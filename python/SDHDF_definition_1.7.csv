@@ -1,0 +1,2717 @@
+--------------------------
+SDHDF Definition Overview
+--------------------------
+SDHDF Definition Version: 1.7
+Author: Lawrence Toomey
+Copyright: CSIRO 2019
+--------------------------
+SDHDF File Overview
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+uwl_190905_144716.hdf,File,SDHDF format file
+--------------------------
+SDHDF Structure Overview
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+/SB00,Group,SDHDF sub-band group
+/SB00/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB00/cal_frequency,Dataset,SDHDF frequency dataset
+/SB00/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB00/data,Dataset,SDHDF astronomy dataset
+/SB00/frequency,Dataset,SDHDF frequency dataset
+/SB00/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB01,Group,SDHDF sub-band group
+/SB01/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB01/cal_frequency,Dataset,SDHDF frequency dataset
+/SB01/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB01/data,Dataset,SDHDF astronomy dataset
+/SB01/frequency,Dataset,SDHDF frequency dataset
+/SB01/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB02,Group,SDHDF sub-band group
+/SB02/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB02/cal_frequency,Dataset,SDHDF frequency dataset
+/SB02/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB02/data,Dataset,SDHDF astronomy dataset
+/SB02/frequency,Dataset,SDHDF frequency dataset
+/SB02/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB03,Group,SDHDF sub-band group
+/SB03/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB03/cal_frequency,Dataset,SDHDF frequency dataset
+/SB03/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB03/data,Dataset,SDHDF astronomy dataset
+/SB03/frequency,Dataset,SDHDF frequency dataset
+/SB03/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB04,Group,SDHDF sub-band group
+/SB04/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB04/cal_frequency,Dataset,SDHDF frequency dataset
+/SB04/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB04/data,Dataset,SDHDF astronomy dataset
+/SB04/frequency,Dataset,SDHDF frequency dataset
+/SB04/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB05,Group,SDHDF sub-band group
+/SB05/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB05/cal_frequency,Dataset,SDHDF frequency dataset
+/SB05/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB05/data,Dataset,SDHDF astronomy dataset
+/SB05/frequency,Dataset,SDHDF frequency dataset
+/SB05/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB06,Group,SDHDF sub-band group
+/SB06/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB06/cal_frequency,Dataset,SDHDF frequency dataset
+/SB06/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB06/data,Dataset,SDHDF astronomy dataset
+/SB06/frequency,Dataset,SDHDF frequency dataset
+/SB06/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB07,Group,SDHDF sub-band group
+/SB07/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB07/cal_frequency,Dataset,SDHDF frequency dataset
+/SB07/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB07/data,Dataset,SDHDF astronomy dataset
+/SB07/frequency,Dataset,SDHDF frequency dataset
+/SB07/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB08,Group,SDHDF sub-band group
+/SB08/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB08/cal_frequency,Dataset,SDHDF frequency dataset
+/SB08/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB08/data,Dataset,SDHDF astronomy dataset
+/SB08/frequency,Dataset,SDHDF frequency dataset
+/SB08/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB09,Group,SDHDF sub-band group
+/SB09/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB09/cal_frequency,Dataset,SDHDF frequency dataset
+/SB09/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB09/data,Dataset,SDHDF astronomy dataset
+/SB09/frequency,Dataset,SDHDF frequency dataset
+/SB09/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB10,Group,SDHDF sub-band group
+/SB10/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB10/cal_frequency,Dataset,SDHDF frequency dataset
+/SB10/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB10/data,Dataset,SDHDF astronomy dataset
+/SB10/frequency,Dataset,SDHDF frequency dataset
+/SB10/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB11,Group,SDHDF sub-band group
+/SB11/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB11/cal_frequency,Dataset,SDHDF frequency dataset
+/SB11/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB11/data,Dataset,SDHDF astronomy dataset
+/SB11/frequency,Dataset,SDHDF frequency dataset
+/SB11/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB12,Group,SDHDF sub-band group
+/SB12/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB12/cal_frequency,Dataset,SDHDF frequency dataset
+/SB12/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB12/data,Dataset,SDHDF astronomy dataset
+/SB12/frequency,Dataset,SDHDF frequency dataset
+/SB12/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB13,Group,SDHDF sub-band group
+/SB13/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB13/cal_frequency,Dataset,SDHDF frequency dataset
+/SB13/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB13/data,Dataset,SDHDF astronomy dataset
+/SB13/frequency,Dataset,SDHDF frequency dataset
+/SB13/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB14,Group,SDHDF sub-band group
+/SB14/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB14/cal_frequency,Dataset,SDHDF frequency dataset
+/SB14/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB14/data,Dataset,SDHDF astronomy dataset
+/SB14/frequency,Dataset,SDHDF frequency dataset
+/SB14/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB15,Group,SDHDF sub-band group
+/SB15/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB15/cal_frequency,Dataset,SDHDF frequency dataset
+/SB15/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB15/data,Dataset,SDHDF astronomy dataset
+/SB15/frequency,Dataset,SDHDF frequency dataset
+/SB15/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB16,Group,SDHDF sub-band group
+/SB16/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB16/cal_frequency,Dataset,SDHDF frequency dataset
+/SB16/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB16/data,Dataset,SDHDF astronomy dataset
+/SB16/frequency,Dataset,SDHDF frequency dataset
+/SB16/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB17,Group,SDHDF sub-band group
+/SB17/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB17/cal_frequency,Dataset,SDHDF frequency dataset
+/SB17/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB17/data,Dataset,SDHDF astronomy dataset
+/SB17/frequency,Dataset,SDHDF frequency dataset
+/SB17/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB18,Group,SDHDF sub-band group
+/SB18/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB18/cal_frequency,Dataset,SDHDF frequency dataset
+/SB18/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB18/data,Dataset,SDHDF astronomy dataset
+/SB18/frequency,Dataset,SDHDF frequency dataset
+/SB18/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB19,Group,SDHDF sub-band group
+/SB19/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB19/cal_frequency,Dataset,SDHDF frequency dataset
+/SB19/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB19/data,Dataset,SDHDF astronomy dataset
+/SB19/frequency,Dataset,SDHDF frequency dataset
+/SB19/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB20,Group,SDHDF sub-band group
+/SB20/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB20/cal_frequency,Dataset,SDHDF frequency dataset
+/SB20/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB20/data,Dataset,SDHDF astronomy dataset
+/SB20/frequency,Dataset,SDHDF frequency dataset
+/SB20/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB21,Group,SDHDF sub-band group
+/SB21/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB21/cal_frequency,Dataset,SDHDF frequency dataset
+/SB21/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB21/data,Dataset,SDHDF astronomy dataset
+/SB21/frequency,Dataset,SDHDF frequency dataset
+/SB21/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB22,Group,SDHDF sub-band group
+/SB22/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB22/cal_frequency,Dataset,SDHDF frequency dataset
+/SB22/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB22/data,Dataset,SDHDF astronomy dataset
+/SB22/frequency,Dataset,SDHDF frequency dataset
+/SB22/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB23,Group,SDHDF sub-band group
+/SB23/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB23/cal_frequency,Dataset,SDHDF frequency dataset
+/SB23/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB23/data,Dataset,SDHDF astronomy dataset
+/SB23/frequency,Dataset,SDHDF frequency dataset
+/SB23/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB24,Group,SDHDF sub-band group
+/SB24/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB24/cal_frequency,Dataset,SDHDF frequency dataset
+/SB24/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB24/data,Dataset,SDHDF astronomy dataset
+/SB24/frequency,Dataset,SDHDF frequency dataset
+/SB24/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB25,Group,SDHDF sub-band group
+/SB25/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB25/cal_frequency,Dataset,SDHDF frequency dataset
+/SB25/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB25/data,Dataset,SDHDF astronomy dataset
+/SB25/frequency,Dataset,SDHDF frequency dataset
+/SB25/weights,Dataset,SDHDF weights dataset
+--------------------------
+/backend_header,Dataset,Astronomy backend meta-data
+/band_header,Dataset,Sub-/zoom-band meta-data
+/cal_backend_header,Dataset,Astronomy backend meta-data
+/cal_band_header,Dataset,Sub-/zoom-band meta-data
+/cal_obs_params,Dataset,Observation integration meta-data
+/history,Dataset,Processing history meta-data
+/obs_params,Dataset,Observation integration meta-data
+/primary_header,Dataset,General observation meta-data
+/rfi_excision,Dataset,RFI excision meta-data
+/software_versions,Dataset,Processing software package version meta-data
+--------------------------
+SDHDF Structure Detail
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+/SB00,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB00/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB01,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB01/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB01/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB01/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB01/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB01/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB01/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB02,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB02/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB02/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB02/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB02/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB02/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB02/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB03,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB03/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB03/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB03/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB03/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB03/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB03/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB04,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB04/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB04/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB04/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB04/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB04/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB04/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB05,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB05/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB06,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB06/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB06/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB06/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB06/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB06/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB06/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB07,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB07/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB08,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB08/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB08/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB08/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB08/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB08/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB08/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB09,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB09/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB09/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB09/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB09/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB09/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB09/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB10,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB10/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB10/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB10/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB10/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB10/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB10/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB11,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB11/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB11/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB11/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB11/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB11/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB11/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB12,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB12/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB12/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB12/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB12/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB12/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB12/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB13,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB13/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB13/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB13/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB13/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB13/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB13/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB14,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB14/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB14/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB14/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB14/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB14/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB14/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB15,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB15/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB15/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB15/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB15/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB15/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB15/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB16,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB16/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB16/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB16/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB16/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB16/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB16/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB17,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB17/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB17/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB17/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB17/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB17/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB17/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB18,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB18/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB18/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB18/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB18/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB18/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB18/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB19,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB19/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB20,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB20/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB21,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB21/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB21/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB21/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB21/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB21/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB21/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB22,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB22/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB22/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB22/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB22/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB22/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB22/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB23,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB23/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB23/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB23/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB23/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB23/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB23/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB24,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB24/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB24/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB24/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB24/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB24/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB24/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB25,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB25/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB25/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB25/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB25/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB25/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB25/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/backend_header,Dataset,Astronomy backend meta-data,N/A,N/A
+.. ADAPTIVE_FILTER,Attribute,?,None,<class 'str'>
+.. ADAPTIVE_FILTER_EPSILON,Attribute,?,None,<class 'float'>
+.. ADAPTIVE_FILTER_NCHAN,Attribute,?,None,<class 'int'>
+.. ADAPTIVE_FILTER_NSAMP,Attribute,?,None,<class 'int'>
+.. BACKEND_PHASE,Attribute,Backend phase convention,None,<class 'int'>
+.. BW,Attribute,Bandwidth across all channels (-ve for lower sideband),MHz,<class 'float'>
+.. BYTES_PER_SECOND,Attribute,Data rate,bytes/s,<class 'float'>
+.. CALFREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_DUTY_CYCLE,Attribute,?,None,<class 'float'>
+.. CAL_EPOCH,Attribute,? (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. CAL_FREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_PHASE,Attribute,?,None,<class 'float'>
+.. CAL_SIGNAL,Attribute,?,None,<class 'int'>
+.. CONTINUUM_OUTNCHAN,Attribute,Number of frequency channels in output data file,None,<class 'int'>
+.. CONTINUUM_OUTNPOL,Attribute,Number of polarisation products in output data file,None,<class 'int'>
+.. CONTINUUM_OUTSTOKES,Attribute,Number of stokes parameters in output data file,None,<class 'int'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. CONTINUUM_OUTTSUBINT,Attribute,Approx. length of time for each output data file,s,<class 'float'>
+.. DATA_HOST,Attribute,Data stream interface IP address,None,<class 'str'>
+.. DATA_MCAST,Attribute,Data stream multi-cast IP address,None,<class 'str'>
+.. DATA_PORT,Attribute,Data stream interface port number,None,<class 'int'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degrees,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,None,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DSB,Attribute,?,?,<class 'int'>
+.. DSPSR_GIT_HASH,Attribute,DSPSR git commit hash,None,<class 'str'>
+.. ENCODING,Attribute,Bit encoding of quantized data (integers only),None,<class 'str'>
+.. ENDIAN,Attribute,Byte ordering of samples,None,<class 'str'>
+.. END_CHANNEL,Attribute,?,None,<class 'int'>
+.. FILE_SIZE,Attribute,Output file size,bytes,<class 'int'>
+.. FREQ,Attribute,Centre frequency of all channels,MHz,<class 'float'>
+.. HDR_SIZE,Attribute,ASCII header size,bytes,<class 'int'>
+.. HDR_VERSION,Attribute,ASCII header version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Software instrument name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NANT,Attribute,Number of beams,None,<class 'int'>
+.. NBIN,Attribute,Number of interleaved bins,None,<class 'int'>
+.. NBIT,Attribute,Number of bits per sample in input data,bits,<class 'int'>
+.. NCHAN,Attribute,Number of frequency channels in input data,None,<class 'int'>
+.. NDIM,Attribute,?,None,<class 'int'>
+.. NPOL,Attribute,Number of polarisations in input data,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_OFFSET,Attribute,?,bytes,<class 'int'>
+.. ORDER,Attribute,?,?,<class 'str'>
+.. OSAMP_DENOMINATOR,Attribute,?,None,<class 'int'>
+.. OSAMP_NUMERATOR,Attribute,?,None,<class 'int'>
+.. PERFORM_BASEBAND,Attribute,?,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,?,None,<class 'str'>
+.. PERFORM_FOLD,Attribute,?,None,<class 'str'>
+.. PERFORM_SEARCH,Attribute,?,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,?,None,<class 'str'>
+.. PERFORM_VLBI,Attribute,?,None,<class 'str'>
+.. PICOSECONDS,Attribute,Offset,?,<class 'float'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. PSRCHIVE_GIT_HASH,Attribute,PSRCHIVE git commit hash,None,<class 'str'>
+.. PSRDADA_GIT_HASH,Attribute,PSRDADA git commit hash,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,None,<class 'float'>
+.. RCVR_HAND,Attribute,Receiver hand (+1|-1),None,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. RESOLUTION,Attribute,?,bytes,<class 'int'>
+.. SCAN_ID,Attribute,ID of TOS scan (0 if TCS),None,<class 'int'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SPIP_GIT_HASH,Attribute,SPIP git commit hash,None,<class 'str'>
+.. START_CHANNEL,Attribute,?,None,<class 'int'>
+.. STATE,Attribute,?,None,<class 'str'>
+.. STREAM_BEAM_ID,Attribute,?,None,<class 'int'>
+.. STREAM_HOST,Attribute,?,None,<class 'str'>
+.. STREAM_SUBBAND_ID,Attribute,?,None,<class 'int'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOBS,Attribute,Observation length,None,<class 'str'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. TSYS_AVG_TIME,Attribute,?,None,<class 'int'>
+.. TSYS_FREQ_RES,Attribute,?,None,<class 'float'>
+.. UDP_NSAMP,Attribute,?,None,<class 'int'>
+.. UTC_START,Attribute,Observation start time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. UTC_STOP,Attribute,Observation stop time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+/band_header,Dataset,Sub-/zoom-band meta-data,N/A,N/A
+.. CENTRE_FREQ,Attribute,Band centre frequency,MHz,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DUMP_TIME,Attribute,Band dump time,s,<class 'float'>
+.. HIGH_FREQ,Attribute,Band range high frequency,MHz,<class 'float'>
+.. LABEL,Attribute,Band label,None,<class 'str'>
+.. LOW_FREQ,Attribute,Band range low frequency,MHz,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NCHAN,Attribute,Number of channels in band,None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/cal_backend_header,Dataset,Astronomy backend meta-data,N/A,N/A
+.. ADAPTIVE_FILTER,Attribute,?,None,<class 'str'>
+.. ADAPTIVE_FILTER_EPSILON,Attribute,?,None,<class 'float'>
+.. ADAPTIVE_FILTER_NCHAN,Attribute,?,None,<class 'int'>
+.. ADAPTIVE_FILTER_NSAMP,Attribute,?,None,<class 'int'>
+.. BACKEND_PHASE,Attribute,Backend phase convention,None,<class 'int'>
+.. BW,Attribute,Bandwidth across all channels (-ve for lower sideband),MHz,<class 'float'>
+.. BYTES_PER_SECOND,Attribute,Data rate,bytes/s,<class 'float'>
+.. CALFREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_DUTY_CYCLE,Attribute,?,None,<class 'float'>
+.. CAL_EPOCH,Attribute,? (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. CAL_FREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_PHASE,Attribute,?,None,<class 'float'>
+.. CAL_SIGNAL,Attribute,?,None,<class 'int'>
+.. CONTINUUM_OUTNCHAN,Attribute,Number of frequency channels in output data file,None,<class 'int'>
+.. CONTINUUM_OUTNPOL,Attribute,Number of polarisation products in output data file,None,<class 'int'>
+.. CONTINUUM_OUTSTOKES,Attribute,Number of stokes parameters in output data file,None,<class 'int'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. CONTINUUM_OUTTSUBINT,Attribute,Approx. length of time for each output data file,s,<class 'float'>
+.. DATA_HOST,Attribute,Data stream interface IP address,None,<class 'str'>
+.. DATA_MCAST,Attribute,Data stream multi-cast IP address,None,<class 'str'>
+.. DATA_PORT,Attribute,Data stream interface port number,None,<class 'int'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degrees,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,None,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DSB,Attribute,?,?,<class 'int'>
+.. DSPSR_GIT_HASH,Attribute,DSPSR git commit hash,None,<class 'str'>
+.. ENCODING,Attribute,Bit encoding of quantized data (integers only),None,<class 'str'>
+.. ENDIAN,Attribute,Byte ordering of samples,None,<class 'str'>
+.. END_CHANNEL,Attribute,?,None,<class 'int'>
+.. FILE_SIZE,Attribute,Output file size,bytes,<class 'int'>
+.. FREQ,Attribute,Centre frequency of all channels,MHz,<class 'float'>
+.. HDR_SIZE,Attribute,ASCII header size,bytes,<class 'int'>
+.. HDR_VERSION,Attribute,ASCII header version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Software instrument name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NANT,Attribute,Number of beams,None,<class 'int'>
+.. NBIN,Attribute,Number of interleaved bins,None,<class 'int'>
+.. NBIT,Attribute,Number of bits per sample in input data,bits,<class 'int'>
+.. NCHAN,Attribute,Number of frequency channels in input data,None,<class 'int'>
+.. NDIM,Attribute,?,None,<class 'int'>
+.. NPOL,Attribute,Number of polarisations in input data,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_OFFSET,Attribute,?,bytes,<class 'int'>
+.. ORDER,Attribute,?,?,<class 'str'>
+.. OSAMP_DENOMINATOR,Attribute,?,None,<class 'int'>
+.. OSAMP_NUMERATOR,Attribute,?,None,<class 'int'>
+.. PERFORM_BASEBAND,Attribute,?,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,?,None,<class 'str'>
+.. PERFORM_FOLD,Attribute,?,None,<class 'str'>
+.. PERFORM_SEARCH,Attribute,?,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,?,None,<class 'str'>
+.. PERFORM_VLBI,Attribute,?,None,<class 'str'>
+.. PICOSECONDS,Attribute,Offset,?,<class 'float'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. PSRCHIVE_GIT_HASH,Attribute,PSRCHIVE git commit hash,None,<class 'str'>
+.. PSRDADA_GIT_HASH,Attribute,PSRDADA git commit hash,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,None,<class 'float'>
+.. RCVR_HAND,Attribute,Receiver hand (+1|-1),None,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. RESOLUTION,Attribute,?,bytes,<class 'int'>
+.. SCAN_ID,Attribute,ID of TOS scan (0 if TCS),None,<class 'int'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SPIP_GIT_HASH,Attribute,SPIP git commit hash,None,<class 'str'>
+.. START_CHANNEL,Attribute,?,None,<class 'int'>
+.. STATE,Attribute,?,None,<class 'str'>
+.. STREAM_BEAM_ID,Attribute,?,None,<class 'int'>
+.. STREAM_HOST,Attribute,?,None,<class 'str'>
+.. STREAM_SUBBAND_ID,Attribute,?,None,<class 'int'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOBS,Attribute,Observation length,None,<class 'str'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. TSYS_AVG_TIME,Attribute,?,None,<class 'int'>
+.. TSYS_FREQ_RES,Attribute,?,None,<class 'float'>
+.. UDP_NSAMP,Attribute,?,None,<class 'int'>
+.. UTC_START,Attribute,Observation start time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. UTC_STOP,Attribute,Observation stop time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+/cal_band_header,Dataset,Sub-/zoom-band meta-data,N/A,N/A
+.. CENTRE_FREQ,Attribute,Band centre frequency,MHz,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DUMP_TIME,Attribute,Band dump time,s,<class 'float'>
+.. HIGH_FREQ,Attribute,Band range high frequency,MHz,<class 'float'>
+.. LABEL,Attribute,Band label,None,<class 'str'>
+.. LOW_FREQ,Attribute,Band range low frequency,MHz,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NCHAN,Attribute,Number of channels in band,None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/cal_obs_params,Dataset,Observation integration meta-data,N/A,N/A
+.. AEST,Attribute,Australian Eastern Standard Time (HH:MM:SS.s),hours,<class 'str'>
+.. AZIMUTH,Attribute,Antenna azimuth angle,degrees,<class 'float'>
+.. AZ_DRIVE_RATE,Attribute,Azimuth drive rate,degrees/min,<class 'float'>
+.. DEC,Attribute,J2000 declination,hours,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,arc-sec,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. ELAPSED_TIME,Attribute,Time since integration start,s,<class 'float'>
+.. ELEVATION,Attribute,Antenna elevation angle,degrees,<class 'float'>
+.. GAL_LAT,Attribute,Galactic latitude,degrees,<class 'float'>
+.. GAL_LONG,Attribute,Galactic longitude,degrees,<class 'float'>
+.. HOUR_ANGLE,Attribute,Hour angle,degrees,<class 'float'>
+.. LMST,Attribute,Local Mean Sidereal Time (HH:MM:SS.s),hours,<class 'str'>
+.. MJD,Attribute,Timestamp at integration start (MJD),days,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PAR_ANGLE,Attribute,Parallactic angle,degrees,<class 'float'>
+.. RA,Attribute,J2000 right ascension,degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,arc-sec,<class 'float'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. UTC,Attribute,Timestamp at integration start (UTC),hours,<class 'str'>
+.. UTC_INFLUX,Attribute,Universal Coordinated Time (HH:MM:SS.s),hours,<class 'str'>
+.. WIND_DIRECTION,Attribute,Wind direction,degrees,<class 'float'>
+.. WIND_SPEED,Attribute,Wind speed,km/hr,<class 'float'>
+.. ZENITH,Attribute,Antenna zenith angle,degrees,<class 'float'>
+.. ZE_DRIVE_RATE,Attribute,Zenith drive rate,degrees/min,<class 'float'>
+/history,Dataset,Processing history meta-data,N/A,N/A
+.. DATE,Attribute,Date (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. DB_HOST,Attribute,Host machine providing observation meta-data ,None,<class 'str'>
+.. DB_TYPE,Attribute,Meta-data database type,None,<class 'str'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PROC_DESCR,Attribute,Process description,None,<class 'str'>
+.. PROC_HOST,Attribute,Host machine running the process,None,<class 'str'>
+.. PROC_NAME,Attribute,Process name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/obs_params,Dataset,Observation integration meta-data,N/A,N/A
+.. AEST,Attribute,Australian Eastern Standard Time (HH:MM:SS.s),hours,<class 'str'>
+.. AZIMUTH,Attribute,Antenna azimuth angle,degrees,<class 'float'>
+.. AZ_DRIVE_RATE,Attribute,Azimuth drive rate,degrees/min,<class 'float'>
+.. DEC,Attribute,J2000 declination,hours,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,arc-sec,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. ELAPSED_TIME,Attribute,Time since integration start,s,<class 'float'>
+.. ELEVATION,Attribute,Antenna elevation angle,degrees,<class 'float'>
+.. GAL_LAT,Attribute,Galactic latitude,degrees,<class 'float'>
+.. GAL_LONG,Attribute,Galactic longitude,degrees,<class 'float'>
+.. HOUR_ANGLE,Attribute,Hour angle,degrees,<class 'float'>
+.. LMST,Attribute,Local Mean Sidereal Time (HH:MM:SS.s),hours,<class 'str'>
+.. MJD,Attribute,Timestamp at integration start (MJD),days,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PAR_ANGLE,Attribute,Parallactic angle,degrees,<class 'float'>
+.. RA,Attribute,J2000 right ascension,degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,arc-sec,<class 'float'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. UTC,Attribute,Timestamp at integration start (UTC),hours,<class 'str'>
+.. UTC_INFLUX,Attribute,Universal Coordinated Time (HH:MM:SS.s),hours,<class 'str'>
+.. WIND_DIRECTION,Attribute,Wind direction,degrees,<class 'float'>
+.. WIND_SPEED,Attribute,Wind speed,km/hr,<class 'float'>
+.. ZENITH,Attribute,Antenna zenith angle,degrees,<class 'float'>
+.. ZE_DRIVE_RATE,Attribute,Zenith drive rate,degrees/min,<class 'float'>
+/primary_header,Dataset,General observation meta-data,N/A,N/A
+.. BAND_MODE,Attribute,Band mode,None,<class 'str'>
+.. CAL_MODE,Attribute,Calibration mode,None,<class 'str'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. DATE,Attribute,File creation date (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degree,<class 'str'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. FILE_FORMAT,Attribute,File format,None,<class 'str'>
+.. FILE_FORMAT_VERSION,Attribute,File format version,None,<class 'str'>
+.. HDR_DEFN,Attribute,File format definition,None,<class 'str'>
+.. HDR_DEFN_VERSION,Attribute,File format definition version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Backend name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. N_SUB,Attribute,Number of sub-bands in output file,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_MODE,Attribute,Observation mode,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,Continuum mode,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,Spectral line mode,None,<class 'str'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. POL_MODE,Attribute,Polarisation mode,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),hours,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SUBBAND_LIST,Attribute,Sub-band meta-data in output file,None,<class 'str'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOTAL_INTEGRATION_TIME,Attribute,Observation total integration time,s,<class 'float'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. UTC_START,Attribute,Observation start (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. ZOOM_CFREQ,Attribute,Zoom centre frequency,MHz,<class 'float'>
+.. ZOOM_MODE,Attribute,Zoom mode,None,<class 'str'>
+.. ZOOM_WIDTH,Attribute,Zoom window width,MHz,<class 'float'>
+/rfi_excision,Dataset,RFI excision meta-data,N/A,N/A
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. FLAG_CHAN_HIGH,Attribute,High frequency channel flagged,None,<class 'int'>
+.. FLAG_CHAN_LOW,Attribute,Low frequency channel flagged,None,<class 'int'>
+.. FLAG_NAME,Attribute,RFI excision algorithm name,None,<class 'str'>
+.. FLAG_NCHAN,Attribute,Number of frequency channels flagged,None,<class 'int'>
+.. FLAG_TYPE,Attribute,RFI excision algorithm type,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/software_versions,Dataset,Processing software package version meta-data,N/A,N/A
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PROC_NAME,Attribute,Process name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOFTWARE_PACKAGE,Attribute,Software package,None,<class 'str'>
+.. SOFTWARE_VERSION,Attribute,Software package version,None,<class 'str'>
+--------------------------
+File /Users/too043/DATA/SDHDF_output/P737/uwl_190905_144716.hdf 
+conforms to the SDHDF definition 1.7
+--------------------------
+Output written to SDHDF_definition_1.7.csv
+--------------------------
+SDHDF Definition Overview
+--------------------------
+SDHDF Definition Version: 1.7
+Author: Lawrence Toomey
+Copyright: CSIRO 2019
+--------------------------
+SDHDF File Overview
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+uwl_181219_074403.hdf,File,SDHDF format file
+--------------------------
+SDHDF Structure Overview
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+/SB00,Group,SDHDF sub-band group
+/SB00/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB00/cal_frequency,Dataset,SDHDF frequency dataset
+/SB00/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB00/data,Dataset,SDHDF astronomy dataset
+/SB00/frequency,Dataset,SDHDF frequency dataset
+/SB00/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB05,Group,SDHDF sub-band group
+/SB05/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB05/cal_frequency,Dataset,SDHDF frequency dataset
+/SB05/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB05/data,Dataset,SDHDF astronomy dataset
+/SB05/frequency,Dataset,SDHDF frequency dataset
+/SB05/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB07,Group,SDHDF sub-band group
+/SB07/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB07/cal_frequency,Dataset,SDHDF frequency dataset
+/SB07/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB07/data,Dataset,SDHDF astronomy dataset
+/SB07/frequency,Dataset,SDHDF frequency dataset
+/SB07/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB19,Group,SDHDF sub-band group
+/SB19/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB19/cal_frequency,Dataset,SDHDF frequency dataset
+/SB19/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB19/data,Dataset,SDHDF astronomy dataset
+/SB19/frequency,Dataset,SDHDF frequency dataset
+/SB19/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB20,Group,SDHDF sub-band group
+/SB20/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB20/cal_frequency,Dataset,SDHDF frequency dataset
+/SB20/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB20/data,Dataset,SDHDF astronomy dataset
+/SB20/frequency,Dataset,SDHDF frequency dataset
+/SB20/weights,Dataset,SDHDF weights dataset
+--------------------------
+/backend_header,Dataset,Astronomy backend meta-data
+/band_header,Dataset,Sub-/zoom-band meta-data
+/cal_backend_header,Dataset,Astronomy backend meta-data
+/cal_band_header,Dataset,Sub-/zoom-band meta-data
+/cal_obs_params,Dataset,Observation integration meta-data
+/history,Dataset,Processing history meta-data
+/obs_params,Dataset,Observation integration meta-data
+/primary_header,Dataset,General observation meta-data
+/rfi_excision,Dataset,RFI excision meta-data
+/software_versions,Dataset,Processing software package version meta-data
+--------------------------
+SDHDF Structure Detail
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+/SB00,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB00/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB05,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB05/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB07,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB07/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB19,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB19/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB20,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB20/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/backend_header,Dataset,Astronomy backend meta-data,N/A,N/A
+.. ADAPTIVE_FILTER,Attribute,?,None,<class 'str'>
+.. ADAPTIVE_FILTER_EPSILON,Attribute,?,None,<class 'float'>
+.. ADAPTIVE_FILTER_NCHAN,Attribute,?,None,<class 'int'>
+.. ADAPTIVE_FILTER_NSAMP,Attribute,?,None,<class 'int'>
+.. BACKEND_PHASE,Attribute,Backend phase convention,None,<class 'int'>
+.. BW,Attribute,Bandwidth across all channels (-ve for lower sideband),MHz,<class 'float'>
+.. BYTES_PER_SECOND,Attribute,Data rate,bytes/s,<class 'float'>
+.. CALFREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_DUTY_CYCLE,Attribute,?,None,<class 'float'>
+.. CAL_EPOCH,Attribute,? (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. CAL_FREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_PHASE,Attribute,?,None,<class 'float'>
+.. CAL_SIGNAL,Attribute,?,None,<class 'int'>
+.. CONTINUUM_OUTNCHAN,Attribute,Number of frequency channels in output data file,None,<class 'int'>
+.. CONTINUUM_OUTNPOL,Attribute,Number of polarisation products in output data file,None,<class 'int'>
+.. CONTINUUM_OUTSTOKES,Attribute,Number of stokes parameters in output data file,None,<class 'int'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. CONTINUUM_OUTTSUBINT,Attribute,Approx. length of time for each output data file,s,<class 'float'>
+.. DATA_HOST,Attribute,Data stream interface IP address,None,<class 'str'>
+.. DATA_MCAST,Attribute,Data stream multi-cast IP address,None,<class 'str'>
+.. DATA_PORT,Attribute,Data stream interface port number,None,<class 'int'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degrees,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,None,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DSB,Attribute,?,?,<class 'int'>
+.. DSPSR_GIT_HASH,Attribute,DSPSR git commit hash,None,<class 'str'>
+.. ENCODING,Attribute,Bit encoding of quantized data (integers only),None,<class 'str'>
+.. ENDIAN,Attribute,Byte ordering of samples,None,<class 'str'>
+.. END_CHANNEL,Attribute,?,None,<class 'int'>
+.. FILE_SIZE,Attribute,Output file size,bytes,<class 'int'>
+.. FREQ,Attribute,Centre frequency of all channels,MHz,<class 'float'>
+.. HDR_SIZE,Attribute,ASCII header size,bytes,<class 'int'>
+.. HDR_VERSION,Attribute,ASCII header version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Software instrument name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NANT,Attribute,Number of beams,None,<class 'int'>
+.. NBIN,Attribute,Number of interleaved bins,None,<class 'int'>
+.. NBIT,Attribute,Number of bits per sample in input data,bits,<class 'int'>
+.. NCHAN,Attribute,Number of frequency channels in input data,None,<class 'int'>
+.. NDIM,Attribute,?,None,<class 'int'>
+.. NPOL,Attribute,Number of polarisations in input data,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_OFFSET,Attribute,?,bytes,<class 'int'>
+.. ORDER,Attribute,?,?,<class 'str'>
+.. OSAMP_DENOMINATOR,Attribute,?,None,<class 'int'>
+.. OSAMP_NUMERATOR,Attribute,?,None,<class 'int'>
+.. PERFORM_BASEBAND,Attribute,?,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,?,None,<class 'str'>
+.. PERFORM_FOLD,Attribute,?,None,<class 'str'>
+.. PERFORM_SEARCH,Attribute,?,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,?,None,<class 'str'>
+.. PERFORM_VLBI,Attribute,?,None,<class 'str'>
+.. PICOSECONDS,Attribute,Offset,?,<class 'float'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. PSRCHIVE_GIT_HASH,Attribute,PSRCHIVE git commit hash,None,<class 'str'>
+.. PSRDADA_GIT_HASH,Attribute,PSRDADA git commit hash,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,None,<class 'float'>
+.. RCVR_HAND,Attribute,Receiver hand (+1|-1),None,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. RESOLUTION,Attribute,?,bytes,<class 'int'>
+.. SCAN_ID,Attribute,ID of TOS scan (0 if TCS),None,<class 'int'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SPIP_GIT_HASH,Attribute,SPIP git commit hash,None,<class 'str'>
+.. START_CHANNEL,Attribute,?,None,<class 'int'>
+.. STATE,Attribute,?,None,<class 'str'>
+.. STREAM_BEAM_ID,Attribute,?,None,<class 'int'>
+.. STREAM_HOST,Attribute,?,None,<class 'str'>
+.. STREAM_SUBBAND_ID,Attribute,?,None,<class 'int'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOBS,Attribute,Observation length,None,<class 'str'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. TSYS_AVG_TIME,Attribute,?,None,<class 'int'>
+.. TSYS_FREQ_RES,Attribute,?,None,<class 'float'>
+.. UDP_NSAMP,Attribute,?,None,<class 'int'>
+.. UTC_START,Attribute,Observation start time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. UTC_STOP,Attribute,Observation stop time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+/band_header,Dataset,Sub-/zoom-band meta-data,N/A,N/A
+.. CENTRE_FREQ,Attribute,Band centre frequency,MHz,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DUMP_TIME,Attribute,Band dump time,s,<class 'float'>
+.. HIGH_FREQ,Attribute,Band range high frequency,MHz,<class 'float'>
+.. LABEL,Attribute,Band label,None,<class 'str'>
+.. LOW_FREQ,Attribute,Band range low frequency,MHz,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NCHAN,Attribute,Number of channels in band,None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/cal_backend_header,Dataset,Astronomy backend meta-data,N/A,N/A
+.. ADAPTIVE_FILTER,Attribute,?,None,<class 'str'>
+.. ADAPTIVE_FILTER_EPSILON,Attribute,?,None,<class 'float'>
+.. ADAPTIVE_FILTER_NCHAN,Attribute,?,None,<class 'int'>
+.. ADAPTIVE_FILTER_NSAMP,Attribute,?,None,<class 'int'>
+.. BACKEND_PHASE,Attribute,Backend phase convention,None,<class 'int'>
+.. BW,Attribute,Bandwidth across all channels (-ve for lower sideband),MHz,<class 'float'>
+.. BYTES_PER_SECOND,Attribute,Data rate,bytes/s,<class 'float'>
+.. CALFREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_DUTY_CYCLE,Attribute,?,None,<class 'float'>
+.. CAL_EPOCH,Attribute,? (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. CAL_FREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_PHASE,Attribute,?,None,<class 'float'>
+.. CAL_SIGNAL,Attribute,?,None,<class 'int'>
+.. CONTINUUM_OUTNCHAN,Attribute,Number of frequency channels in output data file,None,<class 'int'>
+.. CONTINUUM_OUTNPOL,Attribute,Number of polarisation products in output data file,None,<class 'int'>
+.. CONTINUUM_OUTSTOKES,Attribute,Number of stokes parameters in output data file,None,<class 'int'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. CONTINUUM_OUTTSUBINT,Attribute,Approx. length of time for each output data file,s,<class 'float'>
+.. DATA_HOST,Attribute,Data stream interface IP address,None,<class 'str'>
+.. DATA_MCAST,Attribute,Data stream multi-cast IP address,None,<class 'str'>
+.. DATA_PORT,Attribute,Data stream interface port number,None,<class 'int'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degrees,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,None,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DSB,Attribute,?,?,<class 'int'>
+.. DSPSR_GIT_HASH,Attribute,DSPSR git commit hash,None,<class 'str'>
+.. ENCODING,Attribute,Bit encoding of quantized data (integers only),None,<class 'str'>
+.. ENDIAN,Attribute,Byte ordering of samples,None,<class 'str'>
+.. END_CHANNEL,Attribute,?,None,<class 'int'>
+.. FILE_SIZE,Attribute,Output file size,bytes,<class 'int'>
+.. FREQ,Attribute,Centre frequency of all channels,MHz,<class 'float'>
+.. HDR_SIZE,Attribute,ASCII header size,bytes,<class 'int'>
+.. HDR_VERSION,Attribute,ASCII header version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Software instrument name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NANT,Attribute,Number of beams,None,<class 'int'>
+.. NBIN,Attribute,Number of interleaved bins,None,<class 'int'>
+.. NBIT,Attribute,Number of bits per sample in input data,bits,<class 'int'>
+.. NCHAN,Attribute,Number of frequency channels in input data,None,<class 'int'>
+.. NDIM,Attribute,?,None,<class 'int'>
+.. NPOL,Attribute,Number of polarisations in input data,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_OFFSET,Attribute,?,bytes,<class 'int'>
+.. ORDER,Attribute,?,?,<class 'str'>
+.. OSAMP_DENOMINATOR,Attribute,?,None,<class 'int'>
+.. OSAMP_NUMERATOR,Attribute,?,None,<class 'int'>
+.. PERFORM_BASEBAND,Attribute,?,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,?,None,<class 'str'>
+.. PERFORM_FOLD,Attribute,?,None,<class 'str'>
+.. PERFORM_SEARCH,Attribute,?,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,?,None,<class 'str'>
+.. PERFORM_VLBI,Attribute,?,None,<class 'str'>
+.. PICOSECONDS,Attribute,Offset,?,<class 'float'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. PSRCHIVE_GIT_HASH,Attribute,PSRCHIVE git commit hash,None,<class 'str'>
+.. PSRDADA_GIT_HASH,Attribute,PSRDADA git commit hash,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,None,<class 'float'>
+.. RCVR_HAND,Attribute,Receiver hand (+1|-1),None,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. RESOLUTION,Attribute,?,bytes,<class 'int'>
+.. SCAN_ID,Attribute,ID of TOS scan (0 if TCS),None,<class 'int'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SPIP_GIT_HASH,Attribute,SPIP git commit hash,None,<class 'str'>
+.. START_CHANNEL,Attribute,?,None,<class 'int'>
+.. STATE,Attribute,?,None,<class 'str'>
+.. STREAM_BEAM_ID,Attribute,?,None,<class 'int'>
+.. STREAM_HOST,Attribute,?,None,<class 'str'>
+.. STREAM_SUBBAND_ID,Attribute,?,None,<class 'int'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOBS,Attribute,Observation length,None,<class 'str'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. TSYS_AVG_TIME,Attribute,?,None,<class 'int'>
+.. TSYS_FREQ_RES,Attribute,?,None,<class 'float'>
+.. UDP_NSAMP,Attribute,?,None,<class 'int'>
+.. UTC_START,Attribute,Observation start time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. UTC_STOP,Attribute,Observation stop time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+/cal_band_header,Dataset,Sub-/zoom-band meta-data,N/A,N/A
+.. CENTRE_FREQ,Attribute,Band centre frequency,MHz,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DUMP_TIME,Attribute,Band dump time,s,<class 'float'>
+.. HIGH_FREQ,Attribute,Band range high frequency,MHz,<class 'float'>
+.. LABEL,Attribute,Band label,None,<class 'str'>
+.. LOW_FREQ,Attribute,Band range low frequency,MHz,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NCHAN,Attribute,Number of channels in band,None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/cal_obs_params,Dataset,Observation integration meta-data,N/A,N/A
+.. AEST,Attribute,Australian Eastern Standard Time (HH:MM:SS.s),hours,<class 'str'>
+.. AZIMUTH,Attribute,Antenna azimuth angle,degrees,<class 'float'>
+.. AZ_DRIVE_RATE,Attribute,Azimuth drive rate,degrees/min,<class 'float'>
+.. DEC,Attribute,J2000 declination,hours,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,arc-sec,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. ELAPSED_TIME,Attribute,Time since integration start,s,<class 'float'>
+.. ELEVATION,Attribute,Antenna elevation angle,degrees,<class 'float'>
+.. GAL_LAT,Attribute,Galactic latitude,degrees,<class 'float'>
+.. GAL_LONG,Attribute,Galactic longitude,degrees,<class 'float'>
+.. HOUR_ANGLE,Attribute,Hour angle,degrees,<class 'float'>
+.. LMST,Attribute,Local Mean Sidereal Time (HH:MM:SS.s),hours,<class 'str'>
+.. MJD,Attribute,Timestamp at integration start (MJD),days,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PAR_ANGLE,Attribute,Parallactic angle,degrees,<class 'float'>
+.. RA,Attribute,J2000 right ascension,degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,arc-sec,<class 'float'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. UTC,Attribute,Timestamp at integration start (UTC),hours,<class 'str'>
+.. UTC_INFLUX,Attribute,Universal Coordinated Time (HH:MM:SS.s),hours,<class 'str'>
+.. WIND_DIRECTION,Attribute,Wind direction,degrees,<class 'float'>
+.. WIND_SPEED,Attribute,Wind speed,km/hr,<class 'float'>
+.. ZENITH,Attribute,Antenna zenith angle,degrees,<class 'float'>
+.. ZE_DRIVE_RATE,Attribute,Zenith drive rate,degrees/min,<class 'float'>
+/history,Dataset,Processing history meta-data,N/A,N/A
+.. DATE,Attribute,Date (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. DB_HOST,Attribute,Host machine providing observation meta-data ,None,<class 'str'>
+.. DB_TYPE,Attribute,Meta-data database type,None,<class 'str'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PROC_DESCR,Attribute,Process description,None,<class 'str'>
+.. PROC_HOST,Attribute,Host machine running the process,None,<class 'str'>
+.. PROC_NAME,Attribute,Process name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/obs_params,Dataset,Observation integration meta-data,N/A,N/A
+.. AEST,Attribute,Australian Eastern Standard Time (HH:MM:SS.s),hours,<class 'str'>
+.. AZIMUTH,Attribute,Antenna azimuth angle,degrees,<class 'float'>
+.. AZ_DRIVE_RATE,Attribute,Azimuth drive rate,degrees/min,<class 'float'>
+.. DEC,Attribute,J2000 declination,hours,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,arc-sec,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. ELAPSED_TIME,Attribute,Time since integration start,s,<class 'float'>
+.. ELEVATION,Attribute,Antenna elevation angle,degrees,<class 'float'>
+.. GAL_LAT,Attribute,Galactic latitude,degrees,<class 'float'>
+.. GAL_LONG,Attribute,Galactic longitude,degrees,<class 'float'>
+.. HOUR_ANGLE,Attribute,Hour angle,degrees,<class 'float'>
+.. LMST,Attribute,Local Mean Sidereal Time (HH:MM:SS.s),hours,<class 'str'>
+.. MJD,Attribute,Timestamp at integration start (MJD),days,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PAR_ANGLE,Attribute,Parallactic angle,degrees,<class 'float'>
+.. RA,Attribute,J2000 right ascension,degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,arc-sec,<class 'float'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. UTC,Attribute,Timestamp at integration start (UTC),hours,<class 'str'>
+.. UTC_INFLUX,Attribute,Universal Coordinated Time (HH:MM:SS.s),hours,<class 'str'>
+.. WIND_DIRECTION,Attribute,Wind direction,degrees,<class 'float'>
+.. WIND_SPEED,Attribute,Wind speed,km/hr,<class 'float'>
+.. ZENITH,Attribute,Antenna zenith angle,degrees,<class 'float'>
+.. ZE_DRIVE_RATE,Attribute,Zenith drive rate,degrees/min,<class 'float'>
+/primary_header,Dataset,General observation meta-data,N/A,N/A
+.. BAND_MODE,Attribute,Band mode,None,<class 'str'>
+.. CAL_MODE,Attribute,Calibration mode,None,<class 'str'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. DATE,Attribute,File creation date (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degree,<class 'str'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. FILE_FORMAT,Attribute,File format,None,<class 'str'>
+.. FILE_FORMAT_VERSION,Attribute,File format version,None,<class 'str'>
+.. HDR_DEFN,Attribute,File format definition,None,<class 'str'>
+.. HDR_DEFN_VERSION,Attribute,File format definition version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Backend name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. N_SUB,Attribute,Number of sub-bands in output file,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_MODE,Attribute,Observation mode,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,Continuum mode,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,Spectral line mode,None,<class 'str'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. POL_MODE,Attribute,Polarisation mode,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),hours,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SUBBAND_LIST,Attribute,Sub-band meta-data in output file,None,<class 'str'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOTAL_INTEGRATION_TIME,Attribute,Observation total integration time,s,<class 'float'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. UTC_START,Attribute,Observation start (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. ZOOM_CFREQ,Attribute,Zoom centre frequency,MHz,<class 'float'>
+.. ZOOM_MODE,Attribute,Zoom mode,None,<class 'str'>
+.. ZOOM_WIDTH,Attribute,Zoom window width,MHz,<class 'float'>
+/rfi_excision,Dataset,RFI excision meta-data,N/A,N/A
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. FLAG_CHAN_HIGH,Attribute,High frequency channel flagged,None,<class 'int'>
+.. FLAG_CHAN_LOW,Attribute,Low frequency channel flagged,None,<class 'int'>
+.. FLAG_NAME,Attribute,RFI excision algorithm name,None,<class 'str'>
+.. FLAG_NCHAN,Attribute,Number of frequency channels flagged,None,<class 'int'>
+.. FLAG_TYPE,Attribute,RFI excision algorithm type,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/software_versions,Dataset,Processing software package version meta-data,N/A,N/A
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PROC_NAME,Attribute,Process name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOFTWARE_PACKAGE,Attribute,Software package,None,<class 'str'>
+.. SOFTWARE_VERSION,Attribute,Software package version,None,<class 'str'>
+--------------------------
+File /Users/too043/DATA/SDHDF_output/uwl_181219_074403.hdf 
+conforms to the SDHDF definition 1.7
+--------------------------
+Output written to SDHDF_definition_1.7.csv
+--------------------------
+SDHDF Definition Overview
+--------------------------
+SDHDF Definition Version: 1.7
+Author: Lawrence Toomey
+Copyright: CSIRO 2019
+--------------------------
+SDHDF File Overview
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+uwl_190111_083324.hdf,File,SDHDF format file
+--------------------------
+SDHDF Structure Overview
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+/SB00,Group,SDHDF sub-band group
+/SB00/data,Dataset,SDHDF astronomy dataset
+/SB00/frequency,Dataset,SDHDF frequency dataset
+/SB00/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB05,Group,SDHDF sub-band group
+/SB05/data,Dataset,SDHDF astronomy dataset
+/SB05/frequency,Dataset,SDHDF frequency dataset
+/SB05/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB07,Group,SDHDF sub-band group
+/SB07/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+/SB07/cal_frequency,Dataset,SDHDF frequency dataset
+/SB07/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+/SB07/data,Dataset,SDHDF astronomy dataset
+/SB07/frequency,Dataset,SDHDF frequency dataset
+/SB07/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB19,Group,SDHDF sub-band group
+/SB19/data,Dataset,SDHDF astronomy dataset
+/SB19/frequency,Dataset,SDHDF frequency dataset
+/SB19/weights,Dataset,SDHDF weights dataset
+--------------------------
+/SB20,Group,SDHDF sub-band group
+/SB20/data,Dataset,SDHDF astronomy dataset
+/SB20/frequency,Dataset,SDHDF frequency dataset
+/SB20/weights,Dataset,SDHDF weights dataset
+--------------------------
+/backend_header,Dataset,Astronomy backend meta-data
+/band_header,Dataset,Sub-/zoom-band meta-data
+/cal_backend_header,Dataset,Astronomy backend meta-data
+/cal_band_header,Dataset,Sub-/zoom-band meta-data
+/cal_obs_params,Dataset,Observation integration meta-data
+/history,Dataset,Processing history meta-data
+/obs_params,Dataset,Observation integration meta-data
+/primary_header,Dataset,General observation meta-data
+/rfi_excision,Dataset,RFI excision meta-data
+/software_versions,Dataset,Processing software package version meta-data
+--------------------------
+SDHDF Structure Detail
+- HDF_Object_Name -, - HDF_Object_Type -, - Description -
+--------------------------
+/SB00,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB00/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB00/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB05,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB05/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB05/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB07,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB07/cal_data_on,Dataset,SDHDF calibration dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/cal_frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/cal_weights_on,Dataset,SDHDF weights dataset (cal signal on)
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB07/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB19,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB19/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB19/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/SB20,Group,SDHDF sub-band group
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+/SB20/data,Dataset,SDHDF astronomy dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. DIMENSION_LABELS,Attribute,[b'time' b'beam' b'polarization' b'frequency' b'bin']
+.. DIMENSION_LIST,Attribute,DIMENSION_LIST
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/frequency,Dataset,SDHDF frequency dataset
+.. CLASS,Attribute,DIMENSION_SCALE
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. REFERENCE_LIST,Attribute,REFERENCE_LIST
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+/SB20/weights,Dataset,SDHDF weights dataset
+.. DESCRIPTION,Attribute,SDHDF object description
+.. NAME,Attribute,SDHDF object name
+.. SDHDF_CLASS,Attribute,SDHDF class name
+.. UNIT,Attribute,Data unit
+--------------------------
+/backend_header,Dataset,Astronomy backend meta-data,N/A,N/A
+.. ADAPTIVE_FILTER,Attribute,?,None,<class 'str'>
+.. ADAPTIVE_FILTER_EPSILON,Attribute,?,None,<class 'float'>
+.. ADAPTIVE_FILTER_NCHAN,Attribute,?,None,<class 'int'>
+.. ADAPTIVE_FILTER_NSAMP,Attribute,?,None,<class 'int'>
+.. BACKEND_PHASE,Attribute,Backend phase convention,None,<class 'int'>
+.. BW,Attribute,Bandwidth across all channels (-ve for lower sideband),MHz,<class 'float'>
+.. BYTES_PER_SECOND,Attribute,Data rate,bytes/s,<class 'float'>
+.. CALFREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_DUTY_CYCLE,Attribute,?,None,<class 'float'>
+.. CAL_EPOCH,Attribute,? (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. CAL_FREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_PHASE,Attribute,?,None,<class 'float'>
+.. CAL_SIGNAL,Attribute,?,None,<class 'int'>
+.. CONTINUUM_OUTNCHAN,Attribute,Number of frequency channels in output data file,None,<class 'int'>
+.. CONTINUUM_OUTNPOL,Attribute,Number of polarisation products in output data file,None,<class 'int'>
+.. CONTINUUM_OUTSTOKES,Attribute,Number of stokes parameters in output data file,None,<class 'int'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. CONTINUUM_OUTTSUBINT,Attribute,Approx. length of time for each output data file,s,<class 'float'>
+.. DATA_HOST,Attribute,Data stream interface IP address,None,<class 'str'>
+.. DATA_MCAST,Attribute,Data stream multi-cast IP address,None,<class 'str'>
+.. DATA_PORT,Attribute,Data stream interface port number,None,<class 'int'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degrees,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,None,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DSB,Attribute,?,?,<class 'int'>
+.. DSPSR_GIT_HASH,Attribute,DSPSR git commit hash,None,<class 'str'>
+.. ENCODING,Attribute,Bit encoding of quantized data (integers only),None,<class 'str'>
+.. ENDIAN,Attribute,Byte ordering of samples,None,<class 'str'>
+.. END_CHANNEL,Attribute,?,None,<class 'int'>
+.. FILE_SIZE,Attribute,Output file size,bytes,<class 'int'>
+.. FREQ,Attribute,Centre frequency of all channels,MHz,<class 'float'>
+.. HDR_SIZE,Attribute,ASCII header size,bytes,<class 'int'>
+.. HDR_VERSION,Attribute,ASCII header version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Software instrument name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NANT,Attribute,Number of beams,None,<class 'int'>
+.. NBIN,Attribute,Number of interleaved bins,None,<class 'int'>
+.. NBIT,Attribute,Number of bits per sample in input data,bits,<class 'int'>
+.. NCHAN,Attribute,Number of frequency channels in input data,None,<class 'int'>
+.. NDIM,Attribute,?,None,<class 'int'>
+.. NPOL,Attribute,Number of polarisations in input data,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_OFFSET,Attribute,?,bytes,<class 'int'>
+.. ORDER,Attribute,?,?,<class 'str'>
+.. OSAMP_DENOMINATOR,Attribute,?,None,<class 'int'>
+.. OSAMP_NUMERATOR,Attribute,?,None,<class 'int'>
+.. PERFORM_BASEBAND,Attribute,?,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,?,None,<class 'str'>
+.. PERFORM_FOLD,Attribute,?,None,<class 'str'>
+.. PERFORM_SEARCH,Attribute,?,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,?,None,<class 'str'>
+.. PERFORM_VLBI,Attribute,?,None,<class 'str'>
+.. PICOSECONDS,Attribute,Offset,?,<class 'float'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. PSRCHIVE_GIT_HASH,Attribute,PSRCHIVE git commit hash,None,<class 'str'>
+.. PSRDADA_GIT_HASH,Attribute,PSRDADA git commit hash,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,None,<class 'float'>
+.. RCVR_HAND,Attribute,Receiver hand (+1|-1),None,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. RESOLUTION,Attribute,?,bytes,<class 'int'>
+.. SCAN_ID,Attribute,ID of TOS scan (0 if TCS),None,<class 'int'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SPIP_GIT_HASH,Attribute,SPIP git commit hash,None,<class 'str'>
+.. START_CHANNEL,Attribute,?,None,<class 'int'>
+.. STATE,Attribute,?,None,<class 'str'>
+.. STREAM_BEAM_ID,Attribute,?,None,<class 'int'>
+.. STREAM_HOST,Attribute,?,None,<class 'str'>
+.. STREAM_SUBBAND_ID,Attribute,?,None,<class 'int'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOBS,Attribute,Observation length,None,<class 'str'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. TSYS_AVG_TIME,Attribute,?,None,<class 'int'>
+.. TSYS_FREQ_RES,Attribute,?,None,<class 'float'>
+.. UDP_NSAMP,Attribute,?,None,<class 'int'>
+.. UTC_START,Attribute,Observation start time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. UTC_STOP,Attribute,Observation stop time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+/band_header,Dataset,Sub-/zoom-band meta-data,N/A,N/A
+.. CENTRE_FREQ,Attribute,Band centre frequency,MHz,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DUMP_TIME,Attribute,Band dump time,s,<class 'float'>
+.. HIGH_FREQ,Attribute,Band range high frequency,MHz,<class 'float'>
+.. LABEL,Attribute,Band label,None,<class 'str'>
+.. LOW_FREQ,Attribute,Band range low frequency,MHz,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NCHAN,Attribute,Number of channels in band,None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/cal_backend_header,Dataset,Astronomy backend meta-data,N/A,N/A
+.. ADAPTIVE_FILTER,Attribute,?,None,<class 'str'>
+.. ADAPTIVE_FILTER_EPSILON,Attribute,?,None,<class 'float'>
+.. ADAPTIVE_FILTER_NCHAN,Attribute,?,None,<class 'int'>
+.. ADAPTIVE_FILTER_NSAMP,Attribute,?,None,<class 'int'>
+.. BACKEND_PHASE,Attribute,Backend phase convention,None,<class 'int'>
+.. BW,Attribute,Bandwidth across all channels (-ve for lower sideband),MHz,<class 'float'>
+.. BYTES_PER_SECOND,Attribute,Data rate,bytes/s,<class 'float'>
+.. CALFREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_DUTY_CYCLE,Attribute,?,None,<class 'float'>
+.. CAL_EPOCH,Attribute,? (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. CAL_FREQ,Attribute,?,Hz,<class 'float'>
+.. CAL_PHASE,Attribute,?,None,<class 'float'>
+.. CAL_SIGNAL,Attribute,?,None,<class 'int'>
+.. CONTINUUM_OUTNCHAN,Attribute,Number of frequency channels in output data file,None,<class 'int'>
+.. CONTINUUM_OUTNPOL,Attribute,Number of polarisation products in output data file,None,<class 'int'>
+.. CONTINUUM_OUTSTOKES,Attribute,Number of stokes parameters in output data file,None,<class 'int'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. CONTINUUM_OUTTSUBINT,Attribute,Approx. length of time for each output data file,s,<class 'float'>
+.. DATA_HOST,Attribute,Data stream interface IP address,None,<class 'str'>
+.. DATA_MCAST,Attribute,Data stream multi-cast IP address,None,<class 'str'>
+.. DATA_PORT,Attribute,Data stream interface port number,None,<class 'int'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degrees,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,None,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DSB,Attribute,?,?,<class 'int'>
+.. DSPSR_GIT_HASH,Attribute,DSPSR git commit hash,None,<class 'str'>
+.. ENCODING,Attribute,Bit encoding of quantized data (integers only),None,<class 'str'>
+.. ENDIAN,Attribute,Byte ordering of samples,None,<class 'str'>
+.. END_CHANNEL,Attribute,?,None,<class 'int'>
+.. FILE_SIZE,Attribute,Output file size,bytes,<class 'int'>
+.. FREQ,Attribute,Centre frequency of all channels,MHz,<class 'float'>
+.. HDR_SIZE,Attribute,ASCII header size,bytes,<class 'int'>
+.. HDR_VERSION,Attribute,ASCII header version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Software instrument name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NANT,Attribute,Number of beams,None,<class 'int'>
+.. NBIN,Attribute,Number of interleaved bins,None,<class 'int'>
+.. NBIT,Attribute,Number of bits per sample in input data,bits,<class 'int'>
+.. NCHAN,Attribute,Number of frequency channels in input data,None,<class 'int'>
+.. NDIM,Attribute,?,None,<class 'int'>
+.. NPOL,Attribute,Number of polarisations in input data,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_OFFSET,Attribute,?,bytes,<class 'int'>
+.. ORDER,Attribute,?,?,<class 'str'>
+.. OSAMP_DENOMINATOR,Attribute,?,None,<class 'int'>
+.. OSAMP_NUMERATOR,Attribute,?,None,<class 'int'>
+.. PERFORM_BASEBAND,Attribute,?,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,?,None,<class 'str'>
+.. PERFORM_FOLD,Attribute,?,None,<class 'str'>
+.. PERFORM_SEARCH,Attribute,?,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,?,None,<class 'str'>
+.. PERFORM_VLBI,Attribute,?,None,<class 'str'>
+.. PICOSECONDS,Attribute,Offset,?,<class 'float'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. PSRCHIVE_GIT_HASH,Attribute,PSRCHIVE git commit hash,None,<class 'str'>
+.. PSRDADA_GIT_HASH,Attribute,PSRDADA git commit hash,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,None,<class 'float'>
+.. RCVR_HAND,Attribute,Receiver hand (+1|-1),None,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. RESOLUTION,Attribute,?,bytes,<class 'int'>
+.. SCAN_ID,Attribute,ID of TOS scan (0 if TCS),None,<class 'int'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SPIP_GIT_HASH,Attribute,SPIP git commit hash,None,<class 'str'>
+.. START_CHANNEL,Attribute,?,None,<class 'int'>
+.. STATE,Attribute,?,None,<class 'str'>
+.. STREAM_BEAM_ID,Attribute,?,None,<class 'int'>
+.. STREAM_HOST,Attribute,?,None,<class 'str'>
+.. STREAM_SUBBAND_ID,Attribute,?,None,<class 'int'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOBS,Attribute,Observation length,None,<class 'str'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. TSYS_AVG_TIME,Attribute,?,None,<class 'int'>
+.. TSYS_FREQ_RES,Attribute,?,None,<class 'float'>
+.. UDP_NSAMP,Attribute,?,None,<class 'int'>
+.. UTC_START,Attribute,Observation start time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. UTC_STOP,Attribute,Observation stop time (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+/cal_band_header,Dataset,Sub-/zoom-band meta-data,N/A,N/A
+.. CENTRE_FREQ,Attribute,Band centre frequency,MHz,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. DUMP_TIME,Attribute,Band dump time,s,<class 'float'>
+.. HIGH_FREQ,Attribute,Band range high frequency,MHz,<class 'float'>
+.. LABEL,Attribute,Band label,None,<class 'str'>
+.. LOW_FREQ,Attribute,Band range low frequency,MHz,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. NCHAN,Attribute,Number of channels in band,None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/cal_obs_params,Dataset,Observation integration meta-data,N/A,N/A
+.. AEST,Attribute,Australian Eastern Standard Time (HH:MM:SS.s),hours,<class 'str'>
+.. AZIMUTH,Attribute,Antenna azimuth angle,degrees,<class 'float'>
+.. AZ_DRIVE_RATE,Attribute,Azimuth drive rate,degrees/min,<class 'float'>
+.. DEC,Attribute,J2000 declination,hours,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,arc-sec,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. ELAPSED_TIME,Attribute,Time since integration start,s,<class 'float'>
+.. ELEVATION,Attribute,Antenna elevation angle,degrees,<class 'float'>
+.. GAL_LAT,Attribute,Galactic latitude,degrees,<class 'float'>
+.. GAL_LONG,Attribute,Galactic longitude,degrees,<class 'float'>
+.. HOUR_ANGLE,Attribute,Hour angle,degrees,<class 'float'>
+.. LMST,Attribute,Local Mean Sidereal Time (HH:MM:SS.s),hours,<class 'str'>
+.. MJD,Attribute,Timestamp at integration start (MJD),days,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PAR_ANGLE,Attribute,Parallactic angle,degrees,<class 'float'>
+.. RA,Attribute,J2000 right ascension,degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,arc-sec,<class 'float'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. UTC,Attribute,Timestamp at integration start (UTC),hours,<class 'str'>
+.. UTC_INFLUX,Attribute,Universal Coordinated Time (HH:MM:SS.s),hours,<class 'str'>
+.. WIND_DIRECTION,Attribute,Wind direction,degrees,<class 'float'>
+.. WIND_SPEED,Attribute,Wind speed,km/hr,<class 'float'>
+.. ZENITH,Attribute,Antenna zenith angle,degrees,<class 'float'>
+.. ZE_DRIVE_RATE,Attribute,Zenith drive rate,degrees/min,<class 'float'>
+/history,Dataset,Processing history meta-data,N/A,N/A
+.. DATE,Attribute,Date (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. DB_HOST,Attribute,Host machine providing observation meta-data ,None,<class 'str'>
+.. DB_TYPE,Attribute,Meta-data database type,None,<class 'str'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PROC_DESCR,Attribute,Process description,None,<class 'str'>
+.. PROC_HOST,Attribute,Host machine running the process,None,<class 'str'>
+.. PROC_NAME,Attribute,Process name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/obs_params,Dataset,Observation integration meta-data,N/A,N/A
+.. AEST,Attribute,Australian Eastern Standard Time (HH:MM:SS.s),hours,<class 'str'>
+.. AZIMUTH,Attribute,Antenna azimuth angle,degrees,<class 'float'>
+.. AZ_DRIVE_RATE,Attribute,Azimuth drive rate,degrees/min,<class 'float'>
+.. DEC,Attribute,J2000 declination,hours,<class 'str'>
+.. DEC_OFFSET,Attribute,J2000 declination offset,arc-sec,<class 'float'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. ELAPSED_TIME,Attribute,Time since integration start,s,<class 'float'>
+.. ELEVATION,Attribute,Antenna elevation angle,degrees,<class 'float'>
+.. GAL_LAT,Attribute,Galactic latitude,degrees,<class 'float'>
+.. GAL_LONG,Attribute,Galactic longitude,degrees,<class 'float'>
+.. HOUR_ANGLE,Attribute,Hour angle,degrees,<class 'float'>
+.. LMST,Attribute,Local Mean Sidereal Time (HH:MM:SS.s),hours,<class 'str'>
+.. MJD,Attribute,Timestamp at integration start (MJD),days,<class 'float'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PAR_ANGLE,Attribute,Parallactic angle,degrees,<class 'float'>
+.. RA,Attribute,J2000 right ascension,degrees,<class 'str'>
+.. RA_OFFSET,Attribute,J2000 right ascension offset,arc-sec,<class 'float'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. UTC,Attribute,Timestamp at integration start (UTC),hours,<class 'str'>
+.. UTC_INFLUX,Attribute,Universal Coordinated Time (HH:MM:SS.s),hours,<class 'str'>
+.. WIND_DIRECTION,Attribute,Wind direction,degrees,<class 'float'>
+.. WIND_SPEED,Attribute,Wind speed,km/hr,<class 'float'>
+.. ZENITH,Attribute,Antenna zenith angle,degrees,<class 'float'>
+.. ZE_DRIVE_RATE,Attribute,Zenith drive rate,degrees/min,<class 'float'>
+/primary_header,Dataset,General observation meta-data,N/A,N/A
+.. BAND_MODE,Attribute,Band mode,None,<class 'str'>
+.. CAL_MODE,Attribute,Calibration mode,None,<class 'str'>
+.. CONTINUUM_OUTTSAMP,Attribute,Approx. requested dump time per spectrum,s,<class 'float'>
+.. DATE,Attribute,File creation date (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. DEC,Attribute,J2000 declination (DD:MM:SS.s),degree,<class 'str'>
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. FILE_FORMAT,Attribute,File format,None,<class 'str'>
+.. FILE_FORMAT_VERSION,Attribute,File format version,None,<class 'str'>
+.. HDR_DEFN,Attribute,File format definition,None,<class 'str'>
+.. HDR_DEFN_VERSION,Attribute,File format definition version,None,<class 'str'>
+.. INSTRUMENT,Attribute,Backend name,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. N_SUB,Attribute,Number of sub-bands in output file,None,<class 'int'>
+.. OBSERVER,Attribute,Observer name,None,<class 'str'>
+.. OBS_MODE,Attribute,Observation mode,None,<class 'str'>
+.. PERFORM_CONTINUUM,Attribute,Continuum mode,None,<class 'str'>
+.. PERFORM_SPECTRAL_LINE,Attribute,Spectral line mode,None,<class 'str'>
+.. PID,Attribute,OPAL Project ID,None,<class 'str'>
+.. POL_MODE,Attribute,Polarisation mode,None,<class 'str'>
+.. RA,Attribute,J2000 right ascension (HH:MM:SS.s),hours,<class 'str'>
+.. RECEIVER,Attribute,Receiver name,None,<class 'str'>
+.. SCHED_BLOCK_ID,Attribute,ID of TOS schedule block (0 if TCS),None,<class 'int'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOURCE,Attribute,Source name,None,<class 'str'>
+.. SUBBAND_LIST,Attribute,Sub-band meta-data in output file,None,<class 'str'>
+.. TELESCOPE,Attribute,Telescope name,None,<class 'str'>
+.. TOTAL_INTEGRATION_TIME,Attribute,Observation total integration time,s,<class 'float'>
+.. TSAMP,Attribute,Sampling rate of input data,s,<class 'float'>
+.. UTC_START,Attribute,Observation start (UTC YYYY-MM-DD-hh:mm:ss),None,<class 'str'>
+.. ZOOM_CFREQ,Attribute,Zoom centre frequency,MHz,<class 'float'>
+.. ZOOM_MODE,Attribute,Zoom mode,None,<class 'str'>
+.. ZOOM_WIDTH,Attribute,Zoom window width,MHz,<class 'float'>
+/rfi_excision,Dataset,RFI excision meta-data,N/A,N/A
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. FLAG_CHAN_HIGH,Attribute,High frequency channel flagged,None,<class 'int'>
+.. FLAG_CHAN_LOW,Attribute,Low frequency channel flagged,None,<class 'int'>
+.. FLAG_NAME,Attribute,RFI excision algorithm name,None,<class 'str'>
+.. FLAG_NCHAN,Attribute,Number of frequency channels flagged,None,<class 'int'>
+.. FLAG_TYPE,Attribute,RFI excision algorithm type,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+/software_versions,Dataset,Processing software package version meta-data,N/A,N/A
+.. DESCRIPTION,Attribute,SDHDF object description,None,<class 'str'>
+.. NAME,Attribute,SDHDF object name,None,<class 'str'>
+.. PROC_NAME,Attribute,Process name,None,<class 'str'>
+.. SDHDF_CLASS,Attribute,SDHDF class name,None,<class 'str'>
+.. SOFTWARE_PACKAGE,Attribute,Software package,None,<class 'str'>
+.. SOFTWARE_VERSION,Attribute,Software package version,None,<class 'str'>
+--------------------------
+File /Users/too043/DATA/SDHDF_output/uwl_190111_083324.hdf 
+conforms to the SDHDF definition 1.7
+--------------------------
+Output written to SDHDF_definition_1.7.csv
