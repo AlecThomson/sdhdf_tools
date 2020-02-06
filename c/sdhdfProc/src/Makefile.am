@@ -1,0 +1,98 @@
+LIBS = -lhdf5 -lsofa_c -lcalceph
+
+bin_PROGRAMS = sdhdf_describe \
+  sdhdf_extract \
+  sdhdf_quickdump \
+  sdhdf_onoff \
+  sdhdf_sum \
+  sdhdf_modify \
+  sdhdf_identify \
+  sdhdf_cal \
+  sdhdf_listlines
+
+COMMON_SRCS = sdhdfProc_maths.c \
+  sdhdfProc_fileManipulation.c \
+  sdhdfProc_metadata.c \
+  sdhdfProc_calibration.c \
+  sdhdfProc_ephemeris.c
+
+sdhdf_describe_SOURCES = sdhdf_describe.c \
+  $(COMMON_SRCS)
+
+sdhdf_extract_SOURCES = sdhdf_extract.c \
+  $(COMMON_SRCS)
+
+sdhdf_quickdump_SOURCES = sdhdf_quickdump.c \
+  $(COMMON_SRCS)
+
+sdhdf_onoff_SOURCES = sdhdf_onoff.c \
+  $(COMMON_SRCS)
+
+sdhdf_sum_SOURCES = sdhdf_sum.c \
+  $(COMMON_SRCS)
+
+sdhdf_modify_SOURCES = sdhdf_modify.c \
+  $(COMMON_SRCS)
+
+sdhdf_identify_SOURCES = sdhdf_identify.c \
+  $(COMMON_SRCS)
+
+sdhdf_cal_SOURCES = sdhdf_cal.c \
+  $(COMMON_SRCS)
+
+sdhdf_listlines_SOURCES = sdhdf_listlines.c \
+  $(COMMON_SRCS)
+
+LDADD = $(LIBS)
+  
+if HAVE_PGPLOT
+
+bin_PROGRAMS += sdhdf_primaryFluxCal \
+  sdhdf_gainCurve \
+  sdhdf_applyCal \
+  sdhdf_calProc \
+  sdhdf_pointing \
+  sdhdf_autoFlag \
+  sdhdf_flag \
+  sdhdf_plotScan \
+  sdhdf_plotWide \
+  sdhdf_plotMultiSpec \
+  sdhdf_plotSpectrum 
+
+sdhdf_primaryFluxCal_SOURCES = sdhdf_primaryFluxCal.c \
+  $(COMMON_SRCS)
+
+sdhdf_gainCurve_SOURCES = sdhdf_gainCurve.c \
+  $(COMMON_SRCS)
+
+sdhdf_applyCal_SOURCES = sdhdf_applyCal.c \
+  $(COMMON_SRCS)
+
+sdhdf_calProc_SOURCES = sdhdf_calProc.c \
+  $(COMMON_SRCS)
+
+sdhdf_pointing_SOURCES = sdhdf_pointing.c \
+  $(COMMON_SRCS)
+
+sdhdf_autoFlag_SOURCES = sdhdf_autoFlag.c \
+  $(COMMON_SRCS)
+
+sdhdf_flag_SOURCES = sdhdf_flag.c \
+  $(COMMON_SRCS)
+
+sdhdf_plotScan_SOURCES = sdhdf_plotScan.c \
+  $(COMMON_SRCS)
+
+sdhdf_plotWide_SOURCES = sdhdf_plotWide.c \
+  $(COMMON_SRCS)
+
+sdhdf_plotMultiSpec_SOURCES = sdhdf_plotMultiSpec.c \
+  $(COMMON_SRCS)
+
+sdhdf_plotSpectrum_SOURCES = sdhdf_plotSpectrum.c \
+  $(COMMON_SRCS)
+
+AM_CFLAGS = @PGPLOT_CFLAGS@
+LDADD += @PGPLOT_LIBS@
+
+endif
