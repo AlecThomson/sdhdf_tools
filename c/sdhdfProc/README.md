@@ -23,6 +23,8 @@ README for sdhdfProc
 ```
 ./bootstrap  
 ./configure  
+### Note that if any libraries are not present in default paths then use, e.g.:
+### ./configure CFLAGS="-I/u/hob044/software/new_c/sdhdfProc/sofa/20190722/c/src/ -I/pulsar/psr/software/current/stretch/include/ -I/u/hob044/software/new_c/hdf5-1.10.4/src/" LDFLAGS="-L/u/hob044/software/new_c//hdf5-1.10.4/src/ -L/u/hob044/software/new_c/sdhdfProc/sofa/20190722/c/src/"
 make  
 make install
 ```

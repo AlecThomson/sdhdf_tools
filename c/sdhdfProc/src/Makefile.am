@@ -8,7 +8,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_modify \
   sdhdf_identify \
   sdhdf_cal \
-  sdhdf_listlines
+  sdhdf_listLines
 
 COMMON_SRCS = sdhdfProc_maths.c \
   sdhdfProc_fileManipulation.c \
@@ -40,7 +40,7 @@ sdhdf_identify_SOURCES = sdhdf_identify.c \
 sdhdf_cal_SOURCES = sdhdf_cal.c \
   $(COMMON_SRCS)
 
-sdhdf_listlines_SOURCES = sdhdf_listlines.c \
+sdhdf_listLines_SOURCES = sdhdf_listLines.c \
   $(COMMON_SRCS)
 
 LDADD = $(LIBS)

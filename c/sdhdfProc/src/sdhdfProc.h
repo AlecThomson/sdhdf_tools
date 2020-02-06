@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "hdf5.h"
+#include <hdf5.h>
 #include "sdhdf_v1.9.h"
 
 #define SOFTWARE_VER "v0.1"
