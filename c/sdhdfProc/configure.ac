@@ -24,10 +24,15 @@ LIB_PGPLOT
 
 # Check for header files
 AC_HEADER_STDC
-AC_CHECK_HEADER([sofa.h],
-                [AC_DEFINE([HAVE_SOFA_H], [1],
-                [Define to 1 if you have <sofa.h>.])],
-                [AC_MSG_ERROR([header sofa.h not found])])
+#AC_CHECK_HEADER([sofa.h],
+#                [AC_DEFINE([HAVE_SOFA_H], [1],
+#                [Define to 1 if you have <sofa.h>.])],
+#                [AC_MSG_ERROR([header sofa.h not found])])
+
+AC_CHECK_HEADER([erfa.h],
+                [AC_DEFINE([HAVE_ERFA_H], [1],
+                [Define to 1 if you have <erfa.h>.])],
+                [AC_MSG_ERROR([header erfa.h (SOFA replacement not found])])
 
 AC_CHECK_HEADER([calceph.h],
                 [AC_DEFINE([HAVE_CALEPH_H], [1],
