@@ -218,13 +218,15 @@ int main(int argc,char *argv[])
     cpgline(nVals,px,py1);
     if (plotMaxHold==1)
       {
-	cpgsls(2); cpgline(nVals,px,py1_max); cpgsls(1);
+	cpgsci(8);
+	cpgsls(4); cpgline(nVals,px,py1_max); cpgsls(1);
       }
-    cpgsci(5);
+    cpgsci(4);
     cpgline(nVals,px,py2);
     if (plotMaxHold==1)
       {
-	cpgsls(2); cpgline(nVals,px,py2_max); cpgsls(1);
+	cpgsci(5);
+	cpgsls(4); cpgline(nVals,px,py2_max); cpgsls(1);
       }
     cpgsci(1);
     
@@ -321,6 +323,8 @@ int main(int argc,char *argv[])
 	    else
 	      printf("Please press 'z' and then move somewhere and click left mouse button\n");
 	  }
+	else if (key=='A')
+	  printf("Mouse press at (%.6f,%g)\n",mx,my);		 
 	else if (key=='m')
 	  plotMaxHold*=-1;
 	else if (key=='M')
