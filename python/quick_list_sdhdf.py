@@ -9,35 +9,58 @@ __version__ = '1.9'
 __author__ = 'Lawrence Toomey'
 
 
-def quick_list(dir):
+def get_metadata(pth):
+	row_d = []
+
+	try:
+		with h5py.File(pth, 'r') as h5:
+			ph = QTable.read(h5, path='/metadata/primary_header')
+			bp = QTable.read(h5, path='/metadata/beam_params')
+			f = os.path.basename(pth)
+			nbeams = len(bp)
+			pid = ph['PID'][0]
+			utc_start = ph['UTC_START'][0]
+			obs_type = ph['OBS_TYPE'][0]
+			hdr_defn_ver = ph['HDR_DEFN_VERSION']
+			sched_blk_id = ph['SCHED_BLOCK_ID']
+
+			for beam in range(0, nbeams):
+				beam_id = bp['LABEL'][beam]
+				source = bp['SOURCE'][beam]
+				nbands = bp['N_BANDS']
+				row = f, hdr_defn_ver, sched_blk_id, pid, beam_id, source, \
+					obs_type, utc_start, nbands
+				row_d.append(row)
+
+	except Exception as e:
+		print('ERROR: failed to read file %s' % f, e)
+
+	return row_d
+
+
+def quick_list(pth):
 	row_data = []
-	hdr = 'File', 'Project_ID', 'Beam', 'N_bands', 'Source'
+	hdr = 'File', 'SDHDF Version', 'Sched Block ID', 'Project ID', 'Beam', \
+		'Source', 'Obs Type', 'UTC start', 'No. bands'
 
-	for fpath in glob.glob(dir + '/*.hdf'):
-		try:
-			with h5py.File(fpath, 'r') as h5:
-				ph = QTable.read(h5, path='/metadata/primary_header')
-				bp = QTable.read(h5, path='/metadata/beam_params')
-				f = os.path.basename(fpath)
-				nbeams = len(bp)
-				pid = ph['PID'][0]
+	if os.path.isdir(pth):
+		for fpth in glob.glob(pth + '/*.hdf'):
+			row = get_metadata(fpth)
+			row_data += row
 
-				for row in range(0, nbeams):
-					beam = bp['LABEL'][row]
-					nbands = bp['N_BANDS'][row]
-					source = bp['SOURCE'][row]
-					row = f, pid, beam, nbands, source
-					row_data.append(row)
-
-		except Exception as e:
-			print('ERROR: failed to read file %s' % f, e)
+	else:
+		row_data = get_metadata(pth)
 
 	print(tabulate(row_data, headers=hdr))
 
 
 if __name__ == '__main__':
 	ap = argparse.ArgumentParser()
-	ap.add_argument('--dir', help='Path to directory containing SDHDF files [required]', required=True)
+	ap.add_argument('--dir', help='Path to directory containing SDHDF files')
+	ap.add_argument('--filename', help='Path to SDHDF file')
 	args = ap.parse_args()
 
-	quick_list(args.dir)
+	if args.dir:
+		quick_list(args.dir)
+	else:
+		quick_list(args.filename)
