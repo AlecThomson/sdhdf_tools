@@ -14,7 +14,9 @@ COMMON_SRCS = sdhdfProc_maths.c \
   sdhdfProc_fileManipulation.c \
   sdhdfProc_metadata.c \
   sdhdfProc_calibration.c \
-  sdhdfProc_ephemeris.c
+  sdhdfProc_ephemeris.c \
+  T2toolkit.c \
+  TKfit.c
 
 sdhdf_describe_SOURCES = sdhdf_describe.c \
   $(COMMON_SRCS)
@@ -51,8 +53,11 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_gainCurve \
   sdhdf_applyCal \
   sdhdf_calProc \
+  sdhdf_quicklook \
+  sdhdf_processBWS \
   sdhdf_pointing \
   sdhdf_autoFlag \
+  sdhdf_rfiTime \
   sdhdf_flag \
   sdhdf_plotScan \
   sdhdf_plotWide \
@@ -77,10 +82,19 @@ sdhdf_pointing_SOURCES = sdhdf_pointing.c \
 sdhdf_autoFlag_SOURCES = sdhdf_autoFlag.c \
   $(COMMON_SRCS)
 
+sdhdf_rfiTime_SOURCES = sdhdf_rfiTime.c \
+  $(COMMON_SRCS)
+
 sdhdf_flag_SOURCES = sdhdf_flag.c \
   $(COMMON_SRCS)
 
 sdhdf_plotScan_SOURCES = sdhdf_plotScan.c \
+  $(COMMON_SRCS)
+
+sdhdf_quicklook_SOURCES = sdhdf_quicklook.c \
+  $(COMMON_SRCS)
+
+sdhdf_processBWS_SOURCES = sdhdf_processBWS.c \
   $(COMMON_SRCS)
 
 sdhdf_plotWide_SOURCES = sdhdf_plotWide.c \
