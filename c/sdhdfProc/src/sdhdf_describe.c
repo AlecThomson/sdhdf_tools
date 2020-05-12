@@ -46,6 +46,7 @@ void help()
   printf("-history         Provide history information\n");
   printf("-sb <band>       Select band identifier (default = 0)\n");
   printf("-software        Provide software information\n");
+  printf("-atoa            Provide information useful for the ATOA\n");
   exit(1);
 
 }
@@ -66,6 +67,7 @@ int main(int argc,char *argv[])
   int showCalBands=0;
   int showCalDump=0;
   int showAttributes=0;
+  int atoa=0;
   
   int iband=0;
     
@@ -73,6 +75,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-h")==0)
 	help();      
+      else if (strcmp(argv[i],"-atoa")==0)
+	atoa=1;
       else if (strcmp(argv[i],"-band")==0)
 	showBands=1;
       else if (strcmp(argv[i],"-cband")==0)
@@ -95,11 +99,12 @@ int main(int argc,char *argv[])
 
   inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct));
 
-  
-  printf("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-  printf("%-36.36s %-5.5s %-22.22s %-5.5s %-6.6s %-8.8s %-20.20s %-10.10s %-10.10s %-7.7s %-6.6s %-10.10s %-5.5s %-6.6s %-12.12s %-12.12s\n","File","Beam","UTC","SDHDF","PID","Sched_ID","Source","Tel","Observer","RCVR","Bands","POL_TYPE","CAL","M_Time","RA_s","DEC_s");
-  printf("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-
+  if (atoa==0)
+    {
+      printf("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+      printf("%-36.36s %-5.5s %-22.22s %-5.5s %-6.6s %-8.8s %-20.20s %-10.10s %-10.10s %-7.7s %-6.6s %-10.10s %-5.5s %-6.6s %-12.12s %-12.12s\n","File","Beam","UTC","SDHDF","PID","Sched_ID","Source","Tel","Observer","RCVR","Bands","POL_TYPE","CAL","M_Time","RA_s","DEC_s");
+      printf("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+    }
   
   for (i=0;i<nFiles;i++)
     {
@@ -109,85 +114,109 @@ int main(int argc,char *argv[])
       else
 	{
 	  sdhdf_loadMetaData(inFile);
-	  for (beam=0;beam<inFile->nBeam;beam++)
+	  if (atoa==1)
 	    {
 	      maxTime=0;  
-	      for (j=0;j<inFile->beam[beam].nBand;j++)
+	      for (j=0;j<inFile->beam[0].nBand;j++)
 		{
-		  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
+		  intTime = inFile->beam[0].bandHeader[j].dtime*inFile->beam[0].bandHeader[j].ndump;
 		  if (maxTime < intTime)
 		    maxTime = intTime;
 		}
-	      
-	      printf("%-36.36s %-5d %-22.22s %-5.5s %-6.6s %-8d %-20.20s %-10.10s %-10.10s %-7.7s %-6d %-10.10s %-5.5s %-6.1f %s %s\n",
-		     inFile->fname, beam,inFile->primary[0].utc0,inFile->primary[0].hdr_defn_version,
-		     inFile->primary[0].pid,inFile->primary[0].sched_block_id,inFile->beamHeader[iband].source,
-		     inFile->primary[0].telescope,inFile->primary[0].observer,inFile->primary[0].rcvr,inFile->beam[beam].nBand,
-		     inFile->beam[beam].bandHeader[0].pol_type,inFile->primary[0].cal_mode,maxTime,inFile->beam[beam].bandData[iband].astro_obsHeader[0].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[0].decStr);
-	      
-	      if (showBands==1)
+
+	      printf("%s %s %s %s %s %8.3f\n",inFile->fname,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->beam[0].bandData[0].astro_obsHeader[0].raStr,inFile->beam[0].bandData[0].astro_obsHeader[0].decStr,maxTime);
+	      for (j=0;j<inFile->beam[beam].nBand;j++)
 		{
-		  printf("-----------------------------------------------------------------------------\n");
-		  printf("        #   BandID      F0       F1      NCHAN    TDUMP    NPOL NDUMP TOBS\n");
-		  printf("-----------------------------------------------------------------------------\n");
+		  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
+		  printf("%d %-10.10s %d %d %d %d %d %g\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].nchan,(int)inFile->beam[beam].bandHeader[j].f0,(int)inFile->beam[beam].bandHeader[j].f1,(int)inFile->beam[beam].bandHeader[j].fc,(int)(inFile->beam[beam].bandHeader[j].f1-inFile->beam[beam].bandHeader[j].f0),inFile->beam[beam].bandHeader[j].dtime);
+
+
+		  //%8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime);
+		}
+
+	    }
+	  else
+	    {
+	      for (beam=0;beam<inFile->nBeam;beam++)
+		{
+		  maxTime=0;  
 		  for (j=0;j<inFile->beam[beam].nBand;j++)
 		    {
 		      intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
-		      printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime);
+		      if (maxTime < intTime)
+			maxTime = intTime;
 		    }
-		}
-
-	      // Showing dumps for band 0
-	      if (showDump==1)
-		{
-		  printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		  printf("          ElapsedTime MJD           UTC         AEST        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB\n");
-		  printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		  for (j=0;j<inFile->beam[beam].bandData[iband].nAstro_obsHeader;j++)
+		  
+		  printf("%-36.36s %-5d %-22.22s %-5.5s %-6.6s %-8d %-20.20s %-10.10s %-10.10s %-7.7s %-6d %-10.10s %-5.5s %-6.1f %s %s\n",
+			 inFile->fname, beam,inFile->primary[0].utc0,inFile->primary[0].hdr_defn_version,
+			 inFile->primary[0].pid,inFile->primary[0].sched_block_id,inFile->beamHeader[iband].source,
+			 inFile->primary[0].telescope,inFile->primary[0].observer,inFile->primary[0].rcvr,inFile->beam[beam].nBand,
+			 inFile->beam[beam].bandHeader[0].pol_type,inFile->primary[0].cal_mode,maxTime,inFile->beam[beam].bandData[iband].astro_obsHeader[0].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[0].decStr);
+		   
+		  if (showBands==1)
 		    {
-		      printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
-			     inFile->beam[beam].bandData[iband].astro_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].astro_obsHeader[j].mjd,
-			     inFile->beam[beam].bandData[iband].astro_obsHeader[j].utc,inFile->beam[beam].bandData[iband].astro_obsHeader[j].aest,
-			     inFile->beam[beam].bandData[iband].astro_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decStr,
-			     inFile->beam[beam].bandData[iband].astro_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decDeg,
-			     inFile->beam[beam].bandData[iband].astro_obsHeader[j].az,inFile->beam[beam].bandData[iband].astro_obsHeader[j].el,
-			     inFile->beam[beam].bandData[iband].astro_obsHeader[j].gl,inFile->beam[beam].bandData[iband].astro_obsHeader[j].gb);
+		      printf("-----------------------------------------------------------------------------\n");
+		      printf("        #   BandID      F0       F1      NCHAN    TDUMP    NPOL NDUMP TOBS\n");
+		      printf("-----------------------------------------------------------------------------\n");
+		      for (j=0;j<inFile->beam[beam].nBand;j++)
+			{
+			  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
+			  printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime);
+			}
 		    }
-		}
-
-	      if (showCalBands==1)
-		{
-		  printf("-----------------------------------------------------------------------------\n");
-		  printf("        #   BandID      F0       F1      NCHAN    TDUMP    NPOL NDUMP TOBS\n");
-		  printf("-----------------------------------------------------------------------------\n");
-		  for (j=0;j<inFile->beam[beam].nBand;j++)
+		  
+		  // Showing dumps for band 0
+		  if (showDump==1)
 		    {
-		      intTime = inFile->beam[beam].calBandHeader[j].dtime*inFile->beam[beam].calBandHeader[j].ndump;
-		      printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].calBandHeader[j].label,inFile->beam[beam].calBandHeader[j].f0,inFile->beam[beam].calBandHeader[j].f1,inFile->beam[beam].calBandHeader[j].nchan,inFile->beam[beam].calBandHeader[j].dtime,inFile->beam[beam].calBandHeader[j].npol,inFile->beam[beam].calBandHeader[j].ndump,intTime);
+		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+		      printf("          ElapsedTime MJD           UTC         AEST        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB\n");
+		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+		      for (j=0;j<inFile->beam[beam].bandData[iband].nAstro_obsHeader;j++)
+			{
+			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].astro_obsHeader[j].mjd,
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].utc,inFile->beam[beam].bandData[iband].astro_obsHeader[j].aest,
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decStr,
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decDeg,
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].az,inFile->beam[beam].bandData[iband].astro_obsHeader[j].el,
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].gl,inFile->beam[beam].bandData[iband].astro_obsHeader[j].gb);
+			}
 		    }
-		}
 
-	      // Showing dumps for band 0
-	      if (showCalDump==1)
-		{
-		  printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		  printf("          ElapsedTime MJD           UTC         AEST        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB\n");
-		  printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		  for (j=0;j<inFile->beam[beam].bandData[iband].nCal_obsHeader;j++)
+		  if (showCalBands==1)
 		    {
-		      printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
-			     inFile->beam[beam].bandData[iband].cal_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].cal_obsHeader[j].mjd,
-			     inFile->beam[beam].bandData[iband].cal_obsHeader[j].utc,inFile->beam[beam].bandData[iband].cal_obsHeader[j].aest,
-			     inFile->beam[beam].bandData[iband].cal_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decStr,
-			     inFile->beam[beam].bandData[iband].cal_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decDeg,
-			     inFile->beam[beam].bandData[iband].cal_obsHeader[j].az,inFile->beam[beam].bandData[iband].cal_obsHeader[j].el,
-			     inFile->beam[beam].bandData[iband].cal_obsHeader[j].gl,inFile->beam[beam].bandData[iband].cal_obsHeader[j].gb);
-
+		      printf("-----------------------------------------------------------------------------\n");
+		      printf("        #   BandID      F0       F1      NCHAN    TDUMP    NPOL NDUMP TOBS\n");
+		      printf("-----------------------------------------------------------------------------\n");
+		      for (j=0;j<inFile->beam[beam].nBand;j++)
+			{
+			  intTime = inFile->beam[beam].calBandHeader[j].dtime*inFile->beam[beam].calBandHeader[j].ndump;
+			  printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].calBandHeader[j].label,inFile->beam[beam].calBandHeader[j].f0,inFile->beam[beam].calBandHeader[j].f1,inFile->beam[beam].calBandHeader[j].nchan,inFile->beam[beam].calBandHeader[j].dtime,inFile->beam[beam].calBandHeader[j].npol,inFile->beam[beam].calBandHeader[j].ndump,intTime);
+			}
 		    }
+		  
+		  // Showing dumps for band 0
+		  if (showCalDump==1)
+		    {
+		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+		      printf("          ElapsedTime MJD           UTC         AEST        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB\n");
+		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+		      for (j=0;j<inFile->beam[beam].bandData[iband].nCal_obsHeader;j++)
+			{
+			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
+				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].cal_obsHeader[j].mjd,
+				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].utc,inFile->beam[beam].bandData[iband].cal_obsHeader[j].aest,
+				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decStr,
+				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decDeg,
+				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].az,inFile->beam[beam].bandData[iband].cal_obsHeader[j].el,
+				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].gl,inFile->beam[beam].bandData[iband].cal_obsHeader[j].gb);
+			  
+			}
+		    }
+
+
+
 		}
-
-
-
 	    }
 
 	  if (showHistory==1)
