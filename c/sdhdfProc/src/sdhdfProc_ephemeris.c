@@ -20,7 +20,7 @@
 #include <math.h>
 #include <string.h>
 #include "sdhdfProc.h"
-#include "sofa.h"
+#include <erfa.h>
 #include <calceph.h>
 
 long sdhdf_loadEOP(sdhdf_eopStruct *eop)
@@ -188,23 +188,23 @@ void sdhdf_obsCoord_IAU2000B(double *observatory_trs,
 
   // Stick the site position vector in
   // Note that 'trs' is two dimensional
-  iauCp(observatory_trs, trs[0]);
+  eraCp(observatory_trs, trs[0]);
 
   // Work out site velocity in CRS... 
   // first we need to know the angular velocity vector
-  iauPom00(xp, yp, sprime, polarmotion); // polar motion matrix
+  eraPom00(xp, yp, sprime, polarmotion); // polar motion matrix
   north[0] = north[1] = 0.0; north[2] = 1.0; // Vector to +ve pole
-  iauRxp(polarmotion, north, pole_itrs); // Spin pole in ITRS 
+  eraRxp(polarmotion, north, pole_itrs); // Spin pole in ITRS 
   eradot = 2.0*M_PI*1.00273781191135448*(1.0+dut1dot)/86400.0;
-  iauSxp(eradot, pole_itrs, omega_itrs); // Angular velocity in ITRS (rad/s)
-  iauPxp(omega_itrs, trs[0], trs[1]); // Tangential velocity (m/s)
+  eraSxp(eradot, pole_itrs, omega_itrs); // Angular velocity in ITRS (rad/s)
+  eraPxp(omega_itrs, trs[0], trs[1]); // Tangential velocity (m/s)
   
   // Get the Celestial->Terrestrial matrix
-  iauC2t00b(tt_jd1, tt_jd2, ut1_jd1, ut1_jd2, xp, yp, t2c);
+  eraC2t00b(tt_jd1, tt_jd2, ut1_jd1, ut1_jd2, xp, yp, t2c);
   
   // Multiply the itrs position/velocity vector by its transpose (=inverse)
   // to transform trs->crs
-  iauTrxpv(t2c, trs, crs);
+  eraTrxpv(t2c, trs, crs);
 
   // NOTE:::::: DON'T NEED ZENITH STUFF ???
   //iauTrxp(t2c, zenith_trs, zenith_crs);

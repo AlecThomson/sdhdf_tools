@@ -1,4 +1,4 @@
-LIBS = -lhdf5 -lsofa_c -lcalceph
+LIBS = -lhdf5 -lerfa -lcalceph
 
 bin_PROGRAMS = sdhdf_describe \
   sdhdf_extract \
