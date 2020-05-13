@@ -21,8 +21,8 @@ def get_metadata(pth):
 			pid = ph['PID'][0]
 			utc_start = ph['UTC_START'][0]
 			obs_type = ph['OBS_TYPE'][0]
-			hdr_defn_ver = ph['HDR_DEFN_VERSION']
-			sched_blk_id = ph['SCHED_BLOCK_ID']
+			hdr_defn_ver = ph['HDR_DEFN_VERSION'][0]
+			sched_blk_id = ph['SCHED_BLOCK_ID'][0]
 
 			for beam in range(0, nbeams):
 				beam_id = bp['LABEL'][beam]
