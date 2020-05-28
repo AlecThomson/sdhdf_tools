@@ -534,8 +534,8 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	  ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
 	  if (dims[0] != ndump)
 	    {
-	      printf("ERROR: incorrect number of dumps\n");
-	      exit(1);
+	      printf("ERROR: Missing data detected. In %s number of dumps %d (expected) !== %d (actual).\n",inFile->beam[i].bandHeader[j].label,ndump,dims[0]);
+		  exit(1);
 	    }
 	  
 	  val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_obsParamsStruct));
