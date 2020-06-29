@@ -124,7 +124,7 @@ int main(int argc,char *argv[])
 		    maxTime = intTime;
 		}
 
-	      printf("%s %s %s %s %s %s %8.3f\n",inFile->fname,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->beam[0].bandData[0].astro_obsHeader[0].raStr,inFile->beam[0].bandData[0].astro_obsHeader[2].decStr,inFile->primary[0].utc0,maxTime);
+	      printf("%s %s %s %s %s %s %8.3f\n",inFile->fname,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->beam[0].bandData[0].astro_obsHeader[0].raStr,inFile->beam[0].bandData[0].astro_obsHeader[0].decStr,inFile->primary[0].utc0,maxTime);
 	      for (j=0;j<inFile->beam[beam].nBand;j++)
 		{
 		  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
