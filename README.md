@@ -13,7 +13,14 @@ The C code requires the following dependencies to be installed:
 * PGPLOT library (http://www.astro.caltech.edu/~tjp/pgplot/)
 * calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph)
 
-The python modules require Python 3
+The python modules require the following dependencies to be installed:
+* Python 3
+
+The code has been tested with the following library versions installed:
+* liberfa 1.3.0-2
+* libhdf5 1.10.0
+* pgplot5 5.2.2-19.3
+* calceph 3.0.0
 
 ## Branches
 
