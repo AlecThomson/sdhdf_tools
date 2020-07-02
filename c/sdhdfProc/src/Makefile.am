@@ -1,7 +1,8 @@
 LIBS = -lhdf5 -lerfa -lcalceph
 
 bin_PROGRAMS = sdhdf_describe \
-  sdhdf_extract \
+  sdhdf_extractBand \
+  sdhdf_extractDump \
   sdhdf_quickdump \
   sdhdf_onoff \
   sdhdf_sum \
@@ -21,7 +22,10 @@ COMMON_SRCS = sdhdfProc_maths.c \
 sdhdf_describe_SOURCES = sdhdf_describe.c \
   $(COMMON_SRCS)
 
-sdhdf_extract_SOURCES = sdhdf_extract.c \
+sdhdf_extractBand_SOURCES = sdhdf_extractBand.c \
+  $(COMMON_SRCS)
+
+sdhdf_extractDump_SOURCES = sdhdf_extractDump.c \
   $(COMMON_SRCS)
 
 sdhdf_quickdump_SOURCES = sdhdf_quickdump.c \
