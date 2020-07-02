@@ -11,7 +11,7 @@ The C code requires the following dependencies to be installed:
 * ERFA (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
 * HDF5 library (https://www.hdfgroup.org/downloads/hdf5) 
 * PGPLOT library (http://www.astro.caltech.edu/~tjp/pgplot/)
-* calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph)
+* calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
 
 The python modules require the following dependencies to be installed:
 * Python 3
