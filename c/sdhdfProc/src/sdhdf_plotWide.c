@@ -35,13 +35,18 @@
 #include <cpgplot.h>
 
 #define VNUM "v0.1"
+#define MAX_SHADE 128
+#define MAX_FLAG 128
 
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
 void plotSpectrum(sdhdf_fileStruct *inFile,int iband,int idump,char *grDev,char *fname,float f0,float f1,int av,int sump,int nx,int ny,int polPlot);
 void showTransmitter(float freq,float bw,char *label,float miny,float maxy);
+void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float miny,float maxy);
+void drawBand(float f1,float f2,int nVals,float *px,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
+	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax);
 
 int main(int argc,char *argv[])
-{
+{  
   int        i,j,k,l,ii;
   char       fname[MAX_FILES][64];
   sdhdf_fileStruct *inFile;
@@ -69,12 +74,31 @@ int main(int argc,char *argv[])
   float mx,my;
   char key;
   char grDev[128]="/xs";
+  int splitRF=0;
+  int nShade=0;
+  int shadeCol[MAX_SHADE];
+  float shadeF0[MAX_SHADE];
+  float shadeF1[MAX_SHADE];
+  int sd=-1;
+  int s0,s1;
+  int dispAz=0;
+  float azVal;
+  int log=1;
+  int setMinMax=0;
   
+  int nFlag=0;
+  float flagF0[MAX_FLAG],flagF1[MAX_FLAG];
+  
+  int haveFlagged=0;
+
   printf("Starting\n");
+
+  miny = maxy = -1.0;
+
   // Defaults
   idump = iband = ibeam = 0;
   strcpy(grDev,"/xs");
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -90,14 +114,38 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%f",&setMinX);
       else if (strcmp(argv[i],"-maxx")==0)
 	sscanf(argv[++i],"%f",&setMaxX);
+      else if (strcmp(argv[i],"-miny")==0)
+	{sscanf(argv[++i],"%f",&miny); setMinMax=1;}
+      else if (strcmp(argv[i],"-maxy")==0)
+	{sscanf(argv[++i],"%f",&maxy); setMinMax=1;}
       else if (strcmp(argv[i],"-transmitters")==0)
 	plotTransmitters=1;
       else if (strcmp(argv[i],"-maxhold")==0)
 	plotMaxHold=1;
+      else if (strcmp(argv[i],"-splitRF")==0)
+	splitRF=1;
       else if (strcmp(argv[i],"-g")==0)
 	strcpy(grDev,argv[++i]);
+      else if (strcmp(argv[i],"-dispAz")==0)
+	dispAz=1;
+      else if (strcmp(argv[i],"-nolog")==0)
+	log=0;
+      else if (strcmp(argv[i],"-sd")==0)
+	sscanf(argv[++i],"%d",&sd);
       else if (strcmp(argv[i],"-sb")==0)
 	sscanf(argv[++i],"%d",&sb);
+      else if (strcmp(argv[i],"-flag")==0)
+      	{
+      	  sscanf(argv[++i],"%f",&flagF0[nFlag]);
+      	  sscanf(argv[++i],"%f",&flagF1[nFlag++]);
+      	}
+      else if (strcmp(argv[i],"-shade")==0)
+	{
+	  sscanf(argv[++i],"%f",&shadeF0[nShade]);
+	  sscanf(argv[++i],"%f",&shadeF1[nShade]);
+	  sscanf(argv[++i],"%d",&shadeCol[nShade]);
+	  nShade++;
+	}
       else
 	strcpy(fname[inFiles++],argv[i]);
     }
@@ -141,7 +189,17 @@ int main(int argc,char *argv[])
 	{
 	  for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	    {
-	      for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l++)
+	      if (sd<0)
+		{
+		  s0 = 0;
+		  s1 = inFile->beam[ibeam].bandHeader[j].ndump;
+		}
+	      else
+		{
+		  s0 = sd;
+		  s1 = sd+1;
+		}
+	      for (l=s0;l<s1;l++)
 		{
 		  val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
 		  val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
@@ -155,34 +213,38 @@ int main(int argc,char *argv[])
 	  writepos+=inFile->beam[ibeam].bandHeader[j].nchan;
 	}
       
-
-      
+      if (sd >= 0)
+	azVal = inFile->beam[0].bandData[0].astro_obsHeader[sd].az;      
       printf("Closing\n");
       sdhdf_closeFile(inFile);
       printf("Done close\n");
     }
 
-  miny = 1e99; maxy = -1e99;
-  
-  for (i=0;i<nVals;i++)
+  if (miny == -1 && maxy == -1)
     {
-      py1[i]/=(float)psum[i];
-      py2[i]/=(float)psum[i];
-
-      py1[i] = log10(py1[i]);
-      py2[i] = log10(py2[i]);
-
-      py1_max[i] = log10(py1_max[i]);
-      py2_max[i] = log10(py2_max[i]);
-      
-      if (py1[i] > maxy) maxy = py1[i];
-      if (py2[i] > maxy) maxy = py2[i];
-      if (py1_max[i] > maxy) maxy = py1_max[i];
-      if (py2_max[i] > maxy) maxy = py2_max[i];
-      if (py1[i] < miny) miny = py1[i];
-      if (py2[i] < miny) miny = py2[i];
+      miny =  1e30;
+      maxy = -1e30;
+      for (i=0;i<nVals;i++)
+	{
+	  py1[i]/=(float)psum[i];
+	  py2[i]/=(float)psum[i];
+	  if (log==1)
+	    {
+	      py1[i] = log10(py1[i]);
+	      py2[i] = log10(py2[i]);
+	      
+	      py1_max[i] = log10(py1_max[i]);
+	      py2_max[i] = log10(py2_max[i]);
+	    }
+	  if (py1[i] > maxy) maxy = py1[i];
+	  if (py2[i] > maxy) maxy = py2[i];
+	  if (py1_max[i] > maxy) maxy = py1_max[i];
+	  if (py2_max[i] > maxy) maxy = py2_max[i];
+	  if (py1[i] < miny) miny = py1[i];
+	  if (py2[i] < miny) miny = py2[i];
+	}
     }
-
+  printf("miny/maxy = %g/%g\n",miny,maxy);
   if (sb > -1)
     {
       setMinX = 704+sb*128;
@@ -212,23 +274,59 @@ int main(int argc,char *argv[])
   cpgask(0);
 
   do {
-    cpgenv(minx,maxx,miny,maxy,0,20);
-    cpglab("Observing frequency (MHz)","Signal strength","");
-    cpgsci(2);
-    cpgline(nVals,px,py1);
-    if (plotMaxHold==1)
+    if (splitRF==0)
       {
-	cpgsci(8);
-	cpgsls(4); cpgline(nVals,px,py1_max); cpgsls(1);
+	if (log==1)
+	  cpgenv(minx,maxx,miny,maxy,0,20);
+	else
+	  cpgenv(minx,maxx,miny,maxy,0,1);
+	cpglab("Observing frequency (MHz)","Signal strength","");
+	cpgsci(2);
+	cpgline(nVals,px,py1);
+	if (plotMaxHold==1)
+	  {
+	    cpgsci(8);
+	    cpgsls(4); cpgline(nVals,px,py1_max); cpgsls(1);
+	  }
+	cpgsci(4);
+	cpgline(nVals,px,py2);
+	if (plotMaxHold==1)
+	  {
+	    cpgsci(5);
+	    cpgsls(4); cpgline(nVals,px,py2_max); cpgsls(1);
+	  }
+	cpgsci(1);
+
       }
-    cpgsci(4);
-    cpgline(nVals,px,py2);
-    if (plotMaxHold==1)
+    else
       {
-	cpgsci(5);
-	cpgsls(4); cpgline(nVals,px,py2_max); cpgsls(1);
+	float useMiny,useMaxy;
+	int i0,i1,t=0;
+	int flagit;
+	int region;
+	
+	cpgsch(1.0);
+	cpgsvp(0.10,0.95,0.10,0.35);
+
+	drawBand(704,1344,nVals,px,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax);
+	
+	
+	cpgsvp(0.10,0.95,0.40,0.65);
+	drawBand(1344,2368,nVals,px,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax);
+
+	cpgsvp(0.10,0.95,0.7,0.95);
+	drawBand(2368,4096,nVals,px,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax);
+
+	cpgsch(1.4);
+	if (dispAz==1)
+	  {
+	    char label[128];
+	    cpgsch(1.0);
+	    sprintf(label,"Azimuth: %.1f deg",azVal);
+	    cpgtext(2500,6.2,label);
+	    cpgsch(1.4);
+	  }
       }
-    cpgsci(1);
     
     if (molecularLines==1)
       {
@@ -383,3 +481,118 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
 
 }
 
+
+void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float miny,float maxy)
+{
+  int i;
+  cpgsfs(4);
+  for (i=0;i<nShade;i++)
+    {
+      cpgsci(shadeCol[i]);
+      cpgrect(shadeF0[i],shadeF1[i],miny,maxy);
+      cpgsci(1);
+    }
+  cpgsfs(1);
+}
+
+void drawBand(float f1,float f2,int nVals,float *px,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
+	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax)
+{
+  int i,i0,i1,ii,flagit;
+  float useMiny,useMaxy;
+  int t,region;
+
+  if (setMinMax==1)
+    {
+      useMiny = miny;
+      useMaxy = maxy;
+    }
+  else
+    {
+      t=0;
+      for (i=0;i<nVals;i++)
+	{	    
+	  if (px[i] >= f1 && px[i] < f2)
+	    {
+	      flagit=0;
+	      for (ii=0;ii<nFlag;ii++)
+		{
+		  if (px[i] >= flagF0[ii] && px[i] < flagF1[ii])
+		    {
+		      flagit=1;
+		      break;
+		    }
+		}
+	      if (flagit==0)
+		{
+		  if (t==0)
+		    {
+		      useMiny = py1[i];
+		      useMaxy = py1[i];
+		      t=1;
+		    }
+		  else
+		    {
+		      if (useMiny > py1[i]) useMiny = py1[i];
+		      if (useMiny > py2[i]) useMiny = py2[i];			
+		      if (useMaxy < py1[i]) useMaxy = py1[i];
+		      if (useMaxy < py2[i]) useMaxy = py2[i];			
+		    }
+		}
+	    }
+	}
+    }
+  cpgswin(f1,f2,useMiny,useMaxy);
+
+  if (log==1)
+    cpgbox("ABCTSN",0,0,"ABCTSNL",0,0);
+  else
+    cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
+  if (labelit==1)
+    cpglab("Frequency (MHz)","","");
+  else if (labelit==2)
+    cpglab("","Signal strength","");
+  drawShades(nShade,shadeF0,shadeF1,shadeCol,useMiny,useMaxy);
+
+  i0=0;	
+  region=0;
+  for (i=0;i<nVals;i++)
+    {
+      flagit=0;
+      for (ii=0;ii<nFlag;ii++)
+	{
+	  if (px[i] >= flagF0[ii] && px[i] < flagF1[ii])
+	    {
+	      flagit=1;
+	      break;
+	    }
+	}
+      if (flagit==0 && region==2)
+	{
+	  region=0;
+	  i0=i;
+	}
+      if (flagit==1 && region==0)
+	{
+	  i1 = i;
+	  cpgsci(2);
+	  cpgline(i1-i0,px+i0,py1+i0);
+	  cpgsci(4);
+	  cpgline(i1-i0,px+i0,py2+i0);
+	  cpgsci(1);
+	  region=2;
+	}
+    }
+  if (region==0)
+    {
+      i1 = i-1;
+      cpgsci(2);
+      cpgline(i1-i0,px+i0,py1+i0);
+      cpgsci(4);
+      cpgline(i1-i0,px+i0,py2+i0);
+      cpgsci(1);
+      
+    }
+  
+
+}

@@ -80,7 +80,7 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&fSelect1[zoomBand]);
 	  zoomBand++;
 	}
-      else if (strcmp(argv[i],"-s")==0)
+      else if (strcmp(argv[i],"-b")==0)
 	strcpy(selectBand[nSelectBands++],argv[++i]);
       else
 	{

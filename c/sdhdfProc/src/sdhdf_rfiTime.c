@@ -34,6 +34,7 @@ void drawVline(float t0, float t1,char *str);
 int loadBands(char *bandFile,float *sbF0,float *sbF1,int *col,int *style,char **bandHeader);
 float calcT(char *aest,char *aest0,int min);
 void drawLabels(char *labelFile,char *t0,float miny,float maxy,int min);
+void sort2d(int n,float *a,float *b);
 
 int main(int argc,char *argv[])
 {
@@ -98,6 +99,13 @@ int main(int argc,char *argv[])
   float maxAz = 365;
   
   int plotType=1;
+  int showFiles=0;
+  int plotEl=1;
+  
+  int nIgnoreAz=0;
+  float ignoreAz1[1024];
+  float ignoreAz2[1024];
+  int ignoreIt;
   
   timeVal = (float *)malloc(sizeof(float)*MAX_DUMPS);
   elVal   = (float *)malloc(sizeof(float)*MAX_DUMPS);
@@ -127,6 +135,8 @@ int main(int argc,char *argv[])
 	plotType=2;
       else if (strcmp(argv[i],"-l")==0)
 	strcpy(labelFile,argv[++i]);
+      else if (strcasecmp(argv[i],"-noEl")==0)
+	plotEl=0;
       else if (strcmp(argv[i],"-gap")==0)
 	sscanf(argv[++i],"%f",&gap);
       else if (strcmp(argv[i],"-sm")==0)
@@ -146,6 +156,13 @@ int main(int argc,char *argv[])
 	div1=1;
       else if (strcmp(argv[i],"-sub0")==0)
 	sub0=1;
+      else if (strcmp(argv[i],"-showFiles")==0)	
+	showFiles=1;
+      else if (strcmp(argv[i],"-ignoreAz")==0)
+	{
+	  sscanf(argv[++i],"%f",&ignoreAz1[nIgnoreAz]);
+	  sscanf(argv[++i],"%f",&ignoreAz2[nIgnoreAz++]);
+	}
       else
 	strcpy(fname[nFiles++],argv[i]);
     }
@@ -200,29 +217,42 @@ int main(int argc,char *argv[])
 		  azVal[sdump] = inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].az;
 		  elVal[sdump] = inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].el;
 		}
-		  signalVal[j][sdump] = 0.0;
-	      np=0;
 	      
-	      for (k=0;k<inFile->beam[ibeam].nBand;k++)
+	      ignoreIt=0;
+	      for (kk=0;kk<nIgnoreAz;kk++)
 		{
-		  if (sbF0[j] < inFile->beam[ibeam].bandHeader[k].f1 &&
-		      sbF1[j] > inFile->beam[ibeam].bandHeader[k].f0)
+		  if ( inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].az >= ignoreAz1[kk] && inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].az < ignoreAz2[kk])
 		    {
-		      nchan = inFile->beam[ibeam].bandHeader[k].nchan;
-		      for (ii=0;ii<nchan;ii++)
+		      ignoreIt=1;
+		      break;
+		    }
+		}
+	      if (ignoreIt==0)
+		{
+		  signalVal[j][sdump] = 0.0;
+		  np=0;
+		  
+		  for (k=0;k<inFile->beam[ibeam].nBand;k++)
+		    {
+		      if (sbF0[j] < inFile->beam[ibeam].bandHeader[k].f1 &&
+			  sbF1[j] > inFile->beam[ibeam].bandHeader[k].f0)
 			{
-			  freq = inFile->beam[ibeam].bandData[k].astro_data.freq[ii];
-			  if (freq >= sbF0[j] && freq <= sbF1[j])
+			  nchan = inFile->beam[ibeam].bandHeader[k].nchan;
+			  for (ii=0;ii<nchan;ii++)
 			    {
-			      signalVal[j][sdump] += (inFile->beam[ibeam].bandData[k].astro_data.pol1[ii+jj*nchan]+inFile->beam[ibeam].bandData[k].astro_data.pol2[ii+jj*nchan]);
-			      //			      printf("Complete set\n");
-			      np++;
+			      freq = inFile->beam[ibeam].bandData[k].astro_data.freq[ii];
+			      if (freq >= sbF0[j] && freq <= sbF1[j])
+				{
+				  signalVal[j][sdump] += (inFile->beam[ibeam].bandData[k].astro_data.pol1[ii+jj*nchan]+inFile->beam[ibeam].bandData[k].astro_data.pol2[ii+jj*nchan]);
+				  //			      printf("Complete set\n");
+				  np++;
+				}
 			    }
 			}
 		    }
+		  signalVal[j][sdump]/=(double)np;
+		  sdump++;
 		}
-	      signalVal[j][sdump]/=(double)np;
-	      sdump++;
 	    }
 	}
       sdump0+=(sdump-sdump0);
@@ -235,7 +265,7 @@ int main(int argc,char *argv[])
   fout = fopen("output.dat","w");
   for (i=0;i<sdump;i++)
     {
-      fprintf(fout,"%g ",timeVal[i]);
+      fprintf(fout,"%g %g %g ",timeVal[i],azVal[i],elVal[i]);
       for (j=0;j<nsb;j++)
 	fprintf(fout,"%g ",signalVal[j][i]);
       fprintf(fout,"\n");
@@ -245,20 +275,33 @@ int main(int argc,char *argv[])
   if (sub0==1)
     {
       double v0[nsb];
-      float minVal;
+      float minVal,maxVal;
       for (j=0;j<nsb;j++)
 	v0[j] = signalVal[j][0];
       
       for (j=0;j<nsb;j++)
 	{
-	  minVal=1e99;
+	  minVal = 1e99;
+	  maxVal = -1e99;
+
 	  for (i=0;i<sdump;i++)
 	    {
 	      if (minVal > signalVal[j][i])
 		minVal = signalVal[j][i];
+	      if (maxVal < signalVal[j][i])
+		maxVal = signalVal[j][i];
 	    }
+	  printf("%d min/max = %g %g\n",j,minVal,maxVal);
 	  for (i=0;i<sdump;i++)
-	    signalVal[j][i]-=minVal;
+	    signalVal[j][i]= (signalVal[j][i]-minVal)/(maxVal-minVal);
+
+	  /*
+	    if (j==0)
+	    {
+	    for (i=0;i<sdump;i++)
+		printf("Have %d %g\n",i,signalVal[j][i]);
+	    }
+	  */
 	}
     }
 
@@ -424,29 +467,39 @@ int main(int argc,char *argv[])
     }
   else if (plotType==2)
     {
+      float lineX[1024],lineY[1024];
+      int nl=0;
+      int nc;
+      float mean;
+      
       cpgbeg(0,"plot_az.ps/cps",1,1);
       cpgslw(2);
       cpgscf(2);
       cpgsch(1.0);
 
-      cpgsci(4);
-      cpgsvp(0.10,0.95,0.715,0.895);
-      cpgswin(minAz,maxAz,15,90);
-      cpgbox("BC",0,0,"BCTSN",0,0);
-      cpglab("","El (deg)","");
-      for (i=10;i<90;i+=10)
+      if (plotEl==1)
 	{
-	  fx[0] = minAz; fx[1] = maxAz;
-	  fy[0] = fy[1] = i;
-	  cpgsci(1); cpgsls(4); cpgline(2,fx,fy); cpgsls(1); cpgsci(4);
+	  cpgsci(4);
+	  cpgsvp(0.10,0.95,0.715,0.895);
+	  cpgswin(minAz,maxAz,15,90);
+	  cpgbox("BC",0,0,"BCTSN",0,0);
+	  cpglab("","El (deg)","");
+	  for (i=10;i<90;i+=10)
+	    {
+	      fx[0] = minAz; fx[1] = maxAz;
+	      fy[0] = fy[1] = i;
+	      cpgsci(1); cpgsls(4); cpgline(2,fx,fy); cpgsls(1); cpgsci(4);
+	    }
 	}
-      
       
       cpgpt(sdump,azVal,elVal,22);
       cpgsch(0.8);
       cpgsci(1);
 
-      cpgsvp(0.10,0.95,0.6,0.7);
+      if (plotEl==1)
+	cpgsvp(0.10,0.95,0.6,0.7);
+      else
+	cpgsvp(0.10,0.95,0.8,0.9);
       cpgswin(minAz,maxAz,0,1);
       cpgptxt(0,0.5,0,0.5,"N");
       cpgptxt(360,0.5,0,0.5,"N");
@@ -456,7 +509,10 @@ int main(int argc,char *argv[])
 
 
       cpgsch(1.4);
-      cpgsvp(0.10,0.95,0.12,0.6);
+      if (plotEl==1)
+	cpgsvp(0.10,0.95,0.12,0.6);
+      else
+	cpgsvp(0.10,0.95,0.12,0.8);
       if (miny == maxy)
 	{
 	  miny = 1e99; maxy = -1e99;
@@ -470,9 +526,10 @@ int main(int argc,char *argv[])
 		  if (signalVal[j][i] < miny) miny = signalVal[j][i];
 		}
 	    }
+	  miny = miny-(maxy-miny)*0.1;
 	}
       
-      
+      printf("min/max in plot is %g/%g\n",miny,maxy);
       if (log==1)
 	{
 	  //      cpgenv(timeVal[0],timeVal[sdump-1],miny,maxy,0,20);
@@ -499,13 +556,58 @@ int main(int argc,char *argv[])
       fx[0] = fx[1] = 360; fy[0] = miny; fy[1]=maxy;
       cpgsls(4); cpgline(2,fx,fy); cpgsci(1);
 
-
+	  
       for (j=0;j<nsb;j++)
-	  {
-	    cpgsci(col[j]);
-	    cpgpt(sdump,azVal,signalVal[j],21);
-	    cpgsci(1);
-	  }
+	{
+	  
+	  mean=0;
+	  nl=nc=0;
+	  lineX[nl] = 0;
+	  lineY[nl] = 0;
+
+	  for (i=0;i<sdump;i++)
+	    {
+	      if (i < sdump-1 && (i==0 || fabs(azVal[i]-azVal[i-1]) < gap))
+		{
+		  mean+=signalVal[j][i];
+		  nc++;
+		}
+	      else
+		{
+		  if (nc > 0)
+		    {
+		      mean/=(float)nc;
+		      lineX[nl] = azVal[i-1];
+		      lineY[nl] = mean;
+		      mean=0;
+		      nc=0;
+		      nl++;
+		    }
+		}
+	    }
+	  cpgsci(col[j]);
+	  cpgsls(1);
+
+	  //	  cpgpt(sdump,azVal,signalVal[j],21);
+
+	  // Put in to get the high resolution plot working ** check this
+	  nl = sdump;
+	  for (i=0;i<nl;i++)
+	    {
+	      lineX[i] = azVal[i];
+	      lineY[i] = signalVal[j][i];
+	    }
+	  sort2d(nl,lineX,lineY);
+	  cpgline(nl,lineX,lineY);
+
+	  // HERE **
+	  //	  cpgpt(nl,lineX,lineY,4);
+
+	  //	  for (i=0;i<nl;i++)
+	  //	    printf("PLOTTING: %g %g\n",lineX[i],lineY[i]);
+	  cpgsci(1);
+
+	}
     }
 
   // Put headers and legend
@@ -529,6 +631,7 @@ int main(int argc,char *argv[])
     }
   
   // Write file information
+  if (showFiles==1)
   {
     float xp=0.35;
     float yp=0.94;
@@ -666,4 +769,26 @@ float calcT(char *aest,char *aest0,int min)
     return (t1-t0)/60.0;
   else
     return t1-t0;
+}
+
+void sort2d(int n,float *a,float *b)
+{
+  int i;
+  int swap=0;
+  float t1,t2;
+  
+  do {
+    swap=0;
+    for (i=0;i<n-1;i++)
+      {
+	if (a[i] > a[i+1])
+	  {
+	    t1 = a[i];
+	    t2 = b[i];
+	    a[i] = a[i+1]; a[i+1] = t1;
+	    b[i] = b[i+1]; b[i+1] = t2;
+	    swap=1;
+	  }
+      }
+  } while (swap==1);
 }

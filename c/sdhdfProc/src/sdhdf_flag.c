@@ -36,6 +36,14 @@
 
 void doPlot(sdhdf_fileStruct *inFile,int ibeam);
 void saveFile(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam);
+void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam);
+void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT);
 
 int main(int argc,char *argv[])
 {
@@ -245,6 +253,17 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
 	recalc=1;
       }
+    else if (key=='p') // Zap for Parkes UWL data for persistent RFI
+      {
+	autoZapTransmitters(inFile,ibeam);
+	autoZapDigitisers(inFile,ibeam);
+	autoZapAircraft(inFile,ibeam);
+	autoZapSatellites(inFile,ibeam);
+	autoZapWiFi(inFile,ibeam);
+	autoZapUnexplained(inFile,ibeam);
+	autoZapHandsets(inFile,ibeam);
+	recalc=1;
+      }
     else if (key=='s')
       {
 	saveFile(inFile,ibeam);
@@ -354,3 +373,270 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
   free(outFile);
   printf("Save completed\n");
 }
+
+void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+  
+  //
+  // Fixed mobile transmission towers
+  // We see persistent emission from these at all telescope pointing angles
+  //
+  f0[nT] = 758; f1[nT++] = 768;       //  Optus  
+  f0[nT] = 768; f1[nT++] = 788;       //  Telstra
+  f0[nT] = 869.95; f1[nT++] = 875.05; //  Vodafone
+  f0[nT] = 875.05; f1[nT++] = 889.95; //  Telstra
+  f0[nT] = 915; f1[nT++] = 928;       //  Agricultural 920 MHz RFI
+  f0[nT] = 943.4; f1[nT++] = 951.8;   //  Optus
+  f0[nT] = 953.7; f1[nT++] = 958.7;   //  Vodafone
+  f0[nT] = 1081.7; f1[nT++] = 1086.7; // Aliased signal
+  f0[nT] = 1720; f1[nT++] = 1736.2;   // Aliased signal
+  f0[nT] = 1805; f1[nT++] = 1825;     //  Telstra
+  f0[nT] = 1845; f1[nT++] = 1865;     //  Optus
+  f0[nT] = 1973.7; f1[nT++] = 1991.0; // Aliased signal
+  f0[nT] = 2110; f1[nT++] = 2120;     //  Vodafone
+  f0[nT] = 2140; f1[nT++] = 2145;     //  Optus
+  f0[nT] = 2145; f1[nT++] = 2150;     //  Optus
+  f0[nT] = 2164.9; f1[nT++] = 2170.1; //  Vodafone
+  f0[nT] = 2302.05; f1[nT++] = 2321.95; //  NBN
+  f0[nT] = 2322.05; f1[nT++] = 2341.95; //  NBN
+  f0[nT] = 2342.05; f1[nT++] = 2361.95; //  NBN
+  f0[nT] = 2362.05; f1[nT++] = 2381.95; //  NBN
+  f0[nT] = 2487.00; f1[nT++] = 2496.00; //  NBN alias
+  f0[nT] = 2670; f1[nT++] = 2690;     //  Optus
+  f0[nT] = 3445.05; f1[nT++] = 3464.95; //  NBN
+  f0[nT] = 3550.05; f1[nT++] = 3569.95; //  NBN
+
+  if (zapAll==1)
+    {
+      f0[nT] = 804.4; f1[nT++] = 804.6;               //  NSW Police Force
+      f0[nT] = 2152.5-2.5; f1[nT++] = 2152.5+2.5;     //  Telstra - not always on
+      f0[nT] = 847.8-0.2; f1[nT++] = 847.8+0.2;     //  Radio broadcast Parkes
+      f0[nT] = 849.5-0.1; f1[nT++] = 849.5+0.1;               //  NSW Police Force
+      f0[nT] = 848.6-0.230/2.; f1[nT++] = 848.6+0.230/2.; //  Radio broadcast Mount Coonambro
+      
+      // Note see Licence number 1927906/1 in the ACMA database
+      f0[nT] = 2127.5-2.5; f1[nT++] = 2127.5+2.5; // Parkes: "Station open to official correspondence exclusively"
+
+      f0[nT] = 3575; f1[nT++] = 3640;               //  Telstra from Orange or Dubbo
+    }  
+  printf("Number of fixed transmitters being removed = %d\n",nT);
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+  
+  //
+  // Digitiser-related signals that we always see
+  //
+  f0[nT] = 1023; f1[nT++] = 1025;
+  f0[nT] = 1919.9; f1[nT++] = 1920.1;
+  f0[nT] = 3071.9; f1[nT++] = 3072.05;       
+  
+  printf("Number of digitiser-related signals being removed = %d\n",nT);
+
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+
+void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+  
+  // We do not know what is causing this
+  f0[nT] = 824.95; f1[nT++] = 825.05;
+
+  f0[nT] = 1225; f1[nT++] = 1230; // This is potentially interesting - should look more into this one
+  f0[nT] = 1399.9; f1[nT++] = 1400.15;
+  f0[nT] = 1498.0; f1[nT++] = 1499.0;
+  f0[nT] = 1499.8; f1[nT++] = 1500.2;
+  f0[nT] = 1880; f1[nT++] = 1904;
+  f0[nT] = 2032.0; f1[nT++] = 2033.0;
+  f0[nT] = 2063.0; f1[nT++] = 2064.0;
+  f0[nT] = 2077.0; f1[nT++] = 2078.0;
+  f0[nT] = 2079.0; f1[nT++] = 2080.0;
+  f0[nT] = 2093.0; f1[nT++] = 2094.0;
+  f0[nT] = 2160.0; f1[nT++] = 2161;
+  f0[nT] = 2191.0; f1[nT++] = 2192;
+  f0[nT] = 2205.0; f1[nT++] = 2206.0;
+  f0[nT] = 2207.0; f1[nT++] = 2208.0;
+  f0[nT] = 2221.0; f1[nT++] = 2222.0;
+  f0[nT] = 2226.3; f1[nT++] = 2226.7;
+  printf("Number of unexplained signals being removed = %d\n",nT);
+
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+  
+  //
+  // Digitiser-related signals that we always see
+  //
+  if (zapAll==1)
+    {
+      f0[nT] = 2401; f1[nT++] = 2483; // Entire band
+    }
+  printf("Number of WiFi signals being removed = %d\n",nT);
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+
+
+    //
+  // Satellites that we always see
+  //
+  f0[nT] = 1618; f1[nT++] = 1626.5; // Iridium
+  if (zapAll==1)
+    {
+      f0[nT] = 1164; f1[nT++] = 1189;
+      f0[nT] = 1189; f1[nT++] = 1214;
+      f0[nT] = 1240; f1[nT++] = 1260;
+      f0[nT] = 1260; f1[nT++] = 1300;
+      f0[nT] = 1525; f1[nT++] = 1646.5;  // Inmarsat - this is too wide
+    }
+  
+  printf("Number of satellite signals being removed = %d\n",nT);
+
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+  
+  if (zapAll==1)
+    {
+      f0[nT] = 703;    f1[nT++] = 713;    // 4G Optus
+      f0[nT] = 704.5;  f1[nT++] = 708;    // Alias
+      f0[nT] = 713;    f1[nT++] = 733;
+      f0[nT] = 825.1;  f1[nT++] = 829.9; // Vodafone 4G
+      f0[nT] = 830.05; f1[nT++] = 844.95; // Telstra 3G
+      f0[nT] = 847.6;  f1[nT++] = 848.0;
+      f0[nT] = 898.4;  f1[nT++] = 906.4;  // Optus 3G
+      f0[nT] = 906.8;  f1[nT++] = 915.0;  // Vodafone 3G
+      f0[nT] = 953;    f1[nT++] = 960.1;  // Alias
+      f0[nT] = 1710;   f1[nT++] = 1725;  // 4G Telstra
+      f0[nT] = 1745;   f1[nT++] = 1755;  // 4G Optus
+      f0[nT] = 2550;   f1[nT++] = 2570;  // 4G Optus
+      
+    }
+  printf("Number of Handset signals being removed = %d\n",nT);
+
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam)
+{
+  int maxTransmitters = 128;
+  float f0[maxTransmitters],f1[maxTransmitters];
+  float freq;
+  int nT=0;
+  int i,j;
+  int nzap=0;
+  int zapAll=1;
+
+    //
+  // Aircraft signals that we always see
+  //
+  f0[nT] = 1017; f1[nT++] = 1019;       // Parkes ground response
+  f0[nT] = 1029; f1[nT++] = 1031;       // Parkes ground response
+
+  if (zapAll==1)
+    {
+      f0[nT] = 1026.8; f1[nT++] = 1027.2;       // Unknown DME signal
+      f0[nT] = 1027.8; f1[nT++] = 1028.2;       // Unknown DME signal
+      f0[nT] = 1032.8; f1[nT++] = 1033.2;       // Unknown DME signal
+      f0[nT] = 1040.8; f1[nT++] = 1041.2;       // Strong, unknown DME signal
+      f0[nT] = 1061.8; f1[nT++] = 1062.2;       // Sydney DME
+      f0[nT] = 1067.8; f1[nT++] = 1068.2;       // Richmond DME
+      f0[nT] = 1071.8; f1[nT++] = 1072.2;       // Wagga Wagga DME
+      f0[nT] = 1079.2; f1[nT++] = 1080.2;       // Unknown DME
+      f0[nT] = 1080.8; f1[nT++] = 1081.2;       // Parkes DME
+      f0[nT] = 1081.8; f1[nT++] = 1082.2;       // Sydney RW07 DME
+      f0[nT] = 1103.8; f1[nT++] = 1104.2;       // Unknown DME
+      f0[nT] = 1102.8; f1[nT++] = 1103.2;       // Unknown DME
+      f0[nT] = 1120.8; f1[nT++] = 1121.2;       // Wagga Wagga DME
+      f0[nT] = 1134.8; f1[nT++] = 1135.2;       // Nowra DME
+      f0[nT] = 1137.6; f1[nT++] = 1138.4;       // Canberra DME
+      f0[nT] = 1149.8; f1[nT++] = 1150.2;       // CHECK IF THIS IS A DME
+      f0[nT] = 1150.8; f1[nT++] = 1151.2;       // CHECK IF THIS IS A DME
+      
+    }
+  printf("Number of aircraft signals being removed = %d\n",nT);
+
+
+  flagChannels(inFile,ibeam,f0,f1,nT);
+}
+
+
+void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT)
+{
+  int i,j,k;
+  int nchan;
+  float f;
+  int zap=0;
+  
+  for (i=0;i<inFile->beam[ibeam].nBand;i++)
+    {
+      nchan = inFile->beam[ibeam].bandHeader[i].nchan; 
+      for (j=0;j<nchan;j++)
+	{
+	  f = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
+	  zap=0;
+	  for (k=0;k<nT;k++)
+	    {
+	      if (f >= f0[k] && f <= f1[k])
+		{
+		  zap=1;
+		  break;
+		}
+	    }
+	  if (zap==1)
+	    inFile->beam[ibeam].bandData[i].astro_data.flag[j] = 1;
+	}
+    }
+}
+

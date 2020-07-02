@@ -56,6 +56,8 @@ int main(int argc,char *argv[])
   float mx,my;
   char key;
 
+  int fitted=0;
+  
   float timeVal[MAX_BANDS][MAX_SUBINT];
   float fluxAA[MAX_BANDS][MAX_SUBINT],fluxBB[MAX_BANDS][MAX_SUBINT];
   float fluxI[MAX_BANDS][MAX_SUBINT];
@@ -122,6 +124,20 @@ int main(int argc,char *argv[])
       ra0 = (4.+8/60.0+20.37884/60./60.)*180./12.;
       dec0 = -65.0-45.0/60.-9.0806/60./60.;
     }
+  else if (strcmp(inFile->beamHeader[ibeam].source,"1934_RASCAN")==0)
+    {
+      printf("Setting default position to 1934-638\n");
+      //  19:39:25.01 -63:42:45.7
+      ra0 = (19.+39/60.0+25.01/60./60.)*180./12.;
+      dec0 = -63.0-42.0/60.-45.7/60./60.;
+    }
+  else if (strcmp(inFile->beamHeader[ibeam].source,"1934_DCSCAN")==0)
+    {
+      printf("Setting default position to 1934-638\n");
+      //  19:39:25.01 -63:42:45.7
+      ra0 = (19.+39/60.0+25.01/60./60.)*180./12.;
+      dec0 = -63.0-42.0/60.-45.7/60./60.;
+    }
   else
     {
       printf("Setting default position to start of observation. Do not know source >%s<\n",
@@ -137,6 +153,7 @@ int main(int argc,char *argv[])
       modelFit[i].baseline = 0;
       // FWHM (Gaussian) = 2.355 sigma
       modelFit[i].width = 1.02*SPEED_LIGHT/(inFile->beam[ibeam].bandHeader[i].fc*1e6)*180./M_PI/64.0/2.355; // HARD CODE TO 64m
+      printf("fc setting is %g\n",inFile->beam[ibeam].bandHeader[i].fc);
     }
   
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
@@ -358,8 +375,18 @@ int main(int argc,char *argv[])
 	lm_status_struct status;
 	lm_control_struct control = lm_control_double;
 	int b;
+	if (select==-1) select=0;
 	printf("Band | Fc (MHz) | Amp | Angular offset | Width | Baseline\n");
 
+	if (fitted==0 && normalise==-1)
+	  {
+	    for (b=0;b<inFile->beam[ibeam].nBand;b++)
+	      {
+		modelFit[b].baseline = fx[b][0];         // Have a more reasonable baseline if not normalised
+		modelFit[b].amp = maxy-miny;
+	      }
+	  }
+	
 	for (b=0;b<inFile->beam[ibeam].nBand;b++)
 	  {
 	    for (i=0;i<npts;i++)
@@ -382,6 +409,8 @@ int main(int argc,char *argv[])
 	    modelFit[b].baseline = pval[3];
 	  }
 	recalc=1;
+	fitted=1;
+
       }     
     else if (key=='x')
       {

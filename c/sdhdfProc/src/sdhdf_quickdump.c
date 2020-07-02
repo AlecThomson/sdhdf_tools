@@ -71,6 +71,8 @@ int main(int argc,char *argv[])
 	help();
       else if (strcmp(argv[i],"-tsys")==0)
 	dataType=2;
+      else if (strcmp(argv[i],"-cal")==0)
+	dataType=3;
       else if (strcmp(argv[i],"-freqRange")==0)
 	{
 	  sscanf(argv[++i],"%f",&freq0);
@@ -118,8 +120,9 @@ int main(int argc,char *argv[])
 		{
 		  npol = inFile->beam[beam].bandHeader[band].npol;
 		  nchan = inFile->beam[beam].bandHeader[band].nchan;
-		  sdhdf_loadBandData(inFile,beam,band,1);
-		  if (dataType==2)
+		  if (dataType!=3)
+		    sdhdf_loadBandData(inFile,beam,band,1);
+		  if (dataType==2 || dataType==3)
 		    {
 		      sdhdf_loadBandData(inFile,beam,band,2);
 		      sdhdf_loadBandData(inFile,beam,band,3);
@@ -196,6 +199,29 @@ int main(int argc,char *argv[])
 			}
 		      free(tsys);
 		    }
+		  else if (dataType==3)
+		    {
+		      int nchanCal =  inFile->beam[beam].calBandHeader[band].nchan;
+		      if (setDumpRange==0)
+			{
+			  sd0 = 0;
+			  sd1 = inFile->beam[beam].calBandHeader[band].ndump;
+			}
+		      
+		      for (j=sd0;j<sd1;j++)
+			{
+			  //		      printf("Here with %d\n",k);
+			  for (k=0;k<nchanCal;k++)
+			    {
+			      display=1;
+			      //			  printf("Loading freq\n");
+			      freq = inFile->beam[beam].bandData[band].cal_on_data.freq[k];
+			      printf("%s %d %d %d %d %.6f %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal]);
+
+			    }
+			}
+		    }
+		      
 		  sdhdf_releaseBandData(inFile,beam,band,1);
 		  
 		}

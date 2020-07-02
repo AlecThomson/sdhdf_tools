@@ -168,6 +168,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   int xplot=1;
   int npol=4;
   int reload=1;
+  int flagIt=2;
   
   cpgbeg(0,"/xs",1,1);
   cpgask(0);
@@ -229,21 +230,26 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	
 	  if (t==0 || t==1)
 	    {
+	      int setMiny=0;
 	      for (i=0;i<nchan;i++)
 		{
-		  if (i==0)
+		  if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 0 || flagIt==0)
 		    {
-		      miny = maxy = pol1[i];
-		    }
-		  else
-		    {
-		      if (pol1[i] > maxy) maxy = pol1[i];
-		      if (pol1[i] < miny) miny = pol1[i];
-
-		      if (npol > 1)
+		      if (setMiny==0)
 			{
-			  if (pol2[i] > maxy) maxy = pol2[i];
-			  if (pol2[i] < miny) miny = pol2[i];
+			  miny = maxy = pol1[i];
+			  setMiny=1;
+			}
+		      else
+			{
+			  if (pol1[i] > maxy) maxy = pol1[i];
+			  if (pol1[i] < miny) miny = pol1[i];
+			  
+			  if (npol > 1)
+			    {
+			      if (pol2[i] > maxy) maxy = pol2[i];
+			      if (pol2[i] < miny) miny = pol2[i];
+			    }
 			}
 		    }
 		}
@@ -305,10 +311,44 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  drawMolecularLine(1667.3590,"OH",minx,maxx,miny,maxy);
 	  drawMolecularLine(1720.5300,"OH",minx,maxx,miny,maxy);
 	}
-      cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
-      if (npol > 1)
+      if (flagIt==2)
 	{
-	  cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
+	  int i0=0;
+	  int drawIt=-1;
+	  for (i=0;i<nchan;i++)
+	    {
+	      if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 0 && drawIt==-1)
+		{
+		  drawIt=1;
+		  i0=i;
+		}
+	      if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] != 0 && drawIt==1)
+		{
+		  cpgsci(1); cpgline(i-1-i0,freq+i0,pol1+i0); cpgsci(1);
+		  if (npol > 1)
+		    {
+		      cpgsci(2); cpgline(i-1-i0,freq+i0,pol2+i0); cpgsci(1);
+		    }
+		  drawIt=-1;
+
+		}	      
+	    }
+	  if (drawIt==1)
+	    {
+	      cpgsci(1); cpgline(i-1-i0,freq+i0,pol1+i0); cpgsci(1);
+	      if (npol > 1)
+		{
+		  cpgsci(2); cpgline(i-1-i0,freq+i0,pol2+i0); cpgsci(1);
+		}
+	    }
+	}
+      else
+	{
+	  cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
+	  if (npol > 1)
+	    {
+	      cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
+	    }
 	}
       cpgcurs(&mx,&my,&key);
       if (key=='z')
@@ -329,6 +369,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    }
 	  else
 	    printf("Please press 'z' and then move somewhere and click left mouse button\n");
+	}
+      else if (key=='f')
+	{
+	  flagIt++;
+	  if (flagIt==3) flagIt=0;
+	  t=0;
 	}
       else if (key=='A')
 	printf("Mouse cursor = (%g,%g)\n",mx,my);

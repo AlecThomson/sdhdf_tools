@@ -94,7 +94,14 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-software")==0)
 	showSoftware=1;
       else
-	strcpy(fname[nFiles++],argv[i]);
+	{
+	  strcpy(fname[nFiles++],argv[i]);
+	  if (nFiles == MAX_FILES)
+	    {
+	      printf("ERROR: Maximum number of files = %d\n",MAX_FILES);
+	      exit(1);
+	    }
+	}
     }
 
   inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct));
