@@ -3,8 +3,11 @@ import pylab as plt
 import pandas as pd
 import h5py
 import os
+import shlex
+import subprocess
 import matplotlib as mpl
 from astropy.table import QTable
+from show_sdhdf_definition import show_sdhdf_definition
 
 __version__ = '1.9'
 __author__ = 'Lawrence Toomey'
@@ -16,12 +19,6 @@ mpl.rcParams['agg.path.chunksize'] = 20000
 
 
 def print_hdr(tb):
-    """
-        Print header metadata
-
-        :param astropy.QTable tb: astropy.QTable metadata object
-        :return None
-    """
     params = []
     for col in tb.colnames:
         params.append([col, tb[col][0]])
@@ -35,27 +32,43 @@ def read_sdhdf_header(f_pth, dset_pth):
 
         :param string f_pth: Path to SDHDF file
         :param HDF dataset dset_pth: Path to HDF metadata dataset
-        :return None
+        :return astropy.QTable tb: astropy.QTable metadata object
     """
     try:
         with h5py.File(f_pth, 'r') as h5:
             tb = QTable.read(h5, path=dset_pth)
-            print('Displaying primary header for file:\n%s\n' % f_pth)
-            print_hdr(tb)
     except Exception as e:
         print('ERROR: failed to read file %s' % f_pth, e)
 
+    return tb
 
-def save_plot(plt, f_pth):
+
+def save_plot(plt, out_pth):
     """
         Save a plot to disk
 
         :param matplotlib.pyplot plt: matplotlib.pyplot object
-        :param string f_pth: Path to SDHDF file to plot
+        :param string out_pth: Path to output directory
         :return None
     """
-    plot_prefix = os.path.basename(f_pth)
-    plt.savefig(plot_prefix + '.png')
+    plt.savefig(out_pth)
+
+    return None
+
+
+def save_hdr(tb, out_pth):
+    """
+        Save header metadata to disk
+
+        :param astropy.QTable tb: astropy.QTable metadata object
+        :param string out_pth: Path to output directory
+        :return None
+    """
+    params = []
+    for col in tb.colnames:
+        params.append([col, tb[col][0]])
+    df = pd.DataFrame(params, columns=('-- Key --', '-- Value --'))
+    df.to_csv(out_pth, sep=' ', index=False, header=False)
 
     return None
 
@@ -81,7 +94,27 @@ def setup_figure():
     return fig, axs
 
 
-def verify_sdhdf(f):
+def check_definition(f):
+    try:
+        show_sdhdf_definition(f)
+    except Exception as e:
+        print('ERROR: File %s does not conform to the SDHDF definition' % f, e)
+
+    return None
+
+
+def check_atoa_ingest(f):
+    try:
+        cmd = './c/sdhdf_describe -atoa ' + f
+        cmd_args = shlex.split(cmd)
+        subprocess.check_call(cmd_args)
+    except Exception as e:
+        print('ERROR: File %s does not conform to the ATOA ingest process' % f, e)
+
+    return None
+
+
+def verify_sdhdf(f, out_pth):
     """
         Plot the spectra (uncalibrated flux vs frequency),
         and waterfall (time vs frequency) for each polarisation product,
@@ -92,16 +125,22 @@ def verify_sdhdf(f):
         :return None
     """
     h5 = h5py.File(f, 'r')
+    f_name = os.path.basename(f)
+    hdr_pth = out_pth + '/' + f_name + '.hdr'
+    plot_pth = out_pth + '/' + f_name + '.png'
     bp = QTable.read(h5, path='/metadata/beam_params')
 
     # get primary header metadata
-    read_sdhdf_header(f, '/metadata/primary_header')
+    print('Reading primary header metadata ...')
+    hdr = read_sdhdf_header(f, '/metadata/primary_header')
+    print_hdr(hdr)
 
     # create quick-look plots for web monitor
     # loop over the beams
     for beam in range(0, len(bp)):
         beam_label = 'beam_' + str(beam)
         sb_avail = QTable.read(h5, path=beam_label + '/metadata/band_params')
+        print('Processing beam %s ...' % beam_label)
 
         # set up the figure
         fig, axs = setup_figure()
@@ -115,6 +154,7 @@ def verify_sdhdf(f):
                 op = QTable.read(h5, path=beam_label + '/' + sb_label + '/metadata/obs_params')
 
                 # plot spectra
+                print('Plotting spectra for sub-band %s ...' % sb_label)
                 # plot_spectra()
                 lc = 'b'
                 np.mean(h5[sb_data], axis=0)
@@ -126,6 +166,7 @@ def verify_sdhdf(f):
                 axs[0, sb_id].axis('off')
 
                 # plot waterfall data (time/frequency)
+                print('Plotting waterfall data for sub-band %s ...' % sb_label)
                 # plot_waterfall()
                 if len(op['MJD']) > 1:
                     av = np.mean(h5[sb_data], axis=4)
@@ -143,11 +184,23 @@ def verify_sdhdf(f):
                 axs[1, sb_id].axis('off')
 
         # write plot to disk
-        save_plot(plt, f)
+        print('Writing plot to disk ...')
+        save_plot(plt, plot_pth)
 
-    # check ATOA ingest validation
+        # write header to disk
+        print('Writing header to disk ...')
+        save_hdr(hdr, hdr_pth)
 
-    # other checks
+    # check file conforms to the ATOA ingest process
+    print('Checking file conforms to the ATOA ingest process ...')
+    check_atoa_ingest(f)
+
+    # check file conforms to the SDHDF definition
+    print('Checking file conforms to the SDHDF definition...')
+    check_definition(f)
+
+    # finish up
+    print('Validation complete')
 
 
 if __name__ == '__main__':
@@ -156,6 +209,9 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--filename', help='Path to SDHDF file to read',
                     required=True)
+    ap.add_argument('--outpath', help='Path to directory for output',
+                    required=True)
     args = ap.parse_args()
 
-    verify_sdhdf(args.filename)
+    print('Running verification checks on file %s ...' % args.filename)
+    verify_sdhdf(args.filename, args.outpath)
