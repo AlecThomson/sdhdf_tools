@@ -57,7 +57,7 @@ def save_plot(plt, out_pth):
         :param string out_pth: Path to output directory
         :return None
     """
-    plt.savefig(out_pth)
+    plt.savefig(out_pth, bbox_inches='tight')
 
     return None
 
