@@ -107,8 +107,10 @@ def check_definition(f_pth):
     :param string f_pth: Path to SDHDF file
     :return None
     """
+    output = False
+
     try:
-        show_sdhdf_definition(f_pth)
+        show_sdhdf_definition(f_pth, output)
     except Exception as e:
         print('ERROR: File %s does not conform to the SDHDF definition' % f_pth, e)
 
