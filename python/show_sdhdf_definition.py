@@ -46,7 +46,7 @@ def append_attributes(obj_attrs, defn_list):
     return None
 
 
-def show_sdhdf_definition(f):
+def show_sdhdf_definition(f, output):
     defn_list = []
     try:
         with h5py.File(f, 'r') as h5:
@@ -118,17 +118,20 @@ def show_sdhdf_definition(f):
 
             add_rows_to_csv(defn_csv, defn_list)
             add_line(defn_csv, "\n" + hr)
-            add_line(defn_csv, "File %s \nconforms to the SDHDF definition %s" % (f, sdhdf_ver))
+            add_line(defn_csv, "PASS: File %s conforms to SDHDF definition v%s" % (f_name, sdhdf_ver))
             add_line(defn_csv, hr)
             add_line(defn_csv, 'Output written to %s' % defn_csv)
             add_line(defn_csv, hr)
 
             # read back csv file
-            read_csv(defn_csv)
+            if bool(output) is True:
+                read_csv(defn_csv)
+            else:
+                print("PASS: File %s conforms to SDHDF definition v%s" % (f_name, sdhdf_ver))
 
     except Exception as e:
-        print('ERROR: failed to read file %s - '
-              'contents does not match SDHDF definition.' % f, e)
+        print('ERROR: failed to read %s - '
+              'file does not conform to the SDHDF definition' % f, e)
 
 
 if __name__ == '__main__':
@@ -136,6 +139,9 @@ if __name__ == '__main__':
     ap.add_argument('--filename',
                     help='Path to SDHDF file to read',
                     required=True)
+    ap.add_argument('--output',
+                    help='Print output to stdout [True|False]',
+                    default=False)
     args = ap.parse_args()
 
-    show_sdhdf_definition(args.filename)
+    show_sdhdf_definition(args.filename, args.output)
