@@ -19,6 +19,12 @@ mpl.rcParams['agg.path.chunksize'] = 20000
 
 
 def print_hdr(tb):
+    """
+        Format SDHDF header metadata output
+
+        :param astropy.QTable tb: astropy.QTable metadata object
+        :return: None
+    """
     params = []
     for col in tb.colnames:
         params.append([col, tb[col][0]])
@@ -78,7 +84,7 @@ def setup_figure():
         Setup the parameters of the plot figure, such as spacing,
         viewport size, number of rows/columns etc.
 
-        :return None
+        :return fig, axs
     """
     fig_n_rows = 2
     fig_n_cols = 26
@@ -94,45 +100,98 @@ def setup_figure():
     return fig, axs
 
 
-def check_definition(f):
+def check_definition(f_pth):
+    """
+        Check that the file conforms to the SDHDF definition
+
+        :param string f_pth: Path to SDHDF file
+        :return None
+    """
     try:
-        show_sdhdf_definition(f)
+        show_sdhdf_definition(f_pth)
     except Exception as e:
-        print('ERROR: File %s does not conform to the SDHDF definition' % f, e)
+        print('ERROR: File %s does not conform to the SDHDF definition' % f_pth, e)
 
     return None
 
 
-def check_atoa_ingest(f):
+def check_atoa_ingest(f_pth):
+    """
+        Check that the file conforms for the ATOA ingest process
+
+        :param string f_pth: Path to SDHDF file
+        :return None
+    """
     try:
-        cmd = './c/sdhdf_describe -atoa ' + f
+        cmd = './c/sdhdf_describe -atoa ' + f_pth
         cmd_args = shlex.split(cmd)
         subprocess.check_call(cmd_args)
     except Exception as e:
-        print('ERROR: File %s does not conform to the ATOA ingest process' % f, e)
+        print('ERROR: File %s does not conform to the ATOA ingest process' % f_pth, e)
 
     return None
 
 
-def verify_sdhdf(f, out_pth):
+def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, op=None):
     """
-        Plot the spectra (uncalibrated flux vs frequency),
-        and waterfall (time vs frequency) for each polarisation product,
-        for a specified sub-band from an SDHDF format file,
-        and zoom if specified by the user (Default is no zoom)
+        Create 2 types of plot objects, spectrum and waterfall
 
-        :param string f: Name of SDHDF file to read
+        :param object h5_obj: HDF dataset object
+        :param numpy.ndarray axs: array of matplotlib.axes._subplots.AxesSubplot objects
+        :param int sb_id: sub-band ID
+        :param string sb_freq: HDF path to frequency dataset
+        :param string sb_data: HDF path to data
+        :param astropy.QTable op: astropy.QTable metadata object
         :return None
     """
-    h5 = h5py.File(f, 'r')
-    f_name = os.path.basename(f)
+    if op is not None:
+        if len(op['MJD']) > 1:
+            av = np.mean(h5_obj[sb_data], axis=4)
+            axs[1, sb_id].imshow(av[:, 0, 0, :],
+                                 aspect='auto',
+                                 extent=(h5_obj[sb_freq][0],
+                                         h5_obj[sb_freq][-1],
+                                         op['MJD'][0],
+                                         op['MJD'][-1]),
+                                 interpolation='nearest')
+            axs[1, sb_id].axis('off')
+    else:
+        lc = 'b'
+        np.mean(h5_obj[sb_data], axis=0)
+        plt.yscale('log')
+        axs[0, sb_id].plot(h5_obj[sb_freq][:], h5_obj[sb_data][0, 0, 0, :],
+                           linewidth=0.5, color=lc)
+        axs[0, sb_id].set_title(sb_id, fontsize=6)
+        axs[0, sb_id].axis('off')
+
+    return None
+
+
+def verify_sdhdf(f_pth, out_pth):
+    """
+        Perform a series of verification checks on an SDHDF format file.
+
+        1. Plot the spectra (uncalibrated flux vs frequency),
+        and waterfall (time vs frequency) for all sub-bands,
+        and write the plots and header metadata to disk.
+
+        2. Check that the file meets the requirements of the ATOA ingest process
+
+        3. Check that the file conforms to the SDHDF definition
+
+        :param string f_pth: Path to SDHDF file to read
+        :param string out_pth: Path to directory for output data products
+        :return None
+    """
+    h5 = h5py.File(f_pth, 'r')
+    f_name = os.path.basename(f_pth)
     hdr_pth = out_pth + '/' + f_name + '.hdr'
     plot_pth = out_pth + '/' + f_name + '.png'
     bp = QTable.read(h5, path='/metadata/beam_params')
 
     # get primary header metadata
     print('Reading primary header metadata ...')
-    hdr = read_sdhdf_header(f, '/metadata/primary_header')
+    hdr = read_sdhdf_header(f_pth, '/metadata/primary_header')
     print_hdr(hdr)
 
     # create quick-look plots for web monitor
@@ -153,32 +212,15 @@ def verify_sdhdf(f, out_pth):
                 sb_freq = beam_label + '/' + sb_label + '/astronomy_data/frequency'
                 op = QTable.read(h5, path=beam_label + '/' + sb_label + '/metadata/obs_params')
 
-                # plot spectra
+                # plot spectra (flux vs. frequency)
                 print('Plotting spectra for sub-band %s ...' % sb_label)
-                # plot_spectra()
-                lc = 'b'
-                np.mean(h5[sb_data], axis=0)
-                plt.yscale('log')
-                axs[0, sb_id].plot(h5[sb_freq][:], h5[sb_data][0, 0, 0, :],
-                            linewidth=0.5, color=lc)
+                plot_data(h5, axs, sb_id, sb_freq, sb_data)
 
-                axs[0, sb_id].set_title(sb_id, fontsize=6)
-                axs[0, sb_id].axis('off')
-
-                # plot waterfall data (time/frequency)
+                # plot waterfall (time vs. frequency)
                 print('Plotting waterfall data for sub-band %s ...' % sb_label)
-                # plot_waterfall()
-                if len(op['MJD']) > 1:
-                    av = np.mean(h5[sb_data], axis=4)
-                    axs[1, sb_id].imshow(av[:, 0, 0, :],
-                       aspect='auto',
-                       extent=(h5[sb_freq][0],
-                               h5[sb_freq][-1],
-                               op['MJD'][0],
-                               op['MJD'][-1]),
-                       interpolation='nearest')
-                    axs[1, sb_id].axis('off')
+                plot_data(h5, axs, sb_id, sb_freq, sb_data, op=op)
             else:
+                # leave the plots empty
                 axs[0, sb_id].set_title(sb_id, fontsize=6)
                 axs[0, sb_id].axis('off')
                 axs[1, sb_id].axis('off')
@@ -193,11 +235,11 @@ def verify_sdhdf(f, out_pth):
 
     # check file conforms to the ATOA ingest process
     print('Checking file conforms to the ATOA ingest process ...')
-    check_atoa_ingest(f)
+    check_atoa_ingest(f_pth)
 
     # check file conforms to the SDHDF definition
     print('Checking file conforms to the SDHDF definition...')
-    check_definition(f)
+    check_definition(f_pth)
 
     # finish up
     print('Validation complete')
@@ -209,7 +251,7 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--filename', help='Path to SDHDF file to read',
                     required=True)
-    ap.add_argument('--outpath', help='Path to directory for output',
+    ap.add_argument('--outpath', help='Path to directory for output data products',
                     required=True)
     args = ap.parse_args()
 
