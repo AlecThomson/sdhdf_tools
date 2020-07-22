@@ -123,7 +123,7 @@ def check_atoa_ingest(f_pth):
         :return None
     """
     try:
-        cmd = './c/sdhdf_describe -atoa ' + f_pth
+        cmd = 'sdhdf_describe -atoa ' + f_pth
         cmd_args = shlex.split(cmd)
         subprocess.check_call(cmd_args)
     except Exception as e:
