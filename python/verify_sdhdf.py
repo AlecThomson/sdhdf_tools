@@ -20,10 +20,10 @@ mpl.rcParams['agg.path.chunksize'] = 20000
 
 def print_hdr(tb):
     """
-        Format SDHDF header metadata output
+    Format SDHDF header metadata output
 
-        :param astropy.QTable tb: astropy.QTable metadata object
-        :return: None
+    :param astropy.QTable tb: astropy.QTable metadata object
+    :return: None
     """
     params = []
     for col in tb.colnames:
@@ -34,11 +34,11 @@ def print_hdr(tb):
 
 def read_sdhdf_header(f_pth, dset_pth):
     """
-        Read SDHDF header metadata
+    Read SDHDF header metadata
 
-        :param string f_pth: Path to SDHDF file
-        :param HDF dataset dset_pth: Path to HDF metadata dataset
-        :return astropy.QTable tb: astropy.QTable metadata object
+    :param string f_pth: Path to SDHDF file
+    :param HDF dataset dset_pth: Path to HDF metadata dataset
+    :return astropy.QTable tb: astropy.QTable metadata object
     """
     try:
         with h5py.File(f_pth, 'r') as h5:
@@ -51,11 +51,11 @@ def read_sdhdf_header(f_pth, dset_pth):
 
 def save_plot(plt, out_pth):
     """
-        Save a plot to disk
+    Save a plot to disk
 
-        :param matplotlib.pyplot plt: matplotlib.pyplot object
-        :param string out_pth: Path to output directory
-        :return None
+    :param matplotlib.pyplot plt: matplotlib.pyplot object
+    :param string out_pth: Path to output directory
+    :return None
     """
     plt.savefig(out_pth, bbox_inches='tight')
 
@@ -64,11 +64,11 @@ def save_plot(plt, out_pth):
 
 def save_hdr(tb, out_pth):
     """
-        Save header metadata to disk
+    Save header metadata to disk
 
-        :param astropy.QTable tb: astropy.QTable metadata object
-        :param string out_pth: Path to output directory
-        :return None
+    :param astropy.QTable tb: astropy.QTable metadata object
+    :param string out_pth: Path to output directory
+    :return None
     """
     params = []
     for col in tb.colnames:
@@ -81,10 +81,10 @@ def save_hdr(tb, out_pth):
 
 def setup_figure():
     """
-        Setup the parameters of the plot figure, such as spacing,
-        viewport size, number of rows/columns etc.
+    Setup the parameters of the plot figure, such as spacing,
+    viewport size, number of rows/columns etc.
 
-        :return fig, axs
+    :return fig, axs
     """
     fig_n_rows = 2
     fig_n_cols = 26
@@ -102,10 +102,10 @@ def setup_figure():
 
 def check_definition(f_pth):
     """
-        Check that the file conforms to the SDHDF definition
+    Check that the file conforms to the SDHDF definition
 
-        :param string f_pth: Path to SDHDF file
-        :return None
+    :param string f_pth: Path to SDHDF file
+    :return None
     """
     try:
         show_sdhdf_definition(f_pth)
@@ -117,10 +117,10 @@ def check_definition(f_pth):
 
 def check_atoa_ingest(f_pth):
     """
-        Check that the file conforms for the ATOA ingest process
+    Check that the file conforms for the ATOA ingest process
 
-        :param string f_pth: Path to SDHDF file
-        :return None
+    :param string f_pth: Path to SDHDF file
+    :return None
     """
     try:
         cmd = 'sdhdf_describe -atoa ' + f_pth
@@ -134,15 +134,15 @@ def check_atoa_ingest(f_pth):
 
 def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, op=None):
     """
-        Create 2 types of plot objects, spectrum and waterfall
+    Create 2 types of plot objects, spectrum and waterfall
 
-        :param object h5_obj: HDF dataset object
-        :param numpy.ndarray axs: array of matplotlib.axes._subplots.AxesSubplot objects
-        :param int sb_id: sub-band ID
-        :param string sb_freq: HDF path to frequency dataset
-        :param string sb_data: HDF path to data
-        :param astropy.QTable op: astropy.QTable metadata object
-        :return None
+    :param object h5_obj: HDF dataset object
+    :param numpy.ndarray axs: array of matplotlib.axes._subplots.AxesSubplot objects
+    :param int sb_id: sub-band ID
+    :param string sb_freq: HDF path to frequency dataset
+    :param string sb_data: HDF path to data
+    :param astropy.QTable op: astropy.QTable metadata object
+    :return None
     """
     if op is not None:
         if len(op['MJD']) > 1:
@@ -169,19 +169,19 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, op=None):
 
 def verify_sdhdf(f_pth, out_pth):
     """
-        Perform a series of verification checks on an SDHDF format file.
+    Perform a series of verification checks on an SDHDF format file.
 
-        1. Plot the spectra (uncalibrated flux vs frequency),
-        and waterfall (time vs frequency) for all sub-bands,
-        and write the plots and header metadata to disk.
+    1. Plot the spectra (uncalibrated flux vs frequency),
+    and waterfall (time vs frequency) for all sub-bands,
+    and write the plots and header metadata to disk.
 
-        2. Check that the file meets the requirements of the ATOA ingest process
+    2. Check that the file meets the requirements of the ATOA ingest process
 
-        3. Check that the file conforms to the SDHDF definition
+    3. Check that the file conforms to the SDHDF definition
 
-        :param string f_pth: Path to SDHDF file to read
-        :param string out_pth: Path to directory for output data products
-        :return None
+    :param string f_pth: Path to SDHDF file to read
+    :param string out_pth: Path to directory for output data products
+    :return None
     """
     h5 = h5py.File(f_pth, 'r')
     f_name = os.path.basename(f_pth)

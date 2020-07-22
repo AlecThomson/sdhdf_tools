@@ -8,6 +8,11 @@ __author__ = 'Lawrence Toomey'
 
 
 def sdhdf_access_meta(f):
+    """
+    Demonstrate access of HDF attributes and astropy QTable metadata objects
+    :param string f: Path to SDHDF file
+    :return: None
+    """
     try:
         # with the SDHDF file open read-only
         with h5py.File(f, 'r') as h5:
@@ -40,6 +45,11 @@ def sdhdf_access_meta(f):
 
 
 def sdhdf_access_data(f):
+    """
+    Demonstrate access of HDF attributes and astropy QTable data objects
+    :param string f: Path to SDHDF file
+    :return: None
+    """
     try:
         # with the SDHDF file open read-only
         with h5py.File(f, 'r') as h5:

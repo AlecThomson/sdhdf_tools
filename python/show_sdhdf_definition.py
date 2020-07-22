@@ -13,6 +13,13 @@ dte = datetime.now().strftime('%Y')
 
 
 def add_rows_to_csv(f_name, rows):
+    """
+    Bulk write text to a CSV file
+
+    :param string f_name: Path to output CSV file
+    :param list rows: List of rows to write to CSV
+    :return: None
+    """
     f_csv = open(f_name, 'a')
     writer = csv.writer(f_csv, lineterminator="\n")
     writer.writerows(rows)
@@ -22,6 +29,13 @@ def add_rows_to_csv(f_name, rows):
 
 
 def add_line(f_name, line):
+    """
+    Append to a CSV file
+
+    :param string f_name: Path to output CSV file
+    :param string line: Line to append to CSV
+    :return: None
+    """
     f = open(f_name, 'a')
     f.write(line + "\n")
 
@@ -29,6 +43,12 @@ def add_line(f_name, line):
 
 
 def read_csv(f_name):
+    """
+    Read a CSV file and print to stdout
+
+    :param string f_name: Path to CSV file to read
+    :return: None
+    """
     row_data = []
     f_csv = open(f_name, 'r')
     reader = csv.reader(f_csv, delimiter=',')
@@ -40,6 +60,13 @@ def read_csv(f_name):
 
 
 def append_attributes(obj_attrs, defn_list):
+    """
+    Append attribute to a list
+
+    :param list obj_attrs: List of attributes to append
+    :param defn_list: List to append to
+    :return: None
+    """
     for attr in obj_attrs:
         defn_list.append([attr, 'Attribute', obj_attrs[attr]])
 
@@ -47,6 +74,13 @@ def append_attributes(obj_attrs, defn_list):
 
 
 def show_sdhdf_definition(f, output):
+    """
+    Display the formal SDHDF definition contained in an SDHDF file
+
+    :param string f: Path to SDHDF file to read
+    :param bool output: Print output to stdout [True|False]
+    :return: None
+    """
     defn_list = []
     try:
         with h5py.File(f, 'r') as h5:
