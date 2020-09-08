@@ -8,6 +8,12 @@ __author__ = 'Lawrence Toomey'
 
 
 def print_header(tb):
+    """
+    Format SDHDF header metadata output
+
+    :param astropy.QTable tb: astropy.QTable metadata object
+    :return: None
+    """
     params = []
     for col in tb.colnames:
         params.append([col, tb[col][0]])
@@ -16,6 +22,12 @@ def print_header(tb):
 
 
 def read_sdhdf_header(f):
+    """
+    Read SDHDF primary header metadata
+
+    :param string f: Path to SDHDF file
+    :return: None
+    """
     try:
         with h5py.File(f, 'r') as h5:
             tb = QTable.read(h5, path='/metadata/primary_header')

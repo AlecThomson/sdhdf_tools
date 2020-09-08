@@ -10,6 +10,12 @@ __author__ = 'Lawrence Toomey'
 
 
 def get_metadata(pth):
+	"""
+	Retrieve metadata from SDHDF dataset
+
+	:param string pth: Path to SDHDF file to read
+	:return: list row_d: Metadata as a list
+	"""
 	row_d = []
 
 	try:
@@ -39,6 +45,11 @@ def get_metadata(pth):
 
 
 def quick_list(pth):
+	"""
+	Format metadata from SDHDF file
+	:param string pth: Path to SDHDF file to read
+	:return: None
+	"""
 	row_data = []
 	hdr = 'File', 'SDHDF Version', 'Sched Block ID', 'Project ID', 'Beam', \
 		'Source', 'Obs Type', 'UTC start', 'No. bands'

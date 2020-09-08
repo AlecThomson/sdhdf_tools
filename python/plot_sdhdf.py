@@ -15,6 +15,12 @@ mpl.rcParams['agg.path.chunksize'] = 20000
 
 
 def print_hdr(tb):
+    """
+    Format SDHDF header metadata output
+
+    :param astropy.QTable tb: astropy.QTable metadata object
+    :return: None
+    """
     params = []
     for col in tb.colnames:
         params.append([col, tb[col][0]])
@@ -22,24 +28,30 @@ def print_hdr(tb):
     print(df)
 
 
-def read_sdhdf_header(f, pth):
+def read_sdhdf_header(f_pth, dset_pth):
+    """
+    Read SDHDF header metadata
+
+    :param string f_pth: Path to SDHDF file
+    :param HDF dataset dset_pth: Path to HDF metadata dataset
+    :return astropy.QTable tb: astropy.QTable metadata object
+    """
     try:
-        with h5py.File(f, 'r') as h5:
-            tb = QTable.read(h5, path=pth)
-            print('Displaying primary header for file:\n%s\n' % f)
+        with h5py.File(f_pth, 'r') as h5:
+            tb = QTable.read(h5, path=dset_pth)
+            print('Displaying primary header for file:\n%s\n' % f_pth)
             print_hdr(tb)
     except Exception as e:
-        print('ERROR: failed to read file %s' % f, e)
+        print('ERROR: failed to read file %s' % f_pth, e)
 
 
 def get_available_subbands(sb_dict):
     """
-        Retrieve a list of available sub-band groups
-        from SDHDF format file
+    Retrieve a list of available sub-band groups
+    from SDHDF format file
 
-        :param dict sb_dict: Dictionary of sub-bands to check
-        :return dict sb_avail_dict: Dictionary of available
-                sub-bands and metadata
+    :param dict sb_dict: Dictionary of sub-bands to check
+    :return dict sb_avail_dict: Dictionary of sub-bands and metadata
     """
     sb_avail_dict = {}
     for k, v in sb_dict.items():
@@ -50,14 +62,14 @@ def get_available_subbands(sb_dict):
 
 def get_channel_range(freq_arr, c_freq, z_width):
     """
-        Retrieve a range of frequency channels given
-        a specific centre frequency and zoom window width
+    Retrieve a range of frequency channels given
+    a specific centre frequency and zoom window width
 
-        :param numpy.ndarray freq_arr: Array containing the frequency axis
-        :param int c_freq: User defined centre frequency of zoom window (MHz)
-        :param float z_width: User defined half width of zoom window (MHz)
-        :return int z_min: Zoom window frequency channel minimum
-        :return int z_max: Zoom window frequency channel maximum
+    :param numpy.ndarray freq_arr: Array containing the frequency axis
+    :param int c_freq: User defined centre frequency of zoom window (MHz)
+    :param float z_width: User defined half width of zoom window (MHz)
+    :return int z_min: Zoom window frequency channel minimum
+    :return int z_max: Zoom window frequency channel maximum
     """
     n_chan = freq_arr.shape[0]
     freq_min = int(freq_arr[0])
@@ -73,13 +85,13 @@ def get_channel_range(freq_arr, c_freq, z_width):
 
 def plot_sdhdf(f):
     """
-        Plot the spectra (uncalibrated flux vs frequency),
-        and waterfall (time vs frequency) for each polarisation product,
-        for a specified sub-band from an SDHDF format file,
-        and zoom if specified by the user (Default is no zoom)
+    Plot the spectra (uncalibrated flux vs frequency),
+    and waterfall (time vs frequency) for each polarisation product,
+    for a specified sub-band from an SDHDF format file,
+    and zoom if specified by the user (Default is no zoom)
 
-        :param string f: Name of SDHDF file to read
-        :return None
+    :param string f: Name of SDHDF file to read
+    :return None
     """
     h5 = h5py.File(f, 'r')
 
