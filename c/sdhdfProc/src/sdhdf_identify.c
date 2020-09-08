@@ -49,6 +49,7 @@ int main(int argc,char *argv[])
   int info=0;
   char src[MAX_STRLEN];
   int exactMatch=1;
+  int openFile=0;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -83,44 +84,51 @@ int main(int argc,char *argv[])
   for (i=0;i<nFiles;i++)
     {
       sdhdf_initialiseFile(inFile);
-      sdhdf_openFile(fname[i],inFile,1);
-      sdhdf_loadMetaData(inFile);
-      if (useSource==1)
+      openFile = sdhdf_openFile(fname[i],inFile,1);
+      if (openFile==-1)
 	{
-	  if (exactMatch==1)
+	  printf("ERROR: Unable to open file %s\n",fname[i]);
+	}
+      else
+	{
+	  sdhdf_loadMetaData(inFile);
+	  if (useSource==1)
 	    {
-	      if (strcmp(inFile->beamHeader[ibeam].source,src)==0)
+	      if (exactMatch==1)
 		{
-		  if (info==1) printf("[SRC MATCH] %s %s\n",fname[i],inFile->beamHeader[ibeam].source);
-		  else printf("%s\n",fname[i]);
+		  if (strcmp(inFile->beamHeader[ibeam].source,src)==0)
+		    {
+		      if (info==1) printf("[SRC MATCH] %s %s\n",fname[i],inFile->beamHeader[ibeam].source);
+		      else printf("%s\n",fname[i]);
+		    }
 		}
-	    }
-	  else
-	    {
-	      if (strstr(inFile->beamHeader[ibeam].source,src)!=NULL)
+	      else
 		{
-		  if (info==1) printf("[SRC MATCH] %s %s\n",fname[i],inFile->beamHeader[ibeam].source);
-		  else printf("%s\n",fname[i]);
+		  if (strstr(inFile->beamHeader[ibeam].source,src)!=NULL)
+		    {
+		      if (info==1) printf("[SRC MATCH] %s %s\n",fname[i],inFile->beamHeader[ibeam].source);
+		      else printf("%s\n",fname[i]);
+		    }
 		}
-	    }
 	      
-	}
-      if (useCoord==1)
-	{
-	  for (j=0;j<inFile->beam[ibeam].bandHeader[iband].ndump;j++)
+	    }
+	  if (useCoord==1)
 	    {
-	      dist = haversine(ra0,dec0,inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].raDeg,
-			       inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].decDeg);
-	      if (dist < raddist)
+	      for (j=0;j<inFile->beam[ibeam].bandHeader[iband].ndump;j++)
 		{
-		  if (info==1) printf("[DIST MATCH] %s %d %g\n",fname[i],j,dist);
-		  else printf("%s\n",fname[i]);		    
+		  dist = haversine(ra0,dec0,inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].raDeg,
+				   inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].decDeg);
+		  if (dist < raddist)
+		    {
+		      if (info==1) printf("[DIST MATCH] %s %d %g\n",fname[i],j,dist);
+		      else printf("%s\n",fname[i]);		    
+		    }
 		}
 	    }
+	  sdhdf_closeFile(inFile);
 	}
-      sdhdf_closeFile(inFile);
     }
-  free(inFile);
+      free(inFile);
 }
 
 

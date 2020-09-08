@@ -34,7 +34,8 @@
 #include "hdf5.h"
 #include <cpgplot.h>
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit,
+		  char *grDev);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
 
 
@@ -71,6 +72,7 @@ int main(int argc,char *argv[])
   int idump,iband;
   char dataName[MAX_STRLEN];
   int ibeam=0;
+  char grDev[128]="/xs";
   
   help();
   
@@ -85,16 +87,12 @@ int main(int argc,char *argv[])
 
   for (i=1;i<argc;i++)
     {      
-      if (strcmp(argv[i],"-f")==0)
-	strcpy(fname,argv[++i]);	
-      else if (strcmp(argv[i],"-yunit")==0)
-	strcpy(yUnit,argv[++i]);	
-      else if (strcmp(argv[i],"-fref")==0)
-	sscanf(argv[++i],"%lf",&fref);
-      else if (strcmp(argv[i],"-h")==0)
-	{help(); exit(1);}
-      else if (strcmp(argv[i],"-sd")==0)
-	sscanf(argv[++i],"%d",&idump);
+      if (strcmp(argv[i],"-f")==0)   	     strcpy(fname,argv[++i]);	
+      else if (strcmp(argv[i],"-yunit")==0)  strcpy(yUnit,argv[++i]);	
+      else if (strcmp(argv[i],"-fref")==0)   sscanf(argv[++i],"%lf",&fref);
+      else if (strcmp(argv[i],"-h")==0)      {help(); exit(1);}
+      else if (strcmp(argv[i],"-g")==0)      strcpy(grDev,argv[++i]);
+      else if (strcmp(argv[i],"-sd")==0)     sscanf(argv[++i],"%d",&idump);
       else if (strcmp(argv[i],"-sb")==0) // FIX ME - ENABLE BAND DESCRIPTORS
 	sscanf(argv[++i],"%d",&iband);
     }
@@ -139,14 +137,15 @@ int main(int argc,char *argv[])
   if (strcmp(yUnit,"not set")==0)
     strcpy(yUnit,att_yUnit);
   
-  plotSpectrum(inFile,ibeam,iband,idump,fref,yUnit,freqFrame,freqUnit);
+  plotSpectrum(inFile,ibeam,iband,idump,fref,yUnit,freqFrame,freqUnit,grDev);
 
   
   sdhdf_closeFile(inFile);
   free(inFile);
 }
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit)
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit,
+		  char *grDev)
 {
   char key;
   float mx,my;
@@ -170,7 +169,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   int reload=1;
   int flagIt=2;
   
-  cpgbeg(0,"/xs",1,1);
+  cpgbeg(0,grDev,1,1);
   cpgask(0);
   cpgscf(2);
   cpgsch(1.4);
@@ -182,6 +181,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
       if (inFile->beam[ibeam].bandHeader[i].nchan > maxNchan)
 	maxNchan = inFile->beam[ibeam].bandHeader[i].nchan;
     }
+
   pol1 = (float *)malloc(sizeof(float)*maxNchan);
   pol2 = (float *)malloc(sizeof(float)*maxNchan);
   pol3 = (float *)malloc(sizeof(float)*maxNchan);
@@ -350,97 +350,103 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
 	    }
 	}
-      cpgcurs(&mx,&my,&key);
-      if (key=='z')
+
+      if (strstr(grDev,"/ps")!=NULL || strstr(grDev,"/cps")!=NULL || strstr(grDev,"/png")!=NULL)
+	key='q';
+      else
 	{
-	  float mx2,my2;
-	  cpgband(2,0,mx,my,&mx2,&my2,&key);
-	  if (mx != mx2 && my != my2)
+	  cpgcurs(&mx,&my,&key);
+	  if (key=='z')
 	    {
-	      if (mx < mx2)
-		{minx = mx; maxx = mx2;}
-	      else
-		{minx = mx2; maxx = mx;}
-	      
-	      if (my < my2)
-		{miny = my; maxy = my2;}
-	      else
-		{miny = my2; maxy = my;}
-	    }
-	  else
-	    printf("Please press 'z' and then move somewhere and click left mouse button\n");
-	}
-      else if (key=='f')
-	{
-	  flagIt++;
-	  if (flagIt==3) flagIt=0;
-	  t=0;
-	}
-      else if (key=='A')
-	printf("Mouse cursor = (%g,%g)\n",mx,my);
-      else if (key=='1') {plot=1; t=0;}
-      else if (key=='2') {plot=2; t=1;}
-      else if (key=='l')
-	{setLog*=-1; t=0;}
-      else if (key=='>')
-	{	  
-	  iband++;
-	  if (iband >= inFile->beam[ibeam].nBand)
-	    iband = inFile->beam[ibeam].nBand-1;
-	  reload=1;
-	  t=0;
-	  
-	}
-      else if (key=='<')
-	{
-	  iband--;
-	  if (iband < 0) iband = 0;
-	  reload=1;
-	  t=0;
-	}
-      else if (key=='+')
-	{
-	  if (idump < inFile->beam[ibeam].bandHeader[iband].ndump-1)
-	    idump++;
-	}
-      else if (key=='x')
-	{
-	  xplot*=-1;
-	  t=0;
-	}
-      else if (key=='m')
-	molecularLines*=-1;
-      else if (key=='-')
-	{
-	  if (idump > 0)
-	    idump--;
-	}
-      else if (key=='o')
-	{
-	  char fname[1024];
-	  FILE *fout;
-	  printf("Enter output filename ");
-	  scanf("%s",fname);
-	  fout = fopen(fname,"w");
-	  for (i=0;i<nchan;i++)
-	    {
-	      if (freq[i] > minx && freq[i] <= maxx)
+	      float mx2,my2;
+	      cpgband(2,0,mx,my,&mx2,&my2,&key);
+	      if (mx != mx2 && my != my2)
 		{
-		  if (npol > 1)
-		    fprintf(fout,"%.6f %g %g\n",freq[i],pol1[i],pol2[i]);
+		  if (mx < mx2)
+		    {minx = mx; maxx = mx2;}
 		  else
-		    fprintf(fout,"%.6f %g\n",freq[i],pol1[i]);
+		    {minx = mx2; maxx = mx;}
+		  
+		  if (my < my2)
+		    {miny = my; maxy = my2;}
+		  else
+		    {miny = my2; maxy = my;}
 		}
+	      else
+		printf("Please press 'z' and then move somewhere and click left mouse button\n");
 	    }
+	  else if (key=='f')
+	    {
+	      flagIt++;
+	      if (flagIt==3) flagIt=0;
+	      t=0;
+	    }
+	  else if (key=='A')
+	    printf("Mouse cursor = (%g,%g)\n",mx,my);
+	  else if (key=='1') {plot=1; t=0;}
+	  else if (key=='2') {plot=2; t=1;}
+	  else if (key=='l')
+	    {setLog*=-1; t=0;}
+	  else if (key=='>')
+	    {	  
+	      iband++;
+	      if (iband >= inFile->beam[ibeam].nBand)
+		iband = inFile->beam[ibeam].nBand-1;
+	      reload=1;
+	      t=0;
+	      
+	    }
+	  else if (key=='<')
+	    {
+	      iband--;
+	      if (iband < 0) iband = 0;
+	      reload=1;
+	      t=0;
+	    }
+	  else if (key=='+')
+	    {
+	      if (idump < inFile->beam[ibeam].bandHeader[iband].ndump-1)
+		idump++;
+	    }
+	  else if (key=='x')
+	    {
+	      xplot*=-1;
+	      t=0;
+	    }
+	  else if (key=='m')
+	    molecularLines*=-1;
+	  else if (key=='-')
+	    {
+	      if (idump > 0)
+		idump--;
+	    }
+	  else if (key=='o')
+	    {
+	      char fname[1024];
+	      FILE *fout;
+	      printf("Enter output filename ");
+	      scanf("%s",fname);
+	      fout = fopen(fname,"w");
+	      for (i=0;i<nchan;i++)
+		{
+		  if (freq[i] > minx && freq[i] <= maxx)
+		    {
+		      if (npol > 1)
+			fprintf(fout,"%.6f %g %g\n",freq[i],pol1[i],pol2[i]);
+		      else
+			fprintf(fout,"%.6f %g\n",freq[i],pol1[i]);
+		    }
+		}
 	  fclose(fout);
+	    }
+	  else if (key=='u')
+	    {
+	      minx = ominx;
+	      maxx = omaxx;
+	      miny = ominy;
+	      maxy = omaxy;
+	    }
 	}
-    else if (key=='u')
-      {
-	minx = ominx;
-	maxx = omaxx;
-	miny = ominy;
-	maxy = omaxy;
-      }
   } while (key!='q');
   
   cpgend();

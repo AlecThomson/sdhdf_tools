@@ -75,7 +75,7 @@ int main(int argc,char *argv[])
   sdhdf_openFile(fname,inFile,1);
   printf("File opened\n");
   sdhdf_loadMetaData(inFile);
-  
+  printf("Complete loading metadata\n");
   if (setnband > 0)
     inFile->beam[ibeam].nBand = setnband;
   
@@ -99,7 +99,7 @@ int main(int argc,char *argv[])
       ndump = inFile->beam[ibeam].bandHeader[i].ndump;
       sdhdf_loadBandData(inFile,ibeam,i,1);
     }
-
+  printf("Preparing the plot\n");
   doPlot(inFile,ibeam);
 
   sdhdf_closeFile(inFile);

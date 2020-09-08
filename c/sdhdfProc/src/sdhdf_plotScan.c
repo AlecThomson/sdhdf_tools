@@ -86,6 +86,7 @@ int main(int argc,char *argv[])
   char title[1024];
   int select=-1;
   double sigma;
+  char srcName[128]="NULL";
   
   double ra0 = 0;
   double dec0 = 0;
@@ -103,6 +104,8 @@ int main(int argc,char *argv[])
     {
      if (strcmp(argv[i],"-f")==0)
        strcpy(fname,argv[++i]);
+     else if (strcmp(argv[i],"-src")==0)
+       strcpy(srcName,argv[++i]);
     }
 
   if (sdhdf_openFile(fname,inFile,1)==-1)
@@ -113,7 +116,9 @@ int main(int argc,char *argv[])
     }
 
   sdhdf_loadMetaData(inFile);
-
+  if (strcmp(srcName,"NULL")!=0)
+    strcpy(inFile->beamHeader[ibeam].source,srcName);
+  
   ndumps = inFile->beam[ibeam].bandHeader[band0].ndump;
 
   // FIX ME: Should read these from a file

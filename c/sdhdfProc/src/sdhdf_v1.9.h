@@ -167,9 +167,89 @@ typedef struct sdhdf_bandHeaderStruct {
   int    nchan;
   int    npol;
   char pol_type[20]; // MOVED
-  double dtime;
+    double dtime;
   int    ndump;
 } sdhdf_bandHeaderStruct;
+
+// backend_config
+typedef struct sdhdf_backendConfigStruct {
+  char backend_phase[64];
+  char bw[64];
+  char bytes_per_second[64];
+  char data_host[64];
+  char data_mcast[64];
+  char data_port[64];
+  char dsb[64];
+  char dpsr_git_hash[64];
+  char encoding[64];
+  char endian[64];
+  char end_channel[64];
+  char freq[64];
+  char hdr_size[64];
+  char hdr_version[64];
+  char instrument[64];
+  char nbit[64];
+  char nchan[64];
+  char ndim[64];
+  char npol[64];
+  char psrchive_git_hash[64];
+  char psrdada_git_hash[64];
+  char rcvr_hand[64];
+  char receiver[64];
+  char resolution[64];
+  char spip_git_hash[64];
+  char start_channel[64];
+  char state[64];
+  char stream_beam_id[64];
+  char stream_host[64];
+  char stream_subband_id[64];
+  char telescope[64];
+  char tsamp[64];
+  char udp_nsamp[64];
+  char adaptive_filter[64];
+  char adaptive_filter_epsilon[64];
+  char adaptive_filter_nchan[64];
+  char adaptive_filter_nsamp[64];
+  char calFreq[64];
+  char cal_duty_cycle[64];
+  char cal_epoch[64];
+  char cal_freq[64];
+  char cal_phase[64];
+  char cal_signal[64];
+  char continuum_outnchan[64];
+  char continuum_outstokes[64];
+  char continuum_outtsamp[64];
+  char continuum_outtsubint[64];
+  char dec[64];
+  char dec_offset[64];
+  char observer[64];
+  char obs_offset[64];
+  char perform_baseband[64];
+  char perform_continuum[64];
+  char perform_fold[64];
+  char perform_search[64];
+  char perform_spectral_line[64];
+  char perform_vlbi[64];
+  char pid[64];
+  char ra[64];
+  char ra_offset[64];
+  char scan_id[64];
+  char sched_block_id[64];
+  char source[64];
+  char tobs[64];
+  char tsys_avg_time[64];
+  char tsys_freq_res[64];
+  char utc_start[64];
+  char utc_stop[64];
+  char nant[64];
+  char nbin[64];
+  char picoseconds[64];
+  char osamp_numerator[64];
+  char osamp_denominator[64];
+  char order[64];
+  char file_size[64];
+  
+} sdhdf_backendConfigStruct;
 
 
 // OBS_PARAMS group
@@ -274,6 +354,14 @@ typedef struct sdhdf_fileStruct {
   sdhdf_attributes_struct primaryAttr[MAX_ATTRIBUTES];
   int nPrimaryAttributes;
 
+  // Config information
+  char cal_epoch[1024];
+  double cal_freq;
+  double cal_duty_cycle;
+  double cal_phase;
+  //  sdhdf_backendConfigStruct config[512]; // Note currently will just load a single line
+
+  
   // Software versions
   int nSoftware;
   int softwareAllocatedMemory;             // 0 = no, 1 = yes

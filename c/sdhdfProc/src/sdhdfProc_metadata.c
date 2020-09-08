@@ -29,6 +29,7 @@
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
 {
   sdhdf_loadPrimaryHeader(inFile);
+  sdhdf_loadConfig(inFile);
   sdhdf_loadBeamHeader(inFile);
   sdhdf_loadBandHeader(inFile,1);
   sdhdf_loadObsHeader(inFile,1);
@@ -39,6 +40,45 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
     }
   sdhdf_loadHistory(inFile);
   sdhdf_loadSoftware(inFile);  
+}
+
+void sdhdf_loadConfig(sdhdf_fileStruct *inFile)
+{
+  int i,j;
+  hid_t header_id,headerT,space,stid,val_tid;
+  herr_t status;
+  int ndims;
+  hsize_t dims[2];
+  sdhdf_backendConfigStruct *configVals;
+
+  header_id  = H5Dopen2(inFile->fileID,"config/backend_config",H5P_DEFAULT);
+  headerT    = H5Dget_type(header_id);
+  space      = H5Dget_space(header_id);
+  ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+
+  configVals = (sdhdf_backendConfigStruct *)malloc(sizeof(sdhdf_backendConfigStruct)*dims[0]);
+
+  val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_backendConfigStruct));
+  stid    = H5Tcopy(H5T_C_S1);
+  status  = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+  H5Tinsert(val_tid,"BACKEND_PHASE",HOFFSET(sdhdf_backendConfigStruct,backend_phase),stid);
+  H5Tinsert(val_tid,"CAL_FREQ",HOFFSET(sdhdf_backendConfigStruct,cal_freq),stid);
+  H5Tinsert(val_tid,"CAL_EPOCH",HOFFSET(sdhdf_backendConfigStruct,cal_epoch),stid);
+  H5Tinsert(val_tid,"CAL_DUTY_CYCLE",HOFFSET(sdhdf_backendConfigStruct,cal_duty_cycle),stid);
+  H5Tinsert(val_tid,"CAL_PHASE",HOFFSET(sdhdf_backendConfigStruct,cal_phase),stid);
+  status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,configVals);
+
+  strcpy(inFile->cal_epoch,configVals[0].cal_epoch);
+  sscanf(configVals[0].cal_freq,"%lf",&(inFile->cal_freq));
+  sscanf(configVals[0].cal_phase,"%lf",&(inFile->cal_phase));
+  sscanf(configVals[0].cal_duty_cycle,"%lf",&(inFile->cal_duty_cycle));
+  
+  //  printf("Loaded %s %s %s\n",configVals[0].backend_phase,configVals[0].cal_freq,configVals[0].cal_epoch);
+  free(configVals);
+  
+  status = H5Tclose(val_tid);
+  status = H5Tclose(stid);
+  status = H5Dclose(header_id);
 }
 
 //

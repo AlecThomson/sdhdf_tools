@@ -66,6 +66,8 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_plotScan \
   sdhdf_plotWide \
   sdhdf_plotMultiSpec \
+  sdhdf_map \
+  sdhdf_weightSpectra \
   sdhdf_plotSpectrum 
 
 sdhdf_primaryFluxCal_SOURCES = sdhdf_primaryFluxCal.c \
@@ -90,6 +92,12 @@ sdhdf_rfiTime_SOURCES = sdhdf_rfiTime.c \
   $(COMMON_SRCS)
 
 sdhdf_flag_SOURCES = sdhdf_flag.c \
+  $(COMMON_SRCS)
+
+sdhdf_map_SOURCES = sdhdf_map.c \
+  $(COMMON_SRCS)
+
+sdhdf_weightSpectra_SOURCES = sdhdf_weightSpectra.c \
   $(COMMON_SRCS)
 
 sdhdf_plotScan_SOURCES = sdhdf_plotScan.c \

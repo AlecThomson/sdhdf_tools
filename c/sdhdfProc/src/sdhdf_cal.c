@@ -34,18 +34,29 @@
 #include <cpgplot.h>
 
 
-void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan);
+void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB);
 
 int main(int argc,char *argv[])
 {
-  int i,j;
+  int i,j,k;
   char fname[MAX_STRLEN];
   sdhdf_fileStruct *inFile;
   int iband=0,nchan,idump;
   int ndump=0;
   int beam=0;
   int totChan=0;
+  float *scalFreq,*scalAA,*scalBB;
+  char scalFname[1024]="NULL";
+  int  nScal=-1;
+  float scaleCal=1;
+  int autoSsys=0;
+  int autoSysGain=0;
+  int av=0;
   
+  scalFreq = (float *)malloc(sizeof(float)*3328);
+  scalAA = (float *)malloc(sizeof(float)*3328);
+  scalBB = (float *)malloc(sizeof(float)*3328);
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -58,33 +69,195 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-f")==0)
 	strcpy(fname,argv[++i]);	
+      else if (strcmp(argv[i],"-scal")==0)
+	strcpy(scalFname,argv[++i]);
+      else if (strcmp(argv[i],"-scale")==0)
+	sscanf(argv[++i],"%f",&scaleCal);
+      else if (strcmp(argv[i],"-autoSsys")==0)
+	autoSsys=1;
+      else if (strcmp(argv[i],"-autoSysGain")==0)
+	autoSysGain=1;
+      else if (strcmp(argv[i],"-av")==0)
+	av=1;
     }
-  
+
+  if (strcmp(scalFname,"NULL")!=0)
+    {
+      FILE *fin;
+      
+      nScal=0;
+      fin = fopen(scalFname,"r");
+      while (!feof(fin))
+	{
+	  if (fscanf(fin,"%f %f %f",&scalFreq[nScal],&scalAA[nScal],&scalBB[nScal])==3)
+	    {
+	      scalAA[nScal] *= scaleCal;
+	      scalBB[nScal] *= scaleCal;
+	      nScal++;
+	    }
+	}
+      fclose(fin);
+    }
+    
   sdhdf_openFile(fname,inFile,1);
   printf("File opened\n");
   sdhdf_loadMetaData(inFile);
 
-
-
   ndump = inFile->beam[beam].calBandHeader[0].ndump;
   printf("ndumps = %d\n",ndump);
-
 
   for (i=0;i<inFile->beam[beam].nBand;i++)
     {
       nchan = inFile->beam[beam].calBandHeader[i].nchan;
       totChan+=nchan;
-      printf("Cal nchan = %d\n",nchan);
       sdhdf_loadBandData(inFile,beam,i,2);
       sdhdf_loadBandData(inFile,beam,i,3);
     }
-  doPlot(inFile,beam,totChan);
+  if (autoSysGain==1 && av==0)
+    {
+          double freq,s1,s2;
+      int np=0;
+      float onP1,offP1,onP2,offP2;
+      float onP3,offP3,onP4,offP4;
+      
+      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
+	{	  
+	  np=0;
+	  for (i=0;i<inFile->beam[beam].nBand;i++)
+	    {
+	      nchan = inFile->beam[beam].calBandHeader[i].nchan;
+	      for (j=0;j<nchan;j++)
+		{
+		  freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+		  onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
+		  offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
+		  onP2  = inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
+		  offP2 = inFile->beam[beam].bandData[i].cal_off_data.pol2[j+k*nchan];
+		  onP3  = inFile->beam[beam].bandData[i].cal_on_data.pol3[j+k*nchan];
+		  offP3 = inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
+		  onP4  = inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
+		  offP4 = inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
 
+		  s1 = (onP1-offP1)/scalAA[np];
+		  s2 = (onP2-offP2)/scalBB[np];
+		  printf("SysGain %.6f %g %g\n",freq,s1,s2);
+		  np++;
+		}
+	    }
+	  printf("SysGain\n");
+	}
+    }
+  else if (autoSysGain==1 && av==1)
+    {
+      double freq,s1,s2;
+      int np=0;
+      float onP1,offP1,onP2,offP2;
+      float onP3,offP3,onP4,offP4;
+      
+      np=0;
+      for (i=0;i<inFile->beam[beam].nBand;i++)
+	{
+	  nchan = inFile->beam[beam].calBandHeader[i].nchan;
+	  for (j=0;j<nchan;j++)
+	    {
+	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+	      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0;
+	      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
+		{	  		  
+		  onP1  += inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
+		  offP1 += inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
+		  onP2  += inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
+		  offP2 += inFile->beam[beam].bandData[i].cal_off_data.pol2[j+k*nchan];
+		  onP3  += inFile->beam[beam].bandData[i].cal_on_data.pol3[j+k*nchan];
+		  offP3 += inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
+		  onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
+		  offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
+		}
+	      s1 = (onP1-offP1)/scalAA[np];
+	      s2 = (onP2-offP2)/scalBB[np];
+
+	      printf("AvSysGain %.6f %g %g\n",freq,s1,s2);
+	      np++;
+	    }
+	}
+    }
+ else  if (autoSsys==1 && av==0)
+    {
+      double freq,s1,s2;
+      int np=0;
+      float onP1,offP1,onP2,offP2;
+      float onP3,offP3,onP4,offP4;
+      
+      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
+	{	  
+	  np=0;
+	  for (i=0;i<inFile->beam[beam].nBand;i++)
+	    {
+	      nchan = inFile->beam[beam].calBandHeader[i].nchan;
+	      for (j=0;j<nchan;j++)
+		{
+		  freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+		  onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
+		  offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
+		  onP2  = inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
+		  offP2 = inFile->beam[beam].bandData[i].cal_off_data.pol2[j+k*nchan];
+		  onP3  = inFile->beam[beam].bandData[i].cal_on_data.pol3[j+k*nchan];
+		  offP3 = inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
+		  onP4  = inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
+		  offP4 = inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
+
+		  s1 = scalAA[np]*offP1/(onP1-offP1);
+		  s2 = scalBB[np]*offP2/(onP2-offP2);
+		  printf("Ssys %.6f %g %g\n",freq,s1,s2);
+		  np++;
+		}
+	    }
+	  printf("Ssys\n");
+	}
+    }
+  else if (autoSsys==1 && av==1)
+    {
+      double freq,s1,s2;
+      int np=0;
+      float onP1,offP1,onP2,offP2;
+      float onP3,offP3,onP4,offP4;
+      
+      np=0;
+      for (i=0;i<inFile->beam[beam].nBand;i++)
+	{
+	  nchan = inFile->beam[beam].calBandHeader[i].nchan;
+	  for (j=0;j<nchan;j++)
+	    {
+	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+	      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0;
+	      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
+		{	  		  
+		  onP1  += inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
+		  offP1 += inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
+		  onP2  += inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
+		  offP2 += inFile->beam[beam].bandData[i].cal_off_data.pol2[j+k*nchan];
+		  onP3  += inFile->beam[beam].bandData[i].cal_on_data.pol3[j+k*nchan];
+		  offP3 += inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
+		  onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
+		  offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
+		}
+	      s1 = scalAA[np]*offP1/(onP1-offP1);
+	      s2 = scalBB[np]*offP2/(onP2-offP2);
+	      printf("AvSsys %.6f %g %g\n",freq,s1,s2);
+	      np++;
+	    }
+	}
+    }
+  else
+    doPlot(inFile,beam,totChan,nScal,scalFreq,scalAA,scalBB);
+
+    
   sdhdf_closeFile(inFile);
   free(inFile);
+  free(scalFreq); free(scalAA); free(scalBB);
 }
 
-void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
+void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB)
 {
   float fx[totChan];
   float fy1[totChan];
@@ -107,13 +280,15 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
   float set_miny=-1,set_maxy=-1;
   float set_minx=-1,set_maxx=-1;
   int log=0;
+  char title[1024];
+  int av=-1;
   
   cpgbeg(0,"/xs",1,1);
   cpgask(0);
   cpgslw(2);
   cpgscf(2);
   cpgsch(1.4);
-  do {
+  do {    
     np=0;
     for (i=0;i<inFile->beam[beam].nBand;i++)
       {
@@ -121,15 +296,41 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
 	for (j=0;j<nchan;j++)
 	  {
 	    fx[np] = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
-	    onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+idump*nchan];
-	    offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+idump*nchan];
- 	    onP2  = inFile->beam[beam].bandData[i].cal_on_data.pol2[j+idump*nchan];
-	    offP2 = inFile->beam[beam].bandData[i].cal_off_data.pol2[j+idump*nchan];
- 	    onP3  = inFile->beam[beam].bandData[i].cal_on_data.pol3[j+idump*nchan];
-	    offP3 = inFile->beam[beam].bandData[i].cal_off_data.pol3[j+idump*nchan];
- 	    onP4  = inFile->beam[beam].bandData[i].cal_on_data.pol4[j+idump*nchan];
-	    offP4 = inFile->beam[beam].bandData[i].cal_off_data.pol4[j+idump*nchan];
-
+	    if (av==-1)
+	      {
+		onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+idump*nchan];
+		offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+idump*nchan];
+		onP2  = inFile->beam[beam].bandData[i].cal_on_data.pol2[j+idump*nchan];
+		offP2 = inFile->beam[beam].bandData[i].cal_off_data.pol2[j+idump*nchan];
+		onP3  = inFile->beam[beam].bandData[i].cal_on_data.pol3[j+idump*nchan];
+		offP3 = inFile->beam[beam].bandData[i].cal_off_data.pol3[j+idump*nchan];
+		onP4  = inFile->beam[beam].bandData[i].cal_on_data.pol4[j+idump*nchan];
+		offP4 = inFile->beam[beam].bandData[i].cal_off_data.pol4[j+idump*nchan];
+	      }
+	    else
+	      {
+		onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4 = 0.0;
+		for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
+		  {
+		    onP1  += inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
+		    offP1 += inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
+		    onP2  += inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
+		    offP2 += inFile->beam[beam].bandData[i].cal_off_data.pol2[j+k*nchan];
+		    onP3  += inFile->beam[beam].bandData[i].cal_on_data.pol3[j+k*nchan];
+		    offP3 += inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
+		    onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
+		    offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
+		  }
+		onP1  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		offP1 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		onP2  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		offP2 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		onP3  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		offP3 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		onP4  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		offP4 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+										
+	      }
 	    if (plot==1)
 	      {
 		fy1[np] = onP1;
@@ -159,6 +360,14 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
 	      }
 	    else if (plot==4)
 	      {
+		fy1[np] = scalAA[np]*offP1/(onP1-offP1);
+		fy2[np] = scalBB[np]*offP2/(onP2-offP2);
+		printf("Have %g %g\n",fy1[np],fy2[np]);
+		nLine=2;
+		log=0;
+	      }
+	    else if (plot==5)
+	      {
 		float ical = (onP1-offP1) + (onP2-offP2);
 		float qcal = (onP1-offP1) - (onP2-offP2);
 
@@ -167,13 +376,22 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
 		nLine=1;
 		log=0;
 	      }
-	    else if (plot==5)
+	    else if (plot==6)
 	      {
 		float ucal = 2*(onP3-offP3);
 		float vcal = 2*(onP4-offP4);
 		fy1[np] = atan2(vcal,ucal)*180/M_PI;
 		printf("Have %g %g\n",fy1[np],fy2[np]);
 		nLine=1;
+		log=0;
+	      }
+	    else if (plot==7)
+	      {
+		fy1[np] = onP1;
+		fy2[np] = offP1;
+		fy3[np] = onP2;
+		fy4[np] = offP2;
+		nLine=4;
 		log=0;
 	      }
 	    np++;
@@ -187,12 +405,21 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
 	  }
 	if (miny > fy1[i]) miny = fy1[i];
 	if (maxy < fy1[i]) maxy = fy1[i];
-	if (nLine > 1)
+	if (nLine == 2)
 	  {
 	    if (miny > fy2[i]) miny = fy2[i];
 	    if (maxy < fy2[i]) maxy = fy2[i];
 	  }
+	if (nLine == 4)
+	  {
+	    if (miny > fy2[i]) miny = fy2[i];
+	    if (maxy < fy2[i]) maxy = fy2[i];
+	    if (miny > fy3[i]) miny = fy3[i];
+	    if (maxy < fy3[i]) maxy = fy3[i];
+	    if (miny > fy4[i]) miny = fy4[i];
+	    if (maxy < fy4[i]) maxy = fy4[i];
 	  }
+      }
     if (set_miny==-1 && set_maxy==-1)
       {
 	uminy = miny;
@@ -211,15 +438,24 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
       cpgenv(uminx,umaxx,uminy,umaxy,0,20);
     else
       cpgenv(uminx,umaxx,uminy,umaxy,0,1);
-    if (plot==3)
-      cpglab("Frequency (MHz)","OFF/(ON-OFF)","");
-    else
-      cpglab("Frequency (MHz)","","");
+
+    if (av==-1)       sprintf(title,"spectral dump %d",idump);
+    else              sprintf(title,"averaged spectral dump");
+
+    if (plot==3)      cpglab("Frequency (MHz)","OFF/(ON-OFF)",title);
+    else if (plot==4) cpglab("Frequency (MHz)","S_sys (Jy)",title);
+    else              cpglab("Frequency (MHz)","",title);
 
     cpgsci(1); cpgline(np,fx,fy1);
-    if (nLine > 1)
+    if (nLine == 2)
       {
 	cpgsci(2); cpgline(np,fx,fy2);
+      }
+    else if (nLine==4)
+      {
+	cpgsci(2); cpgline(np,fx,fy2);
+	cpgsci(3); cpgline(np,fx,fy3);
+	cpgsci(4); cpgline(np,fx,fy4);
       }
     
     cpgsci(1);
@@ -231,6 +467,39 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan)
     else if (key=='3') {plot=3;set_miny = set_maxy = -1;}
     else if (key=='4') {plot=4;set_miny = set_maxy = -1;}
     else if (key=='5') {plot=5;set_miny = set_maxy = -1;}
+    else if (key=='6') {plot=6;set_miny = set_maxy = -1;}
+    else if (key=='7') {plot=7;set_miny = set_maxy = -1;}
+    else if (key=='a') av*=-1;
+    else if (key=='+')
+      {
+	if (idump < inFile->beam[beam].calBandHeader[0].ndump-1)
+	  idump++;
+
+      }
+    else if (key=='-')
+      {
+	if (idump > 0)
+	  idump--;
+      }
+    else if (key=='w')
+      {
+	FILE *fout;
+	char outFile[128];
+	printf("Loaded: %s\n",inFile->fname);
+	printf("Enter output filename ");
+	scanf("%s",outFile);
+	fout = fopen(outFile,"w");
+	for (i=0;i<np;i++)
+	  {
+	    if (nLine == 2)	
+	      fprintf(fout,"%.6f %g %g\n",fx[i],fy1[i],fy2[i]);
+	    else if (nLine == 4)	
+	      fprintf(fout,"%.6f %g %g %g %g\n",fx[i],fy1[i],fy2[i],fy3[i],fy4[i]);
+	    else
+	      fprintf(fout,"%.6f %g\n",fx[i],fy1[i]);
+	  }
+	fclose(fout);
+      }
     else if (key=='u')
       {
 	set_miny = set_maxy = -1;

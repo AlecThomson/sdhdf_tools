@@ -52,12 +52,14 @@ void help()
   printf("---------------------\n");
 }
 
+void determineOffSourceScale(float *freqOffScl,float *offSclA,float *offSclB,int n,float freq,float *sclA2,float *sclB2);
+
 int main(int argc,char *argv[])
 {
   int i,j,k,p,ii,b;
-  char fnameOn[MAX_FILES][MAX_STRLEN];
-  char fnameOff[MAX_FILES][MAX_STRLEN];
-  char outFileName[MAX_FILES][MAX_STRLEN];
+  char fnameOn[16][MAX_STRLEN];
+  char fnameOff[16][MAX_STRLEN];
+  char outFileName[16][MAX_STRLEN];
   char defineOn[MAX_STRLEN];
   char defineOff[MAX_STRLEN];
   char defineOutFileName[MAX_STRLEN];
@@ -79,11 +81,20 @@ int main(int argc,char *argv[])
   long nchan,npol,ndump;
   float sclA=1.0;
   float sclB=1.0;
-    
+  char scaleOff[128]="NULL";
+
+  float freqOffScl[8192];
+  float offSclA[8192];
+  float offSclB[8192];
+  int nOffScl=0;
+  float sclA2=1.0,sclB2=1.0;
+
+  int procType=1;
+  
   FILE *fout;
   
   // help();
-  
+
   if (!(onFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >onFile<\n");
@@ -100,7 +111,6 @@ int main(int argc,char *argv[])
       exit(1);
     }
 
-  
   for (i=1;i<argc;i++)
     {      
       if (strcmp(argv[i],"-on")==0)
@@ -111,6 +121,10 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%f",&sclA);
       else if (strcmp(argv[i],"-sclB")==0)
 	sscanf(argv[++i],"%f",&sclB);
+      else if (strcmp(argv[i],"-subtract")==0)
+	procType=2;
+      else if (strcmp(argv[i],"-scaleOff")==0)
+	strcpy(scaleOff,argv[++i]);
       else if (strcmp(argv[i],"-h")==0) // Should actually free memory
 	exit(1);
       else if (strcmp(argv[i],"-batch")==0)
@@ -122,6 +136,21 @@ int main(int argc,char *argv[])
 	strcpy(outFileName[0],argv[++i]);
     }
 
+  if (strcmp(scaleOff,"NULL")!=0)
+    {
+      FILE *fin;
+      fin = fopen(scaleOff,"r");
+      nOffScl=0;
+      while (!feof(fin))
+	{
+	  if (fscanf(fin,"%f %f %f",&freqOffScl[nOffScl],&offSclA[nOffScl],&offSclB[nOffScl])==3)
+	    nOffScl++;
+	}
+      fclose(fin);
+      printf("Loaded %d values for the off source system noise/temperature\n",nOffScl);
+    }
+
+  
   if (batch==0)
     nFiles=1;
   else
@@ -136,8 +165,6 @@ int main(int argc,char *argv[])
 	}
       fclose(fin);
     }
-  printf("number of files to process: %d\n",nFiles);
-
   
   for (ii=0;ii<nFiles;ii++)
     {
@@ -184,8 +211,12 @@ int main(int argc,char *argv[])
 		    {
 		      on_pol1  = onFile->beam[b].bandData[i].astro_data.pol1[k];
 		      off_pol1 = offFile->beam[b].bandData[i].astro_data.pol1[k];
-		      
-		      out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
+
+		      if (procType==1)			
+			out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
+		      else
+			out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1);
+			
 		    }
 		  else if (npol == 2)
 		    {
@@ -193,10 +224,17 @@ int main(int argc,char *argv[])
 		      on_pol2 = onFile->beam[b].bandData[i].astro_data.pol2[k];
 		      off_pol1 = offFile->beam[b].bandData[i].astro_data.pol1[k];
 		      off_pol2 = offFile->beam[b].bandData[i].astro_data.pol2[k];
-		      
-		      out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
-		      out_data[k+0*npol*nchan+nchan]   = sclB*(on_pol2-off_pol2)/off_pol2;
-		      
+
+		      if (procType==1)
+			{
+			  out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
+			  out_data[k+0*npol*nchan+nchan]   = sclB*(on_pol2-off_pol2)/off_pol2;
+			}
+		      else
+			{
+			  out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1);
+			  out_data[k+0*npol*nchan+nchan]   = sclB*(on_pol2-off_pol2);
+			}
 		      
 		    }
 		  else
@@ -210,12 +248,25 @@ int main(int argc,char *argv[])
 		      off_pol2 = offFile->beam[b].bandData[i].astro_data.pol2[k];
 		      off_pol3 = offFile->beam[b].bandData[i].astro_data.pol3[k];
 		      off_pol4 = offFile->beam[b].bandData[i].astro_data.pol4[k];
-
-		      out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
-		      out_data[k+0*npol*nchan+nchan]   = sclB*(on_pol2-off_pol2)/off_pol2;
-		      out_data[k+0*npol*nchan+2*nchan] = (on_pol3-off_pol3)/off_pol3;
-		      out_data[k+0*npol*nchan+3*nchan] = (on_pol4-off_pol4)/off_pol4;
+		      sclA2=sclB2 = 1.0;
+		      if (nOffScl>0)
+			determineOffSourceScale(freqOffScl,offSclA,offSclB,nOffScl,freq[k],&sclA2,&sclB2);
 		      
+		      if (procType==1)
+			{
+			  out_data[k+0*npol*nchan]         = sclA2*sclA*(on_pol1-off_pol1)/off_pol1;
+			  out_data[k+0*npol*nchan+nchan]   = sclB2*sclB*(on_pol2-off_pol2)/off_pol2;
+			  out_data[k+0*npol*nchan+2*nchan] = (on_pol3-off_pol3)/off_pol3;
+			  out_data[k+0*npol*nchan+3*nchan] = (on_pol4-off_pol4)/off_pol4;
+			}
+		      else
+			{
+			  out_data[k+0*npol*nchan]         = sclA2*sclA*(on_pol1-off_pol1);
+			  out_data[k+0*npol*nchan+nchan]   = sclB2*sclB*(on_pol2-off_pol2);
+			  out_data[k+0*npol*nchan+2*nchan] = (on_pol3-off_pol3);
+			  out_data[k+0*npol*nchan+3*nchan] = (on_pol4-off_pol4);
+			}
+
 		    }
 		      //	  printf("DIFF =  %g %g %g %g\n",freq[k],on_pol1,off_pol1,(on_pol1-off_pol1)/off_pol1);
 	      
@@ -251,3 +302,17 @@ int main(int argc,char *argv[])
 
 }
 
+void determineOffSourceScale(float *freqOffScl,float *offSclA,float *offSclB,int n,float freq,float *sclA2,float *sclB2)
+{
+  int i;
+
+  for (i=0;i<n-1;i++)
+    {
+      if (freq <= freqOffScl[i])
+	{
+	  *sclA2 = offSclA[i]; // Should do an interpolation
+	  *sclB2 = offSclB[i];
+	  break;
+	}
+    }
+}

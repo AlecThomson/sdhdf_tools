@@ -183,7 +183,7 @@ int main(int argc,char *argv[])
 		      outBandParams[j].f1 = fSelect1[j];
 		      strcpy(outBandParams[j].pol_type,inBandParams[0].pol_type);
 		      outBandParams[j].npol = inBandParams[0].npol;
-		      outBandParams[j].ndump = 1; // FIX THIS
+		      outBandParams[j].ndump = inBandParams[0].ndump;
 
 		      strcpy(outCalBandParams[j].label,zoomLabel);
 		      outCalBandParams[j].fc = (fSelect0[j] + fSelect1[j])/2.;
@@ -191,7 +191,7 @@ int main(int argc,char *argv[])
 		      outCalBandParams[j].f1 = fSelect1[j];
 		      strcpy(outCalBandParams[j].pol_type,inCalBandParams[0].pol_type);
 		      outCalBandParams[j].npol = inCalBandParams[0].npol;
-		      outCalBandParams[j].ndump = 1; // FIX THIS
+		      outCalBandParams[j].ndump = inCalBandParams[0].ndump;
 
 		      
 		      // Count nchan (note that we may go across band edges)

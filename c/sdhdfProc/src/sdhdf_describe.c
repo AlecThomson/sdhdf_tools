@@ -68,6 +68,7 @@ int main(int argc,char *argv[])
   int showCalDump=0;
   int showAttributes=0;
   int atoa=0;
+  int calInfo=0;
   
   int iband=0;
     
@@ -87,6 +88,8 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%d",&iband);
       else if (strcmp(argv[i],"-dump")==0)
 	showDump=1;
+      else if (strcmp(argv[i],"-cal")==0)
+	calInfo=1;
       else if (strcmp(argv[i],"-cdump")==0)
 	showCalDump=1;
       else if (strcmp(argv[i],"-history")==0)
@@ -159,7 +162,11 @@ int main(int argc,char *argv[])
 			 inFile->primary[0].pid,inFile->primary[0].sched_block_id,inFile->beamHeader[iband].source,
 			 inFile->primary[0].telescope,inFile->primary[0].observer,inFile->primary[0].rcvr,inFile->beam[beam].nBand,
 			 inFile->beam[beam].bandHeader[0].pol_type,inFile->primary[0].cal_mode,maxTime,inFile->beam[beam].bandData[iband].astro_obsHeader[0].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[0].decStr);
-		   
+		  if (calInfo==1)
+		    {
+		      printf("[CAL] %s %s %d %s %s %f %f %f\n",inFile->fname,inFile->beamHeader[iband].source,inFile->primary[0].sched_block_id,inFile->primary[0].cal_mode,inFile->cal_epoch,inFile->cal_freq,inFile->cal_phase,inFile->cal_duty_cycle);
+		    }
+		  
 		  if (showBands==1)
 		    {
 		      printf("-----------------------------------------------------------------------------\n");

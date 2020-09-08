@@ -32,6 +32,11 @@
 #include "sdhdfProc.h"
 #include "hdf5.h"
 
+
+#define MAX_IGNORE_SDUMP 4096
+
+double linearInterpolate(double *freq,double *scaleAA,float in_freq,int kk,int nScale);
+
 int main(int argc,char *argv[])
 {
   int i,ii,j,k,p,l,kp,b;
@@ -60,7 +65,13 @@ int main(int argc,char *argv[])
   sdhdf_eopStruct *eop;
   int nEOP=0;
   char args[MAX_STRLEN]="";
-   
+  char scaleFile[1024]="NULL";
+  int ignoreSD[MAX_IGNORE_SDUMP];
+  int nIgnoreSD=0;
+  double freq[128*26],scaleAA[128*26],scaleBB[128*26];
+  int nScale=0;
+
+  
   strcpy(oname,"sdhdf_modify_output.hdf");
 
   eop = (sdhdf_eopStruct *)malloc(sizeof(sdhdf_eopStruct)*MAX_EOP_LINES);
@@ -87,6 +98,10 @@ int main(int argc,char *argv[])
 	{sdhdf_add1arg(args,argv[i]); tScrunch=1;}
       else if (strcmp(argv[i],"-F")==0)
 	{sdhdf_add1arg(args,argv[i]); fScrunch=1;}
+      else if (strcmp(argv[i],"-scaleFile")==0)
+	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(scaleFile,argv[++i]);}
+      else if (strcmp(argv[i],"-id")==0)
+	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&ignoreSD[nIgnoreSD++]);}
       else if (strcmp(argv[i],"-p1")==0)
 	{sdhdf_add1arg(args,argv[i]); pol=1;}
       else if (strcmp(argv[i],"-p2")==0)
@@ -113,6 +128,19 @@ int main(int argc,char *argv[])
 	{
 	  strcpy(fname,argv[i]);
 
+	  if (strcmp(scaleFile,"NULL")!=0)
+	    {
+	      FILE *fScale;
+	      nScale=0;
+	      fScale = fopen(scaleFile,"r");
+	      while (!feof(fScale))
+		{
+		  if (fscanf(fScale,"%lf %lf %lf",&freq[nScale],&scaleAA[nScale],&scaleBB[nScale])==3)
+		    nScale++;
+		}
+	      fclose(fScale);
+	    }
+	  
 	  sdhdf_initialiseFile(inFile);
 	  sdhdf_initialiseFile(outFile);
 
@@ -199,8 +227,7 @@ int main(int argc,char *argv[])
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      
 		      tav=0;
-		    
-		    
+		    		    
 		      sdhdf_loadBandData(inFile,b,ii,1);
 		      
 		      for (j=0;j<nchan;j++)
@@ -209,27 +236,70 @@ int main(int argc,char *argv[])
 			  if (fAv < 2)
 			    out_freq[j] = in_freq[j];
 			}
-	      // Time averaging
-		      if (tScrunch==1)
+		      if (strcmp(scaleFile,"NULL")!=0)
 			{
+			  double sclAA,sclBB;
+			  int kk,k0;
+			  //			  printf("Applying scaling\n");
+			  // Apply the scaling
 			  for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
 			    {
+			      k0=0;
 			      for (k=0;k<nchan;k++)
 				{
-				  // NOT ACCOUNTING FOR WEIGHTINGS			  
-				  if (npol==1)
-				    out_Tdata[k] += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
-				  else if (npol==2)
+				  sclAA = sclBB = 0.0;
+				  for (kk=k0;kk<nScale;kk++)
 				    {
-				      out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]/(float)nsd;
+				      if (in_freq[k] <= freq[kk])
+					{
+					  sclAA = 1./linearInterpolate(freq,scaleAA,in_freq[k],kk,nScale);
+					  sclBB = 1./linearInterpolate(freq,scaleBB,in_freq[k],kk,nScale);
+					  if (k==0) k0=kk;
+					  break;
+					}				     
 				    }
-				  else
+				  // FIX ME -- ****
+				  sclAA *= (nchan/128);
+				  sclBB *= (nchan/128);
+				  inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]*=sclAA;
+				  inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]*=sclBB;
+				}
+			    }
+			  //			  printf("Fixed the scaling\n");
+			}
+		      // Time averaging
+		      if (tScrunch==1)
+			{
+			  int ignore=0;
+			  int jj;
+			  for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
+			    {
+			      ignore=0;
+			      
+			      for (jj=0;jj<nIgnoreSD;jj++)
+				{
+				  if (ignoreSD[jj] == j)
+				    {ignore=1; break;}
+				}
+			      if (ignore==0)
+				{
+				  for (k=0;k<nchan;k++)
 				    {
-				      out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+2*nchan] += inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+3*nchan] += inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]/(float)nsd;		      
+				      // NOT ACCOUNTING FOR WEIGHTINGS			  
+				      if (npol==1)
+					out_Tdata[k] += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
+				      else if (npol==2)
+					{
+					  out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
+					  out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]/(float)nsd;
+					}
+				      else
+					{
+					  out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
+					  out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]/(float)nsd;
+					  out_Tdata[k+2*nchan] += inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]/(float)nsd;
+					  out_Tdata[k+3*nchan] += inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]/(float)nsd;		      
+					}
 				    }
 				}
 			    }
@@ -310,6 +380,7 @@ int main(int argc,char *argv[])
 		      else
 			{
 			  // Should use memcpy
+			  printf("Not frequency scrunching\n");
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      for (k=0;k<out_nchan;k++)
@@ -493,4 +564,27 @@ int main(int argc,char *argv[])
 }
 
 
+double linearInterpolate(double *freq, double *scaleAA,float in_freq,int kk,int nScale)
+{
+  double y1,y2;
+  double x1,x2;
+  double m,c;
+  if (kk==0)
+    {
+      y1 = scaleAA[kk];
+      y2 = scaleAA[kk+1];
+      x1 = freq[kk];
+      x2 = freq[kk+1];
+    }
+  else 
+    {
+      y1 = scaleAA[kk-1];
+      y2 = scaleAA[kk];
+      x1 = freq[kk-1];
+      x2 = freq[kk];
+    }
+  m = (y2-y1)/(x2-x1);
+  c = y1-m*x1;
+  return m*in_freq+c;
+}
 
