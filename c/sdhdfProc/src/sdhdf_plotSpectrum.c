@@ -219,6 +219,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		freq[i] = i;
 
 	      pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
+	      //	      printf("Loaded %f %f\n",freq[i],pol1[i]);
 	      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
 	      if (setLog == 1)
 		{

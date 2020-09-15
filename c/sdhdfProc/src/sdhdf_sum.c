@@ -65,12 +65,15 @@ int main(int argc,char *argv[])
   double tav=0;
   sdhdf_bandHeaderStruct *inBandParams;  
   long nchan,npol,ndump;
+  int divN=0;
   
   char outFileName[MAX_STRLEN];
   int nFiles=0;
   char **fname;
   FILE *fout;
+  double scaleFactor=1;
 
+  printf("Starting sdhdf_sum\n");
   //  help();
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
@@ -97,12 +100,14 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-o")==0)
 	strcpy(outFileName,argv[++i]);
+      else if (strcmp(argv[i],"-divN")==0) // NEED TO UPDATE COMMAND LINE ARGUMENT LIST BELOW AS WELL -- SHOULD FIX
+	divN=1;
       else if (strcmp(argv[i],"-h")==0) // Should actually free memory
 	exit(1);
       else
 	nFiles++;
     }
-
+  printf("Loaded command line arguments\n");
   fname = (char **)malloc(sizeof(char *)*nFiles);
   for (i=0;i<nFiles;i++)
     fname[i] = (char *)malloc(sizeof(char)*MAX_STRLEN);
@@ -112,7 +117,7 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-o")==0)
 	i++;
-      else if (strcmp(argv[i],"-h")==0)
+      else if (strcmp(argv[i],"-h")==0 || strcmp(argv[i],"-divN")==0)
 	{} // Do nothing
       else
 	strcpy(fname[nFiles++],argv[i]);
@@ -156,8 +161,11 @@ int main(int argc,char *argv[])
 	    {
 	      printf(" ... %s\n",fname[j]);
 	      sdhdf_initialiseFile(inFile);	  
+	      printf("Opening\n");
 	      sdhdf_openFile(fname[j],inFile,1);
+	      printf("Complete opening\n");
 	      sdhdf_loadMetaData(inFile);
+	      printf("Complete loading metadata\n");
 	      
 	      nchan = inFile->beam[b].bandHeader[i].nchan;
 	      npol  = inFile->beam[b].bandHeader[i].npol;
@@ -165,6 +173,8 @@ int main(int argc,char *argv[])
 	      
 	      sdhdf_loadBandData(inFile,b,i,1);
 	      tav += inFile->beam[b].bandHeader[i].dtime;
+
+	      scaleFactor=1;
 	      
 	      for (k=0;k<nchan;k++)
 		{
@@ -172,15 +182,25 @@ int main(int argc,char *argv[])
 		  if (npol == 1)
 		    {
 		      in_pol1 = inFile->beam[b].bandData[i].astro_data.pol1[k];
-		      out_data[k+0*npol*nchan]         += (in_pol1)/nFiles;
+		      if (divN==1)
+			out_data[k+0*npol*nchan]         += scaleFactor*(in_pol1)/nFiles;
+		      else
+			out_data[k+0*npol*nchan]         += scaleFactor*(in_pol1);
 		    }
 		  else if (npol==2)
 		    {
 		      in_pol1 = inFile->beam[b].bandData[i].astro_data.pol1[k];
 		      in_pol2 = inFile->beam[b].bandData[i].astro_data.pol2[k];
-		      out_data[k+0*npol*nchan]         += (in_pol1)/nFiles;
-		      out_data[k+0*npol*nchan+nchan]   += (in_pol2)/nFiles;
-		      
+		      if (divN==1)
+			{
+			  out_data[k+0*npol*nchan]         += scaleFactor*(in_pol1)/nFiles;
+			  out_data[k+0*npol*nchan+nchan]   += scaleFactor*(in_pol2)/nFiles;		      
+			}
+		      else
+			{
+			  out_data[k+0*npol*nchan]         += scaleFactor*(in_pol1);
+			  out_data[k+0*npol*nchan+nchan]   += scaleFactor*(in_pol2);		      
+			}
 		    }
 		  else
 		    {
@@ -188,11 +208,20 @@ int main(int argc,char *argv[])
 		      in_pol2 = inFile->beam[b].bandData[i].astro_data.pol2[k];
 		      in_pol3 = inFile->beam[b].bandData[i].astro_data.pol3[k];
 		      in_pol4 = inFile->beam[b].bandData[i].astro_data.pol4[k];
-
-		      out_data[k+0*npol*nchan]         += (in_pol1)/nFiles;
-		      out_data[k+0*npol*nchan+nchan]   += (in_pol2)/nFiles;
-		      out_data[k+0*npol*nchan+2*nchan] += (in_pol3)/nFiles;
-		      out_data[k+0*npol*nchan+3*nchan] += (in_pol4)/nFiles;		      
+		      if (divN==1)
+			{
+			  out_data[k+0*npol*nchan]         += scaleFactor*(in_pol1)/nFiles;
+			  out_data[k+0*npol*nchan+nchan]   += scaleFactor*(in_pol2)/nFiles;
+			  out_data[k+0*npol*nchan+2*nchan] += scaleFactor*(in_pol3)/nFiles;
+			  out_data[k+0*npol*nchan+3*nchan] += scaleFactor*(in_pol4)/nFiles;		      
+			}
+		      else
+			{
+			  out_data[k+0*npol*nchan]         += scaleFactor*(in_pol1);
+			  out_data[k+0*npol*nchan+nchan]   += scaleFactor*(in_pol2);
+			  out_data[k+0*npol*nchan+2*nchan] += scaleFactor*(in_pol3);
+			  out_data[k+0*npol*nchan+3*nchan] += scaleFactor*(in_pol4);		      
+			}
 		    }
 		}
 	      sdhdf_releaseBandData(inFile,b,i,1);

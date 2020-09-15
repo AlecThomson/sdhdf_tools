@@ -260,7 +260,7 @@ int main(int argc,char *argv[])
 			  out_data[k+0*npol*nchan+3*nchan] = (on_pol4-off_pol4)/off_pol4;
 			}
 		      else
-			{
+   			{
 			  out_data[k+0*npol*nchan]         = sclA2*sclA*(on_pol1-off_pol1);
 			  out_data[k+0*npol*nchan+nchan]   = sclB2*sclB*(on_pol2-off_pol2);
 			  out_data[k+0*npol*nchan+2*nchan] = (on_pol3-off_pol3);

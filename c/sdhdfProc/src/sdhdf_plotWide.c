@@ -226,6 +226,8 @@ int main(int argc,char *argv[])
 
   if (miny == -1 && maxy == -1)
     {
+      int useThis;
+      
       miny =  1e30;
       maxy = -1e30;
       for (i=0;i<nVals;i++)
@@ -240,12 +242,21 @@ int main(int argc,char *argv[])
 	      py1_max[i] = log10(py1_max[i]);
 	      py2_max[i] = log10(py2_max[i]);
 	    }
-	  if (py1[i] > maxy) maxy = py1[i];
-	  if (py2[i] > maxy) maxy = py2[i];
-	  if (py1_max[i] > maxy) maxy = py1_max[i];
-	  if (py2_max[i] > maxy) maxy = py2_max[i];
-	  if (py1[i] < miny) miny = py1[i];
-	  if (py2[i] < miny) miny = py2[i];
+	  useThis=1;
+	  if (setMinX != -1 && px[i] < setMinX)
+	    useThis=0;
+	  if (setMaxX != -1 && px[i] > setMaxX)
+	    useThis=0;
+	  
+	  if (useThis==1)
+	    {
+	      if (py1[i] > maxy) maxy = py1[i];
+	      if (py2[i] > maxy) maxy = py2[i];
+	      if (py1_max[i] > maxy) maxy = py1_max[i];
+	      if (py2_max[i] > maxy) maxy = py2_max[i];
+	      if (py1[i] < miny) miny = py1[i];
+	      if (py2[i] < miny) miny = py2[i];
+	    }
 	}
     }
   printf("miny/maxy = %g/%g\n",miny,maxy);
