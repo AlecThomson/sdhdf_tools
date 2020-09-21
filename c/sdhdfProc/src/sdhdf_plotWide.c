@@ -88,7 +88,6 @@ int main(int argc,char *argv[])
   
   int nFlag=0;
   float flagF0[MAX_FLAG],flagF1[MAX_FLAG];
-  
   int haveFlagged=0;
 
   printf("Starting\n");

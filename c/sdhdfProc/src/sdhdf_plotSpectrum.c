@@ -37,6 +37,7 @@
 void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit,
 		  char *grDev);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
+void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
 
 #define VNUM "v0.1"
@@ -161,6 +162,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   char legend[1024];
   int plot=1;
   int molecularLines=-1;
+  int recombLines=-1;
   int nchan,maxNchan;
   float *pol1,*pol2,*pol3,*pol4;
   float *freq;
@@ -311,6 +313,16 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  drawMolecularLine(1665.4018,"OH",minx,maxx,miny,maxy);
 	  drawMolecularLine(1667.3590,"OH",minx,maxx,miny,maxy);
 	  drawMolecularLine(1720.5300,"OH",minx,maxx,miny,maxy);
+	  drawMolecularLine(704.1750,"CH",minx,maxx,miny,maxy);
+	  drawMolecularLine(722.3030,"CH",minx,maxx,miny,maxy);
+	  drawMolecularLine(724.7910,"CH",minx,maxx,miny,maxy);
+	  drawMolecularLine(3263.7939,"CH",minx,maxx,miny,maxy);
+	  drawMolecularLine(3335.4810,"CH",minx,maxx,miny,maxy);
+	  drawMolecularLine(3349.1931,"CH",minx,maxx,miny,maxy);
+	}
+      if (recombLines==1)
+	{
+	  drawRecombLine(minx,maxx,miny,maxy);
 	}
       if (flagIt==2)
 	{
@@ -416,6 +428,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    }
 	  else if (key=='m')
 	    molecularLines*=-1;
+	  else if (key=='r')
+	    recombLines*=-1;
 	  else if (key=='-')
 	    {
 	      if (idump > 0)
@@ -481,3 +495,57 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
 
 }
 
+//
+// See https://www.cv.nrao.edu/course/astr534/Recombination.html
+//
+void drawRecombLine(float minX,float maxX,float minY,float maxY)
+{
+  float fx[2],fy[2];
+  double freq;
+  double RM_c;
+  double c = 299792458.0;
+  int n;
+  int dn;
+  double Rinf_c = 3.28984e15; // Rydberg frequency (Hz)
+  double me = 9.10938356e-31; // Kg
+  double M = 1836.1 * me; // Hydrogen nucleus is a single proton of mass mp ~ 1836.1m_e
+  char text[1024];
+  char greek[6];
+  
+  //  n = 187;
+  //  dn = 1;
+
+  for (dn=1;dn<5;dn++)
+    {
+      if (dn==1)
+	sprintf(greek,"\\ga");
+      else if (dn==2)
+	sprintf(greek,"\\gb");
+      else if (dn==3)
+	sprintf(greek,"\\gg");
+      else if (dn==4)
+	sprintf(greek,"\\gd");
+      for (n=1;n<400;n++)
+	{
+	  RM_c = Rinf_c *pow(1+me/M,-1);  
+	  freq = RM_c*(1./pow(n,2) - 1./pow(n+dn,2))/1e6; // MHz
+	  if (freq > minX && freq < maxX)
+	    {
+	      fx[0] = fx[1] = freq;
+	      fy[0] = minY;
+	      fy[1] = maxY;
+	      cpgsci(5);
+	      cpgsls(2);
+	      cpgline(2,fx,fy);
+	      sprintf(text,"H %d%s",n,greek);
+	      cpgsch(0.8);
+	      cpgtext(fx[0],minY + (maxY-minY)*0.9,text);
+	      cpgsch(1.4);
+	      cpgsci(1);
+	      cpgsls(1);
+	      printf("%d %d Freq = %g\n",dn,n,freq);
+	    }
+	}
+    }
+  
+}
