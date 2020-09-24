@@ -495,10 +495,10 @@ int main(int argc,char *argv[])
 			      for (k=0;k<out_nchan;k++)
 				{
 				  if (npol==1)
-				    out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 ??? CHECK
+				    out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
 				  else if (npol==2)
 				    {
-				      out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 ??? CHECK
+				      out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
 				      out_Fdata[k+out_nchan*j*4+out_nchan]   = out_Tdata[k+out_nchan*j*4+out_nchan];
 				    }
 				  else if (npol==4)
@@ -527,7 +527,7 @@ int main(int argc,char *argv[])
 				      out_data[k+out_nchan*j*out_npol]             = out_Fdata[k+out_nchan*j*npol];
 				      out_data[k+out_nchan*j*out_npol+out_nchan]   = out_Fdata[k+out_nchan*j*npol+out_nchan];
 				    }
-				  else if (npol==4)
+				  else if (npol==4) // Remember npol = input npol 
 				    {
 				      out_data[k+out_nchan*j*out_npol]             = out_Fdata[k+out_nchan*j*npol];
 				      out_data[k+out_nchan*j*out_npol+out_nchan]   = out_Fdata[k+out_nchan*j*npol+out_nchan];
@@ -537,12 +537,13 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-		      else if (pol==1)
+		      else if (pol==1) 
 			{
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      for (k=0;k<out_nchan;k++)
-				out_data[k+out_nchan*j*4] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j+4+out_nchan])/2.;
+				out_data[k+out_nchan*j] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j*4+out_nchan]); 
+			      // out_data[k+out_nchan*j*4] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j+4+out_nchan])/2.;
 			    }
 			}
 		      else if (pol==2)
