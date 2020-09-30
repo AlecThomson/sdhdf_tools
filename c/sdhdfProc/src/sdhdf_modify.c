@@ -57,6 +57,7 @@ int main(int argc,char *argv[])
   int stokes=0;
   int fAv=0;
   int bary=0,lsr=0;
+  int regrid=0;
   int nh;
   float *in_data,*out_data,*in_freq,*out_freq;
   float *out_Tdata,*out_Fdata;
@@ -110,6 +111,8 @@ int main(int argc,char *argv[])
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
       else if (strcmp(argv[i],"-scal")==0)
 	strcpy(scalFname,argv[++i]);
+      else if (strcmp(argv[i],"-regrid")==0)
+	regrid=1;
       else if (strcmp(argv[i],"-T")==0)
 	{sdhdf_add1arg(args,argv[i]); tScrunch=1;}
       else if (strcmp(argv[i],"-F")==0)
@@ -279,13 +282,13 @@ int main(int argc,char *argv[])
 				{sysGain_p1[cj] = lastGood_p1; printf("WARNING 1\n");}
 			      if (sysGain_p2[cj] < 1e6) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
 				{sysGain_p2[cj] = lastGood_p2; printf("WARNING 2\n");}
-			      if (sysGain_p1[cj] > 1e10) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
+			      if (sysGain_p1[cj] > 1e12) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
 				{sysGain_p1[cj] = lastGood_p1; printf("WARNING 3\n");}
-			      if (sysGain_p2[cj] > 1e10) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
+			      if (sysGain_p2[cj] > 1e12) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
 				{sysGain_p2[cj] = lastGood_p2; printf("WARNING 4\n");}
 			      lastGood_p1 = sysGain_p1[cj];
 			      lastGood_p2 = sysGain_p2[cj];
-			      printf("Gain: %.6f %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],onP1,offP1,onP2,offP2);
+			      printf("Gain: %.6f %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],onP1,offP1,onP2,offP2,scalAA,scalBB);
 			    }
 			}
 		      
@@ -402,7 +405,7 @@ int main(int argc,char *argv[])
 				  // Note that this is using the getScal interpolation routine, but is getting sysGain instead
 				  //
 				  getScal(in_freq[k],sysGain_freq,sysGain_p1,sysGain_p2,c_nchan,&gainVal1,&gainVal2);
-				  //				  printf("Scale factors: %.6f %g %g\n",in_freq[k],gainVal1,gainVal2);
+				  printf("Scale factors: %.6f %g %g\n",in_freq[k],gainVal1,gainVal2);
 				  // Only scaling 2 polarisations *** <<<
 				  
 				  if (gainVal1 <= 0) gainVal1=1e9; // SHOULD SET MORE SENSIBLY ****
@@ -574,7 +577,7 @@ int main(int argc,char *argv[])
 			      float p1,p2,p3,p4;
 			      for (k=0;k<out_nchan;k++)
 				{
-				  p1 = out_data[k];
+				  p1 = out_data[k];   // SHOULD BE A J IN HERE SOMEWHERE *** FIX
 				  p2 = out_data[k+out_nchan];
 				  p3 = out_data[k+2*out_nchan];
 				  p4 = out_data[k+3*out_nchan];
@@ -590,18 +593,52 @@ int main(int argc,char *argv[])
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      vOverC=sdhdf_calcVoverC(inFile,b,ii,j,eop,nEOP,lsr);
-			      
-			      for (k=0;k<out_nchan;k++)
-				out_freq[k]*=(1.0-vOverC);
+			      if (regrid==0)
+				{
+				  printf("Changing frequency axis\n");
+				  for (k=0;k<out_nchan;k++)
+				    out_freq[k]*=(1.0-vOverC);
+				}
+			      else
+				{
+				  float * temp_data = (float *)calloc(sizeof(float),out_nchan*out_npol);
+				  double freqNew,freqOld;
+				  int kk;
+				  int deltaI;
+				  
+				  printf("Re-gridding: out_npol = %d out_nchan = %d out_ndump = %d\n",out_npol,out_nchan,out_ndump);
+				  memcpy(temp_data,out_data+j*out_nchan*out_npol,sizeof(float)*out_nchan*out_npol);
+				  for (kk=0;kk<out_npol;kk++)
+				    {
+				      for (k=0;k<out_nchan;k++)
+					out_data[j*out_nchan*out_npol + kk*out_nchan + k] = 0.0;
+				    }
+
+				  // Should do a proper gridding or a memcpy here
+				  for (k=0;k<out_nchan;k++)
+				    {
+				      freqNew = out_freq[k]*(1.0-vOverC);
+				      freqOld = out_freq[k];
+				      deltaI  = (int)((freqOld-freqNew)/(out_freq[1]-out_freq[0])+0.5); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
+				      //				      printf("Here with %.6f %.6f %d\n",freqOld,freqNew,deltaI);
+				      //				      deltaI  = 0;
+				      if (k + deltaI >= 0 && k + deltaI < out_nchan)
+					{
+					  for (kk=0;kk<out_npol;kk++)
+					    out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
+					}
+				    }
+				  free(temp_data);
+				}
 			    }
 			}
-
-		    
-			  // FIX ME
-			  //			  if (bary==1)
-			  //			    strcpy(outFile->frequency_attr.frame,"barycentric");
-			  //			  else if (lsr == 1)
-			  //			    strcpy(outFile->frequency_attr.frame,"LSR");
+		      
+		      
+		      // FIX ME
+		      //			  if (bary==1)
+		      //			    strcpy(outFile->frequency_attr.frame,"barycentric");
+		      //			  else if (lsr == 1)
+		      //			    strcpy(outFile->frequency_attr.frame,"LSR");
 		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0);
 		      // Write out the obs_params file
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump);
