@@ -321,15 +321,17 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 		    onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
 		    offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
 		  }
-		onP1  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		offP1 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		onP2  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		offP2 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		onP3  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		offP3 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		onP4  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-		offP4 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
-										
+
+		/*
+		  onP1  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  offP1 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  onP2  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  offP2 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  onP3  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  offP3 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  onP4  /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		  offP4 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
+		*/						
 	      }
 	    if (plot==1)
 	      {

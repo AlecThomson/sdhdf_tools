@@ -36,17 +36,20 @@ void help()
   printf("sdhdf_describe %s (SDHDFProc %s)\n",VERSION,SOFTWARE_VER);
   printf("Authors: G. Hobbs\n");
   printf("Purpose: to present meta-data information for multiple SDHDF files\n");
+  printf("Example: sdhdf_describe file1.hdf file2.hdf\n");
   printf("\n");
   printf("Command line arguments:\n\n");
+  printf("-atoa            Provide information useful for the ATOA\n");
   printf("-attributes      Show group and data set attributes\n");
   printf("-band            Provide band information\n");
   printf("-cband           Provide band information for the calibrator source\n");
   printf("-cdump           Provide spectral dump information for the calibrator source\n");
   printf("-dump            Provide spectral dump information\n");
+  printf("-h               This help\n");
   printf("-history         Provide history information\n");
   printf("-sb <band>       Select band identifier (default = 0)\n");
   printf("-software        Provide software information\n");
-  printf("-atoa            Provide information useful for the ATOA\n");
+
   exit(1);
 
 }
@@ -71,7 +74,11 @@ int main(int argc,char *argv[])
   int calInfo=0;
   
   int iband=0;
-    
+
+  // Display help if no commands given
+  if (argc==1)
+    help();
+  
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-h")==0)

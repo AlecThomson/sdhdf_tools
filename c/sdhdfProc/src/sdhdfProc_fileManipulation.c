@@ -593,6 +593,11 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
 		  if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 		    sdhdf_copyEntireGroup(groupName,inFile,outFile);
 
+		  // Flagging information
+		  sprintf(groupName,"beam_%d/%s/astronomy_data/flag",b,inFile->beam[b].bandHeader[i].label);
+		  if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
+		    sdhdf_copyEntireGroup(groupName,inFile,outFile);
+		  
 		}
 	    }
 	}

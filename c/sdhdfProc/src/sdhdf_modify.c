@@ -274,6 +274,8 @@ int main(int argc,char *argv[])
 				  onP2  += inFile->beam[b].bandData[ii].cal_on_data.pol2[cj+ck*c_nchan];
 				  offP2 += inFile->beam[b].bandData[ii].cal_off_data.pol2[cj+ck*c_nchan];
 				}
+			      // Note: summing, not averaging above ***
+			      //
 			      sysGain_freq[cj] = inFile->beam[b].bandData[ii].cal_on_data.freq[cj];
 			      getScal(sysGain_freq[cj],scalFreq,scalAA,scalBB,nScal,&scalAA_val,&scalBB_val);
 			      sysGain_p1[cj] = (onP1-offP1)/scalAA_val;
@@ -288,7 +290,7 @@ int main(int argc,char *argv[])
 				{sysGain_p2[cj] = lastGood_p2; printf("WARNING 4\n");}
 			      lastGood_p1 = sysGain_p1[cj];
 			      lastGood_p2 = sysGain_p2[cj];
-			      printf("Gain: %.6f %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],onP1,offP1,onP2,offP2,scalAA,scalBB);
+			      printf("Gain: %.6f %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],onP1,offP1,onP2,offP2,scalAA_val,scalBB_val);
 			    }
 			}
 		      
@@ -423,7 +425,7 @@ int main(int argc,char *argv[])
 			      for (k=0;k<nchan;k++)
 				{
 				  if (npol==1)
-				    out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
+				    out_Tdata[k+j*nchan*npol] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
 				  else if (npol==2)
 				    {
 				      out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
@@ -680,7 +682,7 @@ int main(int argc,char *argv[])
 	      //	      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","sdhdfProc software to modify a file",args);	     
 	      //	      inFile->nHistory++;
 	      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
-
+	    
 	      sdhdf_copyRemainder(inFile,outFile,0);
 	      
 	      /*
