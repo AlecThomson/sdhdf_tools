@@ -35,6 +35,7 @@
 
 
 void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB);
+void obtainScal(float freq,float *scalFreq,float *scalAA,float *scalBB,int nScal,float *retAA,float *retBB,int interp);
 
 int main(int argc,char *argv[])
 {
@@ -46,6 +47,7 @@ int main(int argc,char *argv[])
   int beam=0;
   int totChan=0;
   float *scalFreq,*scalAA,*scalBB;
+  float retAA,retBB;
   char scalFname[1024]="NULL";
   int  nScal=-1;
   float scaleCal=1;
@@ -97,6 +99,7 @@ int main(int argc,char *argv[])
 	    }
 	}
       fclose(fin);
+      printf("Loaded %s, Number of SCAL values is %d\n",scalFname,nScal);
     }
     
   sdhdf_openFile(fname,inFile,1);
@@ -116,7 +119,7 @@ int main(int argc,char *argv[])
     }
   if (autoSysGain==1 && av==0)
     {
-          double freq,s1,s2;
+      double freq,s1,s2;
       int np=0;
       float onP1,offP1,onP2,offP2;
       float onP3,offP3,onP4,offP4;
@@ -142,8 +145,9 @@ int main(int argc,char *argv[])
 		  //
 		  // Should find the closest SCAL measurement to the frequency
 		  //
-		  s1    = (onP1-offP1)/scalAA[np];
-		  s2    = (onP2-offP2)/scalBB[np];
+		  obtainScal(freq,scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
+		  s1    = (onP1-offP1)/retAA;
+		  s2    = (onP2-offP2)/retBB;
 		  printf("SysGain %.6f %g %g\n",freq,s1,s2);
 		  np++;
 		}
@@ -177,8 +181,9 @@ int main(int argc,char *argv[])
 		  onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
 		  offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
 		}
-	      s1 = (onP1-offP1)/scalAA[np];
-	      s2 = (onP2-offP2)/scalBB[np];
+	      obtainScal(freq,scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
+	      s1 = (onP1-offP1)/retAA;
+	      s2 = (onP2-offP2)/retBB;
 
 	      printf("AvSysGain %.6f %g %g\n",freq,s1,s2);
 	      np++;
@@ -209,9 +214,9 @@ int main(int argc,char *argv[])
 		  offP3 = inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
 		  onP4  = inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
 		  offP4 = inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
-
-		  s1 = scalAA[np]*offP1/(onP1-offP1);
-		  s2 = scalBB[np]*offP2/(onP2-offP2);
+		  obtainScal(freq,scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
+		  s1 = retAA*offP1/(onP1-offP1);
+		  s2 = retBB*offP2/(onP2-offP2);
 		  printf("Ssys %.6f %g %g\n",freq,s1,s2);
 		  np++;
 		}
@@ -245,8 +250,9 @@ int main(int argc,char *argv[])
 		  onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
 		  offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
 		}
-	      s1 = scalAA[np]*offP1/(onP1-offP1);
-	      s2 = scalBB[np]*offP2/(onP2-offP2);
+	      obtainScal(freq,scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
+	      s1 = retAA*offP1/(onP1-offP1);
+	      s2 = retBB*offP2/(onP2-offP2);
 	      printf("AvSsys %.6f %g %g\n",freq,s1,s2);
 	      np++;
 	    }
@@ -286,6 +292,7 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
   int log=0;
   char title[1024];
   int av=-1;
+  float retAA,retBB;
   
   cpgbeg(0,"/xs",1,1);
   cpgask(0);
@@ -366,8 +373,9 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 	      }
 	    else if (plot==4)
 	      {
-		fy1[np] = scalAA[np]*offP1/(onP1-offP1);
-		fy2[np] = scalBB[np]*offP2/(onP2-offP2);
+		obtainScal(fx[np],scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
+		fy1[np] = retAA*offP1/(onP1-offP1);
+		fy2[np] = retBB*offP2/(onP2-offP2);
 		printf("Have %g %g\n",fy1[np],fy2[np]);
 		nLine=2;
 		log=0;
@@ -448,7 +456,9 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
     if (av==-1)       sprintf(title,"spectral dump %d",idump);
     else              sprintf(title,"averaged spectral dump");
 
-    if (plot==3)      cpglab("Frequency (MHz)","OFF/(ON-OFF)",title);
+    if (plot==1)      cpglab("Frequency (MHz)","Cal On for pol 1 and 2",title);
+    else if (plot==2) cpglab("Frequency (MHz)","Cal On and Cal off for pol 1",title);
+    else if (plot==3) cpglab("Frequency (MHz)","OFF/(ON-OFF)",title);
     else if (plot==4) cpglab("Frequency (MHz)","S_sys (Jy)",title);
     else if (plot==5) cpglab("Frequency (MHz)","Diff. gain",title);
     else if (plot==6) cpglab("Frequency (MHz)","Diff. phase",title);
@@ -536,3 +546,39 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 
   
 }
+
+//
+// Obtain an SCAL determination from an array for a given frequency
+// We assume that the frequency channels are increasing
+//
+void obtainScal(float freq,float *scalFreq,float *scalAA,float *scalBB,int nScal,float *retAA,float *retBB,int interp)
+{
+  float f0,f1;
+  double df;
+  int i,i0;
+  
+  f0 = scalFreq[0];
+  f1 = scalFreq[nScal-1];
+
+  i0=0;
+  for (i=0;i<nScal;i++)
+    {
+      if (freq >= scalFreq[i])
+	{i0=i; break;}
+    }
+  
+  if (interp==1)
+    {
+      *retAA = scalAA[i0];
+      *retBB = scalBB[i0];
+    }
+  else
+    {
+      printf("ERROR: in obtainScal, interp style not implemented\n");
+      *retAA = 0;
+      *retBB = 0;
+    }
+  printf("obtainScal: %.6f %g %g\n",freq,*retAA,*retBB);
+}
+  
+ 
