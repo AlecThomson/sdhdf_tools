@@ -31,17 +31,29 @@
 #include <math.h>
 #include "sdhdfProc.h"
 #include "hdf5.h"
+#include "TKfit.h"
 #include <libgen.h>
 
 #define MAX_IGNORE_SDUMP 4096
 
-double linearInterpolate(double *freq,double *scaleAA,float in_freq,int kk,int nScale);
-void getScal(float sysGain_freq,float *scalFreq,float *scalAA,float *scalBB,int nScal,float *scalAA_val,float *scalBB_val);
+double linearInterpolate(double *freq,double *scaleAA,double in_freq,int kk,int nScale);
+void getScal(double sysGain_freq,double *scalFreq,double *scalAA,double *scalBB,int nScal,double *scalAA_val,double *scalBB_val);
+
+void TKspline_interpolate(int n,double *x,double *y,double yd[][4],double *interpX,
+			  double *interpY,int nInterp);
+void TKcmonot (int n, double x[], double y[], double yd[][4]);
+
+
+// SHOULD ALLOCATE THIS PROPERLY **** FIX ME
+double yd1[4096][4];
+double yd2[4096][4];
+
 
 int main(int argc,char *argv[])
 {
   int i,ii,j,k,p,l,kp,b;
   int nchan,npol;
+  int interp=1; // 1 = linear, 2 = cubic spline
   char fname[MAX_STRLEN];
   char bname[MAX_STRLEN];
   char oname[MAX_STRLEN];
@@ -59,7 +71,8 @@ int main(int argc,char *argv[])
   int bary=0,lsr=0;
   int regrid=0;
   int nh;
-  float *in_data,*out_data,*in_freq,*out_freq;
+  float *in_data,*out_data,*out_freq;
+  double *in_freq;
   float *out_Tdata,*out_Fdata;
   long out_nchan,out_npol,out_ndump,nsd;
   double av1,av2,av3,av4,avFreq;
@@ -74,21 +87,36 @@ int main(int argc,char *argv[])
   double freq[128*26],scaleAA[128*26],scaleBB[128*26];
 
   int nScale=0;
-  float *scalFreq,*scalAA,*scalBB;
-  float sysGain_freq[4096],sysGain_p1[4096],sysGain_p2[4096],scalAA_val,scalBB_val;
+  double *scalFreq,*scalAA,*scalBB;
+  float *cal_p1,*cal_p2,*cal_freq;
+
+  double sysGain_freq[4096],sysGain_p1[4096],sysGain_p2[4096],scalAA_val,scalBB_val;
   double lastGood_p1=1e8,lastGood_p2=1e8;
   char scalFname[1024]="NULL";
   int  nScal=-1;
   int c_nchan;
-
+  int nc;
+  int nRF1,nRF2,nRF3;
+  double scA_rf1_val,scB_rf1_val;
+  double scA_rf2_val,scB_rf2_val;
+  double scA_rf3_val,scB_rf3_val;
+  double scA_rf1_x[4096],scA_rf1_y[4096];
+  double scB_rf1_x[4096],scB_rf1_y[4096];
+  double scA_rf2_x[4096],scA_rf2_y[4096];
+  double scB_rf2_x[4096],scB_rf2_y[4096];
+  double scA_rf3_x[4096],scA_rf3_y[4096];
+  double scB_rf3_x[4096],scB_rf3_y[4096];
+  double scA_rf1[3],scB_rf1[3]; // Parameters modelling the bands			  
+  double scA_rf2[3],scB_rf2[3];
+  double scA_rf3[3],scB_rf3[3];
   
   strcpy(oname,"sdhdf_modify_output.hdf");
 
   eop = (sdhdf_eopStruct *)malloc(sizeof(sdhdf_eopStruct)*MAX_EOP_LINES);
   
-  scalFreq = (float *)malloc(sizeof(float)*3328);
-  scalAA = (float *)malloc(sizeof(float)*3328);
-  scalBB = (float *)malloc(sizeof(float)*3328);
+  scalFreq = (double *)malloc(sizeof(double)*3330);
+  scalAA = (double *)malloc(sizeof(double)*3330);
+  scalBB = (double *)malloc(sizeof(double)*3330);
 
 
   
@@ -111,6 +139,8 @@ int main(int argc,char *argv[])
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
       else if (strcmp(argv[i],"-scal")==0)
 	strcpy(scalFname,argv[++i]);
+      else if (strcmp(argv[i],"-interp")==0) // 1 = linear, 2 = cubic spline
+	sscanf(argv[++i],"%d",&interp);
       else if (strcmp(argv[i],"-regrid")==0)
 	regrid=1;
       else if (strcmp(argv[i],"-T")==0)
@@ -167,13 +197,19 @@ int main(int argc,char *argv[])
 	      FILE *fin;
 	      
 	      nScal=0;
-	      fin = fopen(scalFname,"r");
+	      if ((fin = fopen(scalFname,"r"))==NULL)
+		{
+		  printf("Unable to open file >%s<\n",scalFname);
+		  exit(1); // Should close files before exiting ::: FIX ME
+		}
+	      printf("Loading %s\n",scalFname);
 	      while (!feof(fin))
 		{
-		  if (fscanf(fin,"%f %f %f",&scalFreq[nScal],&scalAA[nScal],&scalBB[nScal])==3)
+		  if (fscanf(fin,"%lf %lf %lf",&scalFreq[nScal],&scalAA[nScal],&scalBB[nScal])==3)
 		    nScal++;
 		}
 	      fclose(fin);
+	      printf("Complete loading %s\n",scalFname);
 	    }
 	  
 
@@ -206,6 +242,134 @@ int main(int argc,char *argv[])
 		  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
 
+		  // Do we need to extract the calibrator information?
+		  if (nScal > 0)
+		    {
+		      int ci,cj,ck;
+		      double onP1,offP1,onP2,offP2;
+		      double freq;
+		      
+		      printf("Calibrating\n");
+		      // Could calibrate dump by dump, or average the entire data file
+		      // FOR NOW **** just averaging all the calibration information in the file
+		      cal_p1 = (float *)malloc(sizeof(float)*128*26); // Should set properly
+		      cal_p2 = (float *)malloc(sizeof(float)*128*26);
+		      cal_freq = (float *)malloc(sizeof(float)*128*26);
+		      nc=0;
+
+		      nRF1=nRF2=nRF3=0;
+		      
+		      
+		      for (ci=0;ci<inFile->beam[b].nBand;ci++)
+			{
+			  sdhdf_loadBandData(inFile,b,ci,2);
+			  sdhdf_loadBandData(inFile,b,ci,3);
+			  
+			  
+			  c_nchan = inFile->beam[b].calBandHeader[ci].nchan;
+			  printf("Number of channels = %d\n",c_nchan);
+			  for (cj=0;cj<c_nchan;cj++)
+			    {
+			      onP1=offP1=onP2=offP2=0.0;
+			      //			      printf("ndump = %d\n",inFile->beam[b].calBandHeader[ii].ndump);
+			      for (ck=0;ck<inFile->beam[b].calBandHeader[ci].ndump;ck++)
+				{
+				  onP1  += inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan];
+				  offP1 += inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan];
+				  onP2  += inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan];
+				  offP2 += inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan];
+				}
+			      // Note: summing, not averaging above ***
+			      //
+			      freq = cal_freq[nc] = inFile->beam[b].bandData[ci].cal_on_data.freq[cj];
+			      cal_p1[nc] = (onP1-offP1);  
+			      cal_p2[nc] = (onP2-offP2);
+			      //			      printf("freq = %g\n",freq);
+
+			      if ((freq > 814 && freq < 818) ||
+				  (freq > 994 && freq < 998) ||
+				  (freq > 1068 && freq < 1073) ||
+				  (freq > 1194 && freq < 1198) ||
+				  (freq > 1295 && freq < 1305))
+				{
+				  scA_rf1_x[nRF1] = scB_rf1_x[nRF1] = log10(freq);
+				  scA_rf1_y[nRF1] = log10(cal_p1[nc]);
+				  scB_rf1_y[nRF1] = log10(cal_p2[nc]);
+				  nRF1++;
+				  //				  scA_rf1+=cal_p1[nc]; scB_rf1+=cal_p2[nc]; nRF1++;
+				}
+			      if ((freq > 1309 && freq < 1400) ||
+				  (freq > 1444 && freq < 1454) ||
+				  (freq > 1510 && freq < 1525) ||
+				  (freq > 1635 && freq < 1660) ||
+				  (freq > 1770 && freq < 1785) ||
+				  (freq > 1830 && freq < 1840) ||
+				  (freq > 1930 && freq < 1960) ||
+				  (freq > 2020 && freq < 2040) ||
+				  (freq > 2060 && freq < 2070) ||
+				  (freq > 2175 && freq < 2195))
+				{
+				  scA_rf2_x[nRF2] = scB_rf2_x[nRF2] = log10(freq);
+				  scA_rf2_y[nRF2] = log10(cal_p1[nc]);
+				  scB_rf2_y[nRF2] = log10(cal_p2[nc]);
+				  nRF2++;
+				  
+				  //				  scA_rf2+=cal_p1[nc]; scB_rf2+=cal_p2[nc]; nRF2++;
+				}
+			      if ((freq > 2520 && freq < 2550) ||
+				  (freq > 2654 && freq < 2660) ||
+				  (freq > 2710 && freq < 2730) ||
+				  (freq > 2780 && freq < 2860) ||
+				  (freq > 2900 && freq < 2980) ||
+				  (freq > 3030 && freq < 3060) ||
+				  (freq > 3080 && freq < 3120) ||
+				  (freq > 3180 && freq < 3240) ||
+				  (freq > 3290 && freq < 3320) ||
+				  (freq > 3340 && freq < 3370) ||
+				  (freq > 3415 && freq < 3435) ||
+				  (freq > 3485 && freq < 3495) ||
+				  (freq > 3590 && freq < 3605) ||
+				  (freq > 3680 && freq < 3690) ||
+				  (freq > 3826 && freq < 3829) ||
+				  (freq > 3860 && freq < 3880) ||
+				  (freq > 4010 && freq < 4015))
+				{
+				  scA_rf3_x[nRF3] = scB_rf3_x[nRF3] = log10(freq);
+				  scA_rf3_y[nRF3] = log10(cal_p1[nc]);
+				  scB_rf3_y[nRF3] = log10(cal_p2[nc]);
+				  nRF3++;
+				  //  scA_rf3+=cal_p1[nc]; scB_rf3+=cal_p2[nc]; nRF3++;
+				}
+			      
+			      
+			      nc++;
+			    }
+			}
+		      // Fit straight lines to the cal data
+		      TKleastSquares_svd_noErr(scA_rf1_x,scA_rf1_y,nRF1,scA_rf1,3,TKfitPoly);
+		      TKleastSquares_svd_noErr(scB_rf1_x,scB_rf1_y,nRF1,scB_rf1,3,TKfitPoly);
+		      
+		      TKleastSquares_svd_noErr(scA_rf2_x,scA_rf2_y,nRF2,scA_rf2,3,TKfitPoly);
+		      TKleastSquares_svd_noErr(scB_rf2_x,scB_rf2_y,nRF2,scB_rf2,3,TKfitPoly);
+
+		      TKleastSquares_svd_noErr(scA_rf3_x,scA_rf3_y,nRF3,scA_rf3,3,TKfitPoly);
+		      TKleastSquares_svd_noErr(scB_rf3_x,scB_rf3_y,nRF3,scB_rf3,3,TKfitPoly);
+
+		      {
+			FILE *fout;
+			fout = fopen("calOutput.dat","w");
+			for (i=0;i<nRF3;i++)
+			  fprintf(fout,"calOutput: %g %g %g %g %g %g %g %g\n",scA_rf3_x[i],scA_rf3_y[i],scB_rf3_x[i],scB_rf3_y[i],scA_rf3[0],scB_rf3[0],scA_rf3[1],scB_rf3[1]);
+			fclose(fout);
+		      }
+
+		      
+		      printf("Loaded cal %g %g %g %g %g %g %g %g %g %g %g %g %d %d %d\n",scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1],
+			     scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf3[0],scB_rf3[0],scA_rf3[1],scB_rf3[1],nRF1,nRF2,nRF3);
+
+		    }
+	       		
+		  
 		  // Copy the bands
 		  for (ii=0;ii<inFile->beam[b].nBand;ii++)
 		    {
@@ -253,33 +417,68 @@ int main(int argc,char *argv[])
 			{
 			  int cj,ck;
 			  double onP1,offP1,onP2,offP2;
+			  double freq;
+			  
 			  printf("Calibrating\n");
 			  // Could calibrate dump by dump, or average the entire data file
 			  // FOR NOW **** just averaging all the calibration information in the file
 			  sdhdf_loadBandData(inFile,b,ii,2);
-			  printf("Loaded cal 1\n");
+			  //			  printf("Loaded cal 1\n");
 			  sdhdf_loadBandData(inFile,b,ii,3);
-			  printf("Loaded cal 2\n");
-
+			  //			  printf("Loaded cal 2\n");
+			  
 			  c_nchan = inFile->beam[b].calBandHeader[ii].nchan;
 			  printf("Number of channels = %d\n",c_nchan);
 			  for (cj=0;cj<c_nchan;cj++)
 			    {
-			      onP1=offP1=onP2=offP2=0.0;
+			      //			      onP1=offP1=onP2=offP2=0.0;
 			      //			      printf("ndump = %d\n",inFile->beam[b].calBandHeader[ii].ndump);
-			      for (ck=0;ck<inFile->beam[b].calBandHeader[ii].ndump;ck++)
-				{
-				  onP1  += inFile->beam[b].bandData[ii].cal_on_data.pol1[cj+ck*c_nchan];
-				  offP1 += inFile->beam[b].bandData[ii].cal_off_data.pol1[cj+ck*c_nchan];
-				  onP2  += inFile->beam[b].bandData[ii].cal_on_data.pol2[cj+ck*c_nchan];
-				  offP2 += inFile->beam[b].bandData[ii].cal_off_data.pol2[cj+ck*c_nchan];
-				}
+			      //			      for (ck=0;ck<inFile->beam[b].calBandHeader[ii].ndump;ck++)
+			      //				{
+			      //				  onP1  += inFile->beam[b].bandData[ii].cal_on_data.pol1[cj+ck*c_nchan];
+			      //				  offP1 += inFile->beam[b].bandData[ii].cal_off_data.pol1[cj+ck*c_nchan];
+			      //				  onP2  += inFile->beam[b].bandData[ii].cal_on_data.pol2[cj+ck*c_nchan];
+			      //				  offP2 += inFile->beam[b].bandData[ii].cal_off_data.pol2[cj+ck*c_nchan];
+			      //				}
 			      // Note: summing, not averaging above ***
 			      //
 			      sysGain_freq[cj] = inFile->beam[b].bandData[ii].cal_on_data.freq[cj];
 			      getScal(sysGain_freq[cj],scalFreq,scalAA,scalBB,nScal,&scalAA_val,&scalBB_val);
-			      sysGain_p1[cj] = (onP1-offP1)/scalAA_val;
-			      sysGain_p2[cj] = (onP2-offP2)/scalBB_val;
+			      //			      sysGain_p1[cj] = (onP1-offP1);  // NOTE /scalAA_val for true gain;
+			      //			      sysGain_p2[cj] = (onP2-offP2);
+
+						  
+			  
+			      // GEORGE TESTING
+			      //sysGain_p1[cj] = (onP1-offP1)/scalAA_val;
+			      //sysGain_p2[cj] = (onP2-offP2)/scalBB_val;
+			      //			      scA_rf1 /= nRF1;
+			      //			      scB_rf1 /= nRF1;
+
+			      scA_rf1_val = pow(10,scA_rf1[0] + scA_rf1[1]*log10(sysGain_freq[cj]) + scA_rf1[2]*pow(log10(sysGain_freq[cj]),2));
+			      scB_rf1_val = pow(10,scB_rf1[0] + scB_rf1[1]*log10(sysGain_freq[cj]) + scB_rf1[2]*pow(log10(sysGain_freq[cj]),2));
+			      scA_rf2_val = pow(10,scA_rf2[0] + scA_rf2[1]*log10(sysGain_freq[cj]) + scA_rf2[2]*pow(log10(sysGain_freq[cj]),2));
+			      scB_rf2_val = pow(10,scB_rf2[0] + scB_rf2[1]*log10(sysGain_freq[cj]) + scB_rf2[2]*pow(log10(sysGain_freq[cj]),2));
+			      scA_rf3_val = pow(10,scA_rf3[0] + scA_rf3[1]*log10(sysGain_freq[cj]) + scA_rf3[2]*pow(log10(sysGain_freq[cj]),2));
+			      scB_rf3_val = pow(10,scB_rf3[0] + scB_rf3[1]*log10(sysGain_freq[cj]) + scB_rf3[2]*pow(log10(sysGain_freq[cj]),2));
+			      
+			      if (sysGain_freq[cj] < 1344) // HARDCODE TO PARKES
+				{
+				  sysGain_p1[cj] = scA_rf1_val/scalAA_val;
+				  sysGain_p2[cj] = scB_rf1_val/scalBB_val;
+				}
+			      else if (sysGain_freq[cj] < 2368) // HARDCODE TO PARKES
+				{
+				  sysGain_p1[cj] = scA_rf2_val/scalAA_val;
+				  sysGain_p2[cj] = scB_rf2_val/scalBB_val;
+				}
+			      else if (sysGain_freq[cj] <= 4032) // HARDCODE TO PARKES
+				{
+				  sysGain_p1[cj] = scA_rf3_val/scalAA_val;
+				  sysGain_p2[cj] = scB_rf3_val/scalBB_val;
+				}
+			      
+			      /*			      
 			      if (sysGain_p1[cj] < 1e6) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
 				{sysGain_p1[cj] = lastGood_p1; printf("WARNING 1\n");}
 			      if (sysGain_p2[cj] < 1e6) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
@@ -290,10 +489,13 @@ int main(int argc,char *argv[])
 				{sysGain_p2[cj] = lastGood_p2; printf("WARNING 4\n");}
 			      lastGood_p1 = sysGain_p1[cj];
 			      lastGood_p2 = sysGain_p2[cj];
-			      printf("Gain: %.6f %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],onP1,offP1,onP2,offP2,scalAA_val,scalBB_val);
+			      */
+			      printf("Gain: %.6f %g %g %g %g %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],scalAA_val,scalBB_val,
+				     scA_rf1_val,scB_rf1_val, scA_rf2_val,scB_rf2_val,scA_rf3_val,scB_rf3_val,scA_rf1[0],scA_rf1[1]);
 			    }
 			}
-		      
+		    
+		
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
 		      if (tScrunch==1)
 			sdhdf_copySingleObsParams(inFile,b,ii,0,&outObsParams[0]);
@@ -307,14 +509,14 @@ int main(int argc,char *argv[])
 		      nsd = inFile->beam[b].bandHeader[ii].ndump;
 		      
 		      in_data = (float *)malloc(sizeof(float)*nchan*npol*inFile->beam[b].bandHeader[ii].ndump);
-		      in_freq = (float *)malloc(sizeof(float)*nchan);
+		      in_freq = (double *)malloc(sizeof(double)*nchan);
 		      out_freq = (float *)malloc(sizeof(float)*out_nchan);
 		      out_data = (float *)calloc(sizeof(float),out_nchan*out_npol*out_ndump);
 		      out_Tdata = (float *)calloc(sizeof(float),nchan*npol*out_ndump);
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      
 		      tav=0;
-		    		    
+		      
 		      sdhdf_loadBandData(inFile,b,ii,1);
 		      
 		      for (j=0;j<nchan;j++)
@@ -392,7 +594,7 @@ int main(int argc,char *argv[])
 					  out_Tdata[k+2*nchan] += inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; // /(float)nsd;
 					  out_Tdata[k+3*nchan] += inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; // /(float)nsd;  
 					}
-
+				      
 				    }
 				}
 			    }
@@ -400,21 +602,45 @@ int main(int argc,char *argv[])
 			  // GEORGE **** THIS SHOULD BE EARLIER AS YOU MAY NOT CHOOSE TO TIME SCRUNCH *****
 			  if (nScal > 0)
 			    {
-			      float gainVal1,gainVal2;
+			      double gainVal1,gainVal2;
+			      double *interpY1,*interpY2;
+			      
+			      if (interp==2) // Cubic spline
+				{
+				  interpY1 = (double *)malloc(sizeof(double)*nchan);
+				  interpY2 = (double *)malloc(sizeof(double)*nchan);
+				  printf("Setting up cubic spline\n");
+				  TKcmonot(c_nchan,sysGain_freq,sysGain_p1,yd1);
+				  TKcmonot(c_nchan,sysGain_freq,sysGain_p2,yd2);
+				  TKspline_interpolate(c_nchan,sysGain_freq,sysGain_p1,yd1,in_freq,interpY1,nchan);
+				  TKspline_interpolate(c_nchan,sysGain_freq,sysGain_p2,yd2,in_freq,interpY2,nchan);
+				  printf("Complete setting up cubic spline\n");
+				}
 			      for (k=0;k<nchan;k++)
 				{
 				  //
 				  // Note that this is using the getScal interpolation routine, but is getting sysGain instead
 				  //
-				  getScal(in_freq[k],sysGain_freq,sysGain_p1,sysGain_p2,c_nchan,&gainVal1,&gainVal2);
+				  if (interp==1)
+				    getScal(in_freq[k],sysGain_freq,sysGain_p1,sysGain_p2,c_nchan,&gainVal1,&gainVal2);
+				  else if (interp==2)
+				    {
+				      gainVal1 = interpY1[k];
+				      gainVal2 = interpY2[k];
+				    }
 				  printf("Scale factors: %.6f %g %g\n",in_freq[k],gainVal1,gainVal2);
 				  // Only scaling 2 polarisations *** <<<
 				  
 				  if (gainVal1 <= 0) gainVal1=1e9; // SHOULD SET MORE SENSIBLY ****
 				  if (gainVal2 <= 0) gainVal2=1e9; // SHOULD SET MORE SENSIBLY ****
-
+				  
 				  out_Tdata[k]         *= nchan/c_nchan/gainVal1/nsum; // Note scaling by number of spectral dumps as each one now should be in Jy
 				  out_Tdata[k+nchan]   *= nchan/c_nchan/gainVal2/nsum;				  
+				}
+			      if (interp==2)
+				{
+				  free(interpY1);
+				  free(interpY2);
 				}
 			    }
 			}
@@ -615,7 +841,7 @@ int main(int argc,char *argv[])
 				      for (k=0;k<out_nchan;k++)
 					out_data[j*out_nchan*out_npol + kk*out_nchan + k] = 0.0;
 				    }
-
+				  
 				  // Should do a proper gridding or a memcpy here
 				  for (k=0;k<out_nchan;k++)
 				    {
@@ -657,32 +883,32 @@ int main(int argc,char *argv[])
 		      inBandParams[ii].ndump  = out_ndump;
 		      if (tScrunch==1)
 			inBandParams[ii].dtime = tav;
-
+		      
 		      free(in_data);
 		      free(out_data);
 		      free(out_Tdata);
 		      free(out_Fdata);
 		      free(in_freq);
 		      free(out_freq);
-
+		      
 		      // NOW NEED TO UPDATE META-DATA
 		      // Subintegration change
 		      //  band_header
 		      //  obs_params
 		      // Polarisation change
 		      //  
-
+		      
 		    }
 		  sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
 		  free(inBandParams);
 		}
 	      // Copy other primary tables
-	    
+	      
 	      // FIX ME -- NEED TO INCREASE SIZE OF HISTORY ARRAY
 	      //	      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","sdhdfProc software to modify a file",args);	     
 	      //	      inFile->nHistory++;
 	      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
-	    
+	      
 	      sdhdf_copyRemainder(inFile,outFile,0);
 	      
 	      /*
@@ -692,8 +918,8 @@ int main(int argc,char *argv[])
 		sdhdf_copyEntireGroup("cal_obs_params",inFile,outFile);
 	      */
 	      // SHOULD BE UPDATING THE HEADER INFORMATION
-
-
+	      
+	      
 	      // FIX ME
 	      /*
 		sdhdf_writeSpectralDumpHeader(outFile,inFile->spectralDumpHeader,out_ndump);
@@ -705,15 +931,22 @@ int main(int argc,char *argv[])
 	      printf("Finished file %s %s\n",fname,oname);
 	    }
 	}
-    }
+    }        
   free(scalFreq); free(scalAA); free(scalBB);
   free(inFile);
   free(outFile);
   free(eop);
+  if (nScal > 0)
+    {
+      free(cal_p1);
+      free(cal_p2);
+      free(cal_freq);
+    }
+  
 }
 
 
-double linearInterpolate(double *freq, double *scaleAA,float in_freq,int kk,int nScale)
+double linearInterpolate(double *freq, double *scaleAA,double in_freq,int kk,int nScale)
 {
   double y1,y2;
   double x1,x2;
@@ -738,7 +971,7 @@ double linearInterpolate(double *freq, double *scaleAA,float in_freq,int kk,int 
 }
 
 
-void getScal(float sysGain_freq,float *scalFreq,float *scalAA,float *scalBB,int nScal,float *scalAA_val,float *scalBB_val)
+void getScal(double sysGain_freq,double *scalFreq,double *scalAA,double *scalBB,int nScal,double *scalAA_val,double *scalBB_val)
 {
   int i;
   double m,c,y1,y2,x1,x2;
@@ -784,4 +1017,186 @@ void getScal(float sysGain_freq,float *scalFreq,float *scalAA,float *scalBB,int 
       m = (y2-y1)/(x2-x1); c = y1-m*x1;
       *scalBB_val = m*sysGain_freq+c;
     }
+}
+
+/* ************************************************************** *
+ * Spline routines                                                *
+ * ************************************************************** */
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
+
+
+void TKcmonot (int n, double x[], double y[], double yd[][4])
+/*****************************************************************************
+compute cubic interpolation coefficients via the Fritsch-Carlson method,
+which preserves monotonicity
+******************************************************************************
+Input:
+n		number of samples
+x  		array[n] of monotonically increasing or decreasing abscissae
+y		array[n] of ordinates
+
+Output:
+yd		array[n][4] of cubic interpolation coefficients (see notes)
+******************************************************************************
+Notes:
+The computed cubic spline coefficients are as follows:
+yd[i][0] = y(x[i])    (the value of y at x = x[i])
+yd[i][1] = y'(x[i])   (the 1st derivative of y at x = x[i])
+yd[i][2] = y''(x[i])  (the 2nd derivative of y at x = x[i])
+yd[i][3] = y'''(x[i]) (the 3rd derivative of y at x = x[i])
+
+To evaluate y(x) for x between x[i] and x[i+1] and h = x-x[i],
+use the computed coefficients as follows:
+y(x) = yd[i][0]+h*(yd[i][1]+h*(yd[i][2]/2.0+h*yd[i][3]/6.0))
+
+The Fritsch-Carlson method yields continuous 1st derivatives, but 2nd
+and 3rd derivatives are discontinuous.  The method will yield a
+monotonic interpolant for monotonic data.  1st derivatives are set
+to zero wherever first divided differences change sign.
+
+For more information, see Fritsch, F. N., and Carlson, R. E., 1980,
+Monotone piecewise cubic interpolation:  SIAM J. Numer. Anal., v. 17,
+n. 2, p. 238-246.
+
+Also, see the book by Kahaner, D., Moler, C., and Nash, S., 1989,
+Numerical Methods and Software, Prentice Hall.  This function was
+derived from SUBROUTINE PCHEZ contained on the diskette that comes
+with the book.
+******************************************************************************
+Author:  Dave Hale, Colorado School of Mines, 09/30/89
+Modified:  Dave Hale, Colorado School of Mines, 02/28/91
+	changed to work for n=1.
+Modified:  Dave Hale, Colorado School of Mines, 08/04/91
+	fixed bug in computation of left end derivative
+*****************************************************************************/
+{
+  int i;
+  double h1,h2,del1,del2,dmin,dmax,hsum,hsum3,w1,w2,drat1,drat2,divdf3;
+  
+  /* copy ordinates into output array */
+  for (i=0; i<n; i++)
+    yd[i][0] = y[i];
+  
+  /* if n=1, then use constant interpolation */
+  if (n==1) {
+    yd[0][1] = 0.0;
+    yd[0][2] = 0.0;
+    yd[0][3] = 0.0;
+    return;
+    
+    /* else, if n=2, then use linear interpolation */
+  } else if (n==2) {
+    yd[0][1] = yd[1][1] = (y[1]-y[0])/(x[1]-x[0]);
+    yd[0][2] = yd[1][2] = 0.0;
+    yd[0][3] = yd[1][3] = 0.0;
+    return;
+  }
+  
+  /* set left end derivative via shape-preserving 3-point formula */
+  h1 = x[1]-x[0];
+  h2 = x[2]-x[1];
+  hsum = h1+h2;
+  del1 = (y[1]-y[0])/h1;
+  del2 = (y[2]-y[1])/h2;
+  w1 = (h1+hsum)/hsum;
+  w2 = -h1/hsum;
+  yd[0][1] = w1*del1+w2*del2;
+  if (yd[0][1]*del1<=0.0)
+    yd[0][1] = 0.0;
+  else if (del1*del2<0.0) {
+    dmax = 3.0*del1;
+    if (ABS(yd[0][1])>ABS(dmax)) yd[0][1] = dmax;
+  }
+  
+  /* loop over interior points */
+  for (i=1; i<n-1; i++) {
+    
+    /* compute intervals and slopes */
+    h1 = x[i]-x[i-1];
+    h2 = x[i+1]-x[i];
+    hsum = h1+h2;
+    del1 = (y[i]-y[i-1])/h1;
+    del2 = (y[i+1]-y[i])/h2;
+    
+    /* if not strictly monotonic, zero derivative */
+    if (del1*del2<=0.0) {
+      yd[i][1] = 0.0;
+      
+      /*
+       * else, if strictly monotonic, use Butland's formula:
+       *      3*(h1+h2)*del1*del2
+       * -------------------------------
+       * ((2*h1+h2)*del1+(h1+2*h2)*del2)
+       * computed as follows to avoid roundoff error
+       */
+    } else {
+      hsum3 = hsum+hsum+hsum;
+      w1 = (hsum+h1)/hsum3;
+      w2 = (hsum+h2)/hsum3;
+      dmin = MIN(ABS(del1),ABS(del2));
+      dmax = MAX(ABS(del1),ABS(del2));
+      drat1 = del1/dmax;
+      drat2 = del2/dmax;
+      yd[i][1] = dmin/(w1*drat1+w2*drat2);
+    }
+  }
+  
+  /* set right end derivative via shape-preserving 3-point formula */
+  w1 = -h2/hsum;
+  w2 = (h2+hsum)/hsum;
+  yd[n-1][1] = w1*del1+w2*del2;
+  if (yd[n-1][1]*del2<=0.0)
+    yd[n-1][1] = 0.0;
+  else if (del1*del2<0.0) {
+    dmax = 3.0*del2;
+    if (ABS(yd[n-1][1])>ABS(dmax)) yd[n-1][1] = dmax;
+  }
+  
+  /* compute 2nd and 3rd derivatives of cubic polynomials */
+  for (i=0; i<n-1; i++) {
+    h2 = x[i+1]-x[i];
+    del2 = (y[i+1]-y[i])/h2;
+    divdf3 = yd[i][1]+yd[i+1][1]-2.0*del2;
+    yd[i][2] = 2.0*(del2-yd[i][1]-divdf3)/h2;
+    yd[i][3] = (divdf3/h2)*(6.0/h2);
+  }
+  yd[n-1][2] = yd[n-2][2]+(x[n-1]-x[n-2])*yd[n-2][3];
+  yd[n-1][3] = yd[n-2][3];
+}
+
+// Interpolate the spline fit on to a given set of x-values
+void TKspline_interpolate(int n,double *x,double *y,double yd[][4],double *interpX,
+			  double *interpY,int nInterp)
+{
+  double h;
+  int jpos;
+  int i,j;
+
+  //To evaluate y(x) for x between x[i] and x[i+1] and h = x-x[i],
+  //use the computed coefficients as follows:
+  //y(x) = yd[i][0]+h*(yd[i][1]+h*(yd[i][2]/2.0+h*yd[i][3]/6.0))
+  
+  // Assume the data are sorted so x[i] < x[i+1]
+  for (i=0;i<nInterp;i++)
+    {
+      jpos=-1;
+      for (j=0;j<n-1;j++)
+	{
+	  if (interpX[i]>=x[j] && interpX[i]<x[j+1])
+	    {
+	      jpos=j;
+	      break;
+	    }
+	}
+      if (jpos!=-1)
+	{
+	  h = interpX[i]-x[jpos];
+	  interpY[i] = yd[jpos][0]+h*(yd[jpos][1]+h*(yd[jpos][2]/2.0+h*yd[jpos][3]/6.0));
+	}
+      else
+	interpY[i] = 0.0;
+    }
+
 }

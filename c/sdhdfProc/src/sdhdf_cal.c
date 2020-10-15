@@ -105,9 +105,10 @@ int main(int argc,char *argv[])
 
   ndump = inFile->beam[beam].calBandHeader[0].ndump;
   printf("ndumps = %d\n",ndump);
-
   for (i=0;i<inFile->beam[beam].nBand;i++)
     {
+      printf("nchan = %d\n",inFile->beam[beam].calBandHeader[i].nchan);
+
       nchan = inFile->beam[beam].calBandHeader[i].nchan;
       totChan+=nchan;
       sdhdf_loadBandData(inFile,beam,i,2);
@@ -138,8 +139,11 @@ int main(int argc,char *argv[])
 		  onP4  = inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
 		  offP4 = inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
 
-		  s1 = (onP1-offP1)/scalAA[np];
-		  s2 = (onP2-offP2)/scalBB[np];
+		  //
+		  // Should find the closest SCAL measurement to the frequency
+		  //
+		  s1    = (onP1-offP1)/scalAA[np];
+		  s2    = (onP2-offP2)/scalBB[np];
 		  printf("SysGain %.6f %g %g\n",freq,s1,s2);
 		  np++;
 		}
@@ -446,6 +450,8 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 
     if (plot==3)      cpglab("Frequency (MHz)","OFF/(ON-OFF)",title);
     else if (plot==4) cpglab("Frequency (MHz)","S_sys (Jy)",title);
+    else if (plot==5) cpglab("Frequency (MHz)","Diff. gain",title);
+    else if (plot==6) cpglab("Frequency (MHz)","Diff. phase",title);
     else              cpglab("Frequency (MHz)","",title);
 
     cpgsci(1); cpgline(np,fx,fy1);
