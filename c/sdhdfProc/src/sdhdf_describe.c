@@ -133,22 +133,22 @@ int main(int argc,char *argv[])
 	  sdhdf_loadMetaData(inFile);
 	  if (atoa==1)
 	    {
-	      maxTime=0;  
+	      maxTime=0;
+	      //
+	      // Note here that we are hardcoding to beam 0
+	      //
 	      for (j=0;j<inFile->beam[0].nBand;j++)
 		{
 		  intTime = inFile->beam[0].bandHeader[j].dtime*inFile->beam[0].bandHeader[j].ndump;
 		  if (maxTime < intTime)
 		    maxTime = intTime;
 		}
-
 	      printf("%s %s %s %s %s %s %8.3f\n",inFile->fname,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->beam[0].bandData[0].astro_obsHeader[0].raStr,inFile->beam[0].bandData[0].astro_obsHeader[0].decStr,inFile->primary[0].utc0,maxTime);
-	      for (j=0;j<inFile->beam[beam].nBand;j++)
+
+              for (j=0;j<inFile->beam[0].nBand;j++)
 		{
-		  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
-		  printf("%d %-10.10s %d %d %d %d %d %g\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].nchan,(int)inFile->beam[beam].bandHeader[j].f0,(int)inFile->beam[beam].bandHeader[j].f1,(int)inFile->beam[beam].bandHeader[j].fc,(int)(inFile->beam[beam].bandHeader[j].f1-inFile->beam[beam].bandHeader[j].f0),inFile->beam[beam].bandHeader[j].dtime);
-
-
-		  //%8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime);
+		  intTime = inFile->beam[0].bandHeader[j].dtime*inFile->beam[0].bandHeader[j].ndump;
+		  printf("%d %-10.10s %d %d %d %d %d %g\n",j,inFile->beam[0].bandHeader[j].label,inFile->beam[0].bandHeader[j].nchan,(int)inFile->beam[0].bandHeader[j].f0,(int)inFile->beam[0].bandHeader[j].f1,(int)inFile->beam[0].bandHeader[j].fc,(int)(inFile->beam[0].bandHeader[j].f1-inFile->beam[0].bandHeader[j].f0),inFile->beam[0].bandHeader[j].dtime);
 		}
 
 	    }
