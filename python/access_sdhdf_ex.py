@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import h5py
 from astropy.table import QTable
 import numpy as np
