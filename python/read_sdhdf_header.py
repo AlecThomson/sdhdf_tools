@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import h5py
 import argparse
 import pandas as pd
