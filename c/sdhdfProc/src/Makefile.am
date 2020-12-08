@@ -1,4 +1,4 @@
-LIBS = -lhdf5 -lerfa -lcalceph
+LIBS = -lcfitsio -lhdf5 -lerfa -lcalceph
 
 bin_PROGRAMS = sdhdf_describe \
   sdhdf_extractBand \
@@ -7,8 +7,10 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_onoff \
   sdhdf_sum \
   sdhdf_modify \
+  sdhdf_join \
   sdhdf_identify \
   sdhdf_cal \
+  sdhdf_convertFromFITS \
   sdhdf_listLines
 
 COMMON_SRCS = sdhdfProc_maths.c \
@@ -40,7 +42,13 @@ sdhdf_sum_SOURCES = sdhdf_sum.c \
 sdhdf_modify_SOURCES = sdhdf_modify.c \
   $(COMMON_SRCS)
 
+sdhdf_join_SOURCES = sdhdf_join.c \
+  $(COMMON_SRCS)
+
 sdhdf_identify_SOURCES = sdhdf_identify.c \
+  $(COMMON_SRCS)
+
+sdhdf_convertFromFITS_SOURCES = sdhdf_convertFromFITS.c \
   $(COMMON_SRCS)
 
 sdhdf_cal_SOURCES = sdhdf_cal.c \
@@ -50,7 +58,8 @@ sdhdf_listLines_SOURCES = sdhdf_listLines.c \
   $(COMMON_SRCS)
 
 LDADD = $(LIBS)
-  
+
+
 if HAVE_PGPLOT
 
 bin_PROGRAMS += sdhdf_primaryFluxCal \
@@ -59,6 +68,7 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_calProc \
   sdhdf_quicklook \
   sdhdf_processBWS \
+  sdhdf_statistics \
   sdhdf_pointing \
   sdhdf_autoFlag \
   sdhdf_rfiTime \
@@ -107,6 +117,9 @@ sdhdf_quicklook_SOURCES = sdhdf_quicklook.c \
   $(COMMON_SRCS)
 
 sdhdf_processBWS_SOURCES = sdhdf_processBWS.c \
+  $(COMMON_SRCS)
+
+sdhdf_statistics_SOURCES = sdhdf_statistics.c \
   $(COMMON_SRCS)
 
 sdhdf_plotWide_SOURCES = sdhdf_plotWide.c \
