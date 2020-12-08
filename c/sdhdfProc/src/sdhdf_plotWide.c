@@ -181,7 +181,7 @@ int main(int argc,char *argv[])
 	      for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 		{
 		  px[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
-		  pflag[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.flag[k];
+		  pflag[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.dataWeights[k];
 		}
 	      writepos+=inFile->beam[ibeam].bandHeader[j].nchan;
 	    }
@@ -537,7 +537,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
 	  if (px[i] >= f1 && px[i] < f2)
 	    {
 	      flagit=0;
-	      if (pflag[i]==1)
+	      if (pflag[i]==0)
 		flagit=1;
 	      else
 		{
@@ -588,7 +588,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
   for (i=0;i<nVals;i++)
     {
       flagit=0;
-      if (pflag[i]==1)
+      if (pflag[i]==0)
 	flagit=1;
       else	
 	{

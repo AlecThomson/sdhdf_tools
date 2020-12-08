@@ -25,6 +25,7 @@
 #define SOFTWARE_VER "v0.1"
 #define MAX_STRLEN    512
 #define MAX_FILES     8192         // Maximum number of files to be processed in batch processing
+#define MAX_CHAN_SCAL 3328         // Maximum number of channels in the SCAL measurements
 
 #define SPEED_LIGHT   299792458.0  // Speed of light
 #define BOLTZMANN 1.38064852e-23   // Boltzmann constant
@@ -77,6 +78,8 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile);
 // Data 
 void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type);
 void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type);
+void sdhdf_loadBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int type,float *arr);
+void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float *arr);
 void sdhdf_allocateBandData(sdhdf_spectralDumpsStruct *spec,int nchan,int ndump,int npol);
 void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int ndump,int npol);
 
@@ -127,13 +130,20 @@ void sdhdf_addHistory(sdhdf_historyStruct *history,int n,char *procName,char *de
 
 // Output information
 void sdhdf_copyEntireGroup(char *groupLabel,sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile); 
+void sdhdf_copyEntireGroupDifferentLabels(char *bandLabelIn,sdhdf_fileStruct *inFile,char *bandLabelOut,sdhdf_fileStruct *outFile);
+void sdhdf_setMetadataDefaults(sdhdf_primaryHeaderStruct *primaryHeader,sdhdf_beamHeaderStruct *beamHeader,
+			       sdhdf_bandHeaderStruct *bandHeader,sdhdf_softwareVersionsStruct *softwareVersions,sdhdf_historyStruct *history,
+			       int nbeam,int nband);
 void sdhdf_writeHistory(sdhdf_fileStruct *outFile,sdhdf_historyStruct *outParams,int n);
+void sdhdf_writeSoftwareVersions(sdhdf_fileStruct *outFile,sdhdf_softwareVersionsStruct *outParams);
+void sdhdf_writePrimaryHeader(sdhdf_fileStruct *outFile,sdhdf_primaryHeaderStruct *primaryHeader);
 void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,int ibeam,int outBands,int type);
 void sdhdf_writeBeamHeader(sdhdf_fileStruct *outFile,sdhdf_beamHeaderStruct *beamHeader,int nBeams);
 void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,float *freq,long nchan,long npol,long nsub,int type);
 void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int type);
-void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump);
+void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type);
 void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,int *flag,int nchan,char *bandLabel);
+void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float *flag,int nchan,int ndump,char *bandLabel);
 void sdhdf_writeCalProc(sdhdf_fileStruct *outFile,int ibeam,int iband,char *band_label,char *cal_label,float *vals,int nchan,int npol,int ndumps);
 
 // HDF5 reading functions
@@ -157,10 +167,24 @@ void sdhdf_interpolate_EOP(double mjd, double *xp, double *yp, double *dut1, dou
 void sdhdf_ITRF_to_GRS80(double x,double y,double z,double *long_grs80,double *lat_grs80,double *height_grs80);
 
 // Mathematics
+//int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
+
+void sdhdf_setIdentity_4x4(float mat[4][4]);
+void sdhdf_display_vec4(float *vec);
+void sdhdf_setFeed(float mf[4][4],float gamma);
+void sdhdf_multMat_vec_replace(float mat[4][4],float *vec);
+void sdhdf_copy_mat4(float in[4][4],float out[4][4]);
+void sdhdf_mult4x4_replace(float src1[4][4], float src2[4][4]);
+void sdhdf_copy_vec4(float *in,float *out);
+void sdhdf_setGainPhase(float ma[4][4],float diffGain,float diffPhase);
+void sdhdf_setGain2Phase(float ma[4][4],float diffGain,float diffPhase);
+void sdhdf_setParallacticAngle(float msky[4][4],float pa);
+
 int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
-static inline void sdhdf_mult4x4(float src1[4][4], float src2[4][4], float dest[4][4]);
+void sdhdf_mult4x4(float src1[4][4], float src2[4][4], float dest[4][4]);
 double sdhdf_dotproduct(double *v1,double *v2);
 void sdhdf_para(double dxd,double ddc,double q,double *axd,double *eld);
+void displayMatrix_4x4(float matrix[4][4]);
 
 // Function definitions (OLD)
 

@@ -84,7 +84,7 @@ int main(int argc,char *argv[])
   char scaleFile[1024]="NULL";
   int ignoreSD[MAX_IGNORE_SDUMP];
   int nIgnoreSD=0;
-  double freq[128*26],scaleAA[128*26],scaleBB[128*26];
+  double freq[MAX_CHAN_SCAL],scaleAA[MAX_CHAN_SCAL],scaleBB[MAX_CHAN_SCAL];
 
   int nScale=0;
   double *scalFreq,*scalAA,*scalBB;
@@ -95,8 +95,9 @@ int main(int argc,char *argv[])
   char scalFname[1024]="NULL";
   int  nScal=-1;
   int c_nchan;
-  int nc;
+  int nc,nc2;
   int nRF1,nRF2,nRF3;
+  int calBin = 32;  // *** MUST SET PROPERLY **
   double scA_rf1_val,scB_rf1_val;
   double scA_rf2_val,scB_rf2_val;
   double scA_rf3_val,scB_rf3_val;
@@ -109,16 +110,46 @@ int main(int argc,char *argv[])
   double scA_rf1[3],scB_rf1[3]; // Parameters modelling the bands			  
   double scA_rf2[3],scB_rf2[3];
   double scA_rf3[3],scB_rf3[3];
+
+  double diffGain2[4096],diffPhase[4096],g_e[4096];
+  double scale1[4096],scale2[4096],scale3[4096],scale4[4096];
+  double useScale1,useScale2,useScale3,useScale4;
+  double t_phase,t_len;
+  double calAA,calBB,calReAB,calImAB;
+  double usePara=0;
+  int    setPara=0;
+  int    tcal=0;
+  
+  double divideCal=1;
+  double divideAstro=1;
+
+  double cc_a=0,cc_b=0,cc_c=0,cc_d=0; // Cross coupling parameters
+  double cc_phi1,cc_phi2;
+  double cc_eps1,cc_eps2;
+  int muellerI = 0;
+  int origNchan = -1;
+  double chbw;
+  
+  cc_eps1=cc_eps2=0;
+  
+  scA_rf1[0]=scA_rf1[1]=scA_rf1[2] = 0.0;
+  scB_rf1[0]=scB_rf1[1]=scB_rf1[2] = 0.0;
+  scA_rf2[0]=scA_rf2[1]=scA_rf2[2] = 0.0;
+  scB_rf2[0]=scB_rf2[1]=scB_rf2[2] = 0.0;
+  scA_rf3[0]=scA_rf3[1]=scA_rf3[2] = 0.0;
+  scB_rf3[0]=scB_rf3[1]=scB_rf3[2] = 0.0;
+
+  
+  int calFitN=1;
   
   strcpy(oname,"sdhdf_modify_output.hdf");
-
+  strcpy(extension,"modify");
+  
   eop = (sdhdf_eopStruct *)malloc(sizeof(sdhdf_eopStruct)*MAX_EOP_LINES);
   
-  scalFreq = (double *)malloc(sizeof(double)*3330);
-  scalAA = (double *)malloc(sizeof(double)*3330);
-  scalBB = (double *)malloc(sizeof(double)*3330);
-
-
+  scalFreq = (double *)malloc(sizeof(double)*MAX_CHAN_SCAL);
+  scalAA = (double *)malloc(sizeof(double)*MAX_CHAN_SCAL);
+  scalBB = (double *)malloc(sizeof(double)*MAX_CHAN_SCAL);
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -131,14 +162,40 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
-  
-  
+   
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-e")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
+      else if (strcmp(argv[i],"-origNchan")==0)
+	sscanf(argv[++i],"%d",&origNchan);
+      else if (strcmp(argv[i],"-divideCal")==0)
+	sscanf(argv[++i],"%lf",&divideCal);
+      else if (strcmp(argv[i],"-divideAstro")==0)
+	sscanf(argv[++i],"%lf",&divideAstro);
+      else if (strcmp(argv[i],"-calFitN")==0) // Currently 1, 2 or 3 (1 = default) for fitting to the ON-OFF cal values
+	  sscanf(argv[++i],"%d",&calFitN);
+      else if (strcmp(argv[i],"-calBin")==0)
+	sscanf(argv[++i],"%d",&calBin);
+      else if (strcmp(argv[i],"-muellerI")==0)
+	muellerI=1;
+      else if (strcasecmp(argv[i],"-cc_phi1")==0)
+	sscanf(argv[++i],"%lf",&cc_phi1);
+      else if (strcasecmp(argv[i],"-cc_phi2")==0)
+	sscanf(argv[++i],"%lf",&cc_phi2);
+      else if (strcasecmp(argv[i],"-cc_eps1")==0)
+	sscanf(argv[++i],"%lf",&cc_eps1);
+      else if (strcasecmp(argv[i],"-cc_eps2")==0)
+	sscanf(argv[++i],"%lf",&cc_eps2);
       else if (strcmp(argv[i],"-scal")==0)
-	strcpy(scalFname,argv[++i]);
+	{strcpy(scalFname,argv[++i]); tcal=0;}
+      else if (strcmp(argv[i],"-tcal")==0)
+	{strcpy(scalFname,argv[++i]); tcal=1;}
+      else if (strcmp(argv[i],"-para")==0)
+	{
+	  setPara=1;
+	  sscanf(argv[++i],"%lf",&usePara);
+	}
       else if (strcmp(argv[i],"-interp")==0) // 1 = linear, 2 = cubic spline
 	sscanf(argv[++i],"%d",&interp);
       else if (strcmp(argv[i],"-regrid")==0)
@@ -176,7 +233,7 @@ int main(int argc,char *argv[])
       else
 	{
 	  strcpy(fname,argv[i]);
-	  printf("Here with %s\n",fname);
+	  printf("Processing %s\n",fname);
 	  //	  strcpy(bname,basename(fname));
 	  //	  printf("Bname = %s\n",bname);
 	  if (strcmp(scaleFile,"NULL")!=0)
@@ -187,7 +244,15 @@ int main(int argc,char *argv[])
 	      while (!feof(fScale))
 		{
 		  if (fscanf(fScale,"%lf %lf %lf",&freq[nScale],&scaleAA[nScale],&scaleBB[nScale])==3)
-		    nScale++;
+		    {
+		      nScale++;
+		      if (nScale == MAX_CHAN_SCAL+1)
+			{
+			  printf("ERROR: Must increase MAX_CHAN_SCAL\n");
+			  fclose(fScale);
+			  exit(1); // Should exit more gracefully
+			}
+		    }
 		}
 	      fclose(fScale);
 	    }
@@ -206,7 +271,21 @@ int main(int argc,char *argv[])
 	      while (!feof(fin))
 		{
 		  if (fscanf(fin,"%lf %lf %lf",&scalFreq[nScal],&scalAA[nScal],&scalBB[nScal])==3)
-		    nScal++;
+		    {
+		      if (tcal==1)
+			{
+			  scalAA[nScal]/=2.0; // THIS IS BECAUSE OF A DIFFERENCE IN HOW TCAL AND SCAL ARE STORED
+			  scalBB[nScal]/=2.0;
+			}
+		      nScal++;
+		      if (nScal == MAX_CHAN_SCAL+1)
+			{
+			  printf("ERROR: Must increase MAX_CHAN_SCAL (currently set to %d)\n",MAX_CHAN_SCAL);
+			  fclose(fin);
+			  exit(1); // Should exit more gracefully
+			}
+
+		    }
 		}
 	      fclose(fin);
 	      printf("Complete loading %s\n",scalFname);
@@ -216,14 +295,10 @@ int main(int argc,char *argv[])
 	  sdhdf_initialiseFile(inFile);
 	  sdhdf_initialiseFile(outFile);
 
-	  printf("Opening in file\n");
 	  sdhdf_openFile(fname,inFile,1);
 	  //	  inFile->fileID  = H5Fopen(fname,H5F_ACC_RDONLY,H5P_DEFAULT);
-	  printf("Complete opening file with %d\n",inFile->fileID);
 	  sprintf(oname,"%s.%s",fname,extension);
-	  printf("Opening output file >%s<\n",oname);
 	  sdhdf_openFile(oname,outFile,3);
-	  printf("Complete open\n");
 	  if (inFile->fileID!=-1) // Did we successfully open the file?
 	    {
 	      sdhdf_loadMetaData(inFile);
@@ -238,7 +313,7 @@ int main(int argc,char *argv[])
 
 	      for (b=0; b<nBeam; b++)
 		{
-		  
+		  printf("Processing beam %d/%d\n",b,nBeam-1);
 		  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
 
@@ -247,14 +322,20 @@ int main(int argc,char *argv[])
 		    {
 		      int ci,cj,ck;
 		      double onP1,offP1,onP2,offP2;
+		      double onOffP1,onOffP2;
 		      double freq;
+		      int totNchan_cal=0;
+
+		      for (ci=0;ci<inFile->beam[b].nBand;ci++)
+			  totNchan_cal+=inFile->beam[b].calBandHeader[ci].nchan;
+		      
 		      
 		      printf("Calibrating\n");
 		      // Could calibrate dump by dump, or average the entire data file
 		      // FOR NOW **** just averaging all the calibration information in the file
-		      cal_p1 = (float *)malloc(sizeof(float)*128*26); // Should set properly
-		      cal_p2 = (float *)malloc(sizeof(float)*128*26);
-		      cal_freq = (float *)malloc(sizeof(float)*128*26);
+		      cal_p1   = (float *)malloc(sizeof(float)*totNchan_cal);
+		      cal_p2   = (float *)malloc(sizeof(float)*totNchan_cal);
+		      cal_freq = (float *)malloc(sizeof(float)*totNchan_cal);
 		      nc=0;
 
 		      nRF1=nRF2=nRF3=0;
@@ -264,13 +345,12 @@ int main(int argc,char *argv[])
 			{
 			  sdhdf_loadBandData(inFile,b,ci,2);
 			  sdhdf_loadBandData(inFile,b,ci,3);
-			  
-			  
+			  			  
 			  c_nchan = inFile->beam[b].calBandHeader[ci].nchan;
 			  printf("Number of channels = %d\n",c_nchan);
 			  for (cj=0;cj<c_nchan;cj++)
 			    {
-			      onP1=offP1=onP2=offP2=0.0;
+			      onP1=offP1=onP2=offP2=onOffP1=onOffP2=0.0;
 			      //			      printf("ndump = %d\n",inFile->beam[b].calBandHeader[ii].ndump);
 			      for (ck=0;ck<inFile->beam[b].calBandHeader[ci].ndump;ck++)
 				{
@@ -278,12 +358,21 @@ int main(int argc,char *argv[])
 				  offP1 += inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan];
 				  onP2  += inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan];
 				  offP2 += inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan];
+				  onOffP1 += (inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan]);
+				  onOffP2 += (inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan]);
 				}
+			      //			      printf("cal: %.5f %g %g %g %g\n",inFile->beam[b].bandData[ci].cal_on_data.freq[cj],onP1,offP1,onP2,offP2);
+
 			      // Note: summing, not averaging above ***
 			      //
 			      freq = cal_freq[nc] = inFile->beam[b].bandData[ci].cal_on_data.freq[cj];
-			      cal_p1[nc] = (onP1-offP1);  
-			      cal_p2[nc] = (onP2-offP2);
+
+
+			      //			      cal_p1[nc] = (onP1-offP1);  
+			      //			      cal_p2[nc] = (onP2-offP2);
+			      cal_p1[nc] = onOffP1;
+			      cal_p2[nc] = onOffP2;
+			      
 			      //			      printf("freq = %g\n",freq);
 
 			      if ((freq > 814 && freq < 818) ||
@@ -292,10 +381,13 @@ int main(int argc,char *argv[])
 				  (freq > 1194 && freq < 1198) ||
 				  (freq > 1295 && freq < 1305))
 				{
-				  scA_rf1_x[nRF1] = scB_rf1_x[nRF1] = log10(freq);
-				  scA_rf1_y[nRF1] = log10(cal_p1[nc]);
-				  scB_rf1_y[nRF1] = log10(cal_p2[nc]);
-				  nRF1++;
+				  if (cal_p1[nc] > 0 && cal_p2[nc] > 0)
+				    {
+				      scA_rf1_x[nRF1] = scB_rf1_x[nRF1] = log10(freq);
+				      scA_rf1_y[nRF1] = log10(cal_p1[nc]);
+				      scB_rf1_y[nRF1] = log10(cal_p2[nc]);
+				      nRF1++;
+				    }
 				  //				  scA_rf1+=cal_p1[nc]; scB_rf1+=cal_p2[nc]; nRF1++;
 				}
 			      if ((freq > 1309 && freq < 1400) ||
@@ -309,10 +401,13 @@ int main(int argc,char *argv[])
 				  (freq > 2060 && freq < 2070) ||
 				  (freq > 2175 && freq < 2195))
 				{
-				  scA_rf2_x[nRF2] = scB_rf2_x[nRF2] = log10(freq);
-				  scA_rf2_y[nRF2] = log10(cal_p1[nc]);
-				  scB_rf2_y[nRF2] = log10(cal_p2[nc]);
-				  nRF2++;
+				  if (cal_p1[nc] > 0 && cal_p2[nc] > 0)
+				    {
+				      scA_rf2_x[nRF2] = scB_rf2_x[nRF2] = log10(freq);
+				      scA_rf2_y[nRF2] = log10(cal_p1[nc]);
+				      scB_rf2_y[nRF2] = log10(cal_p2[nc]);
+				      nRF2++;
+				    }
 				  
 				  //				  scA_rf2+=cal_p1[nc]; scB_rf2+=cal_p2[nc]; nRF2++;
 				}
@@ -334,10 +429,13 @@ int main(int argc,char *argv[])
 				  (freq > 3860 && freq < 3880) ||
 				  (freq > 4010 && freq < 4015))
 				{
-				  scA_rf3_x[nRF3] = scB_rf3_x[nRF3] = log10(freq);
-				  scA_rf3_y[nRF3] = log10(cal_p1[nc]);
-				  scB_rf3_y[nRF3] = log10(cal_p2[nc]);
-				  nRF3++;
+				  if (cal_p1[nc] > 0 && cal_p2[nc] > 0)
+				    {
+				      scA_rf3_x[nRF3] = scB_rf3_x[nRF3] = log10(freq);
+				      scA_rf3_y[nRF3] = log10(cal_p1[nc]);
+				      scB_rf3_y[nRF3] = log10(cal_p2[nc]);
+				      nRF3++;
+				    }
 				  //  scA_rf3+=cal_p1[nc]; scB_rf3+=cal_p2[nc]; nRF3++;
 				}
 			      
@@ -346,33 +444,52 @@ int main(int argc,char *argv[])
 			    }
 			}
 		      // Fit straight lines to the cal data
-		      TKleastSquares_svd_noErr(scA_rf1_x,scA_rf1_y,nRF1,scA_rf1,3,TKfitPoly);
-		      TKleastSquares_svd_noErr(scB_rf1_x,scB_rf1_y,nRF1,scB_rf1,3,TKfitPoly);
+		      if (calFitN>0)
+			{
+			  TKleastSquares_svd_noErr(scA_rf1_x,scA_rf1_y,nRF1,scA_rf1,calFitN,TKfitPoly);
+			  TKleastSquares_svd_noErr(scB_rf1_x,scB_rf1_y,nRF1,scB_rf1,calFitN,TKfitPoly);
+			  
+			  TKleastSquares_svd_noErr(scA_rf2_x,scA_rf2_y,nRF2,scA_rf2,calFitN,TKfitPoly);
+			  TKleastSquares_svd_noErr(scB_rf2_x,scB_rf2_y,nRF2,scB_rf2,calFitN,TKfitPoly);
+			  
+			  TKleastSquares_svd_noErr(scA_rf3_x,scA_rf3_y,nRF3,scA_rf3,calFitN,TKfitPoly);
+			  TKleastSquares_svd_noErr(scB_rf3_x,scB_rf3_y,nRF3,scB_rf3,calFitN,TKfitPoly);
+			}
 		      
-		      TKleastSquares_svd_noErr(scA_rf2_x,scA_rf2_y,nRF2,scA_rf2,3,TKfitPoly);
-		      TKleastSquares_svd_noErr(scB_rf2_x,scB_rf2_y,nRF2,scB_rf2,3,TKfitPoly);
-
-		      TKleastSquares_svd_noErr(scA_rf3_x,scA_rf3_y,nRF3,scA_rf3,3,TKfitPoly);
-		      TKleastSquares_svd_noErr(scB_rf3_x,scB_rf3_y,nRF3,scB_rf3,3,TKfitPoly);
-
 		      {
 			FILE *fout;
-			fout = fopen("calOutput.dat","w");
-			for (i=0;i<nRF3;i++)
-			  fprintf(fout,"calOutput: %g %g %g %g %g %g %g %g\n",scA_rf3_x[i],scA_rf3_y[i],scB_rf3_x[i],scB_rf3_y[i],scA_rf3[0],scB_rf3[0],scA_rf3[1],scB_rf3[1]);
+			int i0;
+			fout = fopen("calOutput_rf1.dat","w");
+			for (i0=0;i0<nRF1;i0++)
+			  fprintf(fout,"calOutput: %g %g %g %g %g %g %g %g\n",scA_rf1_x[i0],scA_rf1_y[i0],scB_rf1_x[i0],scB_rf1_y[i0],scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1]);
+			fclose(fout);
+
+			fout = fopen("calOutput_rf2.dat","w");
+			for (i0=0;i0<nRF2;i0++)
+			  fprintf(fout,"calOutput: %.6f %.6f %.6f %.6f %.4f %.4f %.4f %.4f %.4f %.4f\n",scA_rf2_x[i0],scA_rf2_y[i0],scB_rf2_x[i0],scB_rf2_y[i0],scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf2[2],scB_rf2[2]);
+			fclose(fout);
+
+			
+			fout = fopen("calOutput_rf3.dat","w");
+			for (i0=0;i0<nRF3;i0++)
+			  fprintf(fout,"calOutput: %g %g %g %g %g %g %g %g\n",scA_rf3_x[i0],scA_rf3_y[i0],scB_rf3_x[i0],scB_rf3_y[i0],scA_rf3[0],scB_rf3[0],scA_rf3[1],scB_rf3[1]);
 			fclose(fout);
 		      }
-
 		      
-		      printf("Loaded cal %g %g %g %g %g %g %g %g %g %g %g %g %d %d %d\n",scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1],
-			     scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf3[0],scB_rf3[0],scA_rf3[1],scB_rf3[1],nRF1,nRF2,nRF3);
+		      
+		      printf("Loaded cal %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %d %d %d\n",scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1],scA_rf1[2],scB_rf1[2],
+			     scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf2[2],scB_rf2[2],scA_rf3[0],scB_rf3[0],scA_rf3[1],scA_rf3[2],scB_rf3[2],
+			     scB_rf3[1],nRF1,nRF2,nRF3);
+		      //			  exit(1);
 
 		    }
-	       		
+
 		  
 		  // Copy the bands
+		  nc2=0;
 		  for (ii=0;ii<inFile->beam[b].nBand;ii++)
 		    {
+		      printf(" ... Processing subband %d/%d\n",ii,inFile->beam[b].nBand-1);
 		      // If "timeScrunch" is set then need to
 		      // Replace the first spectral dump in the file with the scrunched information (note integration times
 		      //  in case one spectral dump is shorter than the other ones??)
@@ -416,7 +533,7 @@ int main(int argc,char *argv[])
 		      if (nScal > 0)
 			{
 			  int cj,ck;
-			  double onP1,offP1,onP2,offP2;
+			  double onP1,offP1,onP2,offP2,onP3,offP3,onP4,offP4;
 			  double freq;
 			  
 			  printf("Calibrating\n");
@@ -431,67 +548,97 @@ int main(int argc,char *argv[])
 			  printf("Number of channels = %d\n",c_nchan);
 			  for (cj=0;cj<c_nchan;cj++)
 			    {
-			      //			      onP1=offP1=onP2=offP2=0.0;
+			      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0.0;
 			      //			      printf("ndump = %d\n",inFile->beam[b].calBandHeader[ii].ndump);
-			      //			      for (ck=0;ck<inFile->beam[b].calBandHeader[ii].ndump;ck++)
-			      //				{
-			      //				  onP1  += inFile->beam[b].bandData[ii].cal_on_data.pol1[cj+ck*c_nchan];
-			      //				  offP1 += inFile->beam[b].bandData[ii].cal_off_data.pol1[cj+ck*c_nchan];
-			      //				  onP2  += inFile->beam[b].bandData[ii].cal_on_data.pol2[cj+ck*c_nchan];
-			      //				  offP2 += inFile->beam[b].bandData[ii].cal_off_data.pol2[cj+ck*c_nchan];
-			      //				}
+			      for (ck=0;ck<inFile->beam[b].calBandHeader[ii].ndump;ck++)
+				{
+				  onP1  += inFile->beam[b].bandData[ii].cal_on_data.pol1[cj+ck*c_nchan];
+				  offP1 += inFile->beam[b].bandData[ii].cal_off_data.pol1[cj+ck*c_nchan];
+				  onP2  += inFile->beam[b].bandData[ii].cal_on_data.pol2[cj+ck*c_nchan];
+				  offP2 += inFile->beam[b].bandData[ii].cal_off_data.pol2[cj+ck*c_nchan];
+ 				  onP3  += inFile->beam[b].bandData[ii].cal_on_data.pol3[cj+ck*c_nchan];
+				  offP3 += inFile->beam[b].bandData[ii].cal_off_data.pol3[cj+ck*c_nchan];
+				  onP4  += inFile->beam[b].bandData[ii].cal_on_data.pol4[cj+ck*c_nchan];
+				  offP4 += inFile->beam[b].bandData[ii].cal_off_data.pol4[cj+ck*c_nchan];
+				}
+			      onP1 /= divideCal;
+			      offP1 /= divideCal;
+			      onP2 /= divideCal;
+			      offP2 /= divideCal;
+			      onP3 /= divideCal;
+			      offP3 /= divideCal;
+			      onP4 /= divideCal;
+			      offP4 /= divideCal;
+
+			      
 			      // Note: summing, not averaging above ***
 			      //
+			      calAA   = onP1-offP1;
+			      calBB   = onP2-offP2;
+			      calReAB = onP3-offP3;
+			      calImAB = onP4-offP4;
+
 			      sysGain_freq[cj] = inFile->beam[b].bandData[ii].cal_on_data.freq[cj];
+			      diffGain2[cj]    = (calAA-calBB)/(calAA+calBB);
+			      diffPhase[cj]    = atan2(calImAB,calReAB);
+			      scale1[cj] = calAA;
+			      scale2[cj] = calBB;
+			      scale3[cj] = calReAB;
+			      scale4[cj] = calImAB;
+			      
 			      getScal(sysGain_freq[cj],scalFreq,scalAA,scalBB,nScal,&scalAA_val,&scalBB_val);
-			      //			      sysGain_p1[cj] = (onP1-offP1);  // NOTE /scalAA_val for true gain;
-			      //			      sysGain_p2[cj] = (onP2-offP2);
+			      //  g_e[cj] = (calAA+calBB)/(scalAA_val+scalBB_val);
 
-						  
+			      // 4 SHOULD PROBABLY BE A 2 -- NOT SURE WHAT IS GOING ON HERE
+			      // Note should use -tcal isntead of -scal if using TCAL measurements
+			      g_e[cj] = (4.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
+			      printf("WARNING SCALING BY A FACTOR OF 4 -- CHECK THIS *****\n");
+			      
+			      //			      printf("g_e = %g\n",g_e[cj]);
+			      if (ii==5)
+				printf("Processing freq = %.6f %g %g %g\n",sysGain_freq[cj],diffGain2[cj],diffPhase[cj]*180/M_PI,g_e[cj]);
+
+			      if (calFitN>0)
+				{
+				  scA_rf1_val = pow(10,scA_rf1[0] + scA_rf1[1]*log10(sysGain_freq[cj]) + scA_rf1[2]*pow(log10(sysGain_freq[cj]),2));
+				  scB_rf1_val = pow(10,scB_rf1[0] + scB_rf1[1]*log10(sysGain_freq[cj]) + scB_rf1[2]*pow(log10(sysGain_freq[cj]),2));
+				  scA_rf2_val = pow(10,scA_rf2[0] + scA_rf2[1]*log10(sysGain_freq[cj]) + scA_rf2[2]*pow(log10(sysGain_freq[cj]),2));
+				  scB_rf2_val = pow(10,scB_rf2[0] + scB_rf2[1]*log10(sysGain_freq[cj]) + scB_rf2[2]*pow(log10(sysGain_freq[cj]),2));
+				  scA_rf3_val = pow(10,scA_rf3[0] + scA_rf3[1]*log10(sysGain_freq[cj]) + scA_rf3[2]*pow(log10(sysGain_freq[cj]),2));
+				  scB_rf3_val = pow(10,scB_rf3[0] + scB_rf3[1]*log10(sysGain_freq[cj]) + scB_rf3[2]*pow(log10(sysGain_freq[cj]),2));
+
+				  //				  printf("[%d] Comparison %.6g %.6g %.6g %.6g %.6g %.6g\n",calFitN,sysGain_freq[cj],onP1-offP1,cal_p1[nc2],scA_rf1_val,scA_rf2_val,scA_rf3_val);
+				  							      
+				  if (sysGain_freq[cj] < 1344) // HARDCODE TO PARKES
+				    {
+				      sysGain_p1[cj] = scA_rf1_val/scalAA_val;
+				      sysGain_p2[cj] = scB_rf1_val/scalBB_val;
+				    }
+				  else if (sysGain_freq[cj] < 2368) // HARDCODE TO PARKES
+				    {
+				      sysGain_p1[cj] = scA_rf2_val/scalAA_val;
+				      sysGain_p2[cj] = scB_rf2_val/scalBB_val;
+				    }
+				  else if (sysGain_freq[cj] <= 4032) // HARDCODE TO PARKES
+				    {
+				      sysGain_p1[cj] = scA_rf3_val/scalAA_val;
+				      sysGain_p2[cj] = scB_rf3_val/scalBB_val;
+				    }				  
+				}
+			      else
+				{
+				  sysGain_p1[cj] = cal_p1[nc2]/scalAA_val;
+				  sysGain_p2[cj] = cal_p2[nc2]/scalBB_val;				  
+				}
 			  
-			      // GEORGE TESTING
-			      //sysGain_p1[cj] = (onP1-offP1)/scalAA_val;
-			      //sysGain_p2[cj] = (onP2-offP2)/scalBB_val;
-			      //			      scA_rf1 /= nRF1;
-			      //			      scB_rf1 /= nRF1;
+			      nc2++;
 
-			      scA_rf1_val = pow(10,scA_rf1[0] + scA_rf1[1]*log10(sysGain_freq[cj]) + scA_rf1[2]*pow(log10(sysGain_freq[cj]),2));
-			      scB_rf1_val = pow(10,scB_rf1[0] + scB_rf1[1]*log10(sysGain_freq[cj]) + scB_rf1[2]*pow(log10(sysGain_freq[cj]),2));
-			      scA_rf2_val = pow(10,scA_rf2[0] + scA_rf2[1]*log10(sysGain_freq[cj]) + scA_rf2[2]*pow(log10(sysGain_freq[cj]),2));
-			      scB_rf2_val = pow(10,scB_rf2[0] + scB_rf2[1]*log10(sysGain_freq[cj]) + scB_rf2[2]*pow(log10(sysGain_freq[cj]),2));
-			      scA_rf3_val = pow(10,scA_rf3[0] + scA_rf3[1]*log10(sysGain_freq[cj]) + scA_rf3[2]*pow(log10(sysGain_freq[cj]),2));
-			      scB_rf3_val = pow(10,scB_rf3[0] + scB_rf3[1]*log10(sysGain_freq[cj]) + scB_rf3[2]*pow(log10(sysGain_freq[cj]),2));
-			      
-			      if (sysGain_freq[cj] < 1344) // HARDCODE TO PARKES
-				{
-				  sysGain_p1[cj] = scA_rf1_val/scalAA_val;
-				  sysGain_p2[cj] = scB_rf1_val/scalBB_val;
-				}
-			      else if (sysGain_freq[cj] < 2368) // HARDCODE TO PARKES
-				{
-				  sysGain_p1[cj] = scA_rf2_val/scalAA_val;
-				  sysGain_p2[cj] = scB_rf2_val/scalBB_val;
-				}
-			      else if (sysGain_freq[cj] <= 4032) // HARDCODE TO PARKES
-				{
-				  sysGain_p1[cj] = scA_rf3_val/scalAA_val;
-				  sysGain_p2[cj] = scB_rf3_val/scalBB_val;
-				}
-			      
-			      /*			      
-			      if (sysGain_p1[cj] < 1e6) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
-				{sysGain_p1[cj] = lastGood_p1; printf("WARNING 1\n");}
-			      if (sysGain_p2[cj] < 1e6) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
-				{sysGain_p2[cj] = lastGood_p2; printf("WARNING 2\n");}
-			      if (sysGain_p1[cj] > 1e12) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
-				{sysGain_p1[cj] = lastGood_p1; printf("WARNING 3\n");}
-			      if (sysGain_p2[cj] > 1e12) // THIS IS A MADE-UP NUMBER -- GEORGE FIX
-				{sysGain_p2[cj] = lastGood_p2; printf("WARNING 4\n");}
-			      lastGood_p1 = sysGain_p1[cj];
-			      lastGood_p2 = sysGain_p2[cj];
+			      /*
+			      printf("Gain: %.6f %g %g %g %g %g %g %g %g %g %g [ %g %g ]\n",
+				     sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],scalAA_val,scalBB_val,
+				     scA_rf1_val,scB_rf1_val, scA_rf2_val,scB_rf2_val,scA_rf3_val,scB_rf3_val,
+				     scA_rf1[0],scA_rf1[1]);
 			      */
-			      printf("Gain: %.6f %g %g %g %g %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],scalAA_val,scalBB_val,
-				     scA_rf1_val,scB_rf1_val, scA_rf2_val,scB_rf2_val,scA_rf3_val,scB_rf3_val,scA_rf1[0],scA_rf1[1]);
 			    }
 			}
 		    
@@ -507,11 +654,11 @@ int main(int argc,char *argv[])
 			}
 		      
 		      nsd = inFile->beam[b].bandHeader[ii].ndump;
-		      
-		      in_data = (float *)malloc(sizeof(float)*nchan*npol*inFile->beam[b].bandHeader[ii].ndump);
-		      in_freq = (double *)malloc(sizeof(double)*nchan);
-		      out_freq = (float *)malloc(sizeof(float)*out_nchan);
-		      out_data = (float *)calloc(sizeof(float),out_nchan*out_npol*out_ndump);
+		    
+		      in_data   = (float *)malloc(sizeof(float)*nchan*npol*inFile->beam[b].bandHeader[ii].ndump);
+		      in_freq   = (double *)malloc(sizeof(double)*nchan);
+		      out_freq  = (float *)malloc(sizeof(float)*out_nchan);
+		      out_data  = (float *)calloc(sizeof(float),out_nchan*out_npol*out_ndump);
 		      out_Tdata = (float *)calloc(sizeof(float),nchan*npol*out_ndump);
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      
@@ -548,6 +695,7 @@ int main(int argc,char *argv[])
 					}				     
 				    }
 				  // FIX ME -- ****
+				  printf("WARNING: ASSUMING CAL HAS 128 CHANNELS/SUBBAND\n");
 				  sclAA *= (nchan/128);
 				  sclBB *= (nchan/128);
 				  inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]*=sclAA;
@@ -600,7 +748,7 @@ int main(int argc,char *argv[])
 			    }
 			  // Scale the output
 			  // GEORGE **** THIS SHOULD BE EARLIER AS YOU MAY NOT CHOOSE TO TIME SCRUNCH *****
-			  if (nScal > 0)
+			  if (nScal > 0 && stokes==0)
 			    {
 			      double gainVal1,gainVal2;
 			      double *interpY1,*interpY2;
@@ -628,14 +776,14 @@ int main(int argc,char *argv[])
 				      gainVal1 = interpY1[k];
 				      gainVal2 = interpY2[k];
 				    }
-				  printf("Scale factors: %.6f %g %g\n",in_freq[k],gainVal1,gainVal2);
+				  //				  printf("Scale factors: %.6f %g %g\n",in_freq[k],gainVal1,gainVal2);
 				  // Only scaling 2 polarisations *** <<<
 				  
 				  if (gainVal1 <= 0) gainVal1=1e9; // SHOULD SET MORE SENSIBLY ****
 				  if (gainVal2 <= 0) gainVal2=1e9; // SHOULD SET MORE SENSIBLY ****
 				  
-				  out_Tdata[k]         *= nchan/c_nchan/gainVal1/nsum; // Note scaling by number of spectral dumps as each one now should be in Jy
-				  out_Tdata[k+nchan]   *= nchan/c_nchan/gainVal2/nsum;				  
+				  out_Tdata[k]       *= nchan/c_nchan/gainVal1/calBin; ///nsum; // Note scaling by number of spectral dumps as each one now should be in Jy
+				  out_Tdata[k+nchan] *= nchan/c_nchan/gainVal2/calBin; ///nsum;				  
 				}
 			      if (interp==2)
 				{
@@ -720,7 +868,6 @@ int main(int argc,char *argv[])
 		      else
 			{
 			  // Should use memcpy
-			  printf("Not frequency scrunching\n");
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      for (k=0;k<out_nchan;k++)
@@ -797,19 +944,260 @@ int main(int argc,char *argv[])
 			    }
 			}
 		      // Conversion to Stokes
-		      
+		   
 		      if (stokes==1)
 			{
+			  float p1,p2,p3,p4;
+			  double t_p3,t_p4;
+			  float mI,mQ,mU,mV;
+			  float aI,aQ,aU,aV;
+			  
+			  double phi,dgain2;
+			  float marray[4][4],mueller[4][4],mueller_inv[4][4];
+			  float mastro[4][4];
+			  float mcc[4][4];
+			  float mpa[4][4];
+			  float mfeed[4][4];
+			  float mhand[4][4];
+			  float tmatrix[4][4];
+			  double paraAng;
+			  //			  double feedGamma=-90*M_PI/180;
+			  double feedGamma=0;      //-90*M_PI/180;
+			  double ge;
+			  double temp;
+
+			  int sI,sJ;
+			  float stokesM[4],stokesA[4];
+			  
+			  printf("Stokes In here with %d\n",out_ndump);
+			  printf("WARNING: cal bin set to: %d\n",calBin);
+
+			  // Check for Nchannel changes because of an extraction
+
+
+			  if (origNchan == -1)
+			    {
+			      chbw = in_freq[1]-in_freq[0];
+			      if (fabs(128.0 / chbw - nchan) > 1e-3) // hardcoding band width and 1e-3 values here ****
+				{
+				  printf("WARNING: The number of channels seems to have changed since the original file produced\n");
+				  printf("Setting nchan to %d\n",(int)(128/chbw+0.5));
+				  origNchan = (int)(128/chbw+0.5);				    
+				}
+				
+			    }
+			  
 			  for (j=0;j<out_ndump;j++)
 			    {
-			      float p1,p2,p3,p4;
+			      
 			      for (k=0;k<out_nchan;k++)
 				{
-				  p1 = out_data[k];   // SHOULD BE A J IN HERE SOMEWHERE *** FIX
-				  p2 = out_data[k+out_nchan];
-				  p3 = out_data[k+2*out_nchan];
-				  p4 = out_data[k+3*out_nchan];
-				  sdhdf_convertStokes(p1,p2,p3,p4,&out_data[k],&out_data[k+out_nchan],&out_data[k+2*out_nchan],&out_data[k+3*out_nchan]);
+				  // FD_HAND = -1;
+				  // Q1: WHAT SHOULD THIS BE
+				  /*
+				  
+				  p2 = out_data[k+out_nchan*j*4];   
+				  p1 = out_data[k+out_nchan*j*4+out_nchan];				  
+				  p3 = out_data[k+out_nchan*j*4+2*out_nchan];
+				  p4 = out_data[k+out_nchan*j*4+3*out_nchan];
+				  */
+
+				  
+				  p1 = out_data[k+out_nchan*j*4];   
+				  p2 = out_data[k+out_nchan*j*4+out_nchan];
+				  p3 = out_data[k+out_nchan*j*4+2*out_nchan];
+				  p4 = out_data[k+out_nchan*j*4+3*out_nchan];
+
+				  p1 /= divideAstro;
+				  p2 /= divideAstro;
+				  p3 /= divideAstro;
+				  p4 /= divideAstro;
+				  
+				  //				  sdhdf_convertStokes(p1,p2,p3,p4,&out_data[k],&out_data[k+out_nchan],&out_data[k+2*out_nchan],&out_data[k+3*out_nchan]);
+
+				  // Pre-stabilise the system				  
+				  getScal(in_freq[k],sysGain_freq,scale1,scale2,c_nchan,&useScale1,&useScale2);
+				  getScal(in_freq[k],sysGain_freq,scale3,scale4,c_nchan,&useScale3,&useScale4);
+				  p1/=useScale1;
+				  p2/=useScale2;
+
+				  t_phase = atan2(useScale4,useScale3);
+				  t_len = sqrt(pow(useScale3,2) + pow(useScale4,2));
+				  t_p3 = p3;
+				  t_p4 = p4;
+				  p3 = (t_p3*cos(t_phase) + t_p4*sin(t_phase))/t_len;
+				  p4 = (t_p4*cos(t_phase) - t_p3*sin(t_phase))/t_len;
+				  //				  printf("Scaling: %g %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],scale1[cj],scale2[cj],scale3[cj],scale4[cj],t_phase,t_len,calReAB,calImAB);
+
+				  
+
+				  //				  printf("Converting Stokes %g %g %g %g %g %g %g %g\n",p1,p2,p3,p4,useScale1,useScale2,useScale3,useScale4);
+				  sdhdf_convertStokes(p1,p2,p3,p4,&mI,&mQ,&mU,&mV);
+
+				  
+				  stokesM[0] = mI; ///mI /8/25.;  // REMOVE THE /8 *******
+				  stokesM[1] = mQ; // /8/25.;
+				  stokesM[2] = mU; // /8/25.;
+				  stokesM[3] = mV; // /8/25.; 
+
+
+				  
+				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
+				    {
+				      printf("Stokes in: (mI,mQ,mU,mV) = (%g,%g,%g,%g)\n",stokesM[0],stokesM[1],stokesM[2],stokesM[3]);
+				    }
+				  
+				  //				  getScal(in_freq[k],sysGain_freq,diffGain2,diffPhase,c_nchan,&dgain2,&phi);
+
+				  // Just need g_e
+				  getScal(in_freq[k],sysGain_freq,g_e,diffPhase,c_nchan,&ge,&phi); // Note interpolating two together and so need to pass phi again - FIX THIS
+				  //				  ge = 1; // FIX THIS
+				  //				  printf("diffGain: %.6f %g %g %g\n",in_freq[k],dgain2,phi,ge);
+
+				  //
+				  //				  ge/=(double)calBin;
+
+				  // Should set the outFile, or search the correct place in the inFile???? **** FIX
+				  if (j==0 && k==0)
+				    printf("WARNING: using Parallactic angle: %g\n",inFile->beam[b].bandData[ii].astro_obsHeader[0].paraAngle);
+				  paraAng = inFile->beam[b].bandData[ii].astro_obsHeader[0].paraAngle*M_PI/180.;
+
+				  if (setPara==1)
+				    {
+				      printf("Using command line parallactic angle %g degrees\n",usePara);
+				      paraAng = usePara*M_PI/180.0;
+				    }
+
+
+				  // Now apply the receiver Mueller matrix
+				  
+				  //				  sdhdf_setGain2Phase(marray,dgain2,phi);
+
+				  //				  if (in_freq[k] > 3200 && in_freq[k] < 3201)
+				  //				    {
+				  //				      printf("amplifiers: %g (%g %g)\n",in_freq[k],dgain2*2,phi);
+				  //				      displayMatrix_4x4(marray);
+				  //				    }
+				  sdhdf_setIdentity_4x4(marray);
+				  // Parallactic angle
+				  sdhdf_setParallacticAngle(mpa,paraAng);
+				  sdhdf_setParallacticAngle(mastro,M_PI/4.);
+
+				  //				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
+				  //				    {
+				  //				      printf("msky: %g (%g)\n",in_freq[k],paraAng);
+				  //				      displayMatrix_4x4(mpa);
+				  //				    }
+				
+				  sdhdf_setIdentity_4x4(mhand);
+				  sdhdf_setIdentity_4x4(mcc);
+				  sdhdf_setIdentity_4x4(mfeed);
+				  //				  mhand[1][1] = -1;  // FD_HAND = -1
+				  //				  mhand[3][3] = -1;
+				  
+				  // Feed
+				  //				  sdhdf_setFeed(mfeed,+45*M_PI/180.0);
+
+				  // Cross coupling
+				  //				  sdhdf_setIdentity_4x4(mcc);
+
+				  // CHECK THESE
+
+				  /*
+				  cc_a = cc_eps1*cos(cc_phi1) + cc_eps2*cos(cc_phi2);
+				  cc_b = cc_eps1*sin(cc_phi1) + cc_eps2*sin(cc_phi2);
+				  cc_c = cc_eps1*cos(cc_phi1) - cc_eps2*cos(cc_phi2);
+				  cc_d = cc_eps1*sin(cc_phi1) - cc_eps2*sin(cc_phi2);
+
+				  mcc[2][0] = cc_a;
+				  mcc[3][0] = cc_b;
+				  mcc[2][1] = cc_c;
+				  mcc[3][1] = cc_d;
+
+				  mcc[0][2] = cc_a;
+				  mcc[1][2] = -cc_c;
+				  mcc[0][3] = cc_b;
+				  mcc[1][3] = -cc_d;
+
+				  
+				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
+				    {
+				      printf("mfeed: %g \n",in_freq[k]);
+				      displayMatrix_4x4(mfeed);
+				    }
+				  */
+
+				  
+				  sdhdf_copy_mat4(marray,mueller);
+				  sdhdf_mult4x4_replace(mueller,mcc);
+				  sdhdf_mult4x4_replace(mueller,mfeed);
+				  sdhdf_mult4x4_replace(mueller,mhand);
+				  sdhdf_mult4x4_replace(mueller,mpa);
+				  sdhdf_mult4x4_replace(mueller,mastro);
+				  
+
+				  if (muellerI == 1) // Do not do any calibration
+				    sdhdf_setIdentity_4x4(mueller);
+				  
+				  sdhdf_inv4x4(mueller,mueller_inv);
+				  
+				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
+				    {
+				      printf("Mueller:\n");
+				      displayMatrix_4x4(mueller);
+				      printf("Mueller^-1:\n");
+				      displayMatrix_4x4(mueller_inv);
+				    }
+
+				  sdhdf_multMat_vec_replace(mueller_inv,stokesM);
+				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
+				    {
+				      printf("\n\nStokes after inversion\n");
+				      sdhdf_display_vec4(stokesM);
+				    }
+				  
+				  aI = stokesM[0];
+				  aQ = stokesM[1];
+				  aU = stokesM[2];
+				  aV = stokesM[3];
+				  
+				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
+				    {
+				      printf("(aI,aQ,aU,aV) = (%g,%g,%g,%g)\n",aI,aQ,aU,aV);
+				    }
+
+
+				  //				  *= nchan/c_nchan/gainVal2/calBin; ///nsum;				  
+
+				  /*
+				  out_data[k]             = aI/ge;
+				  out_data[k+out_nchan]   = aQ/ge;
+				  out_data[k+2*out_nchan] = aU/ge;
+				  out_data[k+3*out_nchan] = aV/ge;
+				  */
+				  //				  printf("nchan, c_nchan = %d %d\n",nchan,c_nchan);
+				  // 262144, 128
+				  //				  out_Tdata[k+nchan] *= nchan/c_nchan/gainVal2/calBin; ///nsum;				  
+
+
+				  //  
+				  // GEORGE: SHOULD GET THE SCALING VIA CHANNEL BANDWIDTHS IN THE ASTRO AND CAL CHANNEL
+				  //
+				  if (origNchan > -1)
+				    {
+				      //	      printf("Using the original Nchan %d instead of %d\n",origNchan,nchan);
+				      out_data[k]             = aI/ge/calBin*origNchan/c_nchan;
+				      out_data[k+out_nchan]   = aQ/ge/calBin*origNchan/c_nchan;
+				      out_data[k+2*out_nchan] = aU/ge/calBin*origNchan/c_nchan;
+				      out_data[k+3*out_nchan] = aV/ge/calBin*origNchan/c_nchan;
+				    }
+				  else
+				    {				      
+				      out_data[k]             = aI/ge/calBin*nchan/c_nchan;
+				      out_data[k+out_nchan]   = aQ/ge/calBin*nchan/c_nchan;
+				      out_data[k+2*out_nchan] = aU/ge/calBin*nchan/c_nchan;
+				      out_data[k+3*out_nchan] = aV/ge/calBin*nchan/c_nchan;
+				    }
 				}
 			    }
 			}
@@ -869,7 +1257,7 @@ int main(int argc,char *argv[])
 		      //			    strcpy(outFile->frequency_attr.frame,"LSR");
 		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0);
 		      // Write out the obs_params file
-		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump);
+		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump,1);
 		      free(outObsParams);
 		      // FIX ME
 		      //		      sdhdf_writeFrequencyAttributes(outFile,inFile->bandHeader[ii].label);
@@ -901,6 +1289,14 @@ int main(int argc,char *argv[])
 		    }
 		  sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
 		  free(inBandParams);
+
+		  if (nScal > 0)
+		    {
+		      free(cal_p1);
+		      free(cal_p2);
+		      free(cal_freq);
+		    }
+
 		}
 	      // Copy other primary tables
 	      
@@ -931,17 +1327,11 @@ int main(int argc,char *argv[])
 	      printf("Finished file %s %s\n",fname,oname);
 	    }
 	}
-    }        
+    }
   free(scalFreq); free(scalAA); free(scalBB);
   free(inFile);
   free(outFile);
   free(eop);
-  if (nScal > 0)
-    {
-      free(cal_p1);
-      free(cal_p2);
-      free(cal_freq);
-    }
   
 }
 

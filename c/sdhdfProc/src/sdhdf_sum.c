@@ -170,10 +170,11 @@ int main(int argc,char *argv[])
 	      nchan = inFile->beam[b].bandHeader[i].nchan;
 	      npol  = inFile->beam[b].bandHeader[i].npol;
 	      ndump = 1;
+	      printf("nchan = %d, npol = %d\n",nchan,npol);
 	      
 	      sdhdf_loadBandData(inFile,b,i,1);
 	      tav += inFile->beam[b].bandHeader[i].dtime;
-
+	      printf("Loaded the data\n");
 	      scaleFactor=1;
 	      
 	      for (k=0;k<nchan;k++)
@@ -224,10 +225,13 @@ int main(int argc,char *argv[])
 			}
 		    }
 		}
+	      printf("Releasing data\n");
 	      sdhdf_releaseBandData(inFile,b,i,1);
+	      printf("Closing file\n");
 	      sdhdf_closeFile(inFile);
+	      printf("File closed\n");
 	    }
-
+	  printf("Writing the output\n");
 	  inBandParams[i].ndump=1;
 	  inBandParams[i].dtime = tav;
 	  sdhdf_writeSpectrumData(outFile,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0);

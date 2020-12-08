@@ -56,6 +56,8 @@ int main(int argc,char *argv[])
   float mx,my;
   char key;
 
+  float f0=-1;
+  float f1=-1;;
   int fitted=0;
   
   float timeVal[MAX_BANDS][MAX_SUBINT];
@@ -106,6 +108,11 @@ int main(int argc,char *argv[])
        strcpy(fname,argv[++i]);
      else if (strcmp(argv[i],"-src")==0)
        strcpy(srcName,argv[++i]);
+     else if (strcmp(argv[i],"-freqRange")==0)
+       {
+	 sscanf(argv[++i],"%f",&f0);
+	 sscanf(argv[++i],"%f",&f1);
+       }
     }
 
   if (sdhdf_openFile(fname,inFile,1)==-1)
@@ -176,11 +183,15 @@ int main(int argc,char *argv[])
 	    {
 	      if (inFile->beam[ibeam].bandData[i].astro_data.flag[j] == 0)
 		{
-		  onAA = inFile->beam[ibeam].bandData[i].astro_data.pol1[j+sub*nchan]; 
-		  onBB = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+sub*nchan]; 
-		  fluxAA[i][sub] += onAA;
-		  fluxBB[i][sub] += onBB;
-		  wSum+=1;
+		  if ((f0 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= f0) &&
+		      (f1 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= f1))
+		    {
+		      onAA = inFile->beam[ibeam].bandData[i].astro_data.pol1[j+sub*nchan]; 
+		      onBB = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+sub*nchan]; 
+		      fluxAA[i][sub] += onAA;
+		      fluxBB[i][sub] += onBB;
+		      wSum+=1;
+		    }
 		}
 	    }
 	  fluxAA[i][sub]/=(double)wSum;

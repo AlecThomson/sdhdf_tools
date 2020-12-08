@@ -34,7 +34,7 @@
 #include <cpgplot.h>
 
 
-void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB);
+void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB,int av);
 void obtainScal(float freq,float *scalFreq,float *scalAA,float *scalBB,int nScal,float *retAA,float *retBB,int interp);
 
 int main(int argc,char *argv[])
@@ -56,8 +56,8 @@ int main(int argc,char *argv[])
   int av=0;
   
   scalFreq = (float *)malloc(sizeof(float)*3328);
-  scalAA = (float *)malloc(sizeof(float)*3328);
-  scalBB = (float *)malloc(sizeof(float)*3328);
+  scalAA   = (float *)malloc(sizeof(float)*3328);
+  scalBB   = (float *)malloc(sizeof(float)*3328);
 
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -105,7 +105,7 @@ int main(int argc,char *argv[])
   sdhdf_openFile(fname,inFile,1);
   printf("File opened\n");
   sdhdf_loadMetaData(inFile);
-
+  printf("Loaded metadata\n");
   ndump = inFile->beam[beam].calBandHeader[0].ndump;
   printf("ndumps = %d\n",ndump);
   for (i=0;i<inFile->beam[beam].nBand;i++)
@@ -259,7 +259,7 @@ int main(int argc,char *argv[])
 	}
     }
   else
-    doPlot(inFile,beam,totChan,nScal,scalFreq,scalAA,scalBB);
+    doPlot(inFile,beam,totChan,nScal,scalFreq,scalAA,scalBB,av);
 
     
   sdhdf_closeFile(inFile);
@@ -267,7 +267,7 @@ int main(int argc,char *argv[])
   free(scalFreq); free(scalAA); free(scalBB);
 }
 
-void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB)
+void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB,int av)
 {
   float fx[totChan];
   float fy1[totChan];
@@ -291,8 +291,10 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
   float set_minx=-1,set_maxx=-1;
   int log=0;
   char title[1024];
-  int av=-1;
+  //  int av=-1;
   float retAA,retBB;
+
+  printf("nScal here is =%d\n",nScal);
   
   cpgbeg(0,"/xs",1,1);
   cpgask(0);
@@ -307,7 +309,7 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 	for (j=0;j<nchan;j++)
 	  {
 	    fx[np] = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
-	    if (av==-1)
+	    if (av==0)
 	      {
 		onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+idump*nchan];
 		offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+idump*nchan];
@@ -344,6 +346,8 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 		  offP4 /= (double)inFile->beam[beam].calBandHeader[0].ndump;
 		*/						
 	      }
+	    //	    printf("cal: %.6f %.6g %.6g %.6g %.6g %.6g %.6g %.6g %.6g \n",
+	    //		   inFile->beam[beam].bandData[i].cal_on_data.freq[j],onP1,offP1,onP2,offP2,onP3,offP3,onP4,offP4);
 	    if (plot==1)
 	      {
 		fy1[np] = onP1;
@@ -376,7 +380,7 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 		obtainScal(fx[np],scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
 		fy1[np] = retAA*offP1/(onP1-offP1);
 		fy2[np] = retBB*offP2/(onP2-offP2);
-		printf("Have %g %g\n",fy1[np],fy2[np]);
+		//		printf("Have %.6f %g %g %g %g %g %g %g %g\n",fx[np],fy1[np],fy2[np],retAA,retBB,onP1,offP1,onP2,offP2);
 		nLine=2;
 		log=0;
 	      }
@@ -394,6 +398,9 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 	      {
 		float ucal = 2*(onP3-offP3);
 		float vcal = 2*(onP4-offP4);
+		//		fy1[np] = atan2(vcal,ucal)*180/M_PI;
+
+		// Note PSRCHIVE has a - sign here
 		fy1[np] = atan2(vcal,ucal)*180/M_PI;
 		printf("Have %g %g\n",fy1[np],fy2[np]);
 		nLine=1;
@@ -453,7 +460,7 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
     else
       cpgenv(uminx,umaxx,uminy,umaxy,0,1);
 
-    if (av==-1)       sprintf(title,"spectral dump %d",idump);
+    if (av==0)       sprintf(title,"spectral dump %d",idump);
     else              sprintf(title,"averaged spectral dump");
 
     if (plot==1)      cpglab("Frequency (MHz)","Cal On for pol 1 and 2",title);
@@ -487,8 +494,12 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
     else if (key=='5') {plot=5;set_miny = set_maxy = -1;}
     else if (key=='6') {plot=6;set_miny = set_maxy = -1;}
     else if (key=='7') {plot=7;set_miny = set_maxy = -1;}
-    else if (key=='a') av*=-1;
-    else if (key=='+')
+    else if (key=='a')
+      {
+	if (av==0) av=1;
+	else av=0;
+      }
+	else if (key=='+')
       {
 	if (idump < inFile->beam[beam].calBandHeader[0].ndump-1)
 	  idump++;
@@ -556,17 +567,19 @@ void obtainScal(float freq,float *scalFreq,float *scalAA,float *scalBB,int nScal
   float f0,f1;
   double df;
   int i,i0;
-  
+
   f0 = scalFreq[0];
   f1 = scalFreq[nScal-1];
 
   i0=0;
+  //  printf("nScal i = 0 to %d\n",nScal);
   for (i=0;i<nScal;i++)
     {
-      if (freq >= scalFreq[i])
+      //      printf("Have, nScal i = %d %g and %g\n",i,freq,scalFreq[i]);
+      if (freq < scalFreq[i])
 	{i0=i; break;}
     }
-  
+
   if (interp==1)
     {
       *retAA = scalAA[i0];
@@ -578,7 +591,6 @@ void obtainScal(float freq,float *scalFreq,float *scalAA,float *scalBB,int nScal
       *retAA = 0;
       *retBB = 0;
     }
-  printf("obtainScal: %.6f %g %g\n",freq,*retAA,*retBB);
 }
   
  

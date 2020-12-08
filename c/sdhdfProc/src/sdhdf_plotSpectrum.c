@@ -135,8 +135,8 @@ int main(int argc,char *argv[])
   //  strcpy(freqUnit,inFile->frequency_attr.unit);
   //  strcpy(att_yUnit,inFile->data_attr.unit);
   
-  if (strcmp(yUnit,"not set")==0)
-    strcpy(yUnit,att_yUnit);
+  
+	//    strcpy(yUnit,att_yUnit);
   
   plotSpectrum(inFile,ibeam,iband,idump,fref,yUnit,freqFrame,freqUnit,grDev);
 
@@ -190,12 +190,13 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   pol4 = (float *)malloc(sizeof(float)*maxNchan);
   freq = (float *)malloc(sizeof(float)*maxNchan);
 
+  npol  = inFile->beam[ibeam].bandHeader[iband].npol;
+  
   do
     {
       if (plot==1)
 	{
 	  nchan = inFile->beam[ibeam].bandHeader[iband].nchan;
-	  npol  = inFile->beam[ibeam].bandHeader[iband].npol;
 
 	  if (reload==1) // Should reload if band or beam changes
 	    {
@@ -203,7 +204,33 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      // If already loaded then should release data **
 	      // SHOULD ONLY LOAD IF NOT LOADED YET
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.pol1AllocatedMemory == 0)
-		sdhdf_loadBandData(inFile,ibeam,iband,1);
+		{
+		  sdhdf_loadBandData(inFile,ibeam,iband,1);
+		  if (strcmp(yUnit,"not set")==0)
+		    {
+		      int kk;
+		      for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes;kk++)
+			{
+			  if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].key,"UNIT")==0)
+			    {strcpy(yUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].value); break;}
+			}
+		    }
+		  //  char freqFrame[MAX_STRLEN] = "[unknown]";
+		  //  char freqUnit[MAX_STRLEN] = "unknown";
+		  
+		  if (strcmp(freqFrame,"[unknown]")==0)
+		    {
+		      int kk;
+		      for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq;kk++)
+			{
+			  if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"FRAME")==0)
+			    {strcpy(freqFrame,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);}
+			  else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"UNIT")==0)
+			    {strcpy(freqUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value); }
+			}
+		    }
+		  
+		}
 	      reload=0;
 	    }
 	  for (i=0;i<nchan;i++)
@@ -236,7 +263,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      int setMiny=0;
 	      for (i=0;i<nchan;i++)
 		{
-		  if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 0 || flagIt==0)
+		  if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] != 0 || flagIt==0)
 		    {
 		      if (setMiny==0)
 			{
@@ -330,12 +357,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  int drawIt=-1;
 	  for (i=0;i<nchan;i++)
 	    {
-	      if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 0 && drawIt==-1)
+	      if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] != 0 && drawIt==-1)
 		{
 		  drawIt=1;
 		  i0=i;
 		}
-	      if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] != 0 && drawIt==1)
+	      if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] == 0 && drawIt==1)
 		{
 		  cpgsci(1); cpgline(i-1-i0,freq+i0,pol1+i0); cpgsci(1);
 		  if (npol > 1)
@@ -400,6 +427,11 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  else if (key=='2') {plot=2; t=1;}
 	  else if (key=='l')
 	    {setLog*=-1; t=0;}
+	  else if (key=='p')
+	    {
+	      if (npol==1) npol=4;
+	      else npol=1;
+	    }
 	  else if (key=='>')
 	    {	  
 	      iband++;

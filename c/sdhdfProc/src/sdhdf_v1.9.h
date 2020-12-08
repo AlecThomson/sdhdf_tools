@@ -81,13 +81,15 @@ typedef struct sdhdf_spectralDumpsStruct {
 
   int    freqAllocatedMemory;      // 0 = no, otherwise 1
   int    flagAllocatedMemory;      // 0 = no, otherwise 1
+  int    dataWeightsAllocatedMemory;      // 0 = no, otherwise 1
   int    pol1AllocatedMemory;      // 0 = no, otherwise 1
   int    pol2AllocatedMemory;      // 0 = no, otherwise 1
   int    pol3AllocatedMemory;      // 0 = no, otherwise 1
   int    pol4AllocatedMemory;      // 0 = no, otherwise 1
   
   float  *freq;                // Frequency
-  int    *flag;                // Flagging information
+  float  *dataWeights;         // Weight information for channels and spectral dumps
+  int    *flag;                // Flagging information only for channels
   
   float  *pol1;
   float  *pol2;
@@ -167,7 +169,7 @@ typedef struct sdhdf_bandHeaderStruct {
   int    nchan;
   int    npol;
   char pol_type[20]; // MOVED
-    double dtime;
+  double dtime;
   int    ndump;
 } sdhdf_bandHeaderStruct;
 
@@ -296,6 +298,8 @@ typedef struct sdhdf_bandStruct {
 
   sdhdf_attributes_struct astro_obsHeaderAttr[MAX_ATTRIBUTES];
   int nAstro_obsHeaderAttributes;
+  sdhdf_attributes_struct astro_obsHeaderAttr_freq[MAX_ATTRIBUTES];
+  int nAstro_obsHeaderAttributes_freq;
   sdhdf_attributes_struct cal_obsHeaderAttr[MAX_ATTRIBUTES];
   int nCal_obsHeaderAttributes;
   

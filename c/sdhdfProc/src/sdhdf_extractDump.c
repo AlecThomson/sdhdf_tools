@@ -170,7 +170,7 @@ int main(int argc,char *argv[])
 		  printf("Writing spectral data\n");
 		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nchan,npol,out_ndump,0);
 		  printf("Writing obs params\n");
-		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,b,i,outObsParams,out_ndump);
+		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,b,i,outObsParams,out_ndump,1);
 		  printf("Releasing data\n");
 		  sdhdf_releaseBandData(inFile,b,ii,1);		  
 

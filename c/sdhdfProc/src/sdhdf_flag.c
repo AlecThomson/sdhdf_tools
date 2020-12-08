@@ -47,7 +47,7 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT)
 
 int main(int argc,char *argv[])
 {
-  int i,j;
+  int i,j,k;
   char fname[MAX_STRLEN];
   sdhdf_fileStruct *inFile;
   int iband=0,ibeam=0,nchan,idump,nband;
@@ -79,9 +79,6 @@ int main(int argc,char *argv[])
   if (setnband > 0)
     inFile->beam[ibeam].nBand = setnband;
   
-
-  // FIX ME
-  //  sdhdf_loadFlagData(inFile);
   
   totSize=0;
   nband = inFile->beam[ibeam].nBand;
@@ -92,13 +89,25 @@ int main(int argc,char *argv[])
       totSize+=(inFile->beam[ibeam].bandHeader[i].nchan*inFile->beam[ibeam].bandHeader[i].ndump*npol);
     }
   
-
+  printf("Loading the data\n");
   for (i=0;i<nband;i++)
     {
       nchan = inFile->beam[ibeam].bandHeader[i].nchan;
       ndump = inFile->beam[ibeam].bandHeader[i].ndump;
       sdhdf_loadBandData(inFile,ibeam,i,1);
+
+
+      // Sort out the dataWeights info if first time used -- will be set to -1
+      for (j=0;j<ndump;j++)
+	{
+	  for (k=0;k<nchan;k++)
+	    {
+	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] == -1) // Has not been set
+		inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] = inFile->beam[ibeam].bandHeader[i].dtime;
+	    }
+	}
     }
+  printf("Complete loading the data\n");
   printf("Preparing the plot\n");
   doPlot(inFile,ibeam);
 
@@ -118,6 +127,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
   char key;
   char title[MAX_STRLEN];
   int iband=0;
+  int idump=0;
   int nchan,ndump;
   long max_nchan;
   int npol=4;
@@ -126,6 +136,10 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
   int n;
   int c0;
   int regionType=1;
+  int zapAllDumps=-1;
+  int deleteFlagged=1;
+  int selectPol=1;
+  int firstThrough=1;
   
   cpgbeg(0,"/xs",1,1);
   cpgslw(2);
@@ -155,48 +169,63 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 
     if (recalc > 0)
       {
+	if (zapAllDumps==1)
+	  printf("Flagging will apply to all spectral dumps (press 'a' to toggle)\n");
+	else
+	  printf("Flagging will only apply to current spectral dump (press 'a' to toggle)\n");
 	regionType=1;
 	nFlagRegion=0;
 	c0 = 0;
 	for (i=0;i<iband;i++)
 	  c0+=(inFile->beam[ibeam].bandHeader[iband].nchan*inFile->beam[ibeam].bandHeader[iband].ndump*npol);
 
-	if (recalc!=2) {minx = 1e99; maxx = -1e99;}
-	miny = 1e99; maxy = -1e99;
-
+	if (recalc!=3)
+	  {
+	    if (recalc!=2) {minx = 1e99; maxx = -1e99;}
+	    miny = 1e99; maxy = -1e99;
+	  }
 	for (i=0;i<nchan;i++)
 	  {
 	    px[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
-	    py1[i] = 0.0;
-	    py2[i] = 0.0;
+	    py1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
+	    py2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
+
+	    /*
 	    for (j=0;j<ndump;j++)
 	      {
 		py1[i] += inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+j*nchan];
 		py2[i] += inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+j*nchan];
 	      }
-
-	    if (recalc!=2)
+	    */
+	    if (recalc!=2 && recalc!=3)
 	      {
 		if (px[i] > maxx) maxx = px[i];
 		if (px[i] < minx) minx = px[i];
 	      }
-
-
-	    if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 0)
+	  }
+	for (i=0;i<nchan;i++)
+	  {
+	    if (recalc!=3)
 	      {
- 		if (py1[i] > maxy) {maxy = py1[i]; maxPosX = px[i];}
-		if (py1[i] < miny) miny = py1[i];
-		if (py2[i] > maxy) {maxy = py2[i]; maxPosX = px[i];}
-		if (py2[i] < miny) miny = py2[i];
+		if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] != 0)
+		  {
+		    if (px[i] > minx && px[i] < maxx)
+		      {
+			if (py1[i] > maxy) {maxy = py1[i]; maxPosX = px[i];}
+			if (py1[i] < miny) {miny = py1[i];}
+			if (py2[i] > maxy) {maxy = py2[i]; maxPosX = px[i];}
+			if (py2[i] < miny) {miny = py2[i];}
+		      }
+		  }
 	      }
 	      
 	    
-	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 1) // No region set
+	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] == 0) // No region set
 	      {
 		regionType=2;
 		pf1[nFlagRegion] = px[i];
 	      }	     
-	    else if (regionType==2 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i] == 0) 
+	    else if (regionType==2 && inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] != 0) 
 	      {
 		regionType=1;
 		pf2[nFlagRegion++] = px[i];
@@ -211,17 +240,45 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       }
     
     cpgenv(minx,maxx,miny,maxy,0,1);
-    sprintf(title,"Band: %s",inFile->beam[ibeam].bandHeader[iband].label);
+    sprintf(title,"Band: %s (spectral dump %d/%d)",inFile->beam[ibeam].bandHeader[iband].label,idump,ndump-1);
     cpglab("Frequency (MHz)","Signal strength (arbitrary)",title);
-    cpgline(n,px,py1);
-    cpgsci(2); cpgline(n,px,py2); cpgsci(1);
 
+    // Update so we don't show zapped regions
+    if (deleteFlagged==-1)
+      {
+	cpgline(n,px,py1);
+	cpgsci(2); cpgline(n,px,py2); cpgsci(1);
+      }
+    else
+      {
+	int i0=0;
+	int drawIt=-1;
+	for (i=0;i<nchan;i++)
+	  {
+	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] != 0 && drawIt==-1)
+	      {
+		drawIt=1;
+		i0=i;
+	      }
+	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] == 0 && drawIt==1)
+	      {
+		cpgsci(1); cpgline(i-1-i0,px+i0,py1+i0); cpgsci(1);
+		cpgsci(2); cpgline(i-1-i0,px+i0,py2+i0); cpgsci(1);
+		drawIt=-1;
+		
+	      }	      
+	  }
+	if (drawIt==1)
+	  {
+	    cpgsci(1); cpgline(i-1-i0,px+i0,py1+i0); cpgsci(1);
+	    cpgsci(2); cpgline(i-1-i0,px+i0,py2+i0); cpgsci(1);
+	  }
+      }
+    
     cpgsfs(3);
     cpgsci(5);
     for (i=0;i<nFlagRegion;i++)
-      {
-	cpgrect(pf1[i],pf2[i],miny,maxy);
-      }
+      cpgrect(pf1[i],pf2[i],miny,maxy);
     cpgsci(1);
     cpgsfs(1);
 
@@ -234,19 +291,27 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     cpgcurs(&mx,&my,&key);
     if (key=='u')
       recalc=1;
+    else if (key=='a')
+      {
+	zapAllDumps*=-1;
+	recalc=1;
+      }
+    else if (key=='d')
+      deleteFlagged*=-1;
     else if (key=='b') // Zap 5% of the band edges -- assuming Parkes UWL data
       {
 	int ii,jj,zz;
+	printf("Zapping band edges\n");
 	for (ii=0;ii<inFile->beam[ibeam].nBand;ii++)
 	  {
 	    for (jj=0;jj<inFile->beam[ibeam].bandHeader[ii].nchan;jj++)
 	      {
 		for (zz=0;zz<=26;zz++)
 		  {
-		    if (inFile->beam[ibeam].bandData[ii].astro_data.freq[jj] >= 704-6.4+zz*128.0 &&
-			inFile->beam[ibeam].bandData[ii].astro_data.freq[jj] < 704+6.4+zz*128.0)
-		      {			
-			inFile->beam[ibeam].bandData[ii].astro_data.flag[jj] = 1;
+		    if (inFile->beam[ibeam].bandData[ii].astro_data.freq[jj+iband*inFile->beam[ibeam].bandHeader[ii].nchan] >= 704-6.4+zz*128.0 &&
+			inFile->beam[ibeam].bandData[ii].astro_data.freq[jj+iband*inFile->beam[ibeam].bandHeader[ii].nchan] < 704+6.4+zz*128.0)
+		      {
+			inFile->beam[ibeam].bandData[ii].astro_data.dataWeights[jj+iband*inFile->beam[ibeam].bandHeader[ii].nchan] = 0;
 		      }
 		  }
 	      }	
@@ -257,25 +322,43 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       {
 	autoZapTransmitters(inFile,ibeam);
 	autoZapDigitisers(inFile,ibeam);
-	autoZapAircraft(inFile,ibeam);
-	autoZapSatellites(inFile,ibeam);
-	autoZapWiFi(inFile,ibeam);
-	autoZapUnexplained(inFile,ibeam);
-	autoZapHandsets(inFile,ibeam);
+	//	autoZapAircraft(inFile,ibeam);
+	//	autoZapSatellites(inFile,ibeam);
+	//	autoZapWiFi(inFile,ibeam);
+	//	autoZapUnexplained(inFile,ibeam);
+	//	autoZapHandsets(inFile,ibeam);
 	recalc=1;
       }
+    else if (key=='1')
+      selectPol=1;
+    else if (key=='2')
+      selectPol=2;
     else if (key=='s')
       {
 	saveFile(inFile,ibeam);
       }
-    else if (key=='+')
+    else if (key=='+') 
+      {
+	idump++;
+	if (idump >= ndump)
+	  iband = ndump-1;
+	recalc=1;
+      }
+    else if (key=='-') 
+      {
+	idump--;
+	if (idump == -1)
+	  idump=0;
+	recalc=1;
+      }
+    else if (key=='>') // Note changed from previously +/-
       {
 	iband++;
 	if (iband >= inFile->beam[ibeam].nBand)
 	  iband = inFile->beam[ibeam].nBand-1;
 	recalc=1;
       }
-    else if (key=='-')
+    else if (key=='<')
       {
 	iband--;
 	recalc=1;
@@ -314,19 +397,160 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      {
 		for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
 		  { 
-		    
 		    if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= lowX && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= highX)
-		      inFile->beam[ibeam].bandData[i].astro_data.flag[j] = 1;
+		      {
+			if (zapAllDumps==1)
+			  {
+			    for (k=0;k<ndump;k++)
+			      inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
+			  }
+			else
+			  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;			      
+		      }
 		  }
 	      }
 	    recalc=2;
 	  }
-	else
-	  printf("Please press 'z' and then move somewhere and click left mouse button\n");
-	
       }
-  } while (key != 'q');
+    else if (key=='r') // Un-flag data
+      {
+	float lowX,highX;
+	cpgband(4,0,mx,my,&mx2,&my2,&key);
+	if (mx != mx2)
+	  {
+	    if (mx < mx2)
+	      { lowX = mx; highX = mx2;}
+	    else
+	      { lowX = mx2; highX = mx;}
+	    for (i=0;i<inFile->beam[ibeam].nBand;i++)
+	      {
+		for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
+		  { 
+		    if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= lowX && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= highX)
+		      {
+			if (zapAllDumps==1)
+			  {
+			    for (k=0;k<ndump;k++)
+			      {				
+				inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime;
+			      }
+			  }
+			else
+			  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime;
+		      }
+		  }
+	      }
+	    recalc=2;
+	  }
+      }
+    else if (key=='h')
+      {
+	float lowX,highX;
+	float *plotX,*plotY;
+	int *plotI,*plotJ;
+	int nPlot=0;
+	int nFit = 2;
+	float new_miny = miny;
+	float new_maxy = maxy;
+	
+	printf("Polarisation selection = %d\n",selectPol);
 
+	plotX = (float *)malloc(sizeof(float)*max_nchan);
+	plotY = (float *)malloc(sizeof(float)*max_nchan);
+	plotI = (int *)malloc(sizeof(int)*max_nchan);
+	plotJ = (int *)malloc(sizeof(int)*max_nchan);
+
+	for (i=0;i<inFile->beam[ibeam].nBand;i++)
+	  {
+	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
+	      {
+		if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= minx && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= maxx)
+		  {
+		    plotX[nPlot] = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
+		    if (selectPol == 1) {plotY[nPlot] = inFile->beam[ibeam].bandData[i].astro_data.pol1[j+idump*nchan];}
+		    else if (selectPol == 2) {plotY[nPlot] = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+idump*nchan];}
+		    plotI[nPlot] = i;
+		    plotJ[nPlot] = j;
+		    nPlot++;
+		  }
+	      }
+	  }
+	do {
+	  cpgenv(minx,maxx,new_miny,new_maxy,0,1);
+	  sprintf(title,"Band: %s (spectral dump %d/%d)",inFile->beam[ibeam].bandHeader[iband].label,idump,ndump-1);
+	  cpglab("Frequency (MHz)","Signal strength (arbitrary)",title);
+	  
+	  {
+	    int i0=0;
+	    int drawIt=-1;
+	    for (i=0;i<nPlot;i++)
+	      {
+		if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]] != 0 && drawIt==-1)
+		  {
+		    drawIt=1;
+		    i0=i;
+		  }
+		if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]] == 0 && drawIt==1)
+		  {
+		    cpgsci(1); cpgline(i-1-i0,plotX+i0,plotY+i0); cpgsci(1);
+		    drawIt=-1;
+		    
+		  }	      
+	      }
+	    if (drawIt==1)
+	      {
+		cpgsci(1); cpgline(i-1-i0,plotX+i0,plotY+i0); cpgsci(1);
+	      }
+	  }
+	  
+	  
+	  cpgband(5,0,mx,my,&mx2,&my2,&key);
+	  if (key=='A') // Mouse click
+	    {
+	      for (i=0;i<nPlot;i++)
+		{
+		  if (plotY[i] > my2)
+		    {
+		      if (zapAllDumps==1)
+			{
+			  for (k=0;k<ndump;k++)
+			    inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]+k*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 0;
+			}
+		      else
+			inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 0;			      
+		    }
+		}
+	    }
+	  else if (key=='1') nFit=1;
+	  else if (key=='2') nFit=2;
+	  else if (key=='3') nFit=3;
+	  else if (key=='4') nFit=4;
+	  else if (key=='4') nFit=5;
+	  else if (key=='f')  // Fit a polynomial
+	    {
+	      printf("Nfit = %d\n",nFit);
+	      TKremovePoly_f(plotX,plotY,nPlot,nFit);
+	      new_miny = 1e30; new_maxy = -1e-30;
+	      for (i=0;i<nPlot;i++)
+		{
+		  if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] != 0)
+		    {
+		      if (new_miny > plotY[i]) new_miny = plotY[i];
+		      if (new_maxy < plotY[i]) new_maxy = plotY[i];
+		    }
+		}
+	      printf("New min/max = %g %g\n",new_miny,new_maxy);
+	    }
+	} while (key!='q');
+	key=' ';
+	recalc=3;
+	free(plotX); free(plotY); free(plotI); free(plotJ);
+      }
+    else
+      printf("Please press 'z' and then move somewhere and click left mouse button\n");
+    
+  } while (key != 'q');
+  
   free(px);
   free(py1);
   free(py2);
@@ -364,7 +588,7 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
   // Now add the flag table
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
     {
-      sdhdf_writeFlags(outFile,ibeam,i,inFile->beam[ibeam].bandData[i].astro_data.flag,inFile->beam[ibeam].bandHeader[i].nchan,inFile->beam[ibeam].bandHeader[i].label);
+      sdhdf_writeDataWeights(outFile,ibeam,i,inFile->beam[ibeam].bandData[i].astro_data.dataWeights,inFile->beam[ibeam].bandHeader[i].nchan,inFile->beam[ibeam].bandHeader[i].ndump,inFile->beam[ibeam].bandHeader[i].label);
     }
 
 
@@ -635,8 +859,12 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT)
 		}
 	    }
 	  if (zap==1)
-	    inFile->beam[ibeam].bandData[i].astro_data.flag[j] = 1;
+	    {
+	      inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j]=0;
+	    }
 	}
     }
+
+  printf("Save completed\n");
 }
 

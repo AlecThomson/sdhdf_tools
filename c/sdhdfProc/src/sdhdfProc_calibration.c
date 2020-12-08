@@ -63,7 +63,9 @@ void sdhdf_get_tcal(sdhdf_tcal_struct *tcalData,int n,double f0,double *tcalA,do
     }
 }
 
-// Check this function ...
+//
+// This agrees with compute_stokes in simpol.C in PSRCHIVE
+//
 void sdhdf_convertStokes(float p1,float p2,float p3,float p4,float *stokesI,float *stokesQ,float *stokesU,float *stokesV)
 {
   *stokesI = p1 + p2;

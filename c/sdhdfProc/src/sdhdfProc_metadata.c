@@ -23,6 +23,8 @@
 #include <time.h>
 #include <sys/utsname.h>
 
+void sdhdf_loadConfig(sdhdf_fileStruct *inFile);
+
 //
 // Load all available metadata from the SDHDF file
 //
@@ -50,35 +52,44 @@ void sdhdf_loadConfig(sdhdf_fileStruct *inFile)
   int ndims;
   hsize_t dims[2];
   sdhdf_backendConfigStruct *configVals;
-
-  header_id  = H5Dopen2(inFile->fileID,"config/backend_config",H5P_DEFAULT);
-  headerT    = H5Dget_type(header_id);
-  space      = H5Dget_space(header_id);
-  ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-
-  configVals = (sdhdf_backendConfigStruct *)malloc(sizeof(sdhdf_backendConfigStruct)*dims[0]);
-
-  val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_backendConfigStruct));
-  stid    = H5Tcopy(H5T_C_S1);
-  status  = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
-  H5Tinsert(val_tid,"BACKEND_PHASE",HOFFSET(sdhdf_backendConfigStruct,backend_phase),stid);
-  H5Tinsert(val_tid,"CAL_FREQ",HOFFSET(sdhdf_backendConfigStruct,cal_freq),stid);
-  H5Tinsert(val_tid,"CAL_EPOCH",HOFFSET(sdhdf_backendConfigStruct,cal_epoch),stid);
-  H5Tinsert(val_tid,"CAL_DUTY_CYCLE",HOFFSET(sdhdf_backendConfigStruct,cal_duty_cycle),stid);
-  H5Tinsert(val_tid,"CAL_PHASE",HOFFSET(sdhdf_backendConfigStruct,cal_phase),stid);
-  status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,configVals);
-
-  strcpy(inFile->cal_epoch,configVals[0].cal_epoch);
-  sscanf(configVals[0].cal_freq,"%lf",&(inFile->cal_freq));
-  sscanf(configVals[0].cal_phase,"%lf",&(inFile->cal_phase));
-  sscanf(configVals[0].cal_duty_cycle,"%lf",&(inFile->cal_duty_cycle));
+  char groupName[128];
   
-  //  printf("Loaded %s %s %s\n",configVals[0].backend_phase,configVals[0].cal_freq,configVals[0].cal_epoch);
-  free(configVals);
-  
-  status = H5Tclose(val_tid);
-  status = H5Tclose(stid);
-  status = H5Dclose(header_id);
+  sprintf(groupName,"config");
+  if (sdhdf_checkGroupExists(inFile,groupName) == 1)
+    {
+      printf("Warning: No configuration table in SDHDF file\n");
+    }
+  else
+    {  
+      header_id  = H5Dopen2(inFile->fileID,"config/backend_config",H5P_DEFAULT);
+      headerT    = H5Dget_type(header_id);
+      space      = H5Dget_space(header_id);
+      ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+      
+      configVals = (sdhdf_backendConfigStruct *)malloc(sizeof(sdhdf_backendConfigStruct)*dims[0]);
+      
+      val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_backendConfigStruct));
+      stid    = H5Tcopy(H5T_C_S1);
+      status  = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+      H5Tinsert(val_tid,"BACKEND_PHASE",HOFFSET(sdhdf_backendConfigStruct,backend_phase),stid);
+      H5Tinsert(val_tid,"CAL_FREQ",HOFFSET(sdhdf_backendConfigStruct,cal_freq),stid);
+      H5Tinsert(val_tid,"CAL_EPOCH",HOFFSET(sdhdf_backendConfigStruct,cal_epoch),stid);
+      H5Tinsert(val_tid,"CAL_DUTY_CYCLE",HOFFSET(sdhdf_backendConfigStruct,cal_duty_cycle),stid);
+      H5Tinsert(val_tid,"CAL_PHASE",HOFFSET(sdhdf_backendConfigStruct,cal_phase),stid);
+      status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,configVals);
+      
+      strcpy(inFile->cal_epoch,configVals[0].cal_epoch);
+      sscanf(configVals[0].cal_freq,"%lf",&(inFile->cal_freq));
+      sscanf(configVals[0].cal_phase,"%lf",&(inFile->cal_phase));
+      sscanf(configVals[0].cal_duty_cycle,"%lf",&(inFile->cal_duty_cycle));
+      
+      //  printf("Loaded %s %s %s\n",configVals[0].backend_phase,configVals[0].cal_freq,configVals[0].cal_epoch);
+      free(configVals);
+      
+      status = H5Tclose(val_tid);
+      status = H5Tclose(stid);
+      status = H5Dclose(header_id);
+    }
 }
 
 //
@@ -242,6 +253,105 @@ void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile)
 
 }
 
+
+// Set defaults for metadata
+void sdhdf_setMetadataDefaults(sdhdf_primaryHeaderStruct *primaryHeader,sdhdf_beamHeaderStruct *beamHeader,
+			       sdhdf_bandHeaderStruct *bandHeader,sdhdf_softwareVersionsStruct *softwareVersions,sdhdf_historyStruct *history,
+			       int nbeam,int nband)
+{
+  int i;
+
+  // History
+  strcpy(history->date,"UNKNOWN");
+  strcpy(history->proc_name,"UNKNOWN");
+  strcpy(history->proc_descr,"UNKNOWN");
+  strcpy(history->proc_args,"UNKNOWN");
+  strcpy(history->proc_host,"UNKNOWN");
+  
+  // Software versions
+  strcpy(softwareVersions->proc_name,"UNKNOWN");
+  strcpy(softwareVersions->software,"UNKNONW");
+  strcpy(softwareVersions->software_descr,"UNKNOWN");
+  strcpy(softwareVersions->software_version,"UNKNOWN");
+  
+  // Primary header
+  strcpy(primaryHeader->date,"UNKNOWN");
+  strcpy(primaryHeader->hdr_defn,"UNKNOWN");
+  strcpy(primaryHeader->hdr_defn_version,"UNKNOWN");
+  strcpy(primaryHeader->file_format,"UNKNOWN");
+  strcpy(primaryHeader->file_format_version,"UNKNOWN");
+  primaryHeader->sched_block_id=-1;
+  strcpy(primaryHeader->cal_mode,"UNKNOWN");
+  strcpy(primaryHeader->instrument,"UNKNOWN");
+  strcpy(primaryHeader->observer,"UNKNOWN");
+  strcpy(primaryHeader->pid,"UNKNOWN");
+  strcpy(primaryHeader->rcvr,"UNKNOWN");
+  strcpy(primaryHeader->telescope,"UNKNOWN");
+  strcpy(primaryHeader->utc0,"UNKNOWN");
+  primaryHeader->nbeam=nbeam;
+
+  // Should setup multiple beams correctly
+  strcpy(beamHeader->label,"beam0");
+  beamHeader->nBand=1;
+  strcpy(beamHeader->source,"SOURCE NAME");
+
+  strcpy(bandHeader->label,"band0");
+  bandHeader->fc = 0; 
+  bandHeader->f0 = 0; 
+  bandHeader->f1 = 0; 
+  bandHeader->nchan = 0;
+  bandHeader->npol = 0;
+  strcpy(bandHeader->pol_type,"UNKNOWN");
+  bandHeader->dtime = 0; 
+  bandHeader->ndump = 0;
+ 
+}
+
+void sdhdf_writeSoftwareVersions(sdhdf_fileStruct *outFile,sdhdf_softwareVersionsStruct *outParams)
+{
+  hid_t dset_id,datatype_id,group_id;
+  herr_t status;
+  hid_t dataspace_id,stid;
+  hsize_t dims[1];
+  char name[1024];
+  char groupName[1024];
+			   
+  dims[0] = 1;
+
+  datatype_id = H5Tcreate (H5T_COMPOUND, sizeof(sdhdf_softwareVersionsStruct));
+  stid = H5Tcopy(H5T_C_S1);
+  status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+
+  H5Tinsert(datatype_id,"PROC",HOFFSET(sdhdf_softwareVersionsStruct,proc_name),stid);
+  H5Tinsert(datatype_id,"SOFTWARE",HOFFSET(sdhdf_softwareVersionsStruct,software),stid);
+  H5Tinsert(datatype_id,"SOFTWARE_DESCR",HOFFSET(sdhdf_softwareVersionsStruct,software_descr),stid);
+  H5Tinsert(datatype_id,"SOFTWARE_VERSION",HOFFSET(sdhdf_softwareVersionsStruct,software_version),stid);
+  printf("Compelte insert\n");
+  
+  dataspace_id = H5Screate_simple(1,dims,NULL);
+
+  sprintf(groupName,"metadata");
+  if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+    {
+      group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status = H5Gclose(group_id);
+    }
+  sprintf(name,"metadata/software_versions");
+  if (sdhdf_checkGroupExists(outFile,name) == 1)
+      dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  else
+      dset_id  = H5Dopen2(outFile->fileID,name,H5P_DEFAULT);
+  printf("Created software_versions\n");
+  status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,outParams);
+  status  = H5Dclose(dset_id);
+
+  status  = H5Sclose(dataspace_id);  
+  status  = H5Tclose(datatype_id);
+
+  status  = H5Tclose(stid);
+}
+
+
 //
 // Write the beam header meta data in the beam_xx group
 //
@@ -278,6 +388,70 @@ void sdhdf_writeBeamHeader(sdhdf_fileStruct *outFile,sdhdf_beamHeaderStruct *bea
   else
       dset_id  = H5Dopen2(outFile->fileID,name,H5P_DEFAULT);
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,beamHeader);
+  status  = H5Dclose(dset_id);
+
+  status  = H5Sclose(dataspace_id);  
+  status  = H5Tclose(datatype_id);
+
+  status  = H5Tclose(stid);
+
+  
+}
+
+//
+// Write the beam header meta data in the beam_xx group
+//
+void sdhdf_writePrimaryHeader(sdhdf_fileStruct *outFile,sdhdf_primaryHeaderStruct *primaryHeader)
+{
+  hid_t dset_id,datatype_id,group_id;
+  herr_t status;
+  hid_t dataspace_id,stid;
+  hsize_t dims[1];
+  char name[1024];
+  char groupName[1024];
+			   
+  dims[0] = 1;
+
+  datatype_id = H5Tcreate (H5T_COMPOUND, sizeof(sdhdf_primaryHeaderStruct));
+  stid = H5Tcopy(H5T_C_S1);
+  status = H5Tset_size(stid,20); // Should set to value defined in sdhdf_v1.9.h
+
+
+
+  printf("Inserting\n");
+  H5Tinsert(datatype_id,"DATE",HOFFSET(sdhdf_primaryHeaderStruct,date),stid);
+  H5Tinsert(datatype_id,"HDR_DEFN",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn),stid);
+  H5Tinsert(datatype_id,"HDR_DEFN_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn_version),stid);
+  H5Tinsert(datatype_id,"FILE_FORMAT",HOFFSET(sdhdf_primaryHeaderStruct,file_format),stid);
+  H5Tinsert(datatype_id,"FILE_FORMAT_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,file_format_version),stid);
+  H5Tinsert(datatype_id,"SCHED_BLOCK_ID",HOFFSET(sdhdf_primaryHeaderStruct,sched_block_id),H5T_NATIVE_INT);
+  H5Tinsert(datatype_id,"CAL_MODE",HOFFSET(sdhdf_primaryHeaderStruct,cal_mode),stid);
+  H5Tinsert(datatype_id,"INSTRUMENT",HOFFSET(sdhdf_primaryHeaderStruct,instrument),stid);
+  H5Tinsert(datatype_id,"OBSERVER",HOFFSET(sdhdf_primaryHeaderStruct,observer),stid);
+  H5Tinsert(datatype_id,"PID",HOFFSET(sdhdf_primaryHeaderStruct,pid),stid);
+  H5Tinsert(datatype_id,"RECEIVER",HOFFSET(sdhdf_primaryHeaderStruct,rcvr),stid);
+
+  status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+  H5Tinsert(datatype_id,"TELESCOPE",HOFFSET(sdhdf_primaryHeaderStruct,telescope),stid);
+  H5Tinsert(datatype_id,"UTC_START",HOFFSET(sdhdf_primaryHeaderStruct,utc0),stid);
+  H5Tinsert(datatype_id,"N_BEAMS",HOFFSET(sdhdf_primaryHeaderStruct,nbeam),H5T_NATIVE_INT);
+  printf("Compelte insert\n");
+  
+  dataspace_id = H5Screate_simple(1,dims,NULL);
+
+  sprintf(groupName,"metadata");
+  if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+    {
+      group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status = H5Gclose(group_id);
+    }
+  sprintf(name,"metadata/primary_header");
+  if (sdhdf_checkGroupExists(outFile,name) == 1)
+      dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  else
+      dset_id  = H5Dopen2(outFile->fileID,name,H5P_DEFAULT);
+  printf("Created primary_header\n");
+  status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,primaryHeader);
   status  = H5Dclose(dset_id);
 
   status  = H5Sclose(dataspace_id);  
@@ -394,8 +568,9 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       if (type==1)
 	status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[i].bandHeader);
       else if (type==2)
-	status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[i].calBandHeader);
+	status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[i].calBandHeader);  
 
+      
       status  = H5Tclose(val_tid);
       status  = H5Tclose(stid);
       status  = H5Dclose(header_id);
@@ -528,7 +703,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	    ndump = inFile->beam[i].bandHeader[j].ndump;
 	  else if (type==2)
 	    ndump = inFile->beam[i].calBandHeader[j].ndump;
-	  
+
 	  if (ndump < 1)
 	    {
 	      printf("ERROR: Trying to load observation metadata, but ndump = 0\n");
@@ -572,10 +747,18 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	  headerT    = H5Dget_type(header_id);
 	  space      = H5Dget_space(header_id);
 	  ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+	  if (ndims == -1)
+	    {
+	      printf("ERROR: number of dimensions is -1 in %s\n",label);
+	      exit(1);
+	    }
 	  if (dims[0] != ndump)
 	    {
-	      printf("ERROR: Missing data detected. In %s number of dumps %d (expected) !== %d (actual).\n",inFile->beam[i].bandHeader[j].label,ndump,dims[0]);
-		  exit(1);
+	      printf("ERROR: Missing data detected. In %s number of dumps %d (expected) !== %d (actual) (band = %d) [%s].\n",inFile->beam[i].bandHeader[j].label,ndump,dims[0],j,label);
+	      printf("ndims = %d\n",ndims);
+	      printf("dims[0] = %d\n",dims[0]);
+	      printf("type = %d\n",type);
+	      exit(1);
 	    }
 	  
 	  val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_obsParamsStruct));
@@ -621,6 +804,7 @@ void sdhdf_initialise_spectralDumps(sdhdf_spectralDumpsStruct *in)
 {
   in->freqAllocatedMemory=0;
   in->flagAllocatedMemory=0;
+  in->dataWeightsAllocatedMemory=0;
   in->pol1AllocatedMemory=0;
   in->pol2AllocatedMemory=0;
   in->pol3AllocatedMemory=0;
@@ -759,6 +943,8 @@ void sdhdf_addHistory(sdhdf_historyStruct *history,int n,char *procName,char *de
   strcpy(history[n].proc_host,host);  
 }
 
+
+
 //
 // Load the software information
 //
@@ -814,26 +1000,57 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 {
   hid_t dataset_id,attr_id,atype,atype_mem,aspace;
   H5T_class_t type_class;
+  hid_t type;
   herr_t status;
   char *buf;
+  //  void *buf;
   int rank;
-  hsize_t sdim[64];
+  hsize_t dims[5];
+  int ndims;
+
+
   
   attr_id      = H5Aopen_by_idx(inFile->fileID,dataName, H5_INDEX_NAME, H5_ITER_NATIVE,num,H5P_DEFAULT,H5P_DEFAULT);
-  atype        = H5Aget_type(attr_id);
-  type_class   = H5Tget_class(atype);
-  
-  if (type_class == H5T_STRING)
+  if (attr_id < 0)
     {
-      H5Aread(attr_id, atype, &buf);
-      strcpy(attribute->value,buf);
-      H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
-      free(buf);
+      strcpy(attribute->key,"uncertain");
+      strcpy(attribute->value,"not defined");
+      return;
+    }
+  aspace       = H5Aget_space(attr_id);
+  ndims        = H5Sget_simple_extent_dims(aspace,dims,NULL);
+  //  printf("ndims = %d, aspace = %d\n",ndims,aspace);
+  if (ndims != 0) // 1 && ndims != 0)
+    {
+      //      printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
+      // For now not read attributes like DIMENSION_LABEL and DIMENSION_LIST      
     }
   else
-    printf("CANNOT READ ATTRIBUTE\n");
-  
-  status = H5Tclose(atype);
+    {
+      atype        = H5Aget_type(attr_id);
+      //      printf("atype = %d\n",atype);
+      type_class   = H5Tget_class(atype);
+      //      printf("type_class = %d\n",type_class);
+      if (type_class == H5T_STRING)
+	{
+	  int attr_id_old = attr_id;
+
+	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
+	  if (strcmp(attribute->key,"CLASS")==0)
+	    strcpy(attribute->value,"FIX_THIS");    // NOT SURE HOW TO READ A SCALAR IN PROPERLY -- FIX THIS
+	  else
+	    {
+	      status = H5Aread(attr_id, atype, &buf);
+	      strcpy(attribute->value,buf);
+	    }
+	  free(buf);
+	}
+      else
+	printf("CANNOT READ ATTRIBUTE\n");
+
+      status = H5Tclose(atype);
+    }
+  //  status = H5Aclose(aspace);
   status = H5Aclose(attr_id);
 }
 
@@ -855,7 +1072,7 @@ void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruc
   
 }
 
-void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump)
+void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type)
 {
   hid_t dset_id,datatype_id,group_id;
   herr_t status;
@@ -890,6 +1107,7 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,in
   H5Tinsert(datatype_id,"EL",HOFFSET(sdhdf_obsParamsStruct,el),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"AZ_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,az_drive_rate),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"ZE_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,ze_drive_rate),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"PARA_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"WIND_DIR",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"WIND_SPD",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
   
@@ -915,7 +1133,10 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,in
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  sprintf(name,"beam_%d/%s/metadata/obs_params",ibeam,bandLabel);
+  if (type==1)
+    sprintf(name,"beam_%d/%s/metadata/obs_params",ibeam,bandLabel);
+  else if (type==2)
+    sprintf(name,"beam_%d/%s/metadata/cal_obs_params",ibeam,bandLabel);
   dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,obsParams);
   status  = H5Dclose(dset_id);
