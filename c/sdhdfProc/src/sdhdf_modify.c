@@ -140,7 +140,7 @@ int main(int argc,char *argv[])
   scB_rf3[0]=scB_rf3[1]=scB_rf3[2] = 0.0;
 
   
-  int calFitN=1;
+  int calFitN=0;
   
   strcpy(oname,"sdhdf_modify_output.hdf");
   strcpy(extension,"modify");
@@ -345,20 +345,21 @@ int main(int argc,char *argv[])
 			{
 			  sdhdf_loadBandData(inFile,b,ci,2);
 			  sdhdf_loadBandData(inFile,b,ci,3);
-			  			  
+		       
 			  c_nchan = inFile->beam[b].calBandHeader[ci].nchan;
-			  printf("Number of channels = %d\n",c_nchan);
+			  // printf("Number of channels = %d, number of dumps = %d\n",c_nchan,inFile->beam[b].calBandHeader[ci].ndump);
 			  for (cj=0;cj<c_nchan;cj++)
 			    {
 			      onP1=offP1=onP2=offP2=onOffP1=onOffP2=0.0;
-			      //			      printf("ndump = %d\n",inFile->beam[b].calBandHeader[ii].ndump);
+		
 			      for (ck=0;ck<inFile->beam[b].calBandHeader[ci].ndump;ck++)
 				{
 				  onP1  += inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan];
 				  offP1 += inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan];
 				  onP2  += inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan];
 				  offP2 += inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan];
-				  onOffP1 += (inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan]);
+
+				  onOffP1 += (inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan]);		  
 				  onOffP2 += (inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan]);
 				}
 			      //			      printf("cal: %.5f %g %g %g %g\n",inFile->beam[b].bandData[ci].cal_on_data.freq[cj],onP1,offP1,onP2,offP2);
@@ -367,12 +368,10 @@ int main(int argc,char *argv[])
 			      //
 			      freq = cal_freq[nc] = inFile->beam[b].bandData[ci].cal_on_data.freq[cj];
 
-
 			      //			      cal_p1[nc] = (onP1-offP1);  
 			      //			      cal_p2[nc] = (onP2-offP2);
 			      cal_p1[nc] = onOffP1;
 			      cal_p2[nc] = onOffP2;
-			      
 			      //			      printf("freq = %g\n",freq);
 
 			      if ((freq > 814 && freq < 818) ||
@@ -439,23 +438,38 @@ int main(int argc,char *argv[])
 				  //  scA_rf3+=cal_p1[nc]; scB_rf3+=cal_p2[nc]; nRF3++;
 				}
 			      
-			      
 			      nc++;
 			    }
 			}
+
 		      // Fit straight lines to the cal data
 		      if (calFitN>0)
 			{
-			  TKleastSquares_svd_noErr(scA_rf1_x,scA_rf1_y,nRF1,scA_rf1,calFitN,TKfitPoly);
-			  TKleastSquares_svd_noErr(scB_rf1_x,scB_rf1_y,nRF1,scB_rf1,calFitN,TKfitPoly);
-			  
-			  TKleastSquares_svd_noErr(scA_rf2_x,scA_rf2_y,nRF2,scA_rf2,calFitN,TKfitPoly);
-			  TKleastSquares_svd_noErr(scB_rf2_x,scB_rf2_y,nRF2,scB_rf2,calFitN,TKfitPoly);
-			  
-			  TKleastSquares_svd_noErr(scA_rf3_x,scA_rf3_y,nRF3,scA_rf3,calFitN,TKfitPoly);
-			  TKleastSquares_svd_noErr(scB_rf3_x,scB_rf3_y,nRF3,scB_rf3,calFitN,TKfitPoly);
+
+			  if (nRF1 == 0)
+			    printf("WARNING: Attempting to fit to RF1, but no data\n");
+			  else
+			    {
+			      TKleastSquares_svd_noErr(scA_rf1_x,scA_rf1_y,nRF1,scA_rf1,calFitN,TKfitPoly);
+			      TKleastSquares_svd_noErr(scB_rf1_x,scB_rf1_y,nRF1,scB_rf1,calFitN,TKfitPoly);
+			    }
+
+			  if (nRF2 == 0)
+			    printf("WARNING: Attempting to fit to RF2, but no data\n");
+			  else
+			    {
+			      TKleastSquares_svd_noErr(scA_rf2_x,scA_rf2_y,nRF2,scA_rf2,calFitN,TKfitPoly);
+			      TKleastSquares_svd_noErr(scB_rf2_x,scB_rf2_y,nRF2,scB_rf2,calFitN,TKfitPoly);
+			    }
+			  if (nRF3 == 0)
+			    printf("WARNING: Attempting to fit to RF3, but no data\n");
+			  else
+			    {
+			      TKleastSquares_svd_noErr(scA_rf3_x,scA_rf3_y,nRF3,scA_rf3,calFitN,TKfitPoly);
+			      TKleastSquares_svd_noErr(scB_rf3_x,scB_rf3_y,nRF3,scB_rf3,calFitN,TKfitPoly);
+			    }
 			}
-		      
+
 		      {
 			FILE *fout;
 			int i0;
@@ -591,8 +605,8 @@ int main(int argc,char *argv[])
 
 			      // 4 SHOULD PROBABLY BE A 2 -- NOT SURE WHAT IS GOING ON HERE
 			      // Note should use -tcal isntead of -scal if using TCAL measurements
-			      g_e[cj] = (4.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
-			      printf("WARNING SCALING BY A FACTOR OF 4 -- CHECK THIS *****\n");
+			      g_e[cj] = (8.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
+			      printf("WARNING SCALING BY A FACTOR OF 8 -- CHECK THIS *****\n");
 			      
 			      //			      printf("g_e = %g\n",g_e[cj]);
 			      if (ii==5)
@@ -1002,7 +1016,7 @@ int main(int argc,char *argv[])
 				  p4 = out_data[k+out_nchan*j*4+3*out_nchan];
 				  */
 
-				  
+				
 				  p1 = out_data[k+out_nchan*j*4];   
 				  p2 = out_data[k+out_nchan*j*4+out_nchan];
 				  p3 = out_data[k+out_nchan*j*4+2*out_nchan];

@@ -37,7 +37,8 @@
 #define VNUM "v0.1"
 
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline);
+
 
 void help()
 {
@@ -74,6 +75,8 @@ int main(int argc,char *argv[])
   float locky1=-1,locky2=-1;
   int join=0;
   double fref=-1;
+  float bl_f0=0,bl_f1=0;
+  int setBaseline=0;
   
   //  help();
   
@@ -108,6 +111,12 @@ int main(int argc,char *argv[])
 	join=1;
       else if (strcmp(argv[i],"-av")==0)
 	sscanf(argv[++i],"%d",&av);
+      else if (strcmp(argv[i],"-bl")==0)
+	{
+	  sscanf(argv[++i],"%f",&bl_f0);
+	  sscanf(argv[++i],"%f",&bl_f1);
+	  setBaseline=1;
+	}
       else if (strcmp(argv[i],"-f0")==0)
 	{sscanf(argv[++i],"%f",&f0); setf0=1;}
       else if (strcmp(argv[i],"-f1")==0)
@@ -150,7 +159,7 @@ int main(int argc,char *argv[])
 	  //	    }
 
 
-	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref);	  	  
+	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline);	  	  
 
 	  sdhdf_closeFile(inFile);
 
@@ -160,7 +169,8 @@ int main(int argc,char *argv[])
   free(inFile);
 }
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref)
+
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline)
 {
   static int entry=0;
   static int entryX=0;
@@ -186,8 +196,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   float xp1,xp2,yp1,yp2;
   float wx1 = 0.1, wx2 = 0.9;
   float wy1 = 0.15, wy2 = 0.9;
+  float mean1,mean2,mean3,mean4;
+  int nc=0;
   int npol;
 
+
+  mean1=mean2=mean3=mean4=0.0;
   npol = inFile->beam[ibeam].bandHeader[iband].npol;
   
   if (entry==0)
@@ -240,6 +254,14 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	      pol1[i]=log10(pol1[i]);
 	      if (npol > 1) pol2[i]=log10(pol2[i]);
 	    }
+	  if (freq[i] > bl_f0 && freq[i] <= bl_f1)
+	    {
+	      mean1+=pol1[i];
+	      mean2+=pol2[i];
+	      mean3+=pol3[i];
+	      mean4+=pol4[i];
+	      nc++;
+	    }
 	}
     }
   else
@@ -277,10 +299,31 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	      pol1[n]=log10(pol1[n]);
 	      if (npol > 1) pol2[n]=log10(pol2[n]);
 	    }
+	  if (freq[i] > bl_f0 && freq[i] <= bl_f1)
+	    {
+	      
+	      mean1+=pol1[i];
+	      mean2+=pol2[i];
+	      mean3+=pol3[i];
+	      mean4+=pol4[i];
+	      nc++;
+	    }
 	  n++;
 	}
       nchan = n;
     }
+
+  if (setBaseline==1)
+    {
+      for (i=0;i<nchan;i++)
+	{
+	  pol1[i] -= mean1/(float)nc;
+	  pol2[i] -= mean2/(float)nc;
+	  pol3[i] -= mean3/(float)nc;
+	  pol4[i] -= mean4/(float)nc;
+	}
+    }
+
   
   if (setf0 == 1)
     minx = f0;
@@ -291,7 +334,13 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
     maxx = f1;
   else
     maxx = freq[nchan-1];
-  
+  if (minx > maxx)
+    {
+      float tm = minx;
+      minx = maxx;
+      maxx = tm;
+    }
+
   for (i=0;i<nchan;i++)
     {
       if (freq[i] >= minx && freq[i] <= maxx)
@@ -346,9 +395,9 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	sprintf(xlabel,"%s velocity (km/s)",inFile->frequency_attr.frame);
       */
       if (fref < 0)
-	sprintf(xlabel,"frequency (MHz)");
+	sprintf(xlabel,"Frequency (MHz)");
       else
-	sprintf(xlabel,"velocity (km/s)");
+	sprintf(xlabel,"Velocity (km/s)");
 
       cpglab(xlabel,"Signal strength (arbitrary)",fname);
       
@@ -420,10 +469,11 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
     }
   else if (polPlot==2)
     {
-      cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
       cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
-      cpgsci(4); cpgsls(4); cpgline(nchan,freq,pol3); cpgsci(1);
-      cpgsci(5); cpgsls(2); cpgline(nchan,freq,pol4); cpgsci(1);
+      cpgsci(4); 
+      cpgline(nchan,freq,pol3); cpgsci(1);
+      cpgsci(5);  cpgline(nchan,freq,pol4); cpgsci(1);
+      cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
     }
 
   
