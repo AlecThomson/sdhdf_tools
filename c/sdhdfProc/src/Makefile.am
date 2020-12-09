@@ -5,6 +5,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_extractDump \
   sdhdf_quickdump \
   sdhdf_onoff \
+  sdhdf_fluxDensity \
   sdhdf_sum \
   sdhdf_modify \
   sdhdf_join \
@@ -34,6 +35,9 @@ sdhdf_quickdump_SOURCES = sdhdf_quickdump.c \
   $(COMMON_SRCS)
 
 sdhdf_onoff_SOURCES = sdhdf_onoff.c \
+  $(COMMON_SRCS)
+
+sdhdf_fluxDensity_SOURCES = sdhdf_fluxDensity.c \
   $(COMMON_SRCS)
 
 sdhdf_sum_SOURCES = sdhdf_sum.c \
