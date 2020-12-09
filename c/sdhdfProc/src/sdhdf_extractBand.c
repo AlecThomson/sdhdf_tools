@@ -71,6 +71,7 @@ int main(int argc,char *argv[])
   char groupName1[MAX_STRLEN],groupName2[MAX_STRLEN];
   int cal=0;
   int selectBandID;
+  int npol;
   
   strcpy(oname,"sdhdf_extract_output.hdf");
 
@@ -192,7 +193,8 @@ int main(int argc,char *argv[])
 			  outBandParams[nBand].npol = inBandParams[i].npol;
 			  strcpy(outBandParams[nBand].pol_type, inBandParams[i].pol_type);
 			  outBandParams[nBand].ndump = inBandParams[i].ndump;
-
+			  npol = inBandParams[i].npol;
+			  
 			  if (cal==1)
 			    {
 			      strcpy(outCalBandParams[nBand].label,inCalBandParams[i].label);
@@ -211,7 +213,6 @@ int main(int argc,char *argv[])
 		}
 	      else
 		{
-
 		  for (j=0;j<zoomBand;j++)
 		    {
 		      sprintf(zoomLabel,"band_zoom%03d",j);
@@ -240,6 +241,7 @@ int main(int argc,char *argv[])
 			}
 
 		      strcpy(outBandParams[j].pol_type,inBandParams[selectBandID].pol_type);
+		      npol = inBandParams[i].npol;
 		      outBandParams[j].npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].ndump = inBandParams[selectBandID].ndump; 
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outBandParams[j].ndump);
@@ -274,20 +276,28 @@ int main(int argc,char *argv[])
 			  nchan=0;
 			  for (k=0;k<inFile->beam[b].nBand;k++)
 			    {
-			      // inData = (float *)malloc(sizeof(float)*inFile->beam[b].bandHeader[k].nchan*inFile->beam[b].bandHeader[k].ndump*4); // 4 = npol FIX
-			      //  sdhdf_loadEntireDump(inFile,k,inData);
-			      //			      printf("Processing dump %d, band %d\n",nd,k);
 			      for (l=0;l<inFile->beam[b].bandHeader[k].nchan;l++)
 				{
 				  if (inFile->beam[b].bandData[k].astro_data.freq[l] >= fSelect0[j] && inFile->beam[b].bandData[k].astro_data.freq[l] <= fSelect1[j])
 				    {   
 				      // FIX FOR NPOL
 				      //				      printf("Setting 1: %d %d\n",nchan,nd);
-				      outVals[nd*totNchan*4+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
-				      outVals[nd*totNchan*4+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
-				      outVals[nd*totNchan*4+nchan+2*totNchan] = inFile->beam[b].bandData[k].astro_data.pol3[l+nd*inFile->beam[b].bandHeader[k].nchan];
-				      outVals[nd*totNchan*4+nchan+3*totNchan] = inFile->beam[b].bandData[k].astro_data.pol4[l+nd*inFile->beam[b].bandHeader[k].nchan];
-				      //				      printf("Seting freq\n");
+				      if (npol==4)
+					{
+					  outVals[nd*totNchan*4+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					  outVals[nd*totNchan*4+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					  outVals[nd*totNchan*4+nchan+2*totNchan] = inFile->beam[b].bandData[k].astro_data.pol3[l+nd*inFile->beam[b].bandHeader[k].nchan];
+					  outVals[nd*totNchan*4+nchan+3*totNchan] = inFile->beam[b].bandData[k].astro_data.pol4[l+nd*inFile->beam[b].bandHeader[k].nchan];
+					}
+				      else if (npol==2)
+					{
+					  outVals[nd*totNchan*2+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					  outVals[nd*totNchan*2+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					}
+				      else if (npol==1)
+					outVals[nd*totNchan+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					
+					  //				      printf("Seting freq\n");
 				      if (nd==0) freqVals[nchan] = inFile->beam[b].bandData[k].astro_data.freq[l];
 				      nchan++;
 				    }
@@ -297,7 +307,7 @@ int main(int argc,char *argv[])
 			}
 		      printf("Output nchan = %d (%d)\n",nchan,totNchan);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
-		      sdhdf_writeSpectrumData(outFile,outBandParams[j].label,b,j,outVals,freqVals,totNchan,4,outBandParams[j].ndump,0); // FIX 4,1,0
+		      sdhdf_writeSpectrumData(outFile,outBandParams[j].label,b,j,outVals,freqVals,totNchan,npol,outBandParams[j].ndump,0); // FIX 4,1,0
 		      sdhdf_writeObsParams(outFile,outBandParams[j].label,b,j,outObsParams,outBandParams[j].ndump,1);
 		    
 		      sprintf(groupName1,"beam_%d/%s/metadata/cal_obs_params",b,inFile->beam[b].bandHeader[selectBandID].label);
