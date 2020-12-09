@@ -241,7 +241,7 @@ int main(int argc,char *argv[])
 			}
 
 		      strcpy(outBandParams[j].pol_type,inBandParams[selectBandID].pol_type);
-		      npol = inBandParams[i].npol;
+		      npol = inBandParams[j].npol;
 		      outBandParams[j].npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].ndump = inBandParams[selectBandID].ndump; 
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outBandParams[j].ndump);
@@ -305,7 +305,7 @@ int main(int argc,char *argv[])
 			    }
 			  //			  free(inData);
 			}
-		      printf("Output nchan = %d (%d)\n",nchan,totNchan);
+		      printf("Output nchan = %d (%d), npol = %d\n",nchan,totNchan,npol);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
 		      sdhdf_writeSpectrumData(outFile,outBandParams[j].label,b,j,outVals,freqVals,totNchan,npol,outBandParams[j].ndump,0); // FIX 4,1,0
 		      sdhdf_writeObsParams(outFile,outBandParams[j].label,b,j,outObsParams,outBandParams[j].ndump,1);
