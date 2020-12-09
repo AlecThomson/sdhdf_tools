@@ -34,6 +34,19 @@
 
 #define MAX_BANDS 26     // FIX THIS
 
+void help()
+{
+  printf("sdhdf_extractBand\n");
+  printf("\n");
+  printf("Command line arguments\n\n");
+  printf("-e <ext>        file extension for output files\n");
+  printf("-h              this help\n");
+  printf("-zoom <f1> <f2> produce zoom band between f1 and f2 MHz\n");
+  printf("-sb <n>         select sub-band n\n");
+
+  exit(1);
+}
+
 int main(int argc,char *argv[])
 {
   int ii,i,j,k,kk,l,nchan,totNchan,b,nd;
@@ -60,6 +73,14 @@ int main(int argc,char *argv[])
   int selectBandID;
   
   strcpy(oname,"sdhdf_extract_output.hdf");
+
+  if (argc==1)
+    help();
+  for (i=1;i<argc;i++)
+    {
+      if (strcmp(argv[i],"-h")==0)
+	help();
+    }
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -123,9 +144,9 @@ int main(int argc,char *argv[])
 	      printf("Setting memory %d %d\n",inFile->beam[b].nBand,nSelectBands);
 	      inBandParams  = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);
 	      outBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nSelectBands);
-	      printf("Copying structure\n");
+
 	      sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
-	      printf("Checking cal\n");
+
 	      if (cal==1)
 		{
 		  inCalBandParams  = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);         
@@ -133,7 +154,7 @@ int main(int argc,char *argv[])
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,inCalBandParams,inFile->beam[b].nBand);
 		}
 	      nBand=0;
-	      printf("Got to this bit\n");
+
 	      if (zoomBand==0)
 		{
 		  printf("Number of bands = %d\n",inFile->beam[b].nBand);
