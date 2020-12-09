@@ -329,9 +329,8 @@ int main(int argc,char *argv[])
 		    }
 
 		}
-	      printf("Writing the header info\n");
 	      sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
-	      printf("Writnig the cal info\n");
+
 	      if (cal==1)
 		sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
 
@@ -344,29 +343,22 @@ int main(int argc,char *argv[])
 	    }
        
 	  // Copy other primary tables
-	  printf("Copying the other tables\n");
 	  sdhdf_copyEntireGroup("metadata",inFile,outFile);	      	      
 	  sdhdf_writeBeamHeader(outFile,inFile->beamHeader,inFile->nBeam); 
-	  printf("Copying config\n");
 	  // Don't want to "copyRemainder" as have only selected specific bands
 	  sdhdf_copyEntireGroup("config",inFile,outFile);
-	  printf("Free'ing stuff\n");
+
 	  free(outBandParams);
 	  free(inBandParams);
-	  printf("Free'ing cal\n");
 	  if (cal==1)
 	    {
 	      free(outCalBandParams);
 	      free(inCalBandParams);
 	    }
-	  printf("Closing outfile\n");
 	  sdhdf_closeFile(outFile);
-	  printf("Closing infile\n");
 	  sdhdf_closeFile(inFile);
-	  printf("Done close\n");
 	}
     }
-  printf("Now free in and out\n");
   free(inFile);
   free(outFile);
 }
