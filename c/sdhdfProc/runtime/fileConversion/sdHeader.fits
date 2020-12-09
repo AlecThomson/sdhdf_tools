@@ -1,0 +1,166 @@
+##################################################################
+# FITS Primary Header Block
+##################################################################
+
+SIMPLE  =                    T / file does conform to FITS standard
+BITPIX  =                    8 / number of bits per data pixel
+NAXIS   =                    0 / number of data axes
+EXTEND  =                    T / FITS dataset may contain extensions
+ORIGIN  = 'hdf2sdfits      '   / File was created by 
+DATE    = '                '   / Date (dd/mm//yy) this file was written
+END
+
+##################################################################
+# SDFITS Binary Table Header Block
+##################################################################
+
+### Mandatory SDFITS header fields ###
+
+XTENSION= BINTABLE             / FITS binary table
+BITPIX  =                    8 / Binary data
+NAXIS   =                    2 / 2-dimensional binary table
+NAXIS1  =                    * / width of table in bytes
+NAXIS2  =                    * / Number of rows in table
+PCOUNT  =                    0 / size of special data area
+GCOUNT  =                    1 / one data group (required keyword)
+TFIELDS =                    * / Number of fields per row
+EXTNAME = 'SINGLE DISH'        / name of this binary table extension
+NMATRIX =                    1 / 1 dataset per row
+#
+### Core SDFITS header fields ###
+#
+OBSERVER= ''                   / Observer
+PROJID  = ''                   / Project name
+TELESCOP= ''                   / Telescope name
+OBSGEO-X= ''                   / [m] Antenna ITRF X-coordinate
+OBSGEO-Y= ''                   / [m] Antenna ITRF Y-coordinate
+OBSGEO-Z= ''                   / [m] Antenna ITRF Z-coordinate
+# Not in Parkes SDFITS, but should be
+FRONTEND= '                '   / Rx and feed ID
+DATE-OBS= '                '   / Date of observation (YYYY-MM-DDThh:mm:ss UTC)
+INSTRUME= ''                   / Backend ID
+#
+#
+##################################################################
+# Data table columns
+#####################################################################
+#
+### Standard SDFITS columns ###
+#
+TTYPE#  = 'SCAN    '           / Scan number
+TFORM#  = '1I      '           / 8-byte real
+TTYPE#  = 'CYCLE   '           / Cycle
+TFORM#  = '1J      '           / 32-bit integer
+TTYPE#  = 'DATE-OBS'           / Observation date
+TFORM#  = '10A     '           / 
+TTYPE#  = 'TIME    '           / Time of scan (s)
+TFORM#  = '1D      '           / 
+TTYPE#  = 'EXPOSURE'           / Effective integration time (seconds)
+TFORM#  = '1E      '           / 
+TTYPE#  = 'OBJECT  '           / Source name
+TFORM#  = '16A     '           /
+TTYPE#  = 'OBJ-RA  '           / Right ascension (deg)
+TFORM#  = '1D      '           /
+TTYPE#  = 'OBJ-DEC '           / Declination (deg)
+TFORM#  = '1D      '           / 4-byte real
+TTYPE#  = 'RESTFRQ '           / Rest frequency (Hz)
+TFORM#  = '1E      '           / 4-byte real
+TTYPE#  = 'OBSMODE '           / 
+TFORM#  = '16A     '           /
+TTYPE#  = 'BEAM    '           / 
+TFORM#  = '1I      '           /
+TTYPE#  = 'IF      '           / 
+TFORM#  = '1I      '           /
+TTYPE#  = 'FREQRES '           / Frequency resolution (Hz)
+TFORM#  = '1D      '           /
+TTYPE#  = 'BANDWID '           / Bandwidth (Hz)
+TFORM#  = '1D      '           /
+#
+### The data array axes ###
+#
+CTYPE1  = 'FREQ    '           / DATA ARRAY AXIS 1: frequency in Hz.
+TTYPE#  = 'CRPIX1  '           / Channel num. of centre of spectral bin
+TFORM#  = '1E      '           / 4-byte real
+TTYPE#  = 'CRVAL1  '           / Freq at centre of sub-band (always 0Hz)
+TFORM#  = '1D      '           / 8-byte real
+TUNIT#  = 'Hz      '           / Units is Hz
+TTYPE#  = 'CDELT1  '           / Width of each spectral channel
+TFORM#  = '1D      '           / 8-byte real
+TUNIT#  = 'Hz      '           / Units is Hz
+#
+CTYPE2  = 'STOKES  '           / DATA ARRAY AXIS 2: Stokes polarisation
+CRPIX2  = '1D      '           / Polarization code reference pixel
+CRVAL2  = '1E      '           / Polarization code at reference pixel (XX)
+CDELT2  = '1E      '           / Polarization code axis increment
+#
+CTYPE3  = 'RA      '           / DATA ARRAY AXIS 3: RA mid-integration (degenerate)
+CRPIX3  =                  1.0 / RA reference pixel
+TTYPE#  = 'CRVAL3  '           / Value of RA
+TFORM#  = '1D      '           / 8-byte real
+TUNIT#  = 'deg     '           / degrees
+CDELT3  = *                    / RA axis increment
+#
+CTYPE4  = 'DEC     '           / DATA ARRAY AXIS 4: DEC mid-integration (degenerate)
+CRPIX4  =                  1.0 / DEC reference pixel
+TTYPE#  = 'CRVAL4  '           / Value of DEC
+TFORM#  = '1D      '           / 8-byte real
+TUNIT#  = 'deg     '           / degrees
+CDELT4  = *                    / DEC axis increment
+#
+TTYPE#  = 'SCANRATE'           / Scanning rate
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg/s   '           / 
+#
+SPECSYS = *                    / Doppler reference frame
+SYSOBS  = *                    / Doppler reference frame of observation
+EQUINOX = *                    / Equinox of equatorial coordinates
+RADESYS = *                    / Equatorial coordinate frame
+#
+TTYPE#  = 'TSYS'               / System temperature
+TFORM#  = '1E      '           / 
+TUNIT#  = 'Jy      '           / 
+#
+TTYPE#  = 'CALFCTR '           / 
+TFORM#  = '1E      '           / 
+#
+TTYPE#  = 'DATA    '           / 
+TFORM#  = '1E      '           / 
+TDIM#   = '        '           / Matrix dimensions (e.g. 8,4096,4,1,1)
+#
+TTYPE#  = 'TCAL'               / Cal temperature
+TFORM#  = '1E      '           / 
+TUNIT#  = 'Jy      '           /
+TTYPE#  = 'TCALTIME'           / 
+TFORM#  = '16A     '           / 
+TTYPE#  = 'AZIMUTH '           / Azimuth (deg)
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg     '           /
+TTYPE#  = 'ELEVATIO'           / Elevation (deg)
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg     '           /
+TTYPE#  = 'PARANGLE'           / Parallactic angle (deg)
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg     '           /
+TTYPE#  = 'FOCUSTAN'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg     '           /
+TTYPE#  = 'FOCUSROT'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg     '           /
+TTYPE#  = 'TAMBIENT'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = 'C       '           /
+TTYPE#  = 'PRESSURE'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = 'Pa      '           /
+TTYPE#  = 'HUMIDITY'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = '%       '           /
+TTYPE#  = 'WINDSPEE'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = 'm/s     '           /
+TTYPE#  = 'WINDDIRE'           /
+TFORM#  = '1E      '           / 
+TUNIT#  = 'deg     '           /
+#
+END
