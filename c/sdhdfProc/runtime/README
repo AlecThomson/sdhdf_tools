@@ -1,3 +1,6 @@
 Files used by the SDHDFproc code during runtime.
 
 To add new files:
+git add <path/filename>
+git commit
+git push

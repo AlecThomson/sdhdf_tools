@@ -25,7 +25,7 @@
 #define SOFTWARE_VER "v0.1"
 #define MAX_STRLEN    512
 #define MAX_FILES     8192         // Maximum number of files to be processed in batch processing
-#define MAX_CHAN_SCAL 3328         // Maximum number of channels in the SCAL measurements
+#define MAX_CHAN_SCAL 65536        // Maximum number of channels in the SCAL measurements
 
 #define SPEED_LIGHT   299792458.0  // Speed of light
 #define BOLTZMANN 1.38064852e-23   // Boltzmann constant

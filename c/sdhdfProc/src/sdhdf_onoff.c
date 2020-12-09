@@ -123,6 +123,8 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%f",&sclB);
       else if (strcmp(argv[i],"-subtract")==0)
 	procType=2;
+      else if (strcmp(argv[i],"-1div")==0)
+	procType=3;
       else if (strcmp(argv[i],"-scaleOff")==0)
 	strcpy(scaleOff,argv[++i]);
       else if (strcmp(argv[i],"-h")==0) // Should actually free memory
@@ -214,8 +216,10 @@ int main(int argc,char *argv[])
 
 		      if (procType==1)			
 			out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
-		      else
+		      else if (procType==2)
 			out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1);
+		      else
+			out_data[k+0*npol*nchan]         = sclA*on_pol1/(off_pol1-on_pol1);
 			
 		    }
 		  else if (npol == 2)
@@ -230,10 +234,15 @@ int main(int argc,char *argv[])
 			  out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
 			  out_data[k+0*npol*nchan+nchan]   = sclB*(on_pol2-off_pol2)/off_pol2;
 			}
-		      else
+		      else if (procType==2)
 			{
 			  out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1);
 			  out_data[k+0*npol*nchan+nchan]   = sclB*(on_pol2-off_pol2);
+			}
+		      else
+			{
+			  out_data[k+0*npol*nchan]         = sclA*on_pol1/(off_pol1-on_pol1);
+			  out_data[k+0*npol*nchan+nchan]   = sclB*on_pol2/(off_pol2-on_pol2);
 			}
 		      
 		    }
@@ -259,12 +268,19 @@ int main(int argc,char *argv[])
 			  out_data[k+0*npol*nchan+2*nchan] = (on_pol3-off_pol3)/off_pol3;
 			  out_data[k+0*npol*nchan+3*nchan] = (on_pol4-off_pol4)/off_pol4;
 			}
-		      else
+		      else if (procType==2)
    			{
 			  out_data[k+0*npol*nchan]         = sclA2*sclA*(on_pol1-off_pol1);
 			  out_data[k+0*npol*nchan+nchan]   = sclB2*sclB*(on_pol2-off_pol2);
 			  out_data[k+0*npol*nchan+2*nchan] = (on_pol3-off_pol3);
 			  out_data[k+0*npol*nchan+3*nchan] = (on_pol4-off_pol4);
+			}
+		      else if (procType==3)
+			{
+			  out_data[k+0*npol*nchan]         = sclA2*sclA*on_pol1/(off_pol1-on_pol1);
+			  out_data[k+0*npol*nchan+nchan]   = sclB2*sclB*on_pol2/(off_pol2-on_pol2);
+			  out_data[k+0*npol*nchan+2*nchan] = on_pol3/(off_pol3-on_pol3);
+			  out_data[k+0*npol*nchan+3*nchan] = on_pol4/(off_pol4-on_pol4);
 			}
 
 		    }

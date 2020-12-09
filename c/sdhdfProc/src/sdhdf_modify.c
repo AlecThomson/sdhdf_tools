@@ -708,10 +708,9 @@ int main(int argc,char *argv[])
 					  break;
 					}				     
 				    }
-				  // FIX ME -- ****
-				  printf("WARNING: ASSUMING CAL HAS 128 CHANNELS/SUBBAND\n");
-				  sclAA *= (nchan/128);
-				  sclBB *= (nchan/128);
+				  //				  printf("WARNING: ASSUMING CAL HAS 128 CHANNELS/SUBBAND\n");
+				  //				  sclAA *= (nchan/128);
+				  //				  sclBB *= (nchan/128);
 				  inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]*=sclAA;
 				  inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]*=sclBB;
 				}
