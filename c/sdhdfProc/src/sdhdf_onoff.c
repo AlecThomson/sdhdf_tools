@@ -33,6 +33,7 @@
 #include "hdf5.h"
 
 #define VNUM "v0.1"
+#define MAX_FILES_BATCH 32
 
 void help()
 {
@@ -57,9 +58,9 @@ void determineOffSourceScale(float *freqOffScl,float *offSclA,float *offSclB,int
 int main(int argc,char *argv[])
 {
   int i,j,k,p,ii,b;
-  char fnameOn[16][MAX_STRLEN];
-  char fnameOff[16][MAX_STRLEN];
-  char outFileName[16][MAX_STRLEN];
+  char fnameOn[MAX_FILES_BATCH][MAX_STRLEN];
+  char fnameOff[MAX_FILES_BATCH][MAX_STRLEN];
+  char outFileName[MAX_FILES_BATCH][MAX_STRLEN];
   char defineOn[MAX_STRLEN];
   char defineOff[MAX_STRLEN];
   char defineOutFileName[MAX_STRLEN];
@@ -92,7 +93,7 @@ int main(int argc,char *argv[])
   int procType=1;
   
   FILE *fout;
-  
+  printf("Starting\n");
   // help();
 
   if (!(onFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
@@ -112,7 +113,7 @@ int main(int argc,char *argv[])
     }
 
   for (i=1;i<argc;i++)
-    {      
+    {       
       if (strcmp(argv[i],"-on")==0)
 	strcpy(fnameOn[0],argv[++i]);	
       else if (strcmp(argv[i],"-off")==0)
@@ -163,13 +164,23 @@ int main(int argc,char *argv[])
       while (!feof(fin))
 	{
 	  if (fscanf(fin,"%s %s %s",fnameOn[nFiles],fnameOff[nFiles],outFileName[nFiles])==3)
-	    nFiles++;
+	    {
+	      nFiles++;
+	      if (nFiles == MAX_FILES_BATCH)
+		{
+		  printf("ERROR: Need to increase MAX_FILES_BATCH in sdhdf_onoff.c\n");
+		  printf("Currently the maximum number of files is set to %d\n",MAX_FILES_BATCH);
+		  exit(1);
+		}
+	    }
 	}
       fclose(fin);
+      printf("Loaded %d entires from %s\n",nFiles,batchFileName);
     }
   
   for (ii=0;ii<nFiles;ii++)
     {
+      printf("Processing files: %s %s %s\n",fnameOn[ii],fnameOff[ii],outFileName[ii]);
       sdhdf_initialiseFile(onFile);
       sdhdf_initialiseFile(offFile);
       sdhdf_initialiseFile(outFile);

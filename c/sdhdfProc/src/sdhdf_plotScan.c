@@ -181,7 +181,7 @@ int main(int argc,char *argv[])
 	  wSum=0;
 	  for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
 	    {
-	      if (inFile->beam[ibeam].bandData[i].astro_data.flag[j] == 0)
+	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j] != 0)
 		{
 		  if ((f0 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= f0) &&
 		      (f1 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= f1))

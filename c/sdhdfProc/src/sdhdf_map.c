@@ -177,7 +177,7 @@ int main(int argc,char *argv[])
 	for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l++) 
 	  {
 	    flagDump=0;
-	    if (strcmp(fname[i],"uwl_200720_024617.hdf.autoflag")==0 && (l>=105)) flagDump=1;
+
 	    if (flagDump==0)
 	      {
 		xfit[nd] = l;
@@ -191,7 +191,7 @@ int main(int argc,char *argv[])
 		    //		if (f0 > 1370 && f0 < 1410)
 		    //		if (f0 > 2000 && f0 < 2100)
 		    {
-		      if (inFile->beam[ibeam].bandData[j].astro_data.flag[k] == 0)
+		      if (inFile->beam[ibeam].bandData[j].astro_data.dataWeights[k] != 0)
 			{
 			  val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
 			  val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[l*inFile->beam[ibeam].bandHeader[j].nchan+k];

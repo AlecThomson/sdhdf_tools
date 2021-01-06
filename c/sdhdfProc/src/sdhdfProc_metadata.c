@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
+#include <string.h> 
 #include "sdhdfProc.h"
 #include <time.h>
 #include <sys/utsname.h>
@@ -545,7 +545,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       if (dims[0] != nband)
 	{
 	  printf("ERROR: incorrect number of bands.  In beam header have %d. Dimension of data is %d\n",nband,dims[0]);
-	  printf("label = %s\n",label);
+	  printf("Label = %s\n",label);
 	  printf("File = %s\n",inFile->fname);
 	  exit(1);
 	}

@@ -95,8 +95,8 @@ int main(int argc,char *argv[])
 		  // Again a waste as don't need to load in the data: FIX ME
 		  sdhdf_loadBandData(inFile,b,i,1);
 		  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-		    inFile->beam[b].bandData[i].astro_data.flag[j] =
-		      fromFile->beam[b].bandData[i].astro_data.flag[j];
+		    inFile->beam[b].bandData[i].astro_data.dataWeights[j] =
+		      fromFile->beam[b].bandData[i].astro_data.dataWeights[j];
 		}
 	    }
 	  saveFile(inFile);

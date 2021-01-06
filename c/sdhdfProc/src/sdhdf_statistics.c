@@ -96,7 +96,7 @@ int main(int argc,char *argv[])
 
   //iband = 5;
   //  iband=0;
-  iband = 0;
+  iband = 5;
   
   sdhdf_initialiseFile(inFile);
 
@@ -180,28 +180,28 @@ int main(int argc,char *argv[])
 		    mean2/=(double)(np*nAv);
 		    nfit = 1;
 		    
-		TKremovePoly_d(highResX,highResY1,np,nfit);
-		TKremovePoly_d(highResX,highResY2,np,nfit);
-		
-		// Get mean and variance in the baseline region		
-		
-		sx=sx2=0;
-		sx_2=sx2_2=0;
-		nc = 0;
-		for (kk=0;kk<np;kk++)
-		  {
-		    sx    += highResY1[kk];
-		    sx2   += pow(highResY1[kk],2);
-		    sx_2  += highResY2[kk];
-		    sx2_2 += pow(highResY2[kk],2);
-		    nc++;
-		  }	       		
-		sdev1 = sqrt(1./(double)nc*sx2 - pow(1.0/(double)nc * sx,2));
-		sdev2 = sqrt(1./(double)nc*sx2_2 - pow(1.0/(double)nc * sx_2,2));
-		
-		// Mean = before polynomial subtraction
-		// Sdev = after polynomial subtraction
-		printf("[stats] %d %d %d %g %g %g %g %.5f\n",i,l,ll,mean1,mean2,sdev1,sdev2,inFile->beam[0].bandData[j].astro_obsHeader[ll+l].mjd);	  
+		    TKremovePoly_d(highResX,highResY1,np,nfit);
+		    TKremovePoly_d(highResX,highResY2,np,nfit);
+		    
+		    // Get mean and variance in the baseline region		
+		    
+		    sx=sx2=0;
+		    sx_2=sx2_2=0;
+		    nc = 0;
+		    for (kk=0;kk<np;kk++)
+		      {
+			sx    += highResY1[kk];
+			sx2   += pow(highResY1[kk],2);
+			sx_2  += highResY2[kk];
+			sx2_2 += pow(highResY2[kk],2);
+			nc++;
+		      }	       		
+		    sdev1 = sqrt(1./(double)nc*sx2 - pow(1.0/(double)nc * sx,2));
+		    sdev2 = sqrt(1./(double)nc*sx2_2 - pow(1.0/(double)nc * sx_2,2));
+		    
+		    // Mean = before polynomial subtraction
+		    // Sdev = after polynomial subtraction
+		    printf("[stats] %d %d %d %g %g %g %g %.5f\n",i,l,ll,mean1,mean2,sdev1,sdev2,inFile->beam[0].bandData[j].astro_obsHeader[ll+l].mjd);	  
 		  }
 	      }
 	  }

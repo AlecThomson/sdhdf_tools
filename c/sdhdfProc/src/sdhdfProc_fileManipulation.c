@@ -264,9 +264,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       nchan = inFile->beam[beam].bandHeader[band].nchan;
       ndump = inFile->beam[beam].bandHeader[band].ndump;
       npol  = inFile->beam[beam].bandHeader[band].npol;
-
       sdhdf_allocateBandData(&(inFile->beam[beam].bandData[band].astro_data),nchan,ndump,npol);
-      
       sprintf(dataName,"beam_%d/%s/astronomy_data/frequency",beam,inFile->beam[beam].bandHeader[band].label);      
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.freq);  
@@ -274,14 +272,11 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq = sdhdf_getNattributes(inFile,dataName);
       for (j=0;j<inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq;j++)
 	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j]));
-	  
       sprintf(dataName,"beam_%d/%s/astronomy_data/data",beam,inFile->beam[beam].bandHeader[band].label);      
-
       // Read attributes
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
 	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
-
 
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);
@@ -290,7 +285,6 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       free(allData);
       status = H5Dclose(dataset_id);
       // Flags
-      
       sprintf(dataName,"beam_%d/%s/astronomy_data/flag",beam,inFile->beam[beam].bandHeader[band].label);      
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
@@ -308,6 +302,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.dataWeights);        
 	  status = H5Dclose(dataset_id);
 	}
+
     }
   // calibrator data
   else if (type==2 || type==3)

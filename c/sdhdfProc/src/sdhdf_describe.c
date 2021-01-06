@@ -29,7 +29,7 @@
 #include <math.h>
 #include "sdhdfProc.h"
 
-#define VERSION "v0.5"
+#define VERSION "v1.0"
 
 void help()
 {

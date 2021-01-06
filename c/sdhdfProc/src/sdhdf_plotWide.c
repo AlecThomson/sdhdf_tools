@@ -43,7 +43,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int iband,int idump,char *grDev,char 
 void showTransmitter(float freq,float bw,char *label,float miny,float maxy);
 void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float miny,float maxy);
 void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
-	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax);
+	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title);
 
 int main(int argc,char *argv[])
 {  
@@ -74,7 +74,18 @@ int main(int argc,char *argv[])
   float mx,my;
   char key;
   char grDev[128]="/xs";
+  char title[128]="";
   int splitRF=0;
+  int waterfall=0;
+  int wNchan=0;
+  int wNdump=0;
+  float wF0,wF1;
+  float wMin,wMax;
+  float wFileChange[MAX_FILES];
+  int wMax_dump=2058; // How to set this properly?
+  float owMin,owMax;
+  float *arr;
+
   int nShade=0;
   int shadeCol[MAX_SHADE];
   float shadeF0[MAX_SHADE];
@@ -119,6 +130,8 @@ int main(int argc,char *argv[])
 	{sscanf(argv[++i],"%f",&maxy); setMinMax=1;}
       else if (strcmp(argv[i],"-transmitters")==0)
 	plotTransmitters=1;
+      else if (strcmp(argv[i],"-waterfall")==0)
+	waterfall=1;
       else if (strcmp(argv[i],"-maxhold")==0)
 	plotMaxHold=1;
       else if (strcmp(argv[i],"-splitRF")==0)
@@ -162,58 +175,141 @@ int main(int argc,char *argv[])
       if (allocateMemory ==0)
 	{
 	  nVals=0;
+	}
+      if (sb==-1)
+	{
 	  for (j=0;j<inFile->beam[ibeam].nBand;j++)
 	    {
 	      sdhdf_loadBandData(inFile,ibeam,j,1);
 	      nVals+=(inFile->beam[ibeam].bandHeader[j].nchan);
 	    }
-	  px = (float *)malloc(sizeof(float)*nVals);
-	  pflag = (float *)malloc(sizeof(float)*nVals);
-	  py1 = (float *)calloc(sizeof(float),nVals);
-	  py2 = (float *)calloc(sizeof(float),nVals);
-	  py1_max = (float *)calloc(sizeof(float),nVals);
-	  py2_max = (float *)calloc(sizeof(float),nVals);
-	  psum = (int *)calloc(sizeof(int),nVals);
-	  allocateMemory=1;
-	  writepos=0;
-	  for (j=0;j<inFile->beam[ibeam].nBand;j++)
-	    {
-	      for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
-		{
-		  px[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
-		  pflag[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.dataWeights[k];
-		}
-	      writepos+=inFile->beam[ibeam].bandHeader[j].nchan;
-	    }
 	}
-      printf("Total number of values to plot =  %d\n",(int)nVals);
-      writepos=0;
-      for (j=0;j<inFile->beam[ibeam].nBand;j++)
+      else
 	{
-	  for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
+	  sdhdf_loadBandData(inFile,ibeam,sb,1);
+	  nVals+=(inFile->beam[ibeam].bandHeader[sb].nchan);
+	}
+      if (allocateMemory==0)
+	{
+	  // NOTE: SHOULD BE ABLE TO LOAD MULTPLE FILES ...
+	  allocateMemory=1;
+	  if (waterfall==1)
+	    arr = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[sb].nchan*wMax_dump);
+	  else
 	    {
-	      if (sd<0)
+	      px      = (float *)malloc(sizeof(float)*nVals);
+	      pflag   = (float *)malloc(sizeof(float)*nVals);
+	      py1     = (float *)calloc(sizeof(float),nVals);
+	      py2     = (float *)calloc(sizeof(float),nVals);
+	      py1_max = (float *)calloc(sizeof(float),nVals);
+	      py2_max = (float *)calloc(sizeof(float),nVals);
+	      psum    = (int *)calloc(sizeof(int),nVals);
+
+	      writepos=0;
+	      if (sb==-1)
 		{
-		  s0 = 0;
-		  s1 = inFile->beam[ibeam].bandHeader[j].ndump;
+		  for (j=0;j<inFile->beam[ibeam].nBand;j++)
+		    {
+		      for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
+			{
+			  px[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
+			  pflag[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.dataWeights[k];
+			}
+		      writepos+=inFile->beam[ibeam].bandHeader[j].nchan;
+		    }
 		}
 	      else
 		{
-		  s0 = sd;
-		  s1 = sd+1;
-		}
-	      for (l=s0;l<s1;l++)
-		{
-		  val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
-		  val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
-		  py1[writepos+k] += val1;
-		  py2[writepos+k] += val2;
-		  if (val1 > py1_max[writepos+k]) py1_max[writepos+k] = val1;
-		  if (val2 > py2_max[writepos+k]) py2_max[writepos+k] = val2;
-		  psum[writepos+k] ++;
+		  for (k=0;k<inFile->beam[ibeam].bandHeader[sb].nchan;k++)
+		    {
+		      px[writepos+k] = inFile->beam[ibeam].bandData[sb].astro_data.freq[k];
+		      pflag[writepos+k] = inFile->beam[ibeam].bandData[sb].astro_data.dataWeights[k];
+		    }
+		  writepos+=inFile->beam[ibeam].bandHeader[sb].nchan;	      
 		}
 	    }
-	  writepos+=inFile->beam[ibeam].bandHeader[j].nchan;
+	}
+
+
+      if (waterfall==1)
+	{
+	  if (sb==-1)
+	    {
+	      printf("For waterfall plot, must set -sb <sub-band>\n");
+	      waterfall=0;
+	    }
+	  else
+	    {
+	      float val;
+	      printf("Loading waterfall plot data\n");	      
+	      printf("wNdump = %d\n",wNdump);
+	      printf("New ndump = %d\n",inFile->beam[ibeam].bandHeader[sb].ndump);
+	      printf("New nchan = %d\n",inFile->beam[ibeam].bandHeader[sb].nchan);
+	      printf("Val 0 = %g\n",inFile->beam[ibeam].bandData[sb].astro_data.pol1[0*inFile->beam[ibeam].bandHeader[sb].nchan+0]);
+	      for (k=0;k<inFile->beam[ibeam].bandHeader[sb].ndump;k++)
+		{
+		  for (j=0;j<inFile->beam[ibeam].bandHeader[sb].nchan;j++)
+		    {
+		      val = inFile->beam[ibeam].bandData[sb].astro_data.pol1[k*inFile->beam[ibeam].bandHeader[sb].nchan+j]
+			+ inFile->beam[ibeam].bandData[sb].astro_data.pol2[k*inFile->beam[ibeam].bandHeader[sb].nchan+j];
+
+		      arr[(k+wNdump)*inFile->beam[ibeam].bandHeader[sb].nchan+j] = val;
+		      if (k==0 && j==0)
+			  wMin = wMax = val;
+		      else
+			{
+			  if (wMin > val) wMin = val;
+			  if (wMax < val) wMax = val;
+			}
+		    }
+		}
+	      wF0 = inFile->beam[ibeam].bandData[sb].astro_data.freq[0];
+	      wF1 = inFile->beam[ibeam].bandData[sb].astro_data.freq[inFile->beam[ibeam].bandHeader[sb].nchan-1];
+	      
+	      printf("Complete loading waterfall, min/max = %g/%g\n",wMin,wMax);
+	      wNchan =inFile->beam[ibeam].bandHeader[sb].nchan;
+	      wNdump+=inFile->beam[ibeam].bandHeader[sb].ndump;
+	      wFileChange[i]=wNdump;
+
+	      printf("Now wNdump = %d\n",wNdump);
+	    }
+
+	}
+      else
+	{
+	  
+	  printf("Total number of values to plot =  %d\n",(int)nVals);
+	  writepos=0;
+	  for (j=0;j<inFile->beam[ibeam].nBand;j++)
+	    {
+	      if (sb==-1 || j == sb)
+		{
+		  for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
+		    {
+		      if (sd<0)
+			{
+			  s0 = 0;
+			  s1 = inFile->beam[ibeam].bandHeader[j].ndump;
+			}
+		      else
+			{
+			  s0 = sd;
+			  s1 = sd+1;
+			}
+		      for (l=s0;l<s1;l++)
+			{
+			  val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
+			  val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
+			  py1[writepos+k] += val1;
+			  py2[writepos+k] += val2;
+			  if (val1 > py1_max[writepos+k]) py1_max[writepos+k] = val1;
+			  if (val2 > py2_max[writepos+k]) py2_max[writepos+k] = val2;
+			  psum[writepos+k] ++;
+			}		  
+		    }
+		  writepos+=inFile->beam[ibeam].bandHeader[j].nchan;
+		}
+	    }
 	}
       
       if (sd >= 0)
@@ -223,7 +319,7 @@ int main(int argc,char *argv[])
       printf("Done close\n");
     }
 
-  if (miny == -1 && maxy == -1)
+  if (miny == -1 && maxy == -1 && waterfall == 0)
     {
       int useThis;
       
@@ -258,8 +354,8 @@ int main(int argc,char *argv[])
 	    }
 	}
     }
-  printf("miny/maxy = %g/%g\n",miny,maxy);
-  if (sb > -1)
+
+  if (sb > -1 && setMinX == -1)
     {
       setMinX = 704+sb*128;
       setMaxX = 704+(sb+1)*128;
@@ -276,10 +372,23 @@ int main(int argc,char *argv[])
   else
     maxx = 4040;
 
+  if (waterfall==1)
+    {
+      miny = 0;
+      maxy = wNdump;	
+    }
+  
+  owMin = wMin;
+  owMax = wMax;
+  printf("miny/maxy = %g/%g\n",miny,maxy);
+  printf("minx/maxx = %g/%g\n",minx,maxx);
+  
   ominy = miny;
   omaxy = maxy;
   ominx = minx;
   omaxx = maxx;
+
+  printf("Starting plot >%s<\n",grDev);
   
   cpgbeg(0,grDev,1,1);  
   cpgsch(1.4);
@@ -287,8 +396,47 @@ int main(int argc,char *argv[])
   cpgscf(2);
   cpgask(0);
 
+  printf("Making plot\n");
+  
   do {
-    if (splitRF==0)
+    if (waterfall==1)
+      {
+	float tr[6];
+	float heat_l[] = {0.0, 0.2, 0.4, 0.6, 1.0};
+	float heat_r[] = {0.0, 0.5, 1.0, 1.0, 1.0};
+	float heat_g[] = {0.0, 0.0, 0.5, 1.0, 1.0};
+	float heat_b[] = {0.0, 0.0, 0.0, 0.3, 1.0};
+	float tx[2],ty[2];
+	int nx,ny;
+
+	nx = wNchan;
+	ny = wNdump;
+
+	tr[0] = wF0; tr[1] = (wF1-wF0)/nx; tr[2] = 0;
+	tr[3] = 0; tr[4] = 0; tr[5] = 1;
+	  
+
+	printf("Waterfall with %d and %d\n",nx,ny);
+	
+	cpgeras();
+	cpgsci(1);
+	cpgsch(1.0);
+	cpgsvp(0.10,0.95,0.10,0.95);
+	cpgswin(minx,maxx,miny,maxy);
+	cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
+	cpglab("Frequency (MHz)","Time","");
+	cpgctab(heat_l,heat_r,heat_g,heat_b,5,1.0,0.5);
+	cpgimag(arr,nx,ny,1,nx,1,ny,wMin,wMax,tr);
+	cpgsls(4);
+	for (i=0;i<inFiles;i++)
+	  {
+	    tx[0] = minx; tx[1] = maxx;
+	    ty[0] = ty[1] = wFileChange[i];
+	    cpgline(2,tx,ty);
+	  }
+	cpgsls(1);
+      }
+    else if (splitRF==0)
       {
 	cpgeras();
 	cpgsci(1);
@@ -299,9 +447,9 @@ int main(int argc,char *argv[])
 	//	cpglab("Observing frequency (MHz)","Signal strength","");
 	//	cpgsci(2);
 	cpgsch(1.0);
-	cpgsvp(0.10,0.95,0.10,0.95);
-
-	drawBand(minx,maxx,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1);
+	cpgsvp(0.10,0.95,0.10,0.90);
+	sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
+	drawBand(minx,maxx,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title);
 
 	//	cpgline(nVals,px,py1);
 	if (plotMaxHold==1)
@@ -329,14 +477,14 @@ int main(int argc,char *argv[])
 	cpgsch(1.0);
 	cpgsvp(0.10,0.95,0.10,0.35);
 
-	drawBand(704,1344,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax);
+	drawBand(704,1344,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title);
 	
 	
 	cpgsvp(0.10,0.95,0.40,0.65);
-	drawBand(1344,2368,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax);
+	drawBand(1344,2368,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title);
 
 	cpgsvp(0.10,0.95,0.7,0.95);
-	drawBand(2368,4096,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax);
+	drawBand(2368,4096,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title);
 
 	cpgsch(1.4);
 	if (dispAz==1)
@@ -446,6 +594,12 @@ int main(int argc,char *argv[])
 	  printf("Mouse press at (%.6f,%g)\n",mx,my);		 
 	else if (key=='m')
 	  plotMaxHold*=-1;
+	else if (key=='w')
+	  {
+	    printf("Min/max = %g %g\n",wMin,wMax);
+	    printf("Enter new values:\n");
+	    scanf("%f %f",&wMin,&wMax);
+	  }
 	else if (key=='M')
 	  molecularLines*=-1;
 	else if (key=='t')
@@ -465,13 +619,19 @@ int main(int argc,char *argv[])
 
   
   cpgend();  
-  free(px);
-  free(pflag);
-  free(py1);
-  free(py2);
-  free(py1_max);
-  free(py2_max);      
-  free(psum);
+
+  if (waterfall==1)
+    free(arr);
+  else
+    {
+      free(px);
+      free(pflag);
+      free(py1);
+      free(py2);
+      free(py1_max);
+      free(py2_max);      
+      free(psum);
+    }
   free(inFile);
 }
 
@@ -518,7 +678,7 @@ void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float min
 }
 
 void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
-	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax)
+	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title)
 {
   int i,i0,i1,ii,flagit;
   float useMiny,useMaxy;
@@ -576,11 +736,11 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
   else
     cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
   if (labelit==1)
-    cpglab("Frequency (MHz)","","");
+    cpglab("Frequency (MHz)","",title);
   else if (labelit==2)
-    cpglab("","Signal strength","");
+    cpglab("","Signal strength",title);
   else if (labelit==3)
-    cpglab("Frequency (MHz)","Signal strength","");
+    cpglab("Frequency (MHz)","Signal strength",title);
   drawShades(nShade,shadeF0,shadeF1,shadeCol,useMiny,useMaxy);
 
   i0=0;	

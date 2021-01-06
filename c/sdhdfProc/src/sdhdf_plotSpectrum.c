@@ -200,7 +200,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 
 	  if (reload==1) // Should reload if band or beam changes
 	    {
-	      printf("Loading band data %d\n",iband);
 	      // If already loaded then should release data **
 	      // SHOULD ONLY LOAD IF NOT LOADED YET
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.pol1AllocatedMemory == 0)
@@ -217,7 +216,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    }
 		  //  char freqFrame[MAX_STRLEN] = "[unknown]";
 		  //  char freqUnit[MAX_STRLEN] = "unknown";
-		  
+
 		  if (strcmp(freqFrame,"[unknown]")==0)
 		    {
 		      int kk;
@@ -414,6 +413,43 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	      else
 		printf("Please press 'z' and then move somewhere and click left mouse button\n");
+	    }
+	  else if (key=='s')
+	    {
+	      float mx2,my2;
+	      float t;
+	      int kk;
+	      float sx[nchan],sy1[nchan],sy2[nchan];
+	      double ssy,ssy_2,ssy2,ssy2_2,sdev1,sdev2;
+	      int ns=0;
+	      cpgband(4,0,mx,my,&mx2,&my2,&key);
+	      if (mx != mx2 && my != my2)
+		{
+		  if (mx > mx2)
+		    {t = mx; mx = mx2; mx2 = t;}
+
+		  printf("Determining statistics between %.6f and %.6f\n",mx,mx2);
+		  ssy = ssy_2 = ssy2 = ssy2_2 = 0;
+		  for (kk=0;kk<nchan;kk++)
+		    {
+		      if (freq[kk] > mx && freq[kk] <= mx2)
+			{
+			  sy1[ns]=pol1[kk];
+			  sy2[ns]=pol2[kk];
+			  ssy += pol1[kk];
+			  ssy2 += pol2[kk];
+			  ssy_2 += pow(pol1[kk],2);
+			  ssy2_2 += pow(pol2[kk],2);
+			  ns++;
+			}
+		    }
+		  sdev1 = sqrt(1./(double)ns*ssy_2   - pow(1.0/(double)ns * ssy,2));
+		  sdev2 = sqrt(1./(double)ns*ssy2_2 - pow(1.0/(double)ns * ssy2,2));
+		  printf("# Pol   Npts   Mean    RMS\n");
+		  printf("Pol 1: %d %g %g\n",ns,ssy/(double)ns,sdev1);
+		  printf("Pol 2: %d %g %g\n",ns,ssy2/(double)ns,sdev2);
+
+		}
 	    }
 	  else if (key=='f')
 	    {
