@@ -173,6 +173,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  printf("Flagging will apply to all spectral dumps (press 'a' to toggle)\n");
 	else
 	  printf("Flagging will only apply to current spectral dump (press 'a' to toggle)\n");
+	printf("Recalc ID = %d\n",recalc);
 	regionType=1;
 	nFlagRegion=0;
 	c0 = 0;
@@ -186,7 +187,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
 	for (i=0;i<nchan;i++)
 	  {
-	    px[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
+	    px[i]  = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
 	    py1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
 	    py2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
 
@@ -212,8 +213,8 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 		    if (px[i] > minx && px[i] < maxx)
 		      {
 			if (py1[i] > maxy) {maxy = py1[i]; maxPosX = px[i];}
-			if (py1[i] < miny) {miny = py1[i];}
 			if (py2[i] > maxy) {maxy = py2[i]; maxPosX = px[i];}
+			if (py1[i] < miny) {miny = py1[i];}
 			if (py2[i] < miny) {miny = py2[i];}
 		      }
 		  }
@@ -222,6 +223,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	    
 	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] == 0) // No region set
 	      {
+		printf("Flagging region\n");
 		regionType=2;
 		pf1[nFlagRegion] = px[i];
 	      }	     
@@ -238,7 +240,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	n = nchan;
 	recalc=0;
       }
-    
+    printf("Number of flag regions = %d\n",nFlagRegion);
     cpgenv(minx,maxx,miny,maxy,0,1);
     sprintf(title,"Band: %s (spectral dump %d/%d)",inFile->beam[ibeam].bandHeader[iband].label,idump,ndump-1);
     cpglab("Frequency (MHz)","Signal strength (arbitrary)",title);
@@ -255,12 +257,12 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	int drawIt=-1;
 	for (i=0;i<nchan;i++)
 	  {
-	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] != 0 && drawIt==-1)
+	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] != 0 && drawIt==-1)
 	      {
 		drawIt=1;
 		i0=i;
 	      }
-	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] == 0 && drawIt==1)
+	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] == 0 && drawIt==1)
 	      {
 		cpgsci(1); cpgline(i-1-i0,px+i0,py1+i0); cpgsci(1);
 		cpgsci(2); cpgline(i-1-i0,px+i0,py2+i0); cpgsci(1);
@@ -337,19 +339,38 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       {
 	saveFile(inFile,ibeam);
       }
+    else if (key=='k') // Zap all channels in current spectral dump zoom region and move to the next one
+      {
+	for (i=0;i<inFile->beam[ibeam].nBand;i++)
+	  {
+	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
+	      { 
+		if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= minx && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= maxx)
+		  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;			      
+	      }
+	  }
+	idump++;
+	if (idump >= ndump)
+	  {
+	    idump = ndump-1;
+	    recalc=1;
+	  }
+	else
+	  recalc=2;
+      }      
     else if (key=='+') 
       {
 	idump++;
 	if (idump >= ndump)
-	  iband = ndump-1;
-	recalc=1;
+	  idump = ndump-1;
+	recalc=2;
       }
     else if (key=='-') 
       {
 	idump--;
 	if (idump == -1)
 	  idump=0;
-	recalc=1;
+	recalc=2;
       }
     else if (key=='>') // Note changed from previously +/-
       {
@@ -383,7 +404,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  printf("Please press 'z' and then move somewhere and click left mouse button\n");
 	
       }
-    else if (key=='Z')
+    else if (key=='Z' || key=='f')
       {
 	float lowX,highX;
 	cpgband(4,0,mx,my,&mx2,&my2,&key);

@@ -298,9 +298,9 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
 	  //	  printf("Loading data weights\n");
-	  dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-	  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.dataWeights);        
-	  status = H5Dclose(dataset_id);
+	  dataset_id = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
+	  status     = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.dataWeights);        
+	  status     = H5Dclose(dataset_id);
 	}
 
     }
@@ -805,7 +805,9 @@ void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float 
   hid_t dataspace_id,stid,dset_id,datatype_id,group_id;
   hsize_t dims[2];
   herr_t status;
-  
+
+
+  printf("In here and writing data weights for ndump and nchan = %d and %d\n",ndump,nchan);
   dims[0] = ndump; 
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);

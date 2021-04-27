@@ -318,13 +318,8 @@ int main(int argc,char *argv[])
       sdhdf_closeFile(inFile);
       printf("Done close\n");
     }
-
-  if (miny == -1 && maxy == -1 && waterfall == 0)
+  if (waterfall==0)
     {
-      int useThis;
-      
-      miny =  1e30;
-      maxy = -1e30;
       for (i=0;i<nVals;i++)
 	{
 	  py1[i]/=(float)psum[i];
@@ -337,6 +332,17 @@ int main(int argc,char *argv[])
 	      py1_max[i] = log10(py1_max[i]);
 	      py2_max[i] = log10(py2_max[i]);
 	    }
+	}
+    }
+  
+  if (miny == -1 && maxy == -1 && waterfall == 0)
+    {
+      int useThis;
+      
+      miny =  1e30;
+      maxy = -1e30;
+      for (i=0;i<nVals;i++)
+	{
 	  useThis=1;
 	  if (setMinX != -1 && px[i] < setMinX)
 	    useThis=0;
@@ -729,6 +735,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
 	    }
 	}
     }
+  printf("The minimum and maximum values are: %g/%g\n",useMiny,useMaxy);
   cpgswin(f1,f2,useMiny,useMaxy);
 
   if (log==1)
@@ -745,6 +752,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
 
   i0=0;	
   region=0;
+  printf("nVals = %d\n",nVals);
   for (i=0;i<nVals;i++)
     {
       flagit=0;
@@ -761,6 +769,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
 		}
 	    }
 	}
+      //      printf("Here with %d %d\n",flagit,region);
       if (flagit==0 && region==2)
 	{
 	  region=0;
@@ -775,6 +784,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
 	  cpgline(i1-i0,px+i0,py2+i0);
 	  cpgsci(1);
 	  region=2;
+	  printf("Plotting %d\n",i1-i0);
 	}
     }
   if (region==0)

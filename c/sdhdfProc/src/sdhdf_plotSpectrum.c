@@ -151,6 +151,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   char key;
   float mx,my;
   int i,j;
+  double wts;
   float *aa,*bb,*ab,*abs;
   float minx,maxx,miny,maxy,minz,maxz;
   float ominx,omaxx,ominy,omaxy;
@@ -236,6 +237,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    {
 	      if (xplot==1)
 		{
+		  wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
 		  if (fref < 0)
 		      freq[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
 		  else
@@ -245,42 +247,56 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	      else
 		freq[i] = i;
-
-	      pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
-	      //	      printf("Loaded %f %f\n",freq[i],pol1[i]);
-	      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
-	      if (setLog == 1)
+	      if (wts>0)
 		{
-		  pol1[i]=log10(pol1[i]);
-		  if (npol > 1) pol2[i]=log10(pol2[i]);
+		  pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;
+		  //	      printf("Loaded %f %f\n",freq[i],pol1[i]);
+		  if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan]/wts;
+		  if (setLog == 1)
+		    {
+		      pol1[i]=log10(pol1[i]);
+		      if (npol > 1) pol2[i]=log10(pol2[i]);
+		    }
+		}
+	      else
+		{
+		  pol1[i] = 0;
+		  if (npol > 1) pol2[i] = 0;
 		}
 	    }
 
 	
-	  if (t==0 || t==1)
+	  if (t==-1 || t==0 || t==1)
 	    {
-	      int setMiny=0;
-	      for (i=0;i<nchan;i++)
+	      printf("t = %d\n",t);
+	      if (t==0 || t==1)
 		{
-		  if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] != 0 || flagIt==0)
+		  int setMiny=0;
+		  
+		  for (i=0;i<nchan;i++)
 		    {
-		      if (setMiny==0)
+		      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
+		      if (wts != 0 || flagIt==0)
 			{
-			  miny = maxy = pol1[i];
-			  setMiny=1;
-			}
-		      else
-			{
-			  if (pol1[i] > maxy) maxy = pol1[i];
-			  if (pol1[i] < miny) miny = pol1[i];
-			  
-			  if (npol > 1)
+			  if (setMiny==0)
 			    {
-			      if (pol2[i] > maxy) maxy = pol2[i];
-			      if (pol2[i] < miny) miny = pol2[i];
+			      miny = maxy = pol1[i];
+			      setMiny=1;
+			    }
+			  else
+			    {
+			      if (pol1[i] > maxy) maxy = pol1[i];
+			      if (pol1[i] < miny) miny = pol1[i];
+			      
+			      if (npol > 1)
+				{
+				  if (pol2[i] > maxy) maxy = pol2[i];
+				  if (pol2[i] < miny) miny = pol2[i];
+				}
 			    }
 			}
 		    }
+		  ominy = miny; omaxy = maxy;
 		}
 	      if (t==0)
 		{
@@ -293,9 +309,31 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		      minx = 0;
 		      maxx = nchan;
 		    }
-		      ominx = minx; omaxx = maxx;
+		  ominx = minx; omaxx = maxx;
 		}
-	      ominy = miny; omaxy = maxy;
+	      else if (t==-1)
+		{
+		  float sminx,smaxx;
+		  float f0,f1;
+		  sminx = minx;
+		  smaxx = maxx;
+		  
+		  if (xplot==1) // Convert channel to frequency
+		    {
+		      minx = freq[(int)sminx];
+		      maxx = freq[(int)smaxx];
+		      printf("Changing range from (%g,%g) to (%g,%g)\n",sminx,smaxx,minx,maxx);
+		    }
+		  else // Convert frequency to channel
+		    {
+		      f0 = inFile->beam[ibeam].bandData[iband].astro_data.freq[0];
+		      f1 = inFile->beam[ibeam].bandData[iband].astro_data.freq[1];
+		      minx = (int)((sminx-f0)/(f1-f0)+0.5);
+		      maxx = (int)((smaxx-f0)/(f1-f0)+0.5);
+		      printf("Changing range from (%g,%g) to (%g,%g)\n",sminx,smaxx,minx,maxx);
+		    }
+		}
+
 	      t=2;
 	      
 	    }
@@ -421,6 +459,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      int kk;
 	      float sx[nchan],sy1[nchan],sy2[nchan];
 	      double ssy,ssy_2,ssy2,ssy2_2,sdev1,sdev2;
+	      double min1,max1;
+	      double min2,max2;
+	      double freqPeak1,freqPeak2;
+	      int setMinMax=1;
 	      int ns=0;
 	      cpgband(4,0,mx,my,&mx2,&my2,&key);
 	      if (mx != mx2 && my != my2)
@@ -434,6 +476,18 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    {
 		      if (freq[kk] > mx && freq[kk] <= mx2)
 			{
+			  if (setMinMax==1)
+			    {
+			      min1 = max1 = pol1[kk];
+			      min2 = max2 = pol2[kk];
+			      freqPeak1 = freqPeak2 = freq[kk];
+			      setMinMax=0;
+			    }
+			  if (min1 > pol1[kk]) min1 = pol1[kk];
+			  if (min2 > pol2[kk]) min2 = pol2[kk];
+
+			  if (max1 < pol1[kk]) {max1 = pol1[kk]; freqPeak1 = freq[kk];}
+			  if (max2 < pol2[kk]) {max2 = pol2[kk]; freqPeak2 = freq[kk];}
 			  sy1[ns]=pol1[kk];
 			  sy2[ns]=pol2[kk];
 			  ssy += pol1[kk];
@@ -445,9 +499,9 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    }
 		  sdev1 = sqrt(1./(double)ns*ssy_2   - pow(1.0/(double)ns * ssy,2));
 		  sdev2 = sqrt(1./(double)ns*ssy2_2 - pow(1.0/(double)ns * ssy2,2));
-		  printf("# Pol   Npts   Mean    RMS\n");
-		  printf("Pol 1: %d %g %g\n",ns,ssy/(double)ns,sdev1);
-		  printf("Pol 2: %d %g %g\n",ns,ssy2/(double)ns,sdev2);
+		  printf("# Pol   Npts   Mean    RMS   Min          Max   FreqMax\n");
+		  printf("Pol 1: %d %g %g %g %g %.6f\n",ns,ssy/(double)ns,sdev1,min1,max1,freqPeak1);
+		  printf("Pol 2: %d %g %g %g %g %.6f\n",ns,ssy2/(double)ns,sdev2,min2,max2,freqPeak2);
 
 		}
 	    }
@@ -492,7 +546,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  else if (key=='x')
 	    {
 	      xplot*=-1;
-	      t=0;
+	      t=-1;
 	    }
 	  else if (key=='m')
 	    molecularLines*=-1;

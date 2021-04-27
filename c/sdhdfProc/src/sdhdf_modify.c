@@ -37,17 +37,15 @@
 #define MAX_IGNORE_SDUMP 4096
 
 double linearInterpolate(double *freq,double *scaleAA,double in_freq,int kk,int nScale);
-void getScal(double sysGain_freq,double *scalFreq,double *scalAA,double *scalBB,int nScal,double *scalAA_val,double *scalBB_val);
-
-void TKspline_interpolate(int n,double *x,double *y,double yd[][4],double *interpX,
+void   getScal(double sysGain_freq,double *scalFreq,double *scalAA,double *scalBB,int nScal,double *scalAA_val,double *scalBB_val);
+void   TKspline_interpolate(int n,double *x,double *y,double yd[][4],double *interpX,
 			  double *interpY,int nInterp);
-void TKcmonot (int n, double x[], double y[], double yd[][4]);
+void   TKcmonot (int n, double x[], double y[], double yd[][4]);
 
 
 // SHOULD ALLOCATE THIS PROPERLY **** FIX ME
 double yd1[4096][4];
 double yd2[4096][4];
-
 
 int main(int argc,char *argv[])
 {
@@ -74,6 +72,8 @@ int main(int argc,char *argv[])
   float *in_data,*out_data,*out_freq;
   double *in_freq;
   float *out_Tdata,*out_Fdata;
+  float *dataWts;
+  
   long out_nchan,out_npol,out_ndump,nsd;
   double av1,av2,av3,av4,avFreq;
   double tav=0;
@@ -92,12 +92,13 @@ int main(int argc,char *argv[])
 
   double sysGain_freq[4096],sysGain_p1[4096],sysGain_p2[4096],scalAA_val,scalBB_val;
   double lastGood_p1=1e8,lastGood_p2=1e8;
-  char scalFname[1024]="NULL";
-  int  nScal=-1;
-  int c_nchan;
-  int nc,nc2;
-  int nRF1,nRF2,nRF3;
-  int calBin = 32;  // *** MUST SET PROPERLY **
+  char   scalFname[1024]="NULL";
+  int    nScal=-1;
+  int    c_nchan;
+  int    nc,nc2;
+  int    nRF1,nRF2,nRF3;
+  int    calBin = 32;  // *** MUST SET PROPERLY **
+
   double scA_rf1_val,scB_rf1_val;
   double scA_rf2_val,scB_rf2_val;
   double scA_rf3_val,scB_rf3_val;
@@ -675,6 +676,7 @@ int main(int argc,char *argv[])
 		      out_data  = (float *)calloc(sizeof(float),out_nchan*out_npol*out_ndump);
 		      out_Tdata = (float *)calloc(sizeof(float),nchan*npol*out_ndump);
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
+		      dataWts   = (float *)calloc(sizeof(float),out_nchan*out_ndump);
 		      
 		      tav=0;
 		      
@@ -740,22 +742,30 @@ int main(int argc,char *argv[])
 				  //				  printf("Updating time averaged to %g\n",tav);
 				  for (k=0;k<nchan;k++)
 				    {
-				      // NOT ACCOUNTING FOR WEIGHTINGS			  
-				      if (npol==1)
-					out_Tdata[k] += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
-				      else if (npol==2)
+				      if (inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k]!=0)
 					{
-					  out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-					  out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
+					  if (npol==1)
+					    out_Tdata[k] += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
+					  else if (npol==2)
+					    {
+					      out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
+					    }
+					  else
+					    {
+					      out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+2*nchan] += inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+3*nchan] += inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; // /(float)nsd;  
+					    }
+					  
+					  
+					  //				      printf("Updating dataWts %d %d %g\n",j,k,inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k]);
+					  // Update the data weights
+					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
+					  dataWts[k] += inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
 					}
-				      else
-					{
-					  out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-					  out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
-					  out_Tdata[k+2*nchan] += inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; // /(float)nsd;
-					  out_Tdata[k+3*nchan] += inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; // /(float)nsd;  
-					}
-				      
+					  //				      printf("Done\n");
 				    }
 				}
 			    }
@@ -1272,6 +1282,13 @@ int main(int argc,char *argv[])
 		      // Write out the obs_params file
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump,1);
 		      free(outObsParams);
+		      
+		      printf("Writing out the data weights for band %d\n",ii);
+		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
+		      printf("Complete writing data weights\n");
+		   
+
+
 		      // FIX ME
 		      //		      sdhdf_writeFrequencyAttributes(outFile,inFile->bandHeader[ii].label);
 		      //		      sdhdf_writeDataAttributes(outFile,inFile->bandHeader[ii].label);
@@ -1291,7 +1308,7 @@ int main(int argc,char *argv[])
 		      free(out_Fdata);
 		      free(in_freq);
 		      free(out_freq);
-		      
+		      free(dataWts);
 		      // NOW NEED TO UPDATE META-DATA
 		      // Subintegration change
 		      //  band_header
@@ -1317,6 +1334,9 @@ int main(int argc,char *argv[])
 	      //	      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","sdhdfProc software to modify a file",args);	     
 	      //	      inFile->nHistory++;
 	      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
+
+	   
+
 	      
 	      sdhdf_copyRemainder(inFile,outFile,0);
 	      
