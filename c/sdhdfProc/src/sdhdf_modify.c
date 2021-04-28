@@ -230,6 +230,8 @@ int main(int argc,char *argv[])
 	  sdhdf_add1arg(args,argv[i]); 
 	}
       else if (strcasecmp(argv[i],"-fav")==0)
+	{printf("ERROR: Note: not averaging frequency channels currently -- use -fsum <nsum> to sum adjacent frequency channels\n"); exit(1);}
+      else if (strcasecmp(argv[i],"-fsum")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&fAv);}
       else
 	{
@@ -763,6 +765,7 @@ int main(int argc,char *argv[])
 					  //				      printf("Updating dataWts %d %d %g\n",j,k,inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k]);
 					  // Update the data weights
 					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
+					  // Note that we don't have j*out_nchan here as we're time scrunching
 					  dataWts[k] += inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
 					}
 					  //				      printf("Done\n");
@@ -838,10 +841,11 @@ int main(int argc,char *argv[])
 				}	
 			    }
 			}
-		      sdhdf_releaseBandData(inFile,b,ii,1);
-		      // Frequency averaging
+
+		      // Frequency summing (this was averaging ***)
 		      if (fAv >= 2)
 			{
+			  printf("In averaging\n");
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      kp=0;
@@ -865,23 +869,29 @@ int main(int argc,char *argv[])
 					  av3 += out_Tdata[l+j*npol*nchan+2*nchan];
 					  av4 += out_Tdata[l+j*npol*nchan+3*nchan];
 					}
-				    }
-				  
+				      //				      printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
+				      //				      printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
+				      dataWts[j*out_nchan+kp] += inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+				      //				      printf("Done write\n");
+				    }  
+				  //				  printf("Updating the sum\n");
 				  if (j==0) out_freq[kp] = avFreq/fAv;
+
+				  // Changing to a frequency sum from a frequency average
 				  
 				  if (npol==1)
-				    out_Fdata[kp+out_nchan*j*npol]               = av1/fAv;
+				    out_Fdata[kp+out_nchan*j*npol]               = av1; ///fAv;
 				  else if (npol==2)
 				    {
-				      out_Fdata[kp+out_nchan*j*npol]             = av1/fAv;
-				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/fAv;
+				      out_Fdata[kp+out_nchan*j*npol]             = av1; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2; ///fAv;
 				    }
 				  else
 				    {
-				      out_Fdata[kp+out_nchan*j*npol]             = av1/fAv;
-				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/fAv;
-				      out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = av3/fAv;
-				      out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = av4/fAv;
+				      out_Fdata[kp+out_nchan*j*npol]             = av1; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = av3; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = av4; ///fAv;
 				    }
 				  kp++;
 				  
@@ -912,7 +922,8 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-		      
+		      // This was moved lower because of the need to read the weights
+		      sdhdf_releaseBandData(inFile,b,ii,1); 		      
 		      // Now create final data
 		      // Do polarisation summing as required
 		      if (pol==0)
