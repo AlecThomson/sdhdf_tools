@@ -12,6 +12,8 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_identify \
   sdhdf_cal \
   sdhdf_convertFromFITS \
+  sdhdf_convertTo \
+  sdhdf_convertFromPsr \
   sdhdf_listLines
 
 COMMON_SRCS = sdhdfProc_maths.c \
@@ -53,6 +55,12 @@ sdhdf_identify_SOURCES = sdhdf_identify.c \
   $(COMMON_SRCS)
 
 sdhdf_convertFromFITS_SOURCES = sdhdf_convertFromFITS.c \
+  $(COMMON_SRCS)
+
+sdhdf_convertTo_SOURCES = sdhdf_convertTo.c \
+  $(COMMON_SRCS)
+
+sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \
   $(COMMON_SRCS)
 
 sdhdf_cal_SOURCES = sdhdf_cal.c \
