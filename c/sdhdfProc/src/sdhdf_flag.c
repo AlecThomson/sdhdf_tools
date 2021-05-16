@@ -36,14 +36,14 @@
 
 void doPlot(sdhdf_fileStruct *inFile,int ibeam);
 void saveFile(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam);
-void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam);
-void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT);
+void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,int zapAll);
 
 int main(int argc,char *argv[])
 {
@@ -223,7 +223,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	    
 	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] == 0) // No region set
 	      {
-		printf("Flagging region\n");
+		//		printf("Flagging region\n");
 		regionType=2;
 		pf1[nFlagRegion] = px[i];
 	      }	     
@@ -322,13 +322,13 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       }
     else if (key=='p') // Zap for Parkes UWL data for persistent RFI
       {
-	autoZapTransmitters(inFile,ibeam);
-	autoZapDigitisers(inFile,ibeam);
-	//	autoZapAircraft(inFile,ibeam);
-	//	autoZapSatellites(inFile,ibeam);
-	//	autoZapWiFi(inFile,ibeam);
-	//	autoZapUnexplained(inFile,ibeam);
-	//	autoZapHandsets(inFile,ibeam);
+	autoZapTransmitters(inFile,ibeam,zapAllDumps);
+	autoZapDigitisers(inFile,ibeam,zapAllDumps);
+	//	autoZapAircraft(inFile,ibeam,zapAllDumps);
+	//	autoZapSatellites(inFile,ibeam,zapAllDumps);
+	//	autoZapWiFi(inFile,ibeam,zapAllDumps);
+	//	autoZapUnexplained(inFile,ibeam,zapAllDumps);
+	//	autoZapHandsets(inFile,ibeam,zapAllDumps);
 	recalc=1;
       }
     else if (key=='1')
@@ -619,7 +619,7 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
   printf("Save completed\n");
 }
 
-void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -627,8 +627,7 @@ void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam)
   int nT=0;
   int i,j;
   int nzap=0;
-  int zapAll=1;
-  
+  int zapAllTransmitters = 1;
   //
   // Fixed mobile transmission towers
   // We see persistent emission from these at all telescope pointing angles
@@ -658,7 +657,7 @@ void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam)
   f0[nT] = 3445.05; f1[nT++] = 3464.95; //  NBN
   f0[nT] = 3550.05; f1[nT++] = 3569.95; //  NBN
 
-  if (zapAll==1)
+  if (zapAllTransmitters==1)
     {
       f0[nT] = 804.4; f1[nT++] = 804.6;               //  NSW Police Force
       f0[nT] = 2152.5-2.5; f1[nT++] = 2152.5+2.5;     //  Telstra - not always on
@@ -672,10 +671,10 @@ void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam)
       f0[nT] = 3575; f1[nT++] = 3640;               //  Telstra from Orange or Dubbo
     }  
   printf("Number of fixed transmitters being removed = %d\n",nT);
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAll);
 }
 
-void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -694,11 +693,11 @@ void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam)
   
   printf("Number of digitiser-related signals being removed = %d\n",nT);
 
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
 
-void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -729,10 +728,10 @@ void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam)
   f0[nT] = 2226.3; f1[nT++] = 2226.7;
   printf("Number of unexplained signals being removed = %d\n",nT);
 
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
-void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -750,10 +749,10 @@ void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam)
       f0[nT] = 2401; f1[nT++] = 2483; // Entire band
     }
   printf("Number of WiFi signals being removed = %d\n",nT);
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
-void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -779,10 +778,10 @@ void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam)
   
   printf("Number of satellite signals being removed = %d\n",nT);
 
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
-void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -810,10 +809,10 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
     }
   printf("Number of Handset signals being removed = %d\n",nT);
 
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
-void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam)
+void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
 {
   int maxTransmitters = 128;
   float f0[maxTransmitters],f1[maxTransmitters];
@@ -853,35 +852,42 @@ void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam)
   printf("Number of aircraft signals being removed = %d\n",nT);
 
 
-  flagChannels(inFile,ibeam,f0,f1,nT);
+  flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
 
-void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT)
+void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,int zapAll)
 {
-  int i,j,k;
+  int i,j,k,t;
   int nchan;
   float f;
   int zap=0;
   
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
     {
-      nchan = inFile->beam[ibeam].bandHeader[i].nchan; 
-      for (j=0;j<nchan;j++)
-	{
-	  f = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
-	  zap=0;
-	  for (k=0;k<nT;k++)
+  	  nchan = inFile->beam[ibeam].bandHeader[i].nchan; 
+	  for (j=0;j<nchan;j++)
 	    {
-	      if (f >= f0[k] && f <= f1[k])
+	      f = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
+	      zap=0;
+	      for (k=0;k<nT;k++)
 		{
-		  zap=1;
-		  break;
+		  if (f >= f0[k] && f <= f1[k])
+		    {
+		      zap=1;
+		      break;
+		    }
 		}
-	    }
-	  if (zap==1)
-	    {
-	      inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j]=0;
+	      if (zap==1)
+		{
+		  if (zapAll==0)
+		    inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j]=0;
+		  else
+		    {
+		      for (k=0;k<inFile->beam[ibeam].bandHeader[i].ndump;k++)
+			inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
+		    }
+		  
 	    }
 	}
     }

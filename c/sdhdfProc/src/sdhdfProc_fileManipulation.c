@@ -302,6 +302,13 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  status     = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.dataWeights);        
 	  status     = H5Dclose(dataset_id);
 	}
+      else
+	{
+	  printf("No weightings in the SDHDF file. Setting to the integration time\n");
+	  for (i=0;i<nchan*ndump;i++)
+	    inFile->beam[beam].bandData[band].astro_data.dataWeights[i] = inFile->beam[beam].bandHeader[band].dtime;
+	}
+      
 
     }
   // calibrator data

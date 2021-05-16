@@ -482,10 +482,8 @@ int main(int argc,char *argv[])
 	
 	cpgsch(1.0);
 	cpgsvp(0.10,0.95,0.10,0.35);
-
 	drawBand(704,1344,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title);
-	
-	
+		
 	cpgsvp(0.10,0.95,0.40,0.65);
 	drawBand(1344,2368,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title);
 

@@ -50,6 +50,7 @@ int main(int argc,char *argv[])
   char fname[MAX_FILES][MAX_STRLEN];
   float freq;
   int   flag;
+  float weight;
   float pol1,pol2,pol3,pol4;
   sdhdf_fileStruct *inFile;
   int npol=0;
@@ -163,14 +164,14 @@ int main(int argc,char *argv[])
 			      else
 				pol2 = pol3 = pol4 = 0;
 			      
-			      flag = inFile->beam[beam].bandData[band].astro_data.flag[j];
-			      
+			      weight = inFile->beam[beam].bandData[band].astro_data.dataWeights[k*nchan+j];
+			    
 			      if (display==1)
 				{
 				  if (outFile==1)
-				    fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %d\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,flag);
+				    fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
 				  else
-				    printf("%s %d %d %d %d %.6f %g %g %g %g %d\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,flag);
+				    printf("%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
 				}
 			    }
 			}

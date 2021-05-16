@@ -230,8 +230,6 @@ int main(int argc,char *argv[])
 	  sdhdf_add1arg(args,argv[i]); 
 	}
       else if (strcasecmp(argv[i],"-fav")==0)
-	{printf("ERROR: Note: not averaging frequency channels currently -- use -fsum <nsum> to sum adjacent frequency channels\n"); exit(1);}
-      else if (strcasecmp(argv[i],"-fsum")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&fAv);}
       else
 	{
@@ -842,36 +840,41 @@ int main(int argc,char *argv[])
 			    }
 			}
 
-		      // Frequency summing (this was averaging ***)
+		      // Frequency averaging (note: not summing)
 		      if (fAv >= 2)
 			{
+			  double wt;
+			  double swt;
 			  printf("In averaging\n");
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      kp=0;
 			      for (k=0;k<nchan;k+=fAv)
-				{
+				{				  
 				  av1 = av2 = av3 = av4 = avFreq = 0.0;
+				  swt=0;
 				  for (l=k;l<k+fAv;l++)
 				    {
-				      avFreq += in_freq[l];
+				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+				      avFreq += in_freq[l]; // Should be a weighted sum
 				      if (npol==1)
-					av1 += out_Tdata[l+j*npol*nchan];
+					av1 += wt*out_Tdata[l+j*npol*nchan];
 				      else if (npol==2)
 					{
-					  av1 += out_Tdata[l+j*npol*nchan];
-					  av2 += out_Tdata[l+j*npol*nchan+nchan];
+					  av1 += wt*out_Tdata[l+j*npol*nchan];
+					  av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
 					}
 				      else
 					{
-					  av1 += out_Tdata[l+j*npol*nchan];
-					  av2 += out_Tdata[l+j*npol*nchan+nchan];
-					  av3 += out_Tdata[l+j*npol*nchan+2*nchan];
-					  av4 += out_Tdata[l+j*npol*nchan+3*nchan];
+					  av1 += wt*out_Tdata[l+j*npol*nchan];
+					  av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
+					  av3 += wt*out_Tdata[l+j*npol*nchan+2*nchan];
+					  av4 += wt*out_Tdata[l+j*npol*nchan+3*nchan];
 					}
 				      //				      printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
 				      //				      printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
-				      dataWts[j*out_nchan+kp] += inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+				      dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+				      swt += wt;
 				      //				      printf("Done write\n");
 				    }  
 				  //				  printf("Updating the sum\n");
@@ -880,18 +883,18 @@ int main(int argc,char *argv[])
 				  // Changing to a frequency sum from a frequency average
 				  
 				  if (npol==1)
-				    out_Fdata[kp+out_nchan*j*npol]               = av1; ///fAv;
+				    out_Fdata[kp+out_nchan*j*npol]               = av1/swt; ///fAv;
 				  else if (npol==2)
 				    {
-				      out_Fdata[kp+out_nchan*j*npol]             = av1; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol]             = av1/swt; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; ///fAv;
 				    }
 				  else
 				    {
-				      out_Fdata[kp+out_nchan*j*npol]             = av1; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = av3; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = av4; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol]             = av1/swt; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = av3/swt; ///fAv;
+				      out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = av4/swt; ///fAv;
 				    }
 				  kp++;
 				  
