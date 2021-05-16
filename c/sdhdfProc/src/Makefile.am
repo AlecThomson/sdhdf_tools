@@ -78,7 +78,6 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_gainCurve \
   sdhdf_applyCal \
   sdhdf_calProc \
-  sdhdf_findTones \
   sdhdf_quicklook \
   sdhdf_processBWS \
   sdhdf_statistics \
@@ -139,9 +138,6 @@ sdhdf_plotWide_SOURCES = sdhdf_plotWide.c \
   $(COMMON_SRCS)
 
 sdhdf_plotMultiSpec_SOURCES = sdhdf_plotMultiSpec.c \
-  $(COMMON_SRCS)
-
-sdhdf_findTones_SOURCES = sdhdf_findTones.c \
   $(COMMON_SRCS)
 
 sdhdf_plotSpectrum_SOURCES = sdhdf_plotSpectrum.c \

@@ -8,10 +8,11 @@ Single Dish Hierarchical Data Format (SDHDF) files
 ## Prerequisites
 
 The C code requires the following dependencies to be installed:
-* ERFA (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
+* Erfa (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
 * HDF5 library (https://www.hdfgroup.org/downloads/hdf5) 
-* PGPLOT library (http://www.astro.caltech.edu/~tjp/pgplot/)
-* calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
+* Pgplot library (http://www.astro.caltech.edu/~tjp/pgplot/)
+* Calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
+* Cfitsio library
 
 The python modules require the following dependencies to be installed:
 * Python 3
@@ -21,6 +22,7 @@ The code has been tested with the following library versions installed:
 * libhdf5 1.10.0
 * pgplot5 5.2.2-19.3
 * calceph 3.0.0
+* cfitsio 3.430-2
 
 ## Branches
 

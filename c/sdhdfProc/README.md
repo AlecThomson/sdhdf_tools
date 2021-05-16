@@ -12,11 +12,11 @@ README for sdhdfProc
 
 ## Prerequisites
 ---
-* PGPLOT
-* HDF5 library
-* ERFA library
-* calceph library
-
+* Pgplot
+* Hdf5 library
+* Erfa library
+* Calceph library
+* Cfitsio library
 
 ## Installing
 ---
