@@ -46,6 +46,10 @@ int main(int argc,char *argv[])
   strArray = (char **)malloc(sizeof(char *));
   strArray[0] = (char *)malloc(sizeof(char)*1024);
 
+  printf("WARNING: Various parameters not being set:\n"); //Should set FOCUSTAN correctly\n");
+  printf("FOCUSROT, FOCUSTAN, SCANRATE, TSYS, CALFCTR, TCAL, TCALTIME, AZIMUTH, ELEVATIO, TAMBIENT, PRESSURE, HUMIDITY, WINDSPEE, WINDDIRE\n");
+
+  
   
   for (i=1;i<argc;i++)
     {
@@ -147,31 +151,40 @@ int main(int argc,char *argv[])
 		     {
 		       for (kk=0;kk<inFile->beam[ibeam].bandHeader[ii].nchan;kk++)
 			 {
-			   if (kk==0)
-			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol1[kk+k*inFile->beam[ibeam].bandHeader[ii].nchan];
-			   else if (kk==1)
-			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol2[kk+k*inFile->beam[ibeam].bandHeader[ii].nchan];
-			   else if (kk==2)
-			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol3[kk+k*inFile->beam[ibeam].bandHeader[ii].nchan];
-			   else if (kk==4)
-			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol4[kk+k*inFile->beam[ibeam].bandHeader[ii].nchan];
+			   if (k==0)
+			     {
+			       fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol1[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			       //			       printf("Got %g\n",inFile->beam[ibeam].bandData[ii].astro_data.pol1[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan]);
+				      
 			     }
+			   else if (k==1)
+			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol2[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			   else if (k==2)
+			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol3[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			   else if (k==4)
+			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol4[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			 }
 		     }
 
-		   printf("Subintegration %d/%d (sb %d/%d)\n",j,inFile->beam[ibeam].bandHeader[ii].ndump,ii,inFile->beam[ibeam].nBand);
+		   //		   printf("Checking fdata\n");
+		   //		   for (k=0;k<inFile->beam[ibeam].bandHeader[ii].npol*inFile->beam[ibeam].bandHeader[ii].nchan;k++)
+		   //		     printf("%g\n",fdata[k]);
+		   
+		   //		   printf("Subintegration %d/%d (sb %d/%d)\n",j,inFile->beam[ibeam].bandHeader[ii].ndump,ii,inFile->beam[ibeam].nBand);
 		   fits_insert_rows(fptr,rowNum,1,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"SCAN",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   ival = scan+1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CYCLE",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   ival = j;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"IF",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   ival = i+1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
+		   printf("Setting IF to %d %d %d\n",colnum,rowNum+1,ii+1);
+		   ival = ii+1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"BEAM",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   ival = 1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"DATE-OBS",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   strcpy(strArray[0],inFile->primary[ibeam].utc0);
 		   fits_write_col(fptr,TSTRING,colnum,rowNum+1,1,1,strArray,&fitsStatus);
-
+		
 		   // TIME
 		   sprintf(timeStr,inFile->primary[ibeam].utc0+11); // CHECK THAT THIS IS CORRECT *** GEORGE
 		   sscanf(timeStr,"%f:%f:%f",&hr,&min,&sec);
@@ -185,14 +198,12 @@ int main(int argc,char *argv[])
 		   fits_write_col(fptr,TSTRING,colnum,rowNum+1,1,1,strArray,&fitsStatus);
 		   
 		   // OBJ-RA
-		   printf("NOT SETTING OBJ-RA correctly\n");
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"OBJ-RA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = 260; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);		   
-
+		   fval = inFile->beam[ibeam].bandData[ii].astro_obsHeader[j].raDeg; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);		   
+		
 		   // OBJ-DEC
-		   printf("NOT SETTING OBJ-DEC correctly\n");
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"OBJ-DEC",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = -45; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+		   fval = inFile->beam[ibeam].bandData[ii].astro_obsHeader[j].decDeg; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 
 		   // RESTFRQ
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"RESTFRQ",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
@@ -204,14 +215,6 @@ int main(int argc,char *argv[])
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"OBSMODE",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   fits_write_col(fptr,TSTRING,colnum,rowNum+1,1,1,strArray,&fitsStatus);
 
-		   // BEAM
-		   printf("SETTING BEAM = 1\n");
-		   fits_get_colnum(fptr,CASEINSEN,(char *)"BEAM",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = 1; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
-
-		   // IF
-		   fits_get_colnum(fptr,CASEINSEN,(char *)"IF",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = i+1; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 
 
 		   // FREQRES
@@ -224,7 +227,8 @@ int main(int argc,char *argv[])
 
 		   // CRPIX1 - must check if this is NCHAN - "array location of the reference pixel along axis 1"
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CRPIX1",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = inFile->beam[ibeam].bandHeader[ii].nchan; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+		   //		   fval = (float)inFile->beam[ibeam].bandHeader[ii].nchan; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+		   fval = 0; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 		   
 		   // CRVAL1
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CRVAL1",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
@@ -235,14 +239,14 @@ int main(int argc,char *argv[])
 		   fval = 1e6*fabs(inFile->beam[ibeam].bandHeader[ii].f1-inFile->beam[ibeam].bandHeader[ii].f0)/inFile->beam[ibeam].bandHeader[ii].nchan; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 
 		   // CRVAL3
-		   printf("NOT SETTING CRVAL3 correctly\n");
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CRVAL3",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = 260; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+		   fval =  inFile->beam[ibeam].bandData[ii].astro_obsHeader[j].raDeg; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 		   
 		   // CRVAL4
-		   printf("NOT SETTING CRVAL4 correctly\n");
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CRVAL4",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = -45; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+		   fval =  inFile->beam[ibeam].bandData[ii].astro_obsHeader[j].decDeg; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+
+
 
 		   // SCANRATE
 		   // TSYS
@@ -252,17 +256,15 @@ int main(int argc,char *argv[])
 		   // AZIMUTH
 		   // ELEVATIO
 		   // PARANGLE
-		   printf("Should set PARANGLE correctly\n");
+		   
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"PARANGLE",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fval = 0; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
+		   fval =  inFile->beam[ibeam].bandData[ii].astro_obsHeader[j].paraAngle; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 		   
 		   // FOCUSTAN
-		   printf("Should set FOCUSTAN correctly\n");
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"FOCUSTAN",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   fval = 0; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 		   
 		   // FOCUSROT
-		   printf("Should set FOCUSROT correctly\n");
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"FOCUSROT",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   fval = 0; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 		   
@@ -280,14 +282,10 @@ int main(int argc,char *argv[])
 		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
 		   fits_write_tdim(fptr,colnum,4,naxes,&fitsStatus);fits_report_error(stderr,fitsStatus);
 		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
-		   printf("Writing fdata\n");
 		   fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*inFile->beam[ibeam].bandHeader[ii].npol,fdata,&fitsStatus);
-		   printf("Finished writing\n");
 		   rowNum++;
 		 }
-	       printf("Freing\n");
 	       free(fdata);
-	       printf("Done free\n");
 	     }
  
 	 }
