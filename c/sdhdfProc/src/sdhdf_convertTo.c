@@ -14,28 +14,32 @@
 int main(int argc,char *argv[])
 {
   int i,j,ii,k,kk;
-  char fname[MAX_STRLEN];
+  char fname[MAX_FILES][MAX_STRLEN];
   char oname[MAX_STRLEN];
-  char ext[MAX_STRLEN] = "fits";
+  char ext[MAX_STRLEN] = "sdfits";
 
   // SDHDF file
   sdhdf_fileStruct *inFile;
-  
+  int nFiles=0;
+
   // Parameters for fits file
   fitsfile *fptr;
   int fitsStatus=0;
   float fval;
-  float *fdata;
+  float *fdata,*xdata;
   float hr,min,sec;
   int   colnum;
   int   rowNum=0,ival;
   int   scan=0;
-  long naxes[4];
+  long naxes[4],naxes_xpol[4];
   float intTime;  // Total integration time
   char **strArray;
   char timeStr[1024];
 
+  int haveXpol=0;
+  int useXpol=1;
   int ibeam = 0;
+  int pnum = 0;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -48,32 +52,39 @@ int main(int argc,char *argv[])
 
   printf("WARNING: Various parameters not being set:\n"); //Should set FOCUSTAN correctly\n");
   printf("FOCUSROT, FOCUSTAN, SCANRATE, TSYS, CALFCTR, TCAL, TCALTIME, AZIMUTH, ELEVATIO, TAMBIENT, PRESSURE, HUMIDITY, WINDSPEE, WINDDIRE\n");
-
-  
   
   for (i=1;i<argc;i++)
     {
-      strcpy(fname,argv[i]);
+      if (strcasecmp(argv[i],"-noXpol")==0)
+	useXpol=0;
+      else
+	strcpy(fname[nFiles++],argv[i]);
 
+
+    }
+
+  for (i=0;i<nFiles;i++)
+    {
+      printf("Processing: %s\n",fname[i]);
       sdhdf_initialiseFile(inFile);
-      sdhdf_openFile(fname,inFile,1);
+      sdhdf_openFile(fname[i],inFile,1);
       sdhdf_loadMetaData(inFile);
       
       // NOTE HARDCODE HERE
-      sprintf(oname,"!%s.%s(/u/hob044/software/new_c/sdhdfProc/sdHeader.fits)",fname,ext);
-      printf("opening  %s %s\n",fname,oname);
-
+      sprintf(oname,"!%s.%s(/u/hob044/software/new_c/sdhdfProc/sdHeader.fits)",fname[i],ext);
+      printf("opening  %s %s\n",fname[i],oname);
+	  
       fits_create_file(&fptr,oname,&fitsStatus);
       fits_report_error(stderr, fitsStatus);  /* print out any error messages */
-
+      
       // Primary header information
       fits_movabs_hdu(fptr,1,NULL,&fitsStatus);
       fits_write_date(fptr,&fitsStatus);
-
+      
       // Header information in SINGLE_DISH table
       fits_movnam_hdu(fptr, BINARY_TBL, (char *)"SINGLE DISH", 0, &fitsStatus);
       fits_update_key(fptr,TSTRING,(char *)"TELESCOP",(char *)"PARKES",NULL,&fitsStatus);
-      //       fits_update_key(fptr,TSTRING,(char *)"TELESCOP",(char *)"ATPKSMB",NULL,&fitsStatus);
+	  //       fits_update_key(fptr,TSTRING,(char *)"TELESCOP",(char *)"ATPKSMB",NULL,&fitsStatus);
       fits_update_key(fptr,TSTRING,(char *)"INSTRUME",(char *)"Medusa",NULL,&fitsStatus);
       fits_update_key(fptr,TSTRING,(char *)"DATE-OBS",inFile->primary[0].utc0,NULL,&fitsStatus);
       fits_update_key(fptr,TSTRING,(char *)"PROJID",inFile->primary[0].pid,NULL,&fitsStatus);
@@ -123,20 +134,66 @@ int main(int argc,char *argv[])
        fval = 2.816759046E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-Y",&fval,NULL,&fitsStatus);
        fval = -3.454035950E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-Z",&fval,NULL,&fitsStatus);
 
+
+           
+       
        //
        // ******************* Process each sub-band
        for (ii=0;ii<inFile->beam[ibeam].nBand;ii++)
 	 {
 	   printf("Processing sub-band %d (%s)\n",ii,inFile->beam[ibeam].bandHeader[ii].label);
-	   naxes[0] = inFile->beam[ibeam].bandHeader[ii].nchan;
-	   naxes[1] = inFile->beam[ibeam].bandHeader[ii].npol;
+	   naxes[0] = inFile->beam[ibeam].bandHeader[ii].nchan; // **** FIX ME --- WE SHOULD ONLY SET THIS ONCE
+	   if (useXpol == 1) // For some reason SDFITS seems to have DATA as (nchan,npol) and XDATA as (npol,nchan)!
+	     {
+	       naxes_xpol[0] = 2;
+	       naxes_xpol[1] = inFile->beam[ibeam].bandHeader[ii].nchan;
+	     }
+	   if (inFile->beam[ibeam].bandHeader[ii].npol > 1)
+	     {
+	       naxes[1] = 2; // Xpol data in a different table
+	       pnum = 2;
+	       if (inFile->beam[ibeam].bandHeader[ii].npol == 4) // Do we have cross polar terms?
+		 haveXpol = 1;
+	     }
+	   else
+	     {
+	       naxes[1] = 1;
+	       pnum = 1;
+	     }
 	   naxes[2] = 1;
 	   naxes[3] = 1;
 	   if (strlen(inFile->beam[ibeam].bandHeader[ii].label)>0)
 	     {
 	       printf("Checking subintegrations\n");
 	       // ******************* Now process each subintegration
-	       fdata = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[ii].nchan*inFile->beam[ibeam].bandHeader[ii].npol);
+	       fdata = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[ii].nchan*pnum);
+	       if (haveXpol==1 && useXpol==1)
+		 xdata = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[ii].nchan*2);
+
+	       if (ii==0) // FIX ME -- -ISSUE HERE IF THE CHANNEL NUMBERS ARE OF DIFFRENT LENGTHS IN DIFFERENT BANDS
+		 {
+		   char tdimName[128];
+		   
+		   fits_get_colnum(fptr,CASEINSEN,(char *)"DATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+		   fits_modify_vector_len (fptr, colnum, inFile->beam[ibeam].bandHeader[ii].nchan*pnum, &fitsStatus); fits_report_error(stderr,fitsStatus);
+		   sprintf(tdimName,"TDIM%d",colnum);
+		   fits_delete_key(fptr, (char *)tdimName, &fitsStatus);
+		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
+		   fits_write_tdim(fptr,colnum,4,naxes,&fitsStatus);fits_report_error(stderr,fitsStatus);
+		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
+
+		   fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+		   sprintf(tdimName,"TDIM%d",colnum);
+		   fits_modify_vector_len (fptr, colnum, inFile->beam[ibeam].bandHeader[ii].nchan*pnum, &fitsStatus); fits_report_error(stderr,fitsStatus);
+		   fits_delete_key(fptr, (char *)tdimName, &fitsStatus);
+		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
+		   fits_write_tdim(fptr,colnum,2,naxes_xpol,&fitsStatus);fits_report_error(stderr,fitsStatus);
+		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
+
+		 }
+
+
+	       
 	       sdhdf_loadBandData(inFile,ibeam,ii,1);
 
 	       
@@ -155,21 +212,30 @@ int main(int argc,char *argv[])
 			     {
 			       fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol1[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
 			       //			       printf("Got %g\n",inFile->beam[ibeam].bandData[ii].astro_data.pol1[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan]);
-				      
+			       
 			     }
 			   else if (k==1)
 			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol2[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
-			   else if (k==2)
-			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol3[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
-			   else if (k==4)
-			     fdata[k*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol4[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			   
+			   // These are the cross polar terms
+			   if (haveXpol==1 && useXpol==1)
+			     {
+			       // NOTE: -- The packing of the cross polarization terms seems to be (2,nchan), not (nchan, 2) and so this seems to be different from the data column above
+			       //
+			       if (k==2)
+				 xdata[(kk*2)+(k-2)] = inFile->beam[ibeam].bandData[ii].astro_data.pol3[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+				 //				 xdata[(k-2)*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol3[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			       else if (k==3)
+				 xdata[(kk*2)+(k-2)] = inFile->beam[ibeam].bandData[ii].astro_data.pol4[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+				 //				 xdata[(k-2)*inFile->beam[ibeam].bandHeader[ii].nchan+kk] = inFile->beam[ibeam].bandData[ii].astro_data.pol4[kk+j*inFile->beam[ibeam].bandHeader[ii].nchan];
+			     }
 			 }
 		     }
 
 		   //		   printf("Checking fdata\n");
 		   //		   for (k=0;k<inFile->beam[ibeam].bandHeader[ii].npol*inFile->beam[ibeam].bandHeader[ii].nchan;k++)
 		   //		     printf("%g\n",fdata[k]);
-		   
+		       
 		   //		   printf("Subintegration %d/%d (sb %d/%d)\n",j,inFile->beam[ibeam].bandHeader[ii].ndump,ii,inFile->beam[ibeam].nBand);
 		   fits_insert_rows(fptr,rowNum,1,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"SCAN",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
@@ -177,7 +243,6 @@ int main(int argc,char *argv[])
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CYCLE",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   ival = j;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"IF",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   printf("Setting IF to %d %d %d\n",colnum,rowNum+1,ii+1);
 		   ival = ii+1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"BEAM",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   ival = 1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
@@ -277,18 +342,33 @@ int main(int argc,char *argv[])
 		   // Data
 		   		   
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"DATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fits_modify_vector_len (fptr, colnum, inFile->beam[ibeam].bandHeader[ii].nchan*inFile->beam[ibeam].bandHeader[ii].npol, &fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fits_delete_key(fptr, (char *)"TDIM23", &fitsStatus); // THIS SHOULD NOT BE HARDCODED
-		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
-		   fits_write_tdim(fptr,colnum,4,naxes,&fitsStatus);fits_report_error(stderr,fitsStatus);
-		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
-		   fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*inFile->beam[ibeam].bandHeader[ii].npol,fdata,&fitsStatus);
+		   fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*pnum,fdata,&fitsStatus);
+		 
+		    
+		   if (haveXpol == 1 && useXpol==1)
+		     {
+		       fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+		       fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*2,xdata,&fitsStatus);		       
+		     }
 		   rowNum++;
 		 }
 	       free(fdata);
+	       if (haveXpol == 1 && useXpol==1)
+		 free(xdata);
 	     }
- 
+	   
 	 }
+       // Cross polarisation terms
+       if (useXpol==0) // Don't have or don't want Xpol informatino
+	 {
+	   fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+	   fits_delete_col(fptr,colnum,&fitsStatus);
+	   fits_report_error(stdout,fitsStatus);
+	   fits_get_colnum(fptr,CASEINSEN,(char *)"XCALFCTR",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+	   fits_delete_col(fptr,colnum,&fitsStatus);
+	   fits_report_error(stdout,fitsStatus);
+	 }
+       
 
        
        
