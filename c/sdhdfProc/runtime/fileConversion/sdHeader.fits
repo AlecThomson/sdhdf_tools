@@ -127,6 +127,13 @@ TTYPE#  = 'DATA    '           /
 TFORM#  = '1E      '           / 
 TDIM#   = '        '           / Matrix dimensions (e.g. 8,4096,4,1,1)
 #
+TTYPE#  = 'XCALFCTR'           / For cross polar terms
+TFORM#  = '1E      '           / 
+#
+TTYPE#  = 'XPOLDATA'           / Cross polar terms
+TFORM#  = '1E      '           / 
+TDIM#   = '        '           / Matrix dimensions (e.g. 8,4096,4,1,1)
+#
 TTYPE#  = 'TCAL'               / Cal temperature
 TFORM#  = '1E      '           / 
 TUNIT#  = 'Jy      '           /
