@@ -39,8 +39,9 @@ void help()
   printf("Software to plot a spectrum in an interactive matter\n");
   printf("\n\nCommand line arguments:\n\n");
   printf("-band <integer>     Sub-band selection (starting from 0 for the first subband in the file)\n");
-  printf("-e                  Output file extension (defaults to sdfits)\n");
+  printf("-e <string>         Output file extension (defaults to sdfits)  (note that this is not used if the -o option is set)\n");
   printf("-h                  This help\n");
+  printf("-o <string>         Output file name (this will automatically join input data sets together as one output file)\n");
   printf("<filename>          SDHDF file corresponding to observations\n");
   printf("-noXpol             Do not output cross polarisation terms\n");
   printf("\n");
@@ -56,6 +57,8 @@ int main(int argc,char *argv[])
   int i,j,ii,k,kk;
   char fname[MAX_FILES][MAX_STRLEN];
   char oname[MAX_STRLEN];
+  int  join=0;
+  char requestName[MAX_STRLEN]="NULL";
   char ext[MAX_STRLEN] = "sdfits";
 
   // SDHDF file
@@ -71,6 +74,7 @@ int main(int argc,char *argv[])
   int       colnum;
   int       rowNum=0,ival;
   int       scan=0;
+  int       scan0=0;
   long      naxes[4],naxes_xpol[4];
   float     intTime;  // Total integration time
   char    **strArray;
@@ -85,7 +89,7 @@ int main(int argc,char *argv[])
   long      nchan0;
   
   char      runtimeDir[1024];
-  
+
   if (argc==1) help();
   
   // Allocate memory for the input ifle
@@ -110,6 +114,8 @@ int main(int argc,char *argv[])
 	strcpy(ext,argv[++i]);
       else if (strcmp(argv[i],"-band")==0)   // Selection of band
 	sscanf(argv[++i],"%d",&selectBand);
+      else if (strcmp(argv[i],"-o")==0)
+	{strcpy(requestName,argv[++i]); join=1;}
       else if (strcmp(argv[i],"-h")==0)
 	help();
       else
@@ -132,34 +138,37 @@ int main(int argc,char *argv[])
       sdhdf_initialiseFile(inFile);
       sdhdf_openFile(fname[i],inFile,1);
       sdhdf_loadMetaData(inFile);
+      if (strcmp(requestName,"NULL")==0)
+	sprintf(oname,"!%s.%s(%s/fileConversion/sdHeader.fits)",fname[i],ext,runtimeDir);
+      else
+	sprintf(oname,"!%s(%s/fileConversion/sdHeader.fits)",requestName,runtimeDir);
+
+      if (i==0 || join==0)
+	{
+	  fits_create_file(&fptr,oname,&fitsStatus);
+	  fits_report_error(stderr, fitsStatus); 
       
-      // NOTE HARDCODE HERE
-      sprintf(oname,"!%s.%s(%s/fileConversion/sdHeader.fits)",fname[i],ext,runtimeDir);
+	  // Primary header information in the SDFITS file
+	  fits_movabs_hdu(fptr,1,NULL,&fitsStatus);
+	  fits_write_date(fptr,&fitsStatus);
 	  
-      fits_create_file(&fptr,oname,&fitsStatus);
-      fits_report_error(stderr, fitsStatus);  /* print out any error messages */
+	  // Header information in SINGLE_DISH table
+	  fits_movnam_hdu(fptr, BINARY_TBL, (char *)"SINGLE DISH", 0, &fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"TELESCOP",inFile->primary[0].telescope,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"INSTRUME",inFile->primary[0].instrument,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"DATE-OBS",inFile->primary[0].utc0,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"PROJID",inFile->primary[0].pid,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"FRONTEND",inFile->primary[0].rcvr,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"HDRVER",inFile->primary[0].hdr_defn_version,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"OBSERVER",inFile->primary[0].observer,NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"EQUINOX",(char *)"2000",NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"RADESYS",(char *)"FK5",NULL,&fitsStatus);
+	  fits_update_key(fptr,TSTRING,(char *)"SYSOBS",(char *)"TOPOCENT",NULL,&fitsStatus); // This assumes that we're working from the raw SDHDF file
       
-      // Primary header information in the SDFITS file
-      fits_movabs_hdu(fptr,1,NULL,&fitsStatus);
-      fits_write_date(fptr,&fitsStatus);
-      
-      // Header information in SINGLE_DISH table
-      fits_movnam_hdu(fptr, BINARY_TBL, (char *)"SINGLE DISH", 0, &fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"TELESCOP",inFile->primary[0].telescope,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"INSTRUME",inFile->primary[0].instrument,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"DATE-OBS",inFile->primary[0].utc0,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"PROJID",inFile->primary[0].pid,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"FRONTEND",inFile->primary[0].rcvr,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"HDRVER",inFile->primary[0].hdr_defn_version,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"OBSERVER",inFile->primary[0].observer,NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"EQUINOX",(char *)"2000",NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"RADESYS",(char *)"FK5",NULL,&fitsStatus);
-      fits_update_key(fptr,TSTRING,(char *)"SYSOBS",(char *)"TOPOCENT",NULL,&fitsStatus); // This assumes that we're working from the raw SDHDF file
-      
-      //      fits_update_key(fptr,TSTRING,(char *)"SPECSYS",(char *)"LSRK",NULL,&fitsStatus);
-      // ASAP only allows [REST, LSRK, LSRD, BARY, GEO, TOPO, GALACTO, LGROUP, CMB, Undefined]
-      // Whereas the documentation allows (https://casa.nrao.edu/aips2_docs/notes/236/node14.html): -LSR,-HEL,-OBS,LSRK,-GEO,REST,-GAL
-      fits_update_key(fptr,TSTRING,(char *)"SPECSYS",(char *)"TOPO",NULL,&fitsStatus);
+	  //      fits_update_key(fptr,TSTRING,(char *)"SPECSYS",(char *)"LSRK",NULL,&fitsStatus);
+	  // ASAP only allows [REST, LSRK, LSRD, BARY, GEO, TOPO, GALACTO, LGROUP, CMB, Undefined]
+	  // Whereas the documentation allows (https://casa.nrao.edu/aips2_docs/notes/236/node14.html): -LSR,-HEL,-OBS,LSRK,-GEO,REST,-GAL
+	  fits_update_key(fptr,TSTRING,(char *)"SPECSYS",(char *)"TOPO",NULL,&fitsStatus);
       //
       /*
 	CTYPE2          'STOKES  '               DATA array axis 2: polarization code
@@ -182,20 +191,20 @@ int main(int argc,char *argv[])
 
 
        
-       fits_update_key(fptr,TSTRING,(char *)"CTYPE2",(char *)"STOKES",NULL,&fitsStatus); // SHOULDN'T HARD CODE STOKES?? HERE
-       fval = 1.0; fits_update_key(fptr,TFLOAT,(char *)"CRPIX2",&fval,NULL,&fitsStatus);
-       fval = -5.0; fits_update_key(fptr,TFLOAT,(char *)"CRVAL2",&fval,NULL,&fitsStatus); // See https://casa.nrao.edu/aips2_docs/notes/236/node14.html
-       fval = -1.0; fits_update_key(fptr,TFLOAT,(char *)"CDELT2",&fval,NULL,&fitsStatus);
-       printf("Incorrectly setting CDELT3 and CDELT4\n");
-       fval = -1.0; fits_update_key(fptr,TFLOAT,(char *)"CDELT3",&fval,NULL,&fitsStatus);
-       fval = 1.0; fits_update_key(fptr,TFLOAT,(char *)"CDELT4",&fval,NULL,&fitsStatus);
-
-       // These are taken from an old SDFITS file
-       //
-       fval = -4.554232087E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-X",&fval,NULL,&fitsStatus);
-       fval =  2.816759046E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-Y",&fval,NULL,&fitsStatus);
-       fval = -3.454035950E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-Z",&fval,NULL,&fitsStatus);
-
+	  fits_update_key(fptr,TSTRING,(char *)"CTYPE2",(char *)"STOKES",NULL,&fitsStatus); // SHOULDN'T HARD CODE STOKES?? HERE
+	  fval = 1.0; fits_update_key(fptr,TFLOAT,(char *)"CRPIX2",&fval,NULL,&fitsStatus);
+	  fval = -5.0; fits_update_key(fptr,TFLOAT,(char *)"CRVAL2",&fval,NULL,&fitsStatus); // See https://casa.nrao.edu/aips2_docs/notes/236/node14.html
+	  fval = -1.0; fits_update_key(fptr,TFLOAT,(char *)"CDELT2",&fval,NULL,&fitsStatus);
+	  printf("Incorrectly setting CDELT3 and CDELT4\n");
+	  fval = -1.0; fits_update_key(fptr,TFLOAT,(char *)"CDELT3",&fval,NULL,&fitsStatus);
+	  fval = 1.0; fits_update_key(fptr,TFLOAT,(char *)"CDELT4",&fval,NULL,&fitsStatus);
+	  
+	  // These are taken from an old SDFITS file
+	  //
+	  fval = -4.554232087E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-X",&fval,NULL,&fitsStatus);
+	  fval =  2.816759046E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-Y",&fval,NULL,&fitsStatus);
+	  fval = -3.454035950E+06; fits_update_key(fptr,TFLOAT,(char *)"OBSGEO-Z",&fval,NULL,&fitsStatus);
+	}
 
            
        
@@ -215,6 +224,9 @@ int main(int argc,char *argv[])
        
        for (ii=i0;ii<i1;ii++)
 	 {
+	   scan=0; // Set the scan number back to the start
+      
+
 	   printf("Processing sub-band %d (%s)\n",ii,inFile->beam[ibeam].bandHeader[ii].label);
 	   naxes[0] = inFile->beam[ibeam].bandHeader[ii].nchan; // **** FIX ME --- WE SHOULD ONLY SET THIS ONCE
 	   if (useXpol == 1) // For some reason SDFITS seems to have DATA as (nchan,npol) and XDATA as (npol,nchan)!
@@ -256,7 +268,7 @@ int main(int argc,char *argv[])
 	       if (haveXpol==1 && useXpol==1)
 		 xdata = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[ii].nchan*2);
 
-	       if (ii==i0) // FIX ME -- -ISSUE HERE IF THE CHANNEL NUMBERS ARE OF DIFFRENT LENGTHS IN DIFFERENT BANDS
+	       if (ii==i0) 
 		 {
 		   char tdimName[128];
 
@@ -311,7 +323,7 @@ int main(int argc,char *argv[])
 
 		   fits_insert_rows(fptr,rowNum,1,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"SCAN",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   ival = scan+1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
+		   ival = scan0+scan+1;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"CYCLE",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   ival = j;  fits_write_col(fptr,TINT,colnum,rowNum+1,1,1,&ival,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"IF",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
@@ -430,8 +442,7 @@ int main(int argc,char *argv[])
 		   fval =  inFile->beam[ibeam].bandData[ii].astro_obsHeader[j].windDir; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 
 		   
-		   // Data
-		   		   
+		   // Data		   		   
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"DATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*pnum,fdata,&fitsStatus);
 		 
@@ -442,34 +453,38 @@ int main(int argc,char *argv[])
 		       fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*2,xdata,&fitsStatus);		       
 		     }
 		   rowNum++;
+		   scan++;  
 		 }
+	       scan0+=scan;
 	       free(fdata);
 	       if (haveXpol == 1 && useXpol==1)
 		 free(xdata);
 	     }
 	   
 	 }
-       // Cross polarisation terms
-       if (useXpol==0) // Don't have or don't want Xpol informatino
+       if (i==nFiles-1 || join==0)
 	 {
-	   fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-	   fits_delete_col(fptr,colnum,&fitsStatus);
-	   fits_report_error(stdout,fitsStatus);
-	   fits_get_colnum(fptr,CASEINSEN,(char *)"XCALFCTR",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-	   fits_delete_col(fptr,colnum,&fitsStatus);
-	   fits_report_error(stdout,fitsStatus);
+	   // Cross polarisation terms
+	   if (useXpol==0) // Don't have or don't want Xpol informatino
+	     {
+	       fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+	       fits_delete_col(fptr,colnum,&fitsStatus);
+	       fits_report_error(stdout,fitsStatus);
+	       fits_get_colnum(fptr,CASEINSEN,(char *)"XCALFCTR",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+	       fits_delete_col(fptr,colnum,&fitsStatus);
+	       fits_report_error(stdout,fitsStatus);
+	     }
+	   
+	   
+	   
+	   
+	   
+	   fits_report_error(stderr, fitsStatus);  /* print out any error messages */
+	   fits_close_file(fptr,&fitsStatus);
 	 }
+       printf("Complete\n");
        
-
-       
-       
-
-      fits_report_error(stderr, fitsStatus);  /* print out any error messages */
-      fits_close_file(fptr,&fitsStatus);
-      printf("Complete\n");
-
-
-      sdhdf_closeFile(inFile);
+       sdhdf_closeFile(inFile);
     }
   free(inFile);
   free(strArray[0]);
