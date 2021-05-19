@@ -82,7 +82,8 @@ int main(int argc,char *argv[])
   int       pnum = 0;
 
   int       selectBand=-1,i0,i1;
-
+  long      nchan0;
+  
   char      runtimeDir[1024];
   
   if (argc==1) help();
@@ -237,6 +238,18 @@ int main(int argc,char *argv[])
 	   naxes[3] = 1;
 	   if (strlen(inFile->beam[ibeam].bandHeader[ii].label)>0)
 	     {
+	       if (ii==i0)
+		 nchan0=inFile->beam[ibeam].bandHeader[ii].nchan;
+	       else
+		 {
+		   if (inFile->beam[ibeam].bandHeader[ii].nchan != nchan0)
+		     {
+		       printf("ERROR: SDFITS cannot accept different numbers of channels in different subbands.\n");
+		       printf("sdhdf_convertTo therefore cannot convert this file with %d channels for subband 0 and %d channels for subband %d\n",nchan0,inFile->beam[ibeam].bandHeader[ii].nchan,ii);
+		       printf("Please re-run using the -band option to select a specific sub-band\n");
+		       exit(1);
+		     }
+		 }
 	       printf("Checking subintegrations\n");
 	       // ******************* Now process each subintegration
 	       fdata = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[ii].nchan*pnum);
@@ -246,6 +259,7 @@ int main(int argc,char *argv[])
 	       if (ii==i0) // FIX ME -- -ISSUE HERE IF THE CHANNEL NUMBERS ARE OF DIFFRENT LENGTHS IN DIFFERENT BANDS
 		 {
 		   char tdimName[128];
+
 		   
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"DATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   fits_modify_vector_len (fptr, colnum, inFile->beam[ibeam].bandHeader[ii].nchan*pnum, &fitsStatus); fits_report_error(stderr,fitsStatus);
