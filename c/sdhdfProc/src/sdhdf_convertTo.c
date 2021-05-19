@@ -455,13 +455,14 @@ int main(int argc,char *argv[])
 		   rowNum++;
 		   scan++;  
 		 }
-	       scan0+=scan;
 	       free(fdata);
 	       if (haveXpol == 1 && useXpol==1)
 		 free(xdata);
 	     }
-	   
+
 	 }
+       scan0+=scan;
+    	       
        if (i==nFiles-1 || join==0)
 	 {
 	   // Cross polarisation terms
