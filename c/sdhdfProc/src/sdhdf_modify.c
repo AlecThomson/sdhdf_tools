@@ -725,38 +725,44 @@ int main(int argc,char *argv[])
 			  int ignore=0;
 			  int jj;
 			  int nsum=0;
+			  double swt=0,wt;
 			  
-			  for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
+			  for (k=0;k<nchan;k++)
 			    {
-			      ignore=0;
-			      
-			      for (jj=0;jj<nIgnoreSD;jj++)
+			      swt=0;
+			      tav=0;
+			      for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
 				{
-				  if (ignoreSD[jj] == j)
-				    {ignore=1; break;}
-				}
-			      if (ignore==0)
-				{
-				  tav += inFile->beam[b].bandHeader[ii].dtime;
-				  nsum++;
-				  //				  printf("Updating time averaged to %g\n",tav);
-				  for (k=0;k<nchan;k++)
+				  ignore=0;
+				  
+				  for (jj=0;jj<nIgnoreSD;jj++)
 				    {
-				      if (inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k]!=0)
+				      if (ignoreSD[jj] == j)
+					{ignore=1; break;}
+				    }
+				  if (ignore==0)
+				    {
+				      tav += inFile->beam[b].bandHeader[ii].dtime;
+				      nsum++;
+				      //				  printf("Updating time averaged to %g\n",tav);
+				      
+				      wt  = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
+				      
+				      if (wt!=0)
 					{
 					  if (npol==1)
-					    out_Tdata[k] += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
+					    out_Tdata[k] += wt*inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
 					  else if (npol==2)
 					    {
-					      out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k]         += wt*inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+nchan]   += wt*inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
 					    }
 					  else
 					    {
-					      out_Tdata[k]         += inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+nchan]   += inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+2*nchan] += inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+3*nchan] += inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; // /(float)nsd;  
+					      out_Tdata[k]         += wt*inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+nchan]   += wt*inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+2*nchan] += wt*inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; // /(float)nsd;
+					      out_Tdata[k+3*nchan] += wt*inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; // /(float)nsd;  
 					    }
 					  
 					  
@@ -765,11 +771,50 @@ int main(int argc,char *argv[])
 					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
 					  // Note that we don't have j*out_nchan here as we're time scrunching
 					  dataWts[k] += inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
+					  swt += wt;
 					}
 					  //				      printf("Done\n");
 				    }
 				}
+			      if (npol==1)
+				{if (swt > 0) {out_Tdata[k] /= swt;} else {out_Tdata[k] = 0;}}
+			      else if (npol==2)
+				{
+				  if (swt > 0)
+				    {
+				      out_Tdata[k]         /= swt;
+				      out_Tdata[k+nchan]   /= swt;
+				    }
+				  else
+				    {
+				      out_Tdata[k]         = 0;
+				      out_Tdata[k+nchan]   = 0;				      
+				    }
+				}
+			      else
+				{
+				  if (swt > 0)
+				    {
+				      out_Tdata[k]         /= swt;
+				      out_Tdata[k+nchan]   /= swt;
+				      out_Tdata[k+2*nchan] /= swt;
+				      out_Tdata[k+3*nchan] /= swt;
+				    }
+				  else
+				    {
+				      out_Tdata[k]         = 0;
+				      out_Tdata[k+nchan]   = 0;
+				      out_Tdata[k+2*nchan] = 0;
+				      out_Tdata[k+3*nchan] = 0;
+				    }
+				}
+			      
+			      
 			    }
+
+
+			
+			  
 			  // Scale the output
 			  // GEORGE **** THIS SHOULD BE EARLIER AS YOU MAY NOT CHOOSE TO TIME SCRUNCH *****
 			  if (nScal > 0 && stokes==0)
@@ -840,7 +885,7 @@ int main(int argc,char *argv[])
 			    }
 			}
 
-		      // Frequency averaging (note: not summing)
+		      // Frequency averaging (note: weighted mean)
 		      if (fAv >= 2)
 			{
 			  double wt;
@@ -880,21 +925,42 @@ int main(int argc,char *argv[])
 				  //				  printf("Updating the sum\n");
 				  if (j==0) out_freq[kp] = avFreq/fAv;
 
-				  // Changing to a frequency sum from a frequency average
-				  
 				  if (npol==1)
-				    out_Fdata[kp+out_nchan*j*npol]               = av1/swt; ///fAv;
+				    {
+				      if (swt > 0)
+					out_Fdata[kp+out_nchan*j*npol]               = av1/swt; 
+				      else
+					out_Fdata[kp+out_nchan*j*npol]               = 0; 
+				    }
 				  else if (npol==2)
 				    {
-				      out_Fdata[kp+out_nchan*j*npol]             = av1/swt; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; ///fAv;
+				      if (swt > 0)
+					{
+					  out_Fdata[kp+out_nchan*j*npol]             = av1/swt; 
+					  out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; 
+					}
+				      else
+					{
+					  out_Fdata[kp+out_nchan*j*npol]             = 0; 
+					  out_Fdata[kp+out_nchan*j*npol+out_nchan]   = 0; 
+					}
 				    }
 				  else
 				    {
-				      out_Fdata[kp+out_nchan*j*npol]             = av1/swt; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = av3/swt; ///fAv;
-				      out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = av4/swt; ///fAv;
+				      if (swt > 0)
+					{
+					  out_Fdata[kp+out_nchan*j*npol]             = av1/swt; 
+					  out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; 
+					  out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = av3/swt; 
+					  out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = av4/swt; 
+					}
+				      else
+					{
+					  out_Fdata[kp+out_nchan*j*npol]             = 0; 
+					  out_Fdata[kp+out_nchan*j*npol+out_nchan]   = 0; 
+					  out_Fdata[kp+out_nchan*j*npol+2*out_nchan] = 0; 
+					  out_Fdata[kp+out_nchan*j*npol+3*out_nchan] = 0; 
+					}
 				    }
 				  kp++;
 				  
