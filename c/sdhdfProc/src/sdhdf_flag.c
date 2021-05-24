@@ -168,6 +168,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
   int deleteFlagged=1;
   int selectPol=1;
   int firstThrough=1;
+  int needSave=0;
   
   cpgbeg(0,"/xs",1,1);
   cpgslw(2);
@@ -331,6 +332,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     else if (key=='b') // Zap 5% of the band edges -- assuming Parkes UWL data
       {
 	int ii,jj,zz;
+	needSave=1;
 	printf("Zapping band edges\n");
 	for (ii=0;ii<inFile->beam[ibeam].nBand;ii++)
 	  {
@@ -350,6 +352,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       }
     else if (key=='p') // Zap for Parkes UWL data for persistent RFI
       {
+	needSave=1;
 	autoZapTransmitters(inFile,ibeam,zapAllDumps);
 	autoZapDigitisers(inFile,ibeam,zapAllDumps);
 	//	autoZapAircraft(inFile,ibeam,zapAllDumps);
@@ -366,9 +369,11 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     else if (key=='s')
       {
 	saveFile(inFile,ibeam);
+	needSave=0;
       }
     else if (key=='K') // Zap entire spectral dump and move to the next one
       {
+	needSave=1;
 	for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	  {
 	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
@@ -451,6 +456,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     else if (key=='Z' || key=='f')
       {
 	float lowX,highX;
+	needSave=1;
 	cpgband(4,0,mx,my,&mx2,&my2,&key);
 	if (mx != mx2)
 	  {
@@ -480,6 +486,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     else if (key=='r') // Un-flag data
       {
 	float lowX,highX;
+	needSave=1;
 	cpgband(4,0,mx,my,&mx2,&my2,&key);
 	if (mx != mx2)
 	  {
@@ -519,7 +526,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	int nFit = 2;
 	float new_miny = miny;
 	float new_maxy = maxy;
-	
+	needSave=1;
 	printf("Polarisation selection = %d\n",selectPol);
 
 	plotX = (float *)malloc(sizeof(float)*max_nchan);
@@ -614,7 +621,20 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	free(plotX); free(plotY); free(plotI); free(plotJ);
       }
   } while (key != 'q');
-  
+
+  if (needSave==1)
+    {
+      char yesno[128];
+      printf("You have unsaved changes\n");
+      printf("save (y/n) ");
+      scanf("%s",yesno);
+      if (strcmp(yesno,"y")==0)
+	{
+	  printf("Saving ...\n");
+	  saveFile(inFile,ibeam);
+	  printf("Finished saving\n");
+	}
+    }
   free(px);
   free(py1);
   free(py2);
