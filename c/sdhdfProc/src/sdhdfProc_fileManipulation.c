@@ -304,9 +304,14 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	}
       else
 	{
-	  printf("No weightings in the SDHDF file. Setting to the integration time\n");
+	  double chbw,tint;
+	  printf("No weightings in the SDHDF file. Setting to the integration time x channel bandwidth\n");
+
+	  tint = inFile->beam[beam].bandHeader[band].dtime;
+	  chbw = 1e6*fabs(inFile->beam[beam].bandHeader[band].f0-inFile->beam[beam].bandHeader[band].f1)/(double)inFile->beam[beam].bandHeader[band].nchan;
+
 	  for (i=0;i<nchan*ndump;i++)
-	    inFile->beam[beam].bandData[band].astro_data.dataWeights[i] = inFile->beam[beam].bandHeader[band].dtime;
+	    inFile->beam[beam].bandData[band].astro_data.dataWeights[i] = tint*chbw; 
 	}
       
 

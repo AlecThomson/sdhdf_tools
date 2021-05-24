@@ -30,6 +30,8 @@
 
 #define VNUM "v0.1"
 
+#define MAX_SRC_NAMES 16
+
 void help()
 {
   printf("sdhdf_plotSpectrum: %s\n",VNUM);
@@ -42,8 +44,9 @@ void help()
   printf("-e <string>         Output file extension (defaults to sdfits)  (note that this is not used if the -o option is set)\n");
   printf("-h                  This help\n");
   printf("-o <string>         Output file name (this will automatically join input data sets together as one output file)\n");
-  printf("<filename>          SDHDF file corresponding to observations\n");
   printf("-noXpol             Do not output cross polarisation terms\n");
+  printf("-srcName <from> <to> Changes source names from <from> to <to>\n");
+  printf("<filename>          SDHDF file corresponding to observations\n");
   printf("\n");
   printf("\nExample:\n\n");
   printf("sdhdf_convertTo <filename.hdf>\n");
@@ -61,6 +64,8 @@ int main(int argc,char *argv[])
   char requestName[MAX_STRLEN]="NULL";
   char ext[MAX_STRLEN] = "sdfits";
 
+  int oneScanPerFile = 0;
+  
   // SDHDF file
   sdhdf_fileStruct *inFile;
   int nFiles=0;
@@ -90,6 +95,13 @@ int main(int argc,char *argv[])
   
   char      runtimeDir[1024];
 
+  // Modification of source names as needed
+  int       nSrcChange=0; 
+  char      changeFrom[MAX_SRC_NAMES][64];
+  char      changeTo[MAX_SRC_NAMES][64];
+  char      srcName[64];
+
+  
   if (argc==1) help();
   
   // Allocate memory for the input ifle
@@ -110,6 +122,14 @@ int main(int argc,char *argv[])
     {
       if (strcasecmp(argv[i],"-noXpol")==0)  // Ignore cross polarisation terms
 	useXpol=0;
+      else if (strcasecmp(argv[i],"-1scanPerFile")==0)   // 1 scan per file
+	oneScanPerFile=1;
+      else if (strcmp(argv[i],"-srcChange")==0)
+	{
+	  strcpy(changeFrom[nSrcChange],argv[++i]);
+	  strcpy(changeTo[nSrcChange],argv[++i]);
+	  nSrcChange++;	  
+	}
       else if (strcmp(argv[i],"-e")==0)      // Output file extension
 	strcpy(ext,argv[++i]);
       else if (strcmp(argv[i],"-band")==0)   // Selection of band
@@ -121,6 +141,8 @@ int main(int argc,char *argv[])
       else
 	strcpy(fname[nFiles++],argv[i]);
     }
+
+  printf("Number of source name changes: %d\n",nSrcChange);
 
   if (getenv("SDHDF_RUNTIME")==0)
     {
@@ -165,31 +187,9 @@ int main(int argc,char *argv[])
 	  fits_update_key(fptr,TSTRING,(char *)"RADESYS",(char *)"FK5",NULL,&fitsStatus);
 	  fits_update_key(fptr,TSTRING,(char *)"SYSOBS",(char *)"TOPOCENT",NULL,&fitsStatus); // This assumes that we're working from the raw SDHDF file
       
-	  //      fits_update_key(fptr,TSTRING,(char *)"SPECSYS",(char *)"LSRK",NULL,&fitsStatus);
 	  // ASAP only allows [REST, LSRK, LSRD, BARY, GEO, TOPO, GALACTO, LGROUP, CMB, Undefined]
 	  // Whereas the documentation allows (https://casa.nrao.edu/aips2_docs/notes/236/node14.html): -LSR,-HEL,-OBS,LSRK,-GEO,REST,-GAL
 	  fits_update_key(fptr,TSTRING,(char *)"SPECSYS",(char *)"TOPO",NULL,&fitsStatus);
-      //
-      /*
-	CTYPE2          'STOKES  '               DATA array axis 2: polarization code
-	CRPIX2          1.0                      Polarization code reference pixel
-	CRVAL2          -5.0                     Polarization code at reference pixel (XX)
-	CDELT2          -1.0                     Polarization code axis increment
-	CTYPE3          'RA      '               DATA array axis 3 (degenerate): RA (mid-int)
-	CRPIX3          1.0                      RA reference pixel
-	TTYPE18         'CRVAL3  '               label for field
-	TFORM18         '1D      '               format of field
-	TUNIT18         'deg     '               units of field
-	CDELT3          -1.0                     RA axis increment
-	CTYPE4          'DEC     '               DATA array axis 4 (degenerate): Dec (mid-int)
-	CRPIX4          1.0                      Dec reference pixel
-	TTYPE19         'CRVAL4  '               label for field
-	TFORM19         '1D      '               format of field
-	TUNIT19         'deg     '               units of field
-	CDELT4          1.0                      Dec axis increment
-      */    
-
-
        
 	  fits_update_key(fptr,TSTRING,(char *)"CTYPE2",(char *)"STOKES",NULL,&fitsStatus); // SHOULDN'T HARD CODE STOKES?? HERE
 	  fval = 1.0; fits_update_key(fptr,TFLOAT,(char *)"CRPIX2",&fval,NULL,&fitsStatus);
@@ -226,28 +226,31 @@ int main(int argc,char *argv[])
 	 {
 	   scan=0; // Set the scan number back to the start
       
-
 	   printf("Processing sub-band %d (%s)\n",ii,inFile->beam[ibeam].bandHeader[ii].label);
-	   naxes[0] = inFile->beam[ibeam].bandHeader[ii].nchan; // **** FIX ME --- WE SHOULD ONLY SET THIS ONCE
-	   if (useXpol == 1) // For some reason SDFITS seems to have DATA as (nchan,npol) and XDATA as (npol,nchan)!
+	   printf("scan number = %d\n",scan+scan0);
+	   if (ii==i0)
 	     {
-	       naxes_xpol[0] = 2;
-	       naxes_xpol[1] = inFile->beam[ibeam].bandHeader[ii].nchan;
+	       naxes[0] = inFile->beam[ibeam].bandHeader[i0].nchan; // **** FIX ME --- WE SHOULD ONLY SET THIS ONCE
+	       if (useXpol == 1) // For some reason SDFITS seems to have DATA as (nchan,npol) and XDATA as (npol,nchan)!
+		 {
+		   naxes_xpol[0] = 2;
+		   naxes_xpol[1] = inFile->beam[ibeam].bandHeader[i0].nchan;
+		 }
+	       if (inFile->beam[ibeam].bandHeader[i0].npol > 1)
+		 {
+		   naxes[1] = 2; // Xpol data in a different table
+		   pnum = 2;
+		   if (inFile->beam[ibeam].bandHeader[i0].npol == 4) // Do we have cross polar terms?
+		     haveXpol = 1;
+		 }
+	       else
+		 {
+		   naxes[1] = 1;
+		   pnum = 1;
+		 }
+	       naxes[2] = 1;
+	       naxes[3] = 1;
 	     }
-	   if (inFile->beam[ibeam].bandHeader[ii].npol > 1)
-	     {
-	       naxes[1] = 2; // Xpol data in a different table
-	       pnum = 2;
-	       if (inFile->beam[ibeam].bandHeader[ii].npol == 4) // Do we have cross polar terms?
-		 haveXpol = 1;
-	     }
-	   else
-	     {
-	       naxes[1] = 1;
-	       pnum = 1;
-	     }
-	   naxes[2] = 1;
-	   naxes[3] = 1;
 	   if (strlen(inFile->beam[ibeam].bandHeader[ii].label)>0)
 	     {
 	       if (ii==i0)
@@ -263,6 +266,7 @@ int main(int argc,char *argv[])
 		     }
 		 }
 	       printf("Checking subintegrations\n");
+	       printf("haveXpol = %d, useXpol = %d, pnum = %d\n",haveXpol,useXpol,pnum);
 	       // ******************* Now process each subintegration
 	       fdata = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[ii].nchan*pnum);
 	       if (haveXpol==1 && useXpol==1)
@@ -280,15 +284,16 @@ int main(int argc,char *argv[])
 		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
 		   fits_write_tdim(fptr,colnum,4,naxes,&fitsStatus);fits_report_error(stderr,fitsStatus);
 		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
-
-		   fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   sprintf(tdimName,"TDIM%d",colnum);
-		   fits_modify_vector_len (fptr, colnum, inFile->beam[ibeam].bandHeader[ii].nchan*pnum, &fitsStatus); fits_report_error(stderr,fitsStatus);
-		   fits_delete_key(fptr, (char *)tdimName, &fitsStatus);
-		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
-		   fits_write_tdim(fptr,colnum,2,naxes_xpol,&fitsStatus);fits_report_error(stderr,fitsStatus);
-		   if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
-
+		   if (haveXpol == 1 && useXpol == 1)
+		     {
+		       fits_get_colnum(fptr,CASEINSEN,(char *)"XPOLDATA",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
+		       sprintf(tdimName,"TDIM%d",colnum);
+		       fits_modify_vector_len (fptr, colnum, inFile->beam[ibeam].bandHeader[ii].nchan*pnum, &fitsStatus); fits_report_error(stderr,fitsStatus);
+		       fits_delete_key(fptr, (char *)tdimName, &fitsStatus);
+		       if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
+		       fits_write_tdim(fptr,colnum,2,naxes_xpol,&fitsStatus);fits_report_error(stderr,fitsStatus);
+		       if (fitsStatus) { fits_report_error(stderr,fitsStatus); exit(1);}
+		     }
 		 }
 
 
@@ -343,7 +348,18 @@ int main(int argc,char *argv[])
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"EXPOSURE",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
 		   fval = intTime; fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,1,&fval,&fitsStatus);
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"OBJECT",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);
-		   strcpy(strArray[0],inFile->beamHeader[ibeam].source);
+
+		   // Consider change source name
+		   strcpy(srcName,inFile->beamHeader[ibeam].source);
+		   for (kk=0;kk<nSrcChange;kk++)
+		     {
+		       if (strcmp(changeFrom[kk],srcName)==0)
+			 {
+			   printf("Changing source name: %s to %s\n",srcName,changeTo[kk]);
+			   strcpy(srcName,changeTo[kk]);
+			 }
+		     }
+		   strcpy(strArray[0],srcName);
 		   fits_write_col(fptr,TSTRING,colnum,rowNum+1,1,1,strArray,&fitsStatus);
 		   
 		   // OBJ-RA
@@ -453,7 +469,8 @@ int main(int argc,char *argv[])
 		       fits_write_col(fptr,TFLOAT,colnum,rowNum+1,1,inFile->beam[ibeam].bandHeader[ii].nchan*2,xdata,&fitsStatus);		       
 		     }
 		   rowNum++;
-		   scan++;  
+		   if (oneScanPerFile==0)
+		     scan++;  
 		 }
 	       free(fdata);
 	       if (haveXpol == 1 && useXpol==1)
@@ -461,6 +478,8 @@ int main(int argc,char *argv[])
 	     }
 
 	 }
+       if (oneScanPerFile==1) scan=1;
+       //       printf("Summing %d to scan0 %d\n",scan,scan0);
        scan0+=scan;
     	       
        if (i==nFiles-1 || join==0)

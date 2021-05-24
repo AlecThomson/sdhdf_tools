@@ -155,6 +155,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   float *aa,*bb,*ab,*abs;
   float minx,maxx,miny,maxy,minz,maxz;
   float ominx,omaxx,ominy,omaxy;
+  int   divWeights=1;
   int t=0;
   int setLog=-1;
   char title[1024];
@@ -235,9 +236,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    }
 	  for (i=0;i<nchan;i++)
 	    {
+	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
+
 	      if (xplot==1)
 		{
-		  wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
 		  if (fref < 0)
 		      freq[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
 		  else
@@ -249,9 +251,20 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		freq[i] = i;
 	      if (wts>0)
 		{
-		  pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;
+		  if (divWeights==1)
+		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;		 
+		  else
+		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
 		  //	      printf("Loaded %f %f\n",freq[i],pol1[i]);
-		  if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan]/wts;
+		  if (divWeights==1)
+		    {
+		      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan]/wts;
+		    }
+		  else
+		    {
+		      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
+		    }
+		  
 		  if (setLog == 1)
 		    {
 		      pol1[i]=log10(pol1[i]);
@@ -268,7 +281,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	
 	  if (t==-1 || t==0 || t==1)
 	    {
-	      printf("t = %d\n",t);
 	      if (t==0 || t==1)
 		{
 		  int setMiny=0;
@@ -451,6 +463,15 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	      else
 		printf("Please press 'z' and then move somewhere and click left mouse button\n");
+	    }
+	  else if (key=='w')
+	    {
+	      divWeights*=-1;
+	      if (divWeights==1)
+		printf("Dividing spectra by weights\n");
+	      else
+		printf("Not dividing spectra by weights\n");
+	      t=0;
 	    }
 	  else if (key=='s')
 	    {

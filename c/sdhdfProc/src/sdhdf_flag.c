@@ -45,6 +45,31 @@ void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,int zapAll);
 
+void help()
+{
+  printf("1        Select only polarisation channel 1\n");
+  printf("2        Select only polarisation channel 2\n");
+  printf("+        Move to next spectral dump\n");
+  printf("-        Move to previous spectral dump\n");
+  printf(">        Move to next sub-band\n");
+  printf("<        Move to previous sub-band\n");
+  printf("a        Toggle between flagging all the spectral dumps (default) or just the current one\n");
+  printf("b        Flag 5% of the Parkes UWL band edges\n");
+  printf("d        Toggle between showing and hiding (default) the flagged channels\n");
+  printf("f (or Z) Define a region to flag specific channels\n");
+  printf("h        This help\n");
+  printf("H        Flag all channels where the value is above a specific value\n");
+  printf("k        Flag all the channels in the current zoom window for the current spectral dump and move on to the next\n");
+  printf("K        Flag entire spectral dump and move on to the next\n");
+  printf("p        Remove Parkes UWL persistent RFI\n");
+  printf("q        Quit\n");
+  printf("r        Remove flagging in specified region\n");
+  printf("s        Save file\n");
+  printf("u        Unzoom - revert to default zoom level\n");
+  printf("z        Zoom into a region using the mouse\n");
+  printf("Z (or f) Define a region to flag specific channels\n");
+}
+
 int main(int argc,char *argv[])
 {
   int i,j,k;
@@ -52,6 +77,7 @@ int main(int argc,char *argv[])
   sdhdf_fileStruct *inFile;
   int iband=0,ibeam=0,nchan,idump,nband;
   int ndump=0,totSize,chanPos;
+  double tint,chbw;
   //  spectralDumpStruct spectrum;
   int npol=4;
   int setnband=-1;
@@ -94,6 +120,8 @@ int main(int argc,char *argv[])
     {
       nchan = inFile->beam[ibeam].bandHeader[i].nchan;
       ndump = inFile->beam[ibeam].bandHeader[i].ndump;
+      tint  = inFile->beam[ibeam].bandHeader[i].dtime;
+      chbw  = 1e6*fabs(inFile->beam[ibeam].bandHeader[i].f0-inFile->beam[ibeam].bandHeader[i].f1)/(double)inFile->beam[ibeam].bandHeader[i].nchan;
       sdhdf_loadBandData(inFile,ibeam,i,1);
 
 
@@ -103,7 +131,7 @@ int main(int argc,char *argv[])
 	  for (k=0;k<nchan;k++)
 	    {
 	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] == -1) // Has not been set
-		inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] = inFile->beam[ibeam].bandHeader[i].dtime;
+		inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] = tint*chbw;
 	    }
 	}
     }
@@ -136,7 +164,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
   int n;
   int c0;
   int regionType=1;
-  int zapAllDumps=-1;
+  int zapAllDumps=1;
   int deleteFlagged=1;
   int selectPol=1;
   int firstThrough=1;
@@ -339,6 +367,22 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       {
 	saveFile(inFile,ibeam);
       }
+    else if (key=='K') // Zap entire spectral dump and move to the next one
+      {
+	for (i=0;i<inFile->beam[ibeam].nBand;i++)
+	  {
+	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
+	      inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;			      
+	  }
+	idump++;
+	if (idump >= ndump)
+	  {
+	    idump = ndump-1;
+	    recalc=1;
+	  }
+	else
+	  recalc=2;
+      }
     else if (key=='k') // Zap all channels in current spectral dump zoom region and move to the next one
       {
 	for (i=0;i<inFile->beam[ibeam].nBand;i++)
@@ -465,6 +509,8 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
       }
     else if (key=='h')
+      help();
+    else if (key=='H')
       {
 	float lowX,highX;
 	float *plotX,*plotY;
@@ -524,7 +570,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      }
 	  }
 	  
-	  
+       
 	  cpgband(5,0,mx,my,&mx2,&my2,&key);
 	  if (key=='A') // Mouse click
 	    {
@@ -567,9 +613,6 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	recalc=3;
 	free(plotX); free(plotY); free(plotI); free(plotJ);
       }
-    else
-      printf("Please press 'z' and then move somewhere and click left mouse button\n");
-    
   } while (key != 'q');
   
   free(px);
