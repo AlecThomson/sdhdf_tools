@@ -155,7 +155,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   float *aa,*bb,*ab,*abs;
   float minx,maxx,miny,maxy,minz,maxz;
   float ominx,omaxx,ominy,omaxy;
-  int   divWeights=1;
+  int   divWeights=-1;
   int t=0;
   int setLog=-1;
   char title[1024];
