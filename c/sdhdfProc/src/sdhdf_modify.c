@@ -916,8 +916,8 @@ int main(int argc,char *argv[])
 					  av3 += wt*out_Tdata[l+j*npol*nchan+2*nchan];
 					  av4 += wt*out_Tdata[l+j*npol*nchan+3*nchan];
 					}
-				      //				      printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
-				      //				      printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
+				      //  printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
+				      //  printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
 				      dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
 				      swt += wt;
 				      //				      printf("Done write\n");
