@@ -42,7 +42,7 @@ void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
-void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
+void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam);
 void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,int zapAll);
 
 void help()
@@ -65,6 +65,7 @@ void help()
   printf("q        Quit\n");
   printf("r        Remove flagging in specified region\n");
   printf("s        Save file\n");
+  printf("t        Automatically identify and flag mobile handset RFI\n");
   printf("u        Unzoom - revert to default zoom level\n");
   printf("z        Zoom into a region using the mouse\n");
   printf("Z (or f) Define a region to flag specific channels\n");
@@ -350,6 +351,11 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
 	recalc=1;
       }
+    else if (key=='t') // Zap Parkes transient RFI
+      {
+	autoZapHandsets(inFile,ibeam);
+	recalc=2;
+      }
     else if (key=='p') // Zap for Parkes UWL data for persistent RFI
       {
 	needSave=1;
@@ -485,6 +491,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       }
     else if (key=='r') // Un-flag data
       {
+	float chbw;
 	float lowX,highX;
 	needSave=1;
 	cpgband(4,0,mx,my,&mx2,&my2,&key);
@@ -500,15 +507,16 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 		  { 
 		    if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= lowX && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= highX)
 		      {
+			chbw = 1e6*fabs(inFile->beam[ibeam].bandHeader[i].f0-inFile->beam[ibeam].bandHeader[i].f1)/(double)inFile->beam[ibeam].bandHeader[iband].nchan;
 			if (zapAllDumps==1)
 			  {
 			    for (k=0;k<ndump;k++)
 			      {				
-				inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime;
+				inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime*chbw;
 			      }
 			  }
 			else
-			  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime;
+			  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime*chbw;
 		      }
 		  }
 	      }
@@ -844,15 +852,135 @@ void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
   flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
 }
 
-void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
+void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 {
-  int maxTransmitters = 128;
+  int maxTransmitters = 512;
   float f0[maxTransmitters],f1[maxTransmitters];
   float freq;
+  float cleanF0 = 746; // SHOULD READ FROM AN AUXILARLY FILE -- MUST BE WITHIN 1 BAND
+  float cleanF1 = 748;
+  float f0v,f1v;
   int nT=0;
-  int i,j;
+  int i,j,k;
   int nzap=0;
   int zapAll=1;
+  int bandNum=-1;
+  int n =0;
+  int nchan;
+  
+  float s1,s2;
+  float s1_2,s2_2;
+  float t1,t2,t1_2,t2_2;
+  float mean1,mean2,sdev1,sdev2;
+  float meanT1,meanT2,sdevT1,sdevT2;
+  float sigma1,sigma2,psigma1,psigma2;
+  float peak1,peak2;
+
+  nT=0;
+  for (i=0;i<150;i++)
+    {
+      f0[nT] = 703+0.2*i; f1[nT] = 703+0.2*(i+1); 
+      nT++;
+    }  
+  for (i=0;i<inFile->beam[ibeam].nBand;i++)
+    {
+      printf("Checking %g %g\n",inFile->beam[ibeam].bandHeader[i].f0,inFile->beam[ibeam].bandHeader[i].f1);
+      if (inFile->beam[ibeam].bandHeader[i].f0  < cleanF0 && inFile->beam[ibeam].bandHeader[i].f1 > cleanF1)
+	{
+	  bandNum = i;
+	  break;
+	}
+    }
+
+  //      nchan = 
+  if (bandNum == -1)
+    printf("WARNING: Cannot find the clean band. No flagging applied\n");
+  else
+    {
+      printf("In band %d\n",bandNum);
+      nchan = inFile->beam[ibeam].bandHeader[bandNum].nchan;
+      n=0;
+      s1 = s2 = s1_2 = s2_2 = 0;
+      for (j=0;j<inFile->beam[ibeam].bandHeader[bandNum].ndump;j++)
+	{
+	  for (i=0;i<nchan;i++)
+	    {
+	      if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > cleanF0 && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < cleanF1)
+		{
+		  s1 += inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan];
+		  s1_2 += pow(inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan],2);
+
+		  s2 += inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan];
+		  s2_2 += pow(inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan],2);
+		  n++;
+		}
+	    }
+	}
+      
+      mean1 = s1/(float)n;
+      mean2 = s2/(float)n;
+
+      sdev1 = sqrt(1/(float)n*s1_2 - pow(1.0/(float)n*s1,2));
+      sdev2 = sqrt(1/(float)n*s2_2 - pow(1.0/(float)n*s2,2));
+      
+      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, n = %d, band = %d\n",mean1,mean2,n,bandNum,sdev1,sdev2);      
+    }
+  
+  // Obtain signal in different bands
+  nchan = inFile->beam[ibeam].bandHeader[bandNum].nchan;
+  for (j=0;j<inFile->beam[ibeam].bandHeader[bandNum].ndump;j++)
+    {
+      printf("Processing spectral dump %d\n",j);
+      for (k=0;k<nT;k++)
+	{
+	  t1=t2=t1_2=t2_2=0;
+	  peak1=peak2=0.0;
+	  n=0;
+	  for (i=0;i<nchan;i++)
+	    {
+	      // Could significantly speed this up by simply recording the start and end channels
+	      if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > f0[k] && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < f1[k])
+		{
+		  if (inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan] > peak1)
+		    peak1 = inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan];
+
+		  t1 += inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan];
+		  t1_2 += pow(inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan],2);
+
+		  if (inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan] > peak2)
+		    peak2 = inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan];
+
+		  t2 += inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan];
+		  t2_2 += pow(inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan],2);
+		  n++;
+
+		}
+	    }
+	  meanT1 = t1/(float)n;
+	  meanT2 = t2/(float)n;
+	  
+	  sdevT1 = sqrt(1/(float)n*t1_2 - pow(1.0/(float)n*t1,2));
+	  sdevT2 = sqrt(1/(float)n*t2_2 - pow(1.0/(float)n*t2,2));
+
+	  sigma1 = (meanT1-mean1)/sdev1;
+	  sigma2 = (meanT2-mean2)/sdev2;
+	  psigma1 = (peak1-mean1)/sdev1;
+	  psigma2 = (peak2-mean2)/sdev2;
+	  if (psigma1 > 3 || psigma2 > 3)  // NOTE HARDCODING THRESHOLD HERE AND ONLY USING THE PEAK
+	    {
+	      //	      printf("REMOVE Check %d %d %g %g %g %g sigma = %g %g, peak sigma = %g %g\n",j,k,meanT1,meanT2,sdevT1,sdevT2,sigma1,sigma2,psigma1,psigma2);
+	      for (i=0;i<nchan;i++)
+		{
+		  if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > f0[k] && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < f1[k])
+		    inFile->beam[ibeam].bandData[bandNum].astro_data.dataWeights[i+nchan*j] = 0;
+		}  
+	    }
+	}
+    }
+  
+
+  
+  /*
   
   if (zapAll==1)
     {
@@ -873,6 +1001,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
   printf("Number of Handset signals being removed = %d\n",nT);
 
   flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
+  */
 }
 
 void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
