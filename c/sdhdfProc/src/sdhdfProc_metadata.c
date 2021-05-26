@@ -1007,8 +1007,6 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   int rank;
   hsize_t dims[5];
   int ndims;
-
-
   
   attr_id      = H5Aopen_by_idx(inFile->fileID,dataName, H5_INDEX_NAME, H5_ITER_NATIVE,num,H5P_DEFAULT,H5P_DEFAULT);
   if (attr_id < 0)
@@ -1028,26 +1026,24 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   else
     {
       atype        = H5Aget_type(attr_id);
-      //      printf("atype = %d\n",atype);
       type_class   = H5Tget_class(atype);
-      //      printf("type_class = %d\n",type_class);
       if (type_class == H5T_STRING)
 	{
 	  int attr_id_old = attr_id;
-
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
 	  if (strcmp(attribute->key,"CLASS")==0)
-	    strcpy(attribute->value,"FIX_THIS");    // NOT SURE HOW TO READ A SCALAR IN PROPERLY -- FIX THIS
+	    {
+	      strcpy(attribute->value,"FIX_THIS");    // NOT SURE HOW TO READ A SCALAR IN PROPERLY -- FIX THIS
+	    }
 	  else
 	    {
 	      status = H5Aread(attr_id, atype, &buf);
 	      strcpy(attribute->value,buf);
+	      free(buf);
 	    }
-	  free(buf);
 	}
       else
 	printf("CANNOT READ ATTRIBUTE\n");
-
       status = H5Tclose(atype);
     }
   //  status = H5Aclose(aspace);
