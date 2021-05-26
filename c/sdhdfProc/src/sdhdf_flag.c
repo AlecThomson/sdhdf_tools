@@ -866,16 +866,21 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
   int zapAll=1;
   int bandNum=-1;
   int n =0;
+  int n1=0;
   int nchan;
   
   float s1,s2;
   float s1_2,s2_2;
   float t1,t2,t1_2,t2_2;
+  float *pwr_clean,pwr_test;
   float mean1,mean2,sdev1,sdev2;
   float meanT1,meanT2,sdevT1,sdevT2;
   float sigma1,sigma2,psigma1,psigma2;
   float peak1,peak2;
 
+  pwr_clean = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[bandNum].ndump);
+
+  
   nT=0;
   for (i=0;i<150;i++)
     {
@@ -903,6 +908,8 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
       s1 = s2 = s1_2 = s2_2 = 0;
       for (j=0;j<inFile->beam[ibeam].bandHeader[bandNum].ndump;j++)
 	{
+	  n1=0;
+	  pwr_clean[j]=0;
 	  for (i=0;i<nchan;i++)
 	    {
 	      if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > cleanF0 && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < cleanF1)
@@ -912,25 +919,30 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 
 		  s2 += inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan];
 		  s2_2 += pow(inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan],2);
+		  pwr_clean[j] += inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan]+inFile->beam[ibeam].bandData[bandNum].astro_data.pol2[i+j*nchan];
 		  n++;
+		  n1++;
 		}
 	    }
+	  pwr_clean[j] /= (float)n1;
 	}
-      
+
+
       mean1 = s1/(float)n;
       mean2 = s2/(float)n;
 
       sdev1 = sqrt(1/(float)n*s1_2 - pow(1.0/(float)n*s1,2));
       sdev2 = sqrt(1/(float)n*s2_2 - pow(1.0/(float)n*s2,2));
       
-      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, n = %d, band = %d\n",mean1,mean2,n,bandNum,sdev1,sdev2);      
+      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, pwr = %g, n = %d, band = %d\n",mean1,mean2,sdev1,sdev2,pwr_clean,n,bandNum);      
     }
   
   // Obtain signal in different bands
   nchan = inFile->beam[ibeam].bandHeader[bandNum].nchan;
   for (j=0;j<inFile->beam[ibeam].bandHeader[bandNum].ndump;j++)
+  //  for (j=0;j<5;j++)
     {
-      printf("Processing spectral dump %d\n",j);
+      printf("Processing spectral dump %d/%d\n",j,inFile->beam[ibeam].bandHeader[bandNum].ndump);
       for (k=0;k<nT;k++)
 	{
 	  t1=t2=t1_2=t2_2=0;
@@ -956,6 +968,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 
 		}
 	    }
+	  pwr_test = (t1+t2)/(float)n;
 	  meanT1 = t1/(float)n;
 	  meanT2 = t2/(float)n;
 	  
@@ -966,7 +979,9 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 	  sigma2 = (meanT2-mean2)/sdev2;
 	  psigma1 = (peak1-mean1)/sdev1;
 	  psigma2 = (peak2-mean2)/sdev2;
-	  if (psigma1 > 3 || psigma2 > 3)  // NOTE HARDCODING THRESHOLD HERE AND ONLY USING THE PEAK
+	  //	  if (psigma1 > 3 || psigma2 > 3)  // NOTE HARDCODING THRESHOLD HERE AND ONLY USING THE PEAK
+	  printf("Checking %d %d %g %g [%g %g]\n",j,k,pwr_clean[j],pwr_test,f0[k],f1[k]);
+	  if (pwr_test > pwr_clean[j]*1.5)
 	    {
 	      //	      printf("REMOVE Check %d %d %g %g %g %g sigma = %g %g, peak sigma = %g %g\n",j,k,meanT1,meanT2,sdevT1,sdevT2,sigma1,sigma2,psigma1,psigma2);
 	      for (i=0;i<nchan;i++)
@@ -1002,6 +1017,8 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 
   flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
   */
+
+  free(pwr_clean);
 }
 
 void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
