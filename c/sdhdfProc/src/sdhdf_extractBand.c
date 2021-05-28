@@ -39,10 +39,11 @@ void help()
   printf("sdhdf_extractBand\n");
   printf("\n");
   printf("Command line arguments\n\n");
-  printf("-e <ext>        file extension for output files\n");
-  printf("-h              this help\n");
-  printf("-zoom <f1> <f2> produce zoom band between f1 and f2 MHz\n");
-  printf("-b <n>         select sub-band n\n");
+  printf("-e <ext>          file extension for output files\n");
+  printf("-h                this help\n");
+  printf("-zoom <f1> <f2>   produce zoom band between f1 and f2 MHz\n");
+  printf("-b <bandLabel>    select sub-band with label\n");
+  printf("-band <bandNum>   select sub-band number bandNum (starting from 0)\n"); 
 
   exit(1);
 }
@@ -70,7 +71,7 @@ int main(int argc,char *argv[])
   char groupName[MAX_STRLEN];
   char groupName1[MAX_STRLEN],groupName2[MAX_STRLEN];
   int cal=0;
-  int selectBandID;
+  int selectBandID=-1;
   int npol;
   
   strcpy(oname,"sdhdf_extract_output.hdf");
@@ -158,7 +159,40 @@ int main(int argc,char *argv[])
 
 	      if (zoomBand==0)
 		{
+		  copyBand=0;
 		  printf("Number of bands = %d\n",inFile->beam[b].nBand);
+		  for (j=0;j<nSelectBands;j++)
+		    {
+		      copyBand=0;
+		      for (i=0;i<inFile->beam[b].nBand;i++)
+			{
+			  
+			  if (strcmp(inFile->beam[b].bandHeader[i].label,selectBand[j])==0)
+			    {
+			      copyBand=1;
+			      break;
+			    }
+			}
+		      if (copyBand==0)
+			{
+			  int isel;
+			  printf("WARNING: Unable to find band label >%s<\n",selectBand[j]);
+			  if (sscanf(selectBand[j],"%d",&isel)==1)
+			    {
+			      printf("Using the band label as the band number instead\n");
+			      strcpy(selectBand[j],inFile->beam[b].bandHeader[isel].label);
+			    }
+			  else
+			    {
+			      printf("ERROR: Unable to identify this band\n");
+			      exit(1); // Should clean nicely! ** FIX ME
+			    }
+			}
+		    }
+
+		      
+
+		  // Check if at least one band is to be copied
 		  for (i=0;i<inFile->beam[b].nBand;i++)
 		    {
 		      copyBand=0;
