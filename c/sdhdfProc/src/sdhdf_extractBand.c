@@ -42,8 +42,7 @@ void help()
   printf("-e <ext>          file extension for output files\n");
   printf("-h                this help\n");
   printf("-zoom <f1> <f2>   produce zoom band between f1 and f2 MHz\n");
-  printf("-b <bandLabel>    select sub-band with label\n");
-  printf("-band <bandNum>   select sub-band number bandNum (starting from 0)\n"); 
+  printf("-b <bandLabel>    select sub-band with label (if the label is not found then it assumes a band number)\n");
 
   exit(1);
 }
