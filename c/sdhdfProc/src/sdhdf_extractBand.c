@@ -136,7 +136,7 @@ int main(int argc,char *argv[])
 	  else
 	    cal=0;
 	  
-	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname,inFile->primary[0].utc0,
+	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname[ii],inFile->primary[0].utc0,
 		 inFile->primary[0].hdr_defn_version,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->primary[0].telescope,
 		 inFile->primary[0].observer, inFile->primary[0].rcvr,inFile->beam[0].nBand);
        
