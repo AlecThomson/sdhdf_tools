@@ -182,7 +182,7 @@ int main(int argc,char *argv[])
 		      for (j=0;j<inFile->beam[beam].nBand;j++)
 			{
 			  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
-			  printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime);
+			  printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f %s\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime,inFile->fname);
 			}
 		    }
 		  
