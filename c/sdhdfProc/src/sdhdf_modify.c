@@ -66,6 +66,7 @@ int main(int argc,char *argv[])
   int pol=0;
   int stokes=0;
   int fAv=0;
+  int nchanRequested=-1;
   int bary=0,lsr=0;
   int regrid=0;
   int nh;
@@ -231,6 +232,8 @@ int main(int argc,char *argv[])
 	}
       else if (strcasecmp(argv[i],"-fav")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&fAv);}
+      else if (strcasecmp(argv[i],"-nch")==0)
+	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&nchanRequested);}
       else
 	{
 	  strcpy(fname,argv[i]);
@@ -525,6 +528,13 @@ int main(int argc,char *argv[])
 		      //		      strcpy(outFile->frequency_attr.frame,inFile->frequency_attr.frame);
 		      //		      strcpy(outFile->frequency_attr.unit,inFile->frequency_attr.unit);
 		      //		      strcpy(outFile->data_attr.unit,inFile->data_attr.unit);		     		      
+
+
+		      if (nchanRequested > 0) // Define fav
+			{
+			  fAv = (int)(nchan/nchanRequested);
+			  printf("Setting number of channels to average to %d (original number of channels = %d)\n",fAv,nchan);
+			}
 		      
 		      if (fScrunch==1)
 			fAv = nchan;
