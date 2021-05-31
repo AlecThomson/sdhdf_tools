@@ -84,6 +84,7 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_pointing \
   sdhdf_autoFlag \
   sdhdf_rfiTime \
+  sdhdf_waterfall \
   sdhdf_flag \
   sdhdf_plotScan \
   sdhdf_plotWide \
@@ -111,6 +112,9 @@ sdhdf_autoFlag_SOURCES = sdhdf_autoFlag.c \
   $(COMMON_SRCS)
 
 sdhdf_rfiTime_SOURCES = sdhdf_rfiTime.c \
+  $(COMMON_SRCS)
+
+sdhdf_waterfall_SOURCES = sdhdf_waterfall.c \
   $(COMMON_SRCS)
 
 sdhdf_flag_SOURCES = sdhdf_flag.c \
