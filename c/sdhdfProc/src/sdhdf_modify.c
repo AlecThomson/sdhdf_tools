@@ -131,6 +131,7 @@ int main(int argc,char *argv[])
   int muellerI = 0;
   int origNchan = -1;
   double chbw;
+  float tdumpRequest = -1;
   
   cc_eps1=cc_eps2=0;
   
@@ -206,6 +207,8 @@ int main(int argc,char *argv[])
 	{sdhdf_add1arg(args,argv[i]); tScrunch=1;}
       else if (strcmp(argv[i],"-F")==0)
 	{sdhdf_add1arg(args,argv[i]); fScrunch=1;}
+      else if (strcmp(argv[i],"-tdump")==0)
+	{sdhdf_add1arg(args,argv[i]); sscanf(argv[++i],"%f",&tdumpRequest);}
       else if (strcmp(argv[i],"-scaleFile")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(scaleFile,argv[++i]);}
       else if (strcmp(argv[i],"-id")==0)
@@ -548,6 +551,16 @@ int main(int argc,char *argv[])
 			out_npol=1;
 		      else
 			out_npol  = npol;
+
+		      //		      ** GEORGE HERE**
+		      if (tdumpRequest > 0)
+			{
+			  float tdump;
+			  tdump = inFile->beam[b].bandHeader[ii].dtime;
+			  printf("tdump = %g request = %g\n",tdump,tdumpRequest);
+			}
+
+
 		      
 		      if (tScrunch==1)
 			out_ndump = 1;
@@ -586,15 +599,15 @@ int main(int argc,char *argv[])
 				  onP4  += inFile->beam[b].bandData[ii].cal_on_data.pol4[cj+ck*c_nchan];
 				  offP4 += inFile->beam[b].bandData[ii].cal_off_data.pol4[cj+ck*c_nchan];
 				}
-			      onP1 /= divideCal;
-			      offP1 /= divideCal;
-			      onP2 /= divideCal;
-			      offP2 /= divideCal;
-			      onP3 /= divideCal;
-			      offP3 /= divideCal;
-			      onP4 /= divideCal;
-			      offP4 /= divideCal;
-
+			      
+			      onP1 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      offP1 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      onP2 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      offP2 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      onP3 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      offP3 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      onP4 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
+			      offP4 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
 			      
 			      // Note: summing, not averaging above ***
 			      //
@@ -614,10 +627,10 @@ int main(int argc,char *argv[])
 			      getScal(sysGain_freq[cj],scalFreq,scalAA,scalBB,nScal,&scalAA_val,&scalBB_val);
 			      //  g_e[cj] = (calAA+calBB)/(scalAA_val+scalBB_val);
 
-			      // 4 SHOULD PROBABLY BE A 2 -- NOT SURE WHAT IS GOING ON HERE
 			      // Note should use -tcal isntead of -scal if using TCAL measurements
-			      g_e[cj] = (8.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
-			      printf("WARNING SCALING BY A FACTOR OF 8 -- CHECK THIS *****\n");
+			      g_e[cj] = (1.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
+			      //			      g_e[cj] = (8.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
+			      //			      printf("WARNING SCALING BY A FACTOR OF 8 -- CHECK THIS *****\n");
 			      
 			      //			      printf("g_e = %g\n",g_e[cj]);
 			      if (ii==5)
