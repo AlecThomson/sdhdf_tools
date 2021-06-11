@@ -1337,7 +1337,7 @@ int main(int argc,char *argv[])
 			      vOverC=sdhdf_calcVoverC(inFile,b,ii,j,eop,nEOP,lsr);
 			      if (regrid==0)
 				{
-				  printf("Changing frequency axis\n");
+				  printf("Changing frequency axis => not regridding. V/c = %g. Out_nchan = %d\n",vOverC,out_nchan);				  
 				  for (k=0;k<out_nchan;k++)
 				    out_freq[k]*=(1.0-vOverC);
 				}
@@ -1361,7 +1361,7 @@ int main(int argc,char *argv[])
 				    {
 				      freqNew = out_freq[k]*(1.0-vOverC);
 				      freqOld = out_freq[k];
-				      deltaI  = (int)((freqOld-freqNew)/(out_freq[1]-out_freq[0])+0.5); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
+				      deltaI  = (int)((double)(freqOld-freqNew)/(double)(out_freq[1]-out_freq[0])+0.5); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
 				      //				      printf("Here with %.6f %.6f %d\n",freqOld,freqNew,deltaI);
 				      //				      deltaI  = 0;
 				      if (k + deltaI >= 0 && k + deltaI < out_nchan)

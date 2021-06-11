@@ -208,7 +208,7 @@ int main(int argc,char *argv[])
 	  // What to do if number of dumps is not the same in different bands?
 	  ndump = inFile->beam[ibeam].bandHeader[0].ndump;
 	  sdump = sdump0;
-	  printf("    Number of spectral dumps = %d\n",ndump);
+	  printf("    Number of spectral dumps = %d (sdump = %d)\n",ndump,sdump);
 	  for (jj=0;jj<ndump;jj++)
 	    {
 	      if (j==0)
@@ -252,6 +252,12 @@ int main(int argc,char *argv[])
 		    }
 		  signalVal[j][sdump]/=(double)np;
 		  sdump++;
+		  if (sdump > MAX_DUMPS)
+		    {
+		      printf("ERROR: must increase MAX_DUMPS in sdhdf_rfiTime.c\n");
+		      exit(1);
+		    }
+
 		}
 	    }
 	}

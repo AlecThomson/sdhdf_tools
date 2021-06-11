@@ -48,6 +48,7 @@ int main(int argc,char *argv[])
   int nchan,idump,nband;
   int totSize,chanPos;
   int ndump;
+  int setNdump=MAX_DUMPS;
   //  spectralDumpStruct spectrum;
   int npol=4;
   int ibeam=0;
@@ -90,13 +91,20 @@ int main(int argc,char *argv[])
   int nc;
   int div1=0;
   int sub0=0;
-
+  int poln=0;
+  
   float f0,f1,chbw;
   
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-log")==0)
 	log=1;
+      else if (strcmp(argv[i],"-pol")==0)
+	sscanf(argv[++i],"%d",&poln);
+      else if (strcmp(argv[i],"-ndump")==0)
+	sscanf(argv[++i],"%d",&setNdump);
+      else if (strcmp(argv[i],"-band")==0)
+	sscanf(argv[++i],"%d",&iband);
       else
 	strcpy(fname[nFiles++],argv[i]);
     }
@@ -104,6 +112,8 @@ int main(int argc,char *argv[])
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
+      printf("Try and reduce the total number of spectral dumps using -ndump\n");
+      printf("or reduce the frequency resolution of your data\n");
       exit(1);
     }
 
@@ -116,15 +126,19 @@ int main(int argc,char *argv[])
       sdhdf_loadMetaData(inFile);
       
       // Find out which UWL bands we will need to load and process
-      printf("Processing SB %d (%s)\n",j,inFile->fname);
+      printf("Processing SB %d (%s)\n",iband,inFile->fname);
       sdhdf_loadBandData(inFile,ibeam,iband,1);
       
       ndump = inFile->beam[ibeam].bandHeader[iband].ndump;
       nchan = inFile->beam[ibeam].bandHeader[iband].nchan;
       if (i==0)
 	{
-	  signalVal = (float *)malloc(sizeof(float)*MAX_DUMPS*nchan);
-	  dumpParams = (dumpStruct *)malloc(sizeof(dumpStruct)*MAX_DUMPS);
+	  if (!(signalVal = (float *)malloc(sizeof(float)*setNdump*nchan)))
+	    {
+	      printf("ERROR: unable to allocate enough memory for the data: %g\n",(float)(setNdump*nchan));
+	      exit(1);
+	    }
+	  dumpParams = (dumpStruct *)malloc(sizeof(dumpStruct)*setNdump);
 	  f0 = inFile->beam[ibeam].bandData[iband].astro_data.freq[0];
 	  f1 = inFile->beam[ibeam].bandData[iband].astro_data.freq[1];
 	  chbw = f1-f0;
@@ -132,13 +146,16 @@ int main(int argc,char *argv[])
 
       for (jj=0;jj<ndump;jj++)
 	{
+	  printf("Processing dump %d\n",jj);
 	  strcpy(dumpParams[jj+sdump].fname,inFile->fname);
 	  dumpParams[jj+sdump].dump = jj;
 	  dumpParams[jj+sdump].scale = 1;
-	  //	  printf("Setting fname %s %d >%s<\n",inFile->fname,jj+sdump,dumpParams[jj+sdump].fname);
 	  for (ii=0;ii<nchan;ii++)
 	    {
-	      signalVal[(jj+sdump)*nchan+ii] = (inFile->beam[ibeam].bandData[iband].astro_data.pol1[ii+jj*nchan]+inFile->beam[ibeam].bandData[iband].astro_data.pol2[ii+jj*nchan]);
+	      if (poln == 1)
+		signalVal[(jj+sdump)*nchan+ii] = (inFile->beam[ibeam].bandData[iband].astro_data.pol1[ii+jj*nchan]);
+	      else
+		signalVal[(jj+sdump)*nchan+ii] = (inFile->beam[ibeam].bandData[iband].astro_data.pol1[ii+jj*nchan]+inFile->beam[ibeam].bandData[iband].astro_data.pol2[ii+jj*nchan]);
 	      signalVal[(jj+sdump)*nchan+ii] /= (double)inFile->beam[ibeam].bandHeader[iband].dtime;
 	      //	      printf("dtim = %g\n",(double)inFile->beam[ibeam].bandHeader[iband].dtime);
 	      signalVal[(jj+sdump)*nchan+ii] = log10(signalVal[(jj+sdump)*nchan+ii]);
@@ -171,9 +188,18 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
   float mx,my;
   char key;
   float *heatMap;
+  float cleanF0,cleanF1;
   
   int specSelect=-1;
   float minz,maxz;
+
+  float heatMiny = 0;
+  float heatMaxy = ndump;
+  float specMinx = f0;
+  float specMaxx = f0+nchan*chbw;
+
+  int t=0;
+  int log=-1;
   
   specX = (float *)malloc(sizeof(float)*nchan);
   specY = (float *)malloc(sizeof(float)*nchan);
@@ -193,7 +219,7 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 
   do
     {
-      
+      t=0;
       for (i=0;i<nchan;i++)
 	{
 	  specX[i] = f0+chbw*i;
@@ -203,38 +229,70 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	  for (j=0;j<ndump;j++)
 	    {
 	      val = dumpParams[j].scale*pow(10,signalVal[j*nchan+i]);
-	      heatMap[j*nchan+i] = log10(val);
-	      if (i==0 && j==0)
+	      if (log==1)
+		heatMap[j*nchan+i] = log10(val);
+	      else
+		heatMap[j*nchan+i] = val;
+	      
+	      if (specX[i] > specMinx && specX[i] < specMaxx)
 		{
-		  minz = maxz = heatMap[j*nchan+i];
+		  if (t==0 && j==0)
+		    {
+		      minz = maxz = heatMap[j*nchan+i];
+		    }
+		  if (minz > heatMap[j*nchan+i]) minz = heatMap[j*nchan+i];
+		  if (maxz < heatMap[j*nchan+i]) maxz = heatMap[j*nchan+i];
 		}
-	      if (minz > heatMap[j*nchan+i]) minz = heatMap[j*nchan+i];
-	      if (maxz < heatMap[j*nchan+i]) maxz = heatMap[j*nchan+i];
 	      if (j==specSelect)
-		specY4[i] = log10(val);
+		{
+		  if (log==1)
+		    specY4[i] = log10(val);
+		  else
+		    specY4[i] = (val);
+		}
 	      if (j==0)
 		{
-		  specY2[i] = specY3[i] = log10(val);
+		  if (log==1)
+		    specY2[i] = specY3[i] = log10(val);
+		  else
+		    specY2[i] = specY3[i] = val;
 		}
 	      else
 		{
-		  if (specY2[i] > log10(val)) specY2[i] = log10(val);
-		  if (specY3[i] < log10(val)) specY3[i] = log10(val);
+		  if (log==1)
+		    {
+		      if (specY2[i] > log10(val)) specY2[i] = log10(val);
+		      if (specY3[i] < log10(val)) specY3[i] = log10(val);
+		    }
+		  else
+		    {
+		      if (specY2[i] > log10(val)) specY2[i] = (val);
+		      if (specY3[i] < log10(val)) specY3[i] = (val);
+		    }
 		}
 	      specY[i] += val;
 	    }
-	  specY[i] = log10(specY[i]/ndump);
-	  if (i==0)
+	  if (log==1)
+	    specY[i] = log10(specY[i]/ndump);
+	  else
+	    specY[i] = (specY[i]/ndump);
+	  
+	    if (specX[i] > specMinx && specX[i] < specMaxx)
 	    {
-	      specMiny = specY2[i];
-	      specMaxy = specY3[i];
+	      if (t==0)
+		{
+		  specMiny = specY2[i];
+		  specMaxy = specY3[i];
+		  t=1;
+		}
+	      
+	      if (specMiny > specY2[i]) specMiny = specY2[i];
+	      if (specMaxy < specY3[i]) specMaxy = specY3[i];      
 	    }
-	  if (specMiny > specY2[i]) specMiny = specY2[i];
-	  if (specMaxy < specY3[i]) specMaxy = specY3[i];      
 	}
       cpgeras();
       cpgsvp(0.1,0.95,0.15,0.4);
-      cpgswin(f0,f0+nchan*chbw,specMiny,specMaxy);
+      cpgswin(specMinx,specMaxx,specMiny,specMaxy);
       cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
       cpglab("Frequency (MHz)","","");
       cpgline(nchan,specX,specY);
@@ -244,7 +302,7 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       cpgsci(1);
       
       cpgsvp(0.1,0.95,0.4,0.95);
-      cpgswin(f0,f0+nchan*chbw,0,ndump);
+      cpgswin(specMinx,specMaxx,heatMiny,heatMaxy+0.5);
       
       cpglab("","Spectral dump","");
       cpgctab(heat_l,heat_r,heat_g,heat_b,5,1.0,0.5);
@@ -255,14 +313,71 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       if (key=='A')
 	{
 	  printf("Mouse clicked at (%g,%g)\n",mx,my);
-	  specSelect = (int)(my+0.5);
+	  specSelect = (int)(my-0.5);
+	  if (specSelect < 0) specSelect = 0;
+	  if (specSelect >= ndump) specSelect = ndump-1;
+	  
 	  printf("Selected spectrum #%d\n",specSelect);
 	  printf("Selecting spectra from %s, spectral dump number %d\n",dumpParams[specSelect].fname,dumpParams[specSelect].dump);
 	}
+      else if (key=='l')
+	log*=-1;
+      else if (key=='y')
+	{
+	  float mx2,my2;
+	  
+	  cpgband(3,0,mx,my,&mx2,&my2,&key);
+	  if (my < my2) {heatMiny = my; heatMaxy = my2;}
+	  else {heatMiny = my2; heatMaxy = my;}
+	}
+      else if (key=='x')
+	{
+	  float mx2,my2;
+	  
+	  cpgband(4,0,mx,my,&mx2,&my2,&key);
+	  if (mx < mx2) {specMinx = mx; specMaxx = mx2;}
+	  else {specMinx = mx2; specMaxx = mx;}
+	}
+      else if (key=='f')
+	{
+	  printf("Enter frequency range: ");
+	  scanf("%f %f",&specMinx,&specMaxx);
+	}
+      else if (key=='u')
+	{
+	  heatMiny = 0;
+	  heatMaxy = ndump;
+	  specMinx = f0;
+	  specMaxx = f0+nchan*chbw;	  
+	}
+      else if (key=='a')
+	specSelect=-1;
       else if (key=='s') // Scale
 	{
+	  float scl;
+	  int nv=0;
+	  
+	  printf("Enter a clean frequency range: f0 f1 ");
+	  scanf("%f %f",&cleanF0,&cleanF1);
 	  for (i=0;i<ndump;i++)
-	    dumpParams[i].scale = 1.0/pow(10,signalVal[i*nchan+115]); // 800]); // FIX ***
+	    {
+	      nv=0;
+	      scl=0;
+	      for (j=0;j<nchan;j++)
+		{
+		  if (specX[j] > cleanF0 && specX[j] <= cleanF1)
+		    {
+		      scl += pow(10,signalVal[i*nchan+j]);
+		      nv++;
+		    }
+		  if (nv > 0)
+		    dumpParams[i].scale = 1.0/(scl/nv);
+		  else
+		    dumpParams[i].scale = 1.0;;
+		}
+	    }
+	  
+	  
 	}
     } while (key != 'q');
       
