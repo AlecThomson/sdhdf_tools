@@ -177,12 +177,12 @@ int main(int argc,char *argv[])
 		  if (showBands==1)
 		    {
 		      printf("-----------------------------------------------------------------------------\n");
-		      printf("        #   BandID      F0       F1      NCHAN    TDUMP    NPOL NDUMP TOBS\n");
+		      printf("        #   BandID           F0       F1      NCHAN    TDUMP    NPOL NDUMP TOBS\n");
 		      printf("-----------------------------------------------------------------------------\n");
 		      for (j=0;j<inFile->beam[beam].nBand;j++)
 			{
 			  intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
-			  printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f %s\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime,inFile->fname);
+			  printf(" [Band] %3.3d %-15.15s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f %s\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime,inFile->fname);
 			}
 		    }
 		  
