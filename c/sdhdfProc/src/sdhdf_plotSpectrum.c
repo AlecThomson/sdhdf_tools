@@ -206,7 +206,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      // SHOULD ONLY LOAD IF NOT LOADED YET
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.pol1AllocatedMemory == 0)
 		{
-		  printf("Loading data\n");
 		  sdhdf_loadBandData(inFile,ibeam,iband,1);
 		  if (strcmp(yUnit,"not set")==0)
 		    {

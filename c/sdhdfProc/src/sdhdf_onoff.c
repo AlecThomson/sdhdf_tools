@@ -33,7 +33,7 @@
 #include "hdf5.h"
 
 #define VNUM "v0.1"
-#define MAX_FILES_BATCH 32
+#define MAX_FILES_BATCH 128
 
 void help()
 {
@@ -158,13 +158,16 @@ int main(int argc,char *argv[])
     nFiles=1;
   else
     {
+      char line[4096];
       FILE *fin;
       nFiles=0;
       fin = fopen(batchFileName,"r");
       while (!feof(fin))
 	{
-	  if (fscanf(fin,"%s %s %s",fnameOn[nFiles],fnameOff[nFiles],outFileName[nFiles])==3)
+	  if (fgets(line,4096,fin)!=NULL)
+	    //	  if (fscanf(fin,"%s %s %s",fnameOn[nFiles],fnameOff[nFiles],outFileName[nFiles])==3)
 	    {
+	      sscanf(line,"%s %s %s",fnameOn[nFiles],fnameOff[nFiles],outFileName[nFiles]);
 	      nFiles++;
 	      if (nFiles == MAX_FILES_BATCH)
 		{

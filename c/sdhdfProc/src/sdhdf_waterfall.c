@@ -233,11 +233,15 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 
   do
     {
-      if (cleanF0 > 0 &&  cleanF1 > 0)
+      for (i=0;i<nchan;i++)
 	{
+	  specX[i] = f0+chbw*i;
+	}
+      if (cleanF0 > 0 &&  cleanF1 > 0)
+	{	  
 	  float scl;
 	  int nv=0;
-	  
+	  printf("Cleaning the data\n");
 	  
 	  for (i=0;i<ndump;i++)
 	    {
@@ -261,7 +265,6 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       t=0;
       for (i=0;i<nchan;i++)
 	{
-	  specX[i] = f0+chbw*i;
 	  specY[i] = 0.0;
 	  
 	  
@@ -347,9 +350,12 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       cpgctab(heat_l,heat_r,heat_g,heat_b,5,1.0,0.5);
       if (colourScale==1)
 	cpgimag(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
-      else
+      else if (colourScale==2)
+	cpgimag(heatMap,nchan,ndump,1,nchan,1,ndump,maxz,minz,tr);
+      else if (colourScale==3)
 	cpggray(heatMap,nchan,ndump,1,nchan,1,ndump,maxz,minz,tr);
-
+      else if (colourScale==4)
+	cpggray(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
 	cpgbox("ABCTS",0,0,"ABCTSN",0,0);
 
       cpgcurs(&mx,&my,&key);
@@ -364,7 +370,10 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	  printf("Selecting spectra from %s, spectral dump number %d\n",dumpParams[specSelect].fname,dumpParams[specSelect].dump);
 	}
       else if (key=='c')
-	colourScale*=-1;
+	{
+	  colourScale++;
+	  if (colourScale==5) colourScale=1;
+	}
       else if (key=='l')
 	log*=-1;
       else if (key=='y')
