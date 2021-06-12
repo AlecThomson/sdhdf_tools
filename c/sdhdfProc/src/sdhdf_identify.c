@@ -32,24 +32,54 @@
 #include "sdhdfProc.h"
 #include "hdf5.h"
 
+#define MAX_SRC 128
+
+typedef struct infoStruct {
+  char fname[MAX_STRLEN];
+  char source[MAX_STRLEN];
+  float ra;
+  float dec;
+  double mjd;
+} infoStruct;
+
 double haversine(double centre_long,double centre_lat,double src_long,double src_lat);
 
 int main(int argc,char *argv[])
 {
-  int i,j;
+  int i,j,k,l;
   char fname[MAX_FILES][64];
   int nFiles=0;
   int ibeam=0;
   int iband=0;
+  infoStruct *info;
   sdhdf_fileStruct *inFile;
   int useCoord=0;
   float ra0,dec0,raddist;
   double dist;
   int useSource=0;
-  int info=0;
-  char src[MAX_STRLEN];
+  int infoDisp=0;
+  char **src;
+  char **onSrc;
+  char **offSrc;
+  int nSrc=0;
+  int nOnSrc=0;
+  int nOffSrc=0;
   int exactMatch=1;
   int openFile=0;
+  int pair=0;
+  char outFile[MAX_STRLEN];
+  int writeOut=0;
+  FILE *fout;
+  
+  src = (char **)malloc(sizeof(char *)*MAX_SRC);
+  onSrc = (char **)malloc(sizeof(char *)*MAX_SRC);
+  offSrc = (char **)malloc(sizeof(char *)*MAX_SRC);
+  for (i=0;i<MAX_SRC;i++)
+    {
+      src[i] = (char *)malloc(sizeof(char)*MAX_STRLEN);
+      onSrc[i] = (char *)malloc(sizeof(char)*MAX_STRLEN);
+      offSrc[i] = (char *)malloc(sizeof(char)*MAX_STRLEN);
+    }
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -66,20 +96,34 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&dec0);
 	  sscanf(argv[++i],"%f",&raddist);
 	}
+      else if (strcmp(argv[i],"-o")==0)
+	{
+	  strcpy(outFile,argv[++i]);
+	  writeOut=1;
+	}
+      else if (strcmp(argv[i],"-pair")==0)
+	pair=1;
       else if (strcmp(argv[i],"-partial")==0)
 	exactMatch=0;
       else if (strcmp(argv[i],"-info")==0)
-	info=1;
+	infoDisp=1;
       else if (strcmp(argv[i],"-src")==0)
 	{
 	  useSource=1;
-	  strcpy(src,argv[++i]);
+	  strcpy(src[nSrc++],argv[++i]);
 	}
+      else if (strcmp(argv[i],"-on")==0)
+	strcpy(onSrc[nOnSrc++],argv[++i]);
+      else if (strcmp(argv[i],"-off")==0)
+	strcpy(offSrc[nOffSrc++],argv[++i]);
       else
 	{
 	  strcpy(fname[nFiles++],argv[i]);
 	}
     }
+
+
+  info = (infoStruct *)malloc(sizeof(infoStruct)*nFiles);
 
   for (i=0;i<nFiles;i++)
     {
@@ -92,43 +136,129 @@ int main(int argc,char *argv[])
       else
 	{
 	  sdhdf_loadMetaData(inFile);
-	  if (useSource==1)
+	  strcpy(info[i].fname,fname[i]);
+	  strcpy(info[i].source,inFile->beamHeader[ibeam].source);
+	  info[i].ra = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].raDeg; // Note 0 here
+	  info[i].dec = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].decDeg;
+	  info[i].mjd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].mjd;
+	}
+      sdhdf_closeFile(inFile);
+    }
+  printf("Loaded data for %d files\n",nFiles);
+
+
+  if (writeOut==1)
+    fout = fopen(outFile,"w");
+    
+  if (pair==1)
+    {
+      int foundOn=0;
+      int foundOff=0;
+      int bestOff;
+      double timeDiff;
+      for (i=0;i<nFiles;i++)
+	{
+	  // Find the on source
+	  foundOn=0;
+	  for (j=0;j<nOnSrc;j++)
 	    {
-	      if (exactMatch==1)
+	      if (strcmp(onSrc[j],info[i].source)==0)
+		{foundOn=1; break;}
+	    }
+	  if (foundOn==1)
+	    {
+	      // Now find a matching off source
+	      bestOff=-1;
+	      for (j=0;j<nFiles;j++)
 		{
-		  if (strcmp(inFile->beamHeader[ibeam].source,src)==0)
+		  foundOff=0;
+
+		  for (k=0;k<nOffSrc;k++)
 		    {
-		      if (info==1) printf("[SRC MATCH] %s %s\n",fname[i],inFile->beamHeader[ibeam].source);
-		      else printf("%s\n",fname[i]);
+		      if (strcmp(offSrc[k],info[j].source)==0)
+			{foundOff=1; break;}
+		    }
+		  if (foundOff==1)
+		    {
+		      if (bestOff == -1)
+			{
+			  bestOff = j;
+			  timeDiff = fabs(info[j].mjd-info[i].mjd);
+			}
+		      else if (fabs(info[j].mjd-info[i].mjd) < timeDiff)
+			{
+			  bestOff = j;
+			  timeDiff = fabs(info[j].mjd-info[i].mjd);
+			}
 		    }
 		}
-	      else
+	      printf("[MATCH] %s %s # SRC_ON: %s SRC_OFF: %s TIMEDIFF: %g\n",info[i].fname,info[bestOff].fname,info[i].source,info[bestOff].source,timeDiff);
+	      if (writeOut==1)
+		fprintf(fout,"%s %s # SRC_ON: %s SRC_OFF: %s TIMEDIFF: %g\n",info[i].fname,info[bestOff].fname,info[i].source,info[bestOff].source,timeDiff);
+	      //	      printf("Found %d as off source. Time difference = %g\n",bestOff,timeDiff);
+	    }
+	}
+    }
+  else
+    {  
+      for (i=0;i<nFiles;i++)
+	{
+	  if (useSource==1)
+	    {
+	      for (j=0;j<nSrc;j++)
 		{
-		  if (strstr(inFile->beamHeader[ibeam].source,src)!=NULL)
+		  if (exactMatch==1)
 		    {
-		      if (info==1) printf("[SRC MATCH] %s %s\n",fname[i],inFile->beamHeader[ibeam].source);
-		      else printf("%s\n",fname[i]);
+		      if (strcmp(info[i].source,src[j])==0)
+			{
+			  if (infoDisp==1) printf("[SRC MATCH] %s %s\n",fname[i],info[i].source);
+			  else printf("%s\n",fname[i]);
+			}
+		    }
+		  else
+		    {
+		      if (strstr(info[i].source,src[j])!=NULL)
+			{
+			  if (infoDisp==1) printf("[SRC MATCH] %s %s\n",fname[i],info[i].source);
+			  else printf("%s\n",fname[i]);
+			}
 		    }
 		}
 	      
 	    }
 	  if (useCoord==1)
 	    {
-	      for (j=0;j<inFile->beam[ibeam].bandHeader[iband].ndump;j++)
-		{
+	      printf("CURRENTLY NOT CHECKING COORDINATES IN SDHDF_IDENTIFY -- FIX ME\n");
+	      /*  UPDATE TO USE INFO STUCT
+		  for (j=0;j<inFile->beam[ibeam].bandHeader[iband].ndump;j++)
+		  {
 		  dist = haversine(ra0,dec0,inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].raDeg,
-				   inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].decDeg);
+		  inFile->beam[ibeam].bandData[iband].astro_obsHeader[j].decDeg);
 		  if (dist < raddist)
-		    {
-		      if (info==1) printf("[DIST MATCH] %s %d %g\n",fname[i],j,dist);
-		      else printf("%s\n",fname[i]);		    
-		    }
-		}
+		  {
+		  if (infoDisp==1) printf("[DIST MATCH] %s %d %g\n",fname[i],j,dist);
+		  else printf("%s\n",fname[i]);		    
+		  }
+		  }
+	      */
 	    }
-	  sdhdf_closeFile(inFile);
 	}
     }
-      free(inFile);
+  if (writeOut==1)
+    fclose(fout);
+    
+  free(inFile);
+  free(info);
+  for (i=0;i<MAX_SRC;i++)
+    {
+      free(src[i]);
+      free(onSrc[i]);
+      free(offSrc[i]);
+    }
+  free(src);
+  free(onSrc);
+  free(offSrc);
+
 }
 
 
