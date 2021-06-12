@@ -206,6 +206,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      // SHOULD ONLY LOAD IF NOT LOADED YET
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.pol1AllocatedMemory == 0)
 		{
+		  printf("Loading data\n");
 		  sdhdf_loadBandData(inFile,ibeam,iband,1);
 		  if (strcmp(yUnit,"not set")==0)
 		    {
@@ -237,7 +238,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  for (i=0;i<nchan;i++)
 	    {
 	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
-
 	      if (xplot==1)
 		{
 		  if (fref < 0)
@@ -472,6 +472,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      else
 		printf("Not dividing spectra by weights\n");
 	      t=0;
+	    }
+	  else if (key=='L')
+	    {
+	      printf("Number of channels = %d\n",nchan);
+	      for (i=0;i<nchan;i++)
+		printf("%d %.6f %g\n",freq[i],pol1[i]);
 	    }
 	  else if (key=='s')
 	    {

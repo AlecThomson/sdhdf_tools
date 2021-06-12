@@ -680,7 +680,7 @@ int main(int argc,char *argv[])
 			    }
 			}
 		    
-		
+		    
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
 		      if (tScrunch==1)
 			sdhdf_copySingleObsParams(inFile,b,ii,0,&outObsParams[0]);
@@ -997,6 +997,7 @@ int main(int argc,char *argv[])
 			    {
 			      for (k=0;k<out_nchan;k++)
 				{
+				  dataWts[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+j];
 				  if (npol==1)
 				    out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
 				  else if (npol==2)
@@ -1327,7 +1328,7 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-		      
+		    
 		      // update frequencies if required
 		      if (bary==1 || lsr==1)
 			{
