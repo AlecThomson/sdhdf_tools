@@ -143,7 +143,7 @@ void saveFile(sdhdf_fileStruct *inFile)
     {
       for (i=0;i<inFile->beam[b].nBand;i++)
 	{
-	  sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].label);
+	  sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
 	}
     }
 
