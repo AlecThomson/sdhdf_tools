@@ -71,7 +71,8 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   double trs[3];
   double long_grs80, lat_grs80,height_grs80;
   double vlsr_ra,vlsr_dec;
-  
+
+  printf("HARDCODE EPHEMERIS POSITION\n");
   eph = calceph_open("/pulsar/psr/software/stable/src/workspace/psr-tempo2-build/label/stretch/tempo2/T2runtime/ephemeris/DE436.1950.2050");
   if (eph) {
     printf("Successfully opened ephemeris\n");

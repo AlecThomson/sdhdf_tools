@@ -1332,6 +1332,8 @@ int main(int argc,char *argv[])
 		      if (bary==1 || lsr==1)
 			{
 			  double vOverC;
+			  double iX1,iY1,iX2,iY2,m,c;
+			  double iX,iY;
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      vOverC=sdhdf_calcVoverC(inFile,b,ii,j,eop,nEOP,lsr);
@@ -1347,6 +1349,8 @@ int main(int argc,char *argv[])
 				  double freqNew,freqOld;
 				  int kk;
 				  int deltaI;
+				  double fracDeltaI;
+				  double df;
 				  
 				  printf("Re-gridding: out_npol = %d out_nchan = %d out_ndump = %d\n",out_npol,out_nchan,out_ndump);
 				  memcpy(temp_data,out_data+j*out_nchan*out_npol,sizeof(float)*out_nchan*out_npol);
@@ -1361,13 +1365,38 @@ int main(int argc,char *argv[])
 				    {
 				      freqNew = out_freq[k]*(1.0-vOverC);
 				      freqOld = out_freq[k];
-				      deltaI  = (int)((double)(freqOld-freqNew)/(double)(out_freq[1]-out_freq[0])+0.5); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
-				      //				      printf("Here with %.6f %.6f %d\n",freqOld,freqNew,deltaI);
+				      // Should first check if we're still in topocentric frequencies -- DO THIS ***
+				      df = ((double)(freqOld-freqNew)/(double)(out_freq[1]-out_freq[0])); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
+
+				      if (df > 0)
+					{
+					  deltaI = (int)(df+0.5);
+					  fracDeltaI = deltaI - df;
+					}
+				      else
+					{
+					  deltaI = -(int)(fabs(df)+0.5);
+					  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN
+					}
+
+				      //				      printf("Here with %.6f %.6f %g %d\n",freqOld,freqNew,df,deltaI);
 				      //				      deltaI  = 0;
 				      if (k + deltaI >= 0 && k + deltaI < out_nchan)
 					{
 					  for (kk=0;kk<out_npol;kk++)
-					    out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
+					    {
+					      // ** Do an interpolation here **
+					      iX1 = 0; iX1 = 1;
+					      iY1 = temp_data[kk*out_nchan + k + deltaI];
+					      iY2 = temp_data[kk*out_nchan + k + deltaI + 1]; // SHOULD CHECK IF AT EDGE
+					      m = (iY2- iY1)/(iX2-iX1);
+					      c = iY1;
+					      iX = fracDeltaI;
+					      iY = m*iX+c;
+
+					      // out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
+					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;
+					    }
 					}
 				    }
 				  free(temp_data);

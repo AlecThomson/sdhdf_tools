@@ -39,7 +39,7 @@ typedef struct dumpStruct {
 } dumpStruct;
 
 
-void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams);
+void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1);
 
 int main(int argc,char *argv[])
 {
@@ -49,6 +49,7 @@ int main(int argc,char *argv[])
   int totSize,chanPos;
   int ndump;
   int setNdump=MAX_DUMPS;
+  float minx=-1,maxx=-1;
   //  spectralDumpStruct spectrum;
   int npol=4;
   int ibeam=0;
@@ -94,6 +95,7 @@ int main(int argc,char *argv[])
   int poln=0;
   
   float f0,f1,chbw;
+  float cleanF0=-1,cleanF1=-1;
   
   for (i=1;i<argc;i++)
     {
@@ -105,6 +107,16 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%d",&setNdump);
       else if (strcmp(argv[i],"-band")==0)
 	sscanf(argv[++i],"%d",&iband);
+      else if (strcasecmp(argv[i],"-frange")==0 || strcasecmp(argv[i],"-freqrange")==0)
+	{
+	  sscanf(argv[++i],"%f",&minx);
+	  sscanf(argv[++i],"%f",&maxx);
+	}
+      else if (strcasecmp(argv[i],"-crange")==0 || strcasecmp(argv[i],"-cleanrange")==0)
+	{
+	  sscanf(argv[++i],"%f",&cleanF0);
+	  sscanf(argv[++i],"%f",&cleanF1);
+	}
       else
 	strcpy(fname[nFiles++],argv[i]);
     }
@@ -165,14 +177,14 @@ int main(int argc,char *argv[])
       sdump+=ndump;
     }
 
-  makePlot(signalVal,nchan,sdump,f0,chbw,dumpParams);
+  makePlot(signalVal,nchan,sdump,f0,chbw,dumpParams,minx,maxx,cleanF0,cleanF1);
   
 
   free(signalVal);
   free(dumpParams);
 }
 
-void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams)
+void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1)
 {
   int i,j;
   float tr[6];
@@ -188,18 +200,20 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
   float mx,my;
   char key;
   float *heatMap;
-  float cleanF0,cleanF1;
   
   int specSelect=-1;
   float minz,maxz;
 
   float heatMiny = 0;
   float heatMaxy = ndump;
-  float specMinx = f0;
-  float specMaxx = f0+nchan*chbw;
+  
 
   int t=0;
   int log=-1;
+  int colourScale=1;
+  
+  if (specMinx == -1) specMinx = f0;
+  if (specMaxx == -1) specMaxx = f0+nchan*chbw;
   
   specX = (float *)malloc(sizeof(float)*nchan);
   specY = (float *)malloc(sizeof(float)*nchan);
@@ -219,6 +233,31 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 
   do
     {
+      if (cleanF0 > 0 &&  cleanF1 > 0)
+	{
+	  float scl;
+	  int nv=0;
+	  
+	  
+	  for (i=0;i<ndump;i++)
+	    {
+	      nv=0;
+	      scl=0;
+	      for (j=0;j<nchan;j++)
+		{
+		  if (specX[j] > cleanF0 && specX[j] <= cleanF1)
+		    {
+		      scl += pow(10,signalVal[i*nchan+j]);
+		      nv++;
+		    }
+		  if (nv > 0)
+		    dumpParams[i].scale = 1.0/(scl/nv);
+		  else
+		    dumpParams[i].scale = 1.0;;
+		}
+	    }
+	}
+
       t=0;
       for (i=0;i<nchan;i++)
 	{
@@ -306,8 +345,12 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       
       cpglab("","Spectral dump","");
       cpgctab(heat_l,heat_r,heat_g,heat_b,5,1.0,0.5);
-      cpgimag(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
-      cpgbox("ABCTS",0,0,"ABCTSN",0,0);
+      if (colourScale==1)
+	cpgimag(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
+      else
+	cpggray(heatMap,nchan,ndump,1,nchan,1,ndump,maxz,minz,tr);
+
+	cpgbox("ABCTS",0,0,"ABCTSN",0,0);
 
       cpgcurs(&mx,&my,&key);
       if (key=='A')
@@ -320,6 +363,8 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	  printf("Selected spectrum #%d\n",specSelect);
 	  printf("Selecting spectra from %s, spectral dump number %d\n",dumpParams[specSelect].fname,dumpParams[specSelect].dump);
 	}
+      else if (key=='c')
+	colourScale*=-1;
       else if (key=='l')
 	log*=-1;
       else if (key=='y')
@@ -354,28 +399,8 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	specSelect=-1;
       else if (key=='s') // Scale
 	{
-	  float scl;
-	  int nv=0;
-	  
 	  printf("Enter a clean frequency range: f0 f1 ");
 	  scanf("%f %f",&cleanF0,&cleanF1);
-	  for (i=0;i<ndump;i++)
-	    {
-	      nv=0;
-	      scl=0;
-	      for (j=0;j<nchan;j++)
-		{
-		  if (specX[j] > cleanF0 && specX[j] <= cleanF1)
-		    {
-		      scl += pow(10,signalVal[i*nchan+j]);
-		      nv++;
-		    }
-		  if (nv > 0)
-		    dumpParams[i].scale = 1.0/(scl/nv);
-		  else
-		    dumpParams[i].scale = 1.0;;
-		}
-	    }
 	  
 	  
 	}
