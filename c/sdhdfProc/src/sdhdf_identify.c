@@ -194,7 +194,7 @@ int main(int argc,char *argv[])
 		}
 	      printf("[MATCH] %s %s # SRC_ON: %s SRC_OFF: %s TIMEDIFF: %g\n",info[i].fname,info[bestOff].fname,info[i].source,info[bestOff].source,timeDiff);
 	      if (writeOut==1)
-		fprintf(fout,"%s %s # SRC_ON: %s SRC_OFF: %s TIMEDIFF: %g\n",info[i].fname,info[bestOff].fname,info[i].source,info[bestOff].source,timeDiff);
+		fprintf(fout,"%s %s %s.%s.onoff # SRC_ON: %s SRC_OFF: %s TIMEDIFF: %g\n",info[i].fname,info[bestOff].fname,info[i].fname,info[bestOff].fname,info[i].source,info[bestOff].source,timeDiff);
 	      //	      printf("Found %d as off source. Time difference = %g\n",bestOff,timeDiff);
 	    }
 	}
