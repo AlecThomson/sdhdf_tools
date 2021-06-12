@@ -248,7 +248,9 @@ int main(int argc,char *argv[])
 		{
 		  for (j=0;j<zoomBand;j++)
 		    {
+
 		      sprintf(zoomLabel,"band_zoom%03d",j);
+		      printf("Processing zoom band: %d/%d (%s)\n",j,zoomBand-1,zoomLabel);
 		      strcpy(outBandParams[j].label,zoomLabel);
 		      outBandParams[j].fc = (fSelect0[j] + fSelect1[j])/2.;
 		      outBandParams[j].f0 = fSelect0[j];
@@ -313,8 +315,6 @@ int main(int argc,char *argv[])
 				{
 				  if (inFile->beam[b].bandData[k].astro_data.freq[l] >= fSelect0[j] && inFile->beam[b].bandData[k].astro_data.freq[l] <= fSelect1[j])
 				    {   
-				      // FIX FOR NPOL
-				      //				      printf("Setting 1: %d %d\n",nchan,nd);
 				      if (npol==4)
 					{
 					  outVals[nd*totNchan*4+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
