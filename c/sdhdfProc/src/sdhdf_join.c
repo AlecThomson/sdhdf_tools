@@ -60,6 +60,11 @@ int main(int argc,char *argv[])
   int nBeam=0;
   char zoomLabel[MAX_STRLEN];
   char groupName[MAX_STRLEN];
+  
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
 
   
   long ndump,out_ndump,out_ndump_num;
@@ -196,7 +201,7 @@ int main(int argc,char *argv[])
       for (i=0;i<nBand;i++)
 	{
 	  sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParams[i],outNdump[i],1);
-	  sdhdf_writeSpectrumData(outFile,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0);	  
+	  sdhdf_writeSpectrumData(outFile,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	}
       // *********** DON'T FORGET THE CAL *********
       

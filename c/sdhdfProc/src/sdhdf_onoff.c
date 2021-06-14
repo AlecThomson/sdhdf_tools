@@ -84,6 +84,13 @@ int main(int argc,char *argv[])
   float sclB=1.0;
   char scaleOff[128]="NULL";
 
+
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
+
+  
   float freqOffScl[8192];
   float offSclA[8192];
   float offSclB[8192];
@@ -305,7 +312,7 @@ int main(int argc,char *argv[])
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
 	    
-	      sdhdf_writeSpectrumData(outFile,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0);
+	      sdhdf_writeSpectrumData(outFile,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      /* FIX ME
 		 sdhdf_writeFrequencyAttributes(outFile,onFile->bandHeader[i].label);
 		 sdhdf_writeDataAttributes(outFile,onFile->bandHeader[i].label);

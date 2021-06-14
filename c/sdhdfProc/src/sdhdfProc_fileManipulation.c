@@ -61,7 +61,6 @@ int sdhdf_openFile(char *fname,sdhdf_fileStruct *inFile,int openType)
     }
   return inFile->fileID;
 }
-
 // Routine to close a file that is already open
 // it also frees memory used by the sdhdf_fileStruct
 //
@@ -482,7 +481,9 @@ void sdhdf_add2arg(char *args,char *add1,char *add2)
 // type = 3: update cal_off only
 // type = 4: update flag, data and frequency only
 
-void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,float *freq,long nchan,long npol,long nsub,int type)
+
+// GEORGE: NEED TO ADD ATTRIBUTES HERE -- PASS THEM THROUGH
+void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,float *freq,long nchan,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
 {
   int i;
   hid_t dset_id,datatype_id,group_id,ocpl_id;
@@ -498,7 +499,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 	{
 	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status = H5Gclose(group_id);
+	  status   = H5Gclose(group_id);
 	}
 
       sprintf(groupName,"beam_%d/%s",ibeam,blabel);
@@ -554,6 +555,9 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
       sprintf(groupName,"beam_%d/%s/astronomy_data",ibeam,blabel);
       sprintf(dsetName,"%s/data",groupName);
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      for (i=0;i<nDataAttributes;i++)
+	sdhdf_writeAttribute(outFile,dsetName,dataAttributes[i].key,dataAttributes[i].value);
+
     }
   else if (type==2)
     {
@@ -574,7 +578,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
     }
   
-  status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
+  status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 
@@ -587,6 +591,12 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
       sprintf(dsetName,"%s/frequency",groupName);
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
       status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
+    
+      // Now write attributes
+      //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
+      for (i=0;i<nFreqAttributes;i++)
+	sdhdf_writeAttribute(outFile,dsetName,freqAttributes[i].key,freqAttributes[i].value);
+      
       status  = H5Dclose(dset_id);
     }
   else if (type==2)

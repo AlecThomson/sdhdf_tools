@@ -66,6 +66,12 @@ int main(int argc,char *argv[])
   sdhdf_bandHeaderStruct *inBandParams;  
   long nchan,npol,ndump;
   int divN=0;
+
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
+
   
   char outFileName[MAX_STRLEN];
   int nFiles=0;
@@ -234,7 +240,7 @@ int main(int argc,char *argv[])
 	  printf("Writing the output\n");
 	  inBandParams[i].ndump=1;
 	  inBandParams[i].dtime = tav;
-	  sdhdf_writeSpectrumData(outFile,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0);
+	  sdhdf_writeSpectrumData(outFile,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  // GH: FIX ME
 	  //      sdhdf_writeFrequencyAttributes(outFile,file0->bandHeader[i].label);
 	  //      sdhdf_writeDataAttributes(outFile,file0->bandHeader[i].label);

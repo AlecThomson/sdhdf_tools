@@ -31,6 +31,10 @@ int main(int argc,char *argv[])
   int i,j,k,b,ii,i0,i1;
   sdhdf_fileStruct *inFile;
   sdhdf_fileStruct *outFile;
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
 
   float *cal_freq;
   float *tsys,*avTsys_AA,*avTsys_BB,fval;
@@ -165,7 +169,7 @@ int main(int argc,char *argv[])
 				 inFile->beam[b].bandData[ii].astro_data.pol2[k],
 				 outData[k+inFile->beam[b].bandHeader[ii].nchan*0],outData[k+inFile->beam[b].bandHeader[ii].nchan*0+inFile->beam[b].bandHeader[ii].nchan*1]);
 			}		      
-		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outData,inFile->beam[b].bandData[ii].astro_data.freq,inFile->beam[b].bandHeader[ii].nchan,inFile->beam[b].bandHeader[ii].npol,inFile->beam[b].bandHeader[ii].ndump,0);
+		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outData,inFile->beam[b].bandData[ii].astro_data.freq,inFile->beam[b].bandHeader[ii].nchan,inFile->beam[b].bandHeader[ii].npol,inFile->beam[b].bandHeader[ii].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		    
 		      free(tsys);
 		      free(avTsys_AA);

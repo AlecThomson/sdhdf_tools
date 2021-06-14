@@ -59,6 +59,12 @@ int main(int argc,char *argv[])
   herr_t status;
   sdhdf_bandHeaderStruct *inBandParams;
   sdhdf_obsParamsStruct  *outObsParams;
+
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
+
   int nBeam=0;
   int nBand=0;
   int tScrunch=0;
@@ -505,7 +511,7 @@ int main(int argc,char *argv[])
 
 		    }
 
-		  
+	       
 		  // Copy the bands
 		  nc2=0;
 		  for (ii=0;ii<inFile->beam[b].nBand;ii++)
@@ -552,7 +558,7 @@ int main(int argc,char *argv[])
 		      else
 			out_npol  = npol;
 
-		      //		      ** GEORGE HERE**
+
 		      if (tdumpRequest > 0)
 			{
 			  float tdump;
@@ -680,7 +686,6 @@ int main(int argc,char *argv[])
 			    }
 			}
 		    
-		    
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
 		      if (tScrunch==1)
 			sdhdf_copySingleObsParams(inFile,b,ii,0,&outObsParams[0]);
@@ -690,21 +695,21 @@ int main(int argc,char *argv[])
 			  for (kk=0;kk<out_ndump;kk++)
 			    sdhdf_copySingleObsParams(inFile,b,ii,kk,&outObsParams[kk]);
 			}
-		      
 		      nsd = inFile->beam[b].bandHeader[ii].ndump;
-		    
-		      in_data   = (float *)malloc(sizeof(float)*nchan*npol*inFile->beam[b].bandHeader[ii].ndump);
+		      if (!(in_data = (float *)malloc(sizeof(float)*nchan*npol*inFile->beam[b].bandHeader[ii].ndump)))
+			{
+			  printf("ERROR: Unable to allocate memory for in_data: %d\n",nchan*npol*nsd);
+			  exit(1);
+			}
 		      in_freq   = (double *)malloc(sizeof(double)*nchan);
 		      out_freq  = (float *)malloc(sizeof(float)*out_nchan);
 		      out_data  = (float *)calloc(sizeof(float),out_nchan*out_npol*out_ndump);
 		      out_Tdata = (float *)calloc(sizeof(float),nchan*npol*out_ndump);
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      dataWts   = (float *)calloc(sizeof(float),out_nchan*out_ndump);
-		      
 		      tav=0;
 		      
 		      sdhdf_loadBandData(inFile,b,ii,1);
-		      
 		      for (j=0;j<nchan;j++)
 			{
 			  in_freq[j] = inFile->beam[b].bandData[ii].astro_data.freq[j];
@@ -1406,12 +1411,25 @@ int main(int argc,char *argv[])
 			}
 		      
 		      
-		      // FIX ME
-		      //			  if (bary==1)
-		      //			    strcpy(outFile->frequency_attr.frame,"barycentric");
-		      //			  else if (lsr == 1)
-		      //			    strcpy(outFile->frequency_attr.frame,"LSR");
-		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0);
+		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+
+
+		      if (bary==1 || lsr == 1)
+			{
+			  for (i=0;i<nFreqAttributes;i++)
+			    {
+			      if (strcmp(freqAttributes[i].key,"FRAME")==0)
+				{
+				  if (bary==1)
+				    strcpy(freqAttributes[i].value,"barycentric");
+				  else if (lsr==1)
+				    strcpy(freqAttributes[i].value,"LSR");				    
+				}
+			    }
+			}
+
+		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      // Write out the obs_params file
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump,1);
 		      free(outObsParams);
@@ -1420,7 +1438,7 @@ int main(int argc,char *argv[])
 		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Complete writing data weights\n");
 		   
-
+		    
 
 		      // FIX ME
 		      //		      sdhdf_writeFrequencyAttributes(outFile,inFile->bandHeader[ii].label);

@@ -72,7 +72,11 @@ int main(int argc,char *argv[])
   int cal=0;
   int selectBandID=-1;
   int npol;
-  
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
+
   strcpy(oname,"sdhdf_extract_output.hdf");
 
   if (argc==1)
@@ -340,7 +344,7 @@ int main(int argc,char *argv[])
 			}
 		      printf("Output nchan = %d (%d), npol = %d\n",nchan,totNchan,npol);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
-		      sdhdf_writeSpectrumData(outFile,outBandParams[j].label,b,j,outVals,freqVals,totNchan,npol,outBandParams[j].ndump,0); // FIX 4,1,0
+		      sdhdf_writeSpectrumData(outFile,outBandParams[j].label,b,j,outVals,freqVals,totNchan,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      sdhdf_writeObsParams(outFile,outBandParams[j].label,b,j,outObsParams,outBandParams[j].ndump,1);
 		    
 		      sprintf(groupName1,"beam_%d/%s/metadata/cal_obs_params",b,inFile->beam[b].bandHeader[selectBandID].label);

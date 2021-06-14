@@ -60,6 +60,10 @@ int main(int argc,char *argv[])
   int nBand=0;
   char zoomLabel[MAX_STRLEN];
   char groupName[MAX_STRLEN];
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
 
   long npol,ndump,out_ndump,out_ndump_num;
   float *out_data,*out_freq;
@@ -168,7 +172,7 @@ int main(int argc,char *argv[])
 		  //		  sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
 		  //		  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
 		  printf("Writing spectral data\n");
-		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nchan,npol,out_ndump,0);
+		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		  printf("Writing obs params\n");
 		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,b,i,outObsParams,out_ndump,1);
 		  printf("Releasing data\n");
