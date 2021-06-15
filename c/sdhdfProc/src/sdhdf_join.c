@@ -192,7 +192,14 @@ int main(int argc,char *argv[])
 	      
 	      offsetPos[i] +=ndump*nchan[i]*npol[i];
 	      offsetDump[i]+=ndump;
-
+	      if (ii==0) // Note that this is getting the attributes from the first file -- really should check if they are the same in all the files
+		{
+		  
+		  // Need to do this separately for each band *** FIX ME **** CURRENTLY IT WILL ONLY TAKE THE LAST ONE
+		  sdhdf_copyAttributes(inFile->beam[b].bandData[i].astro_obsHeaderAttr,inFile->beam[b].bandData[i].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+		  sdhdf_copyAttributes(inFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[i].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);	  
+		  //		  printf("Have copied %d attributes\n",nFreqAttributes);
+		}
 	    }
 	  sdhdf_closeFile(inFile);
 	}
@@ -201,6 +208,7 @@ int main(int argc,char *argv[])
       for (i=0;i<nBand;i++)
 	{
 	  sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParams[i],outNdump[i],1);
+	  // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
 	  sdhdf_writeSpectrumData(outFile,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	}
       // *********** DON'T FORGET THE CAL *********

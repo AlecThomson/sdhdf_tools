@@ -1414,7 +1414,7 @@ int main(int argc,char *argv[])
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 
-
+		    
 		      if (bary==1 || lsr == 1)
 			{
 			  for (i=0;i<nFreqAttributes;i++)

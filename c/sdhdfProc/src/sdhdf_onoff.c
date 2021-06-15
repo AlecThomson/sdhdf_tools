@@ -309,14 +309,15 @@ int main(int argc,char *argv[])
 	      
 	      // 0 should be replaced by dump number
 		}
+
+	      // Note that this is getting the attributes from the ON file -- really should check if they are the same as in the OFF file
+	      sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+	      sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);	  
+	      
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
-	    
+	      
 	      sdhdf_writeSpectrumData(outFile,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-	      /* FIX ME
-		 sdhdf_writeFrequencyAttributes(outFile,onFile->bandHeader[i].label);
-		 sdhdf_writeDataAttributes(outFile,onFile->bandHeader[i].label);
-	      */
 	      free(out_data);
 	      free(freq);
 	    }

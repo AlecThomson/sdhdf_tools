@@ -231,6 +231,15 @@ int main(int argc,char *argv[])
 			}
 		    }
 		}
+	  
+	      if (j==0) // Note that this is getting the attributes from the first file -- really should check if they are the same in all the files
+		{
+		  
+		  // Need to do this separately for each band *** FIX ME **** CURRENTLY IT WILL ONLY TAKE THE LAST ONE
+		  sdhdf_copyAttributes(inFile->beam[b].bandData[i].astro_obsHeaderAttr,inFile->beam[b].bandData[i].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+		  sdhdf_copyAttributes(inFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[i].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);	  
+		}
+
 	      printf("Releasing data\n");
 	      sdhdf_releaseBandData(inFile,b,i,1);
 	      printf("Closing file\n");
@@ -240,6 +249,7 @@ int main(int argc,char *argv[])
 	  printf("Writing the output\n");
 	  inBandParams[i].ndump=1;
 	  inBandParams[i].dtime = tav;
+	  // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
 	  sdhdf_writeSpectrumData(outFile,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  // GH: FIX ME
 	  //      sdhdf_writeFrequencyAttributes(outFile,file0->bandHeader[i].label);
