@@ -997,9 +997,9 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
 
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute)
 {
-  hid_t dataset_id,attr_id,atype,atype_mem,aspace;
+  hid_t dataset_id,attr_id,atype,atype_mem,aspace,space;
   H5T_class_t type_class;
-  hid_t type;
+  hid_t type,stid;
   herr_t status;
   char *buf;
   //  char buf[MAX_STRLEN];
@@ -1021,7 +1021,9 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   if (ndims != 0) // 1 && ndims != 0)
     {
       printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
-      printf("Cannot read attributes with multi dimensions\n");
+      H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
+      strcpy(attribute->value,"NOT SET");
+      printf("Cannot read attributes with multi dimensions >%s< >%s<\n",attribute->key,inFile->fname);
       // For now not read attributes like DIMENSION_LABEL and DIMENSION_LIST      
     }
   else // Here the number of dimensions is zero as storing a scalar
@@ -1030,22 +1032,40 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
       type_class   = H5Tget_class(atype);
       if (type_class == H5T_STRING)
 	{
-	  int attr_id_old = attr_id;
 	  char string_out[MAX_STRLEN];
+	  //	  printf("Reading H5T_STRING\n");
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
 	  atype_mem = H5Tget_native_type(atype,H5T_DIR_ASCEND);
 	  if (strcmp(attribute->key,"CLASS")==0)
 	    {
-	      strcpy(attribute->value,"FIX_THIS");    // NOT SURE HOW TO READ A SCALAR IN PROPERLY -- FIX THIS
+	      //	      printf("Reading scalar\n");
+	      /*
+	      stid    = H5Tcopy(H5T_C_S1);
+	      status  = H5Tset_size(stid,H5T_VARIABLE);     
+	      space   = H5Screate(H5S_SCALAR);
+	      status  = H5Aread(attr_id, atype, string_out);
+	      strcpy(attribute->value,string_out);
+	      status  = H5Tclose(stid);
+	      status  = H5Sclose(space);
+	      */
+	      strcpy(attribute->value,"FIX ME");
 	    }
 	  else
 	    {
+	      
+	      //	      printf("Not reading scalar\n");
 	      status = H5Aread(attr_id, atype, &buf);
+	      //	      printf("Copying to  string_out >%s<\n",buf);
 	      strcpy(string_out,buf);
+	      //	      printf("Copying to value\n");
 	      strcpy(attribute->value,string_out);
-	      status = H5Tclose(atype_mem);
+	      //	      printf("Freeing the buffer\n");
 	      free(buf);
+	      
+	      //	      printf("Got to bottom of attributes\n");
 	    }
+	  status = H5Tclose(atype_mem);
+
 	}
       else
 	printf("CANNOT READ ATTRIBUTE\n");
@@ -1194,7 +1214,7 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrNam
   hsize_t dims[1] = {1}; // Has only 1 string
 
   //  printf("In writeAttribute with dataName = >%s<, attrName = >%s< and result = >%s<\n",dataName,attrName,result);
-  // Python strings are written as variable length strings
+  // Python strings are written as variable length strings 
 
 
   dataset_id   = H5Dopen2(outFile->fileID,dataName,H5P_DEFAULT);
