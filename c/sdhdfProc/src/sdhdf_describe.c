@@ -194,7 +194,7 @@ int main(int argc,char *argv[])
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
 		      for (j=0;j<inFile->beam[beam].bandData[iband].nAstro_obsHeader;j++)
 			{
-			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
+			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f\n",
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].astro_obsHeader[j].mjd,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].utc,inFile->beam[beam].bandData[iband].astro_obsHeader[j].aest,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decStr,
