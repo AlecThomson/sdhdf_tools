@@ -59,6 +59,7 @@ void help()
   printf("f (or Z) Define a region to flag specific channels\n");
   printf("h        This help\n");
   printf("H        Flag all channels where the value is above a specific value\n");
+  printf("j        Jump to specific spectral dump\n");
   printf("k        Flag all the channels in the current zoom window for the current spectral dump and move on to the next\n");
   printf("K        Flag entire spectral dump and move on to the next\n");
   printf("p        Remove Parkes UWL persistent RFI\n");
@@ -412,7 +413,15 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
 	else
 	  recalc=2;
-      }      
+      }
+    else if (key=='j') // Jump to dump
+      {
+	printf("Enter spectral dump number (starting from 0): ");
+	scanf("%d",&idump);
+	if (idump >= ndump)
+	  idump = ndump-1;
+	recalc=2;
+      }
     else if (key=='+') 
       {
 	idump++;

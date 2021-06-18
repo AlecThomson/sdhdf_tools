@@ -237,7 +237,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    }
 	  for (i=0;i<nchan;i++)
 	    {
-	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
+	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i]; 
 	      if (xplot==1)
 		{
 		  if (fref < 0)

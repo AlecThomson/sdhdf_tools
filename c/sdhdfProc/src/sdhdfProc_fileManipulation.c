@@ -365,7 +365,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);  
       if (type==2)
 	{
-	  printf("Extrating with %d %d %d\n",nchan,ndump,npol);
+	  //	  printf("Extrating with %d %d %d\n",nchan,ndump,npol);
 	  sdhdf_extractPols(&(inFile->beam[beam].bandData[band].cal_on_data),allData,nchan,ndump,npol);
 	}
 	  else if (type==3)

@@ -48,6 +48,7 @@ int main(int argc,char *argv[])
   sdhdf_fileStruct *inFile;
   char fname[MAX_STRLEN];
   int nchan,npol,ndumps;
+  int plotNdump=0;
   int ibeam=0;
   int band0 = 0; // Used to identify number of subbands
   float gx[2],gy[2];
@@ -64,6 +65,7 @@ int main(int argc,char *argv[])
   float fluxAA[MAX_BANDS][MAX_SUBINT],fluxBB[MAX_BANDS][MAX_SUBINT];
   float fluxI[MAX_BANDS][MAX_SUBINT];
   float fx[MAX_BANDS][MAX_SUBINT],fy[MAX_BANDS][MAX_SUBINT];
+  int useDump[MAX_SUBINT];
   float lineX[2],lineY[2];
   float fModelX[MAX_BANDS][1024];
   float fModelY[MAX_BANDS][1024];
@@ -181,7 +183,8 @@ int main(int argc,char *argv[])
 	  wSum=0;
 	  for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
 	    {
-	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j] != 0)
+	      //	      printf("Loading weights %d %d %d\n",i,sub,j,
+	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+sub*inFile->beam[ibeam].bandHeader[i].nchan] != 0)
 		{
 		  if ((f0 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= f0) &&
 		      (f1 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= f1))
@@ -194,10 +197,19 @@ int main(int argc,char *argv[])
 		    }
 		}
 	    }
-	  fluxAA[i][sub]/=(double)wSum;
-	  fluxBB[i][sub]/=(double)wSum;
-	  fluxI[i][sub] = fluxAA[i][sub] + fluxBB[i][sub];
-	  
+	  if (wSum > 0)
+	    {
+	      fluxAA[i][sub]/=(double)wSum;
+	      fluxBB[i][sub]/=(double)wSum;
+	      fluxI[i][sub] = fluxAA[i][sub] + fluxBB[i][sub];
+	      useDump[sub] = 1;
+	    }
+	  else
+	    {
+	      printf("Entire data flagged for spectral dump %d\n",sub);
+	      fluxI[i][sub] = 0;
+	      useDump[sub]  = 0;
+	    }
 	  if (maxFlux < fluxI[i][sub]) maxFlux = fluxI[i][sub];
 	  if (minFlux > fluxI[i][sub]) minFlux = fluxI[i][sub];
 	  //	  printf("Band: %d, subint %d aa = %g bb = %g\n",i,sub,fluxAA[i][sub],fluxBB[i][sub]);
@@ -218,45 +230,59 @@ int main(int argc,char *argv[])
     if (recalc==1)
       {
 	int t=0;
+
 	for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	  {	    
+	    plotNdump=0;
+
 	    for (sub=0;sub<ndumps;sub++)
 	      {       	
-		if (xaxis==0)
-		  timeVal[i][sub] = sub;
-		else if (xaxis==1)
-		  timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].timeElapsed;
-		else if (xaxis==2)
-		  timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].raDeg;
-		else if (xaxis==3)
-		  timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].decDeg;
-		else if (xaxis==4)
-		  timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].az;
-		else if (xaxis==5)
-		  timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].el;
-		else if (xaxis==6)
-		  timeVal[i][sub] = haversine(ra0,dec0,inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].raDeg,inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].decDeg);
-		else if (xaxis==7)
+		if (useDump[sub]==1)
 		  {
-		    timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].raDeg-ra0;
-		  }
-		else if (xaxis==8)
-		  {
-		    timeVal[i][sub] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].decDeg-dec0;
-		  }
-		fx[i][sub] = timeVal[i][sub];
-		if (logy==1)
-		  fy[i][sub] = log10(fluxI[i][sub]);
-		else
-		  fy[i][sub] = fluxI[i][sub];		
-		if (sub==0)
-		  miny_norm = maxy_norm = fy[i][sub];
-		else
-		  {
-		    if (miny_norm > fy[i][sub]) miny_norm = fy[i][sub];
-		    if (maxy_norm < fy[i][sub]) maxy_norm = fy[i][sub];
+
+		    // FIX ME: Because of the zapping it is possible that there are different numbers of dumps per subband
+		    if (xaxis==0)
+		      timeVal[i][plotNdump] = sub;
+		    else if (xaxis==1)
+		      timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].timeElapsed;
+		    else if (xaxis==2)
+		      {
+			timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].raDeg;
+			printf("Hvae %d %d %g\n",i,plotNdump,timeVal[i][plotNdump]);
+		      }
+			else if (xaxis==3)
+		      timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].decDeg;
+		    else if (xaxis==4)
+		      timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].az;
+		    else if (xaxis==5)
+		      timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].el;
+		    else if (xaxis==6)
+		      timeVal[i][plotNdump] = haversine(ra0,dec0,inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].raDeg,inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].decDeg);
+		    else if (xaxis==7)
+		      {
+			timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].raDeg-ra0;
+		      }
+		    else if (xaxis==8)
+		      {
+			timeVal[i][plotNdump] = inFile->beam[ibeam].bandData[band0].astro_obsHeader[sub].decDeg-dec0;
+		      }
+		    fx[i][plotNdump] = timeVal[i][plotNdump];
+		    if (logy==1)
+		      fy[i][plotNdump] = log10(fluxI[i][sub]);
+		    else
+		      fy[i][plotNdump] = fluxI[i][sub];		
+		    if (plotNdump==0)
+		      miny_norm = maxy_norm = fy[i][plotNdump];
+		    else
+		      {
+			if (miny_norm > fy[i][plotNdump]) miny_norm = fy[i][plotNdump];
+			if (maxy_norm < fy[i][plotNdump]) maxy_norm = fy[i][plotNdump];
+		      }
+		    
+		    plotNdump++;
 		  }
 	      }
+	    printf("ndump =%d %d\n",plotNdump,ndumps);
 
 	    if (xaxis == 7 || xaxis == 8)
 	      {
@@ -270,19 +296,19 @@ int main(int argc,char *argv[])
 	    
 	    if (normalise==1)
 	      {
-		for (sub=0;sub<ndumps;sub++)
+		for (sub=0;sub<plotNdump;sub++)
 		  fy[i][sub] = (fy[i][sub] - miny_norm)/(maxy_norm-miny_norm);
 	      }
 	    if (offset==1 && select==-1)
 	      {
-		for (sub=0;sub<ndumps;sub++)
+		for (sub=0;sub<plotNdump;sub++)
 		  fy[i][sub] += (offsetVal*i);
 	      }
-	    
+	 
 	    // Find max/min ranges
 	    if (select==-1 || i==select)
 	      {
-		for (sub=0;sub<ndumps;sub++)
+		for (sub=0;sub<plotNdump;sub++)
 		  {
 		    if (t==0)
 		      {
@@ -339,7 +365,7 @@ int main(int argc,char *argv[])
 	  {
 	    if (sbHighlight == i)
 	      cpgsci(2);
-	    cpgline(ndumps,fx[i],fy[i]);	    
+	    cpgline(plotNdump,fx[i],fy[i]);	    
 	    cpgsci(1);
 	    if (label==1)
 	      {
@@ -385,7 +411,7 @@ int main(int argc,char *argv[])
       {
 	int nfit=4;
 	double pval[nfit];
-	int npts = ndumps;
+	int npts = plotNdump;
 	double px[npts];
 	double py[npts];
 	lm_status_struct status;
