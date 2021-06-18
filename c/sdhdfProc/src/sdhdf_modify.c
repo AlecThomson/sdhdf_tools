@@ -311,6 +311,7 @@ int main(int argc,char *argv[])
 	  sdhdf_openFile(fname,inFile,1);
 	  //	  inFile->fileID  = H5Fopen(fname,H5F_ACC_RDONLY,H5P_DEFAULT);
 	  sprintf(oname,"%s.%s",fname,extension);
+	  printf("Opening file >%s<\n",oname);
 	  sdhdf_openFile(oname,outFile,3);
 	  if (inFile->fileID!=-1) // Did we successfully open the file?
 	    {
@@ -584,9 +585,7 @@ int main(int argc,char *argv[])
 			  // Could calibrate dump by dump, or average the entire data file
 			  // FOR NOW **** just averaging all the calibration information in the file
 			  sdhdf_loadBandData(inFile,b,ii,2);
-			  //			  printf("Loaded cal 1\n");
 			  sdhdf_loadBandData(inFile,b,ii,3);
-			  //			  printf("Loaded cal 2\n");
 			  
 			  c_nchan = inFile->beam[b].calBandHeader[ii].nchan;
 			  printf("Number of channels = %d\n",c_nchan);
@@ -1417,14 +1416,15 @@ int main(int argc,char *argv[])
 		    
 		      if (bary==1 || lsr == 1)
 			{
-			  for (i=0;i<nFreqAttributes;i++)
+			  int it;
+			  for (it=0;it<nFreqAttributes;it++)
 			    {
-			      if (strcmp(freqAttributes[i].key,"FRAME")==0)
+			      if (strcmp(freqAttributes[it].key,"FRAME")==0)
 				{
 				  if (bary==1)
-				    strcpy(freqAttributes[i].value,"barycentric");
+				    strcpy(freqAttributes[it].value,"barycentric");
 				  else if (lsr==1)
-				    strcpy(freqAttributes[i].value,"LSR");				    
+				    strcpy(freqAttributes[it].value,"LSR");				    
 				}
 			    }
 			}
