@@ -40,7 +40,7 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
 void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
 
-#define VNUM "v0.1"
+#define VNUM "v0.2"
 
 void help()
 {
@@ -50,12 +50,37 @@ void help()
   printf("\n");
   printf("Software to plot a spectrum in an interactive matter\n");
   printf("\n\nCommand line arguments:\n\n");
+
+  printf("-f <filename>       SDHDF file corresponding to observation\n");
+  printf("-g <string>         PGPLOT graphical device\n");
   printf("-h                  This help\n");
-  printf("-f <filename>       SDHDF file corresponding to observations\n");
+  printf("-sb <num>           Set the sub-band number (starting from 0)\n");
+  printf("-sd <num>           Set the spectral dump number (starting from 0)\n");
+  printf("-yuint <string>     The text that will be written on the y-axis (by default this comes from the internal SDHDF attributes)\n");
   
   printf("\nExample:\n\n");
   printf("sdhdf_plotSpectrum -f diff.hdf -sb 0\n");
   printf("---------------------\n");
+  printf("\n");
+  printf("The plot is interactive and the following key/mouse strokes can be used\n\n");
+  printf("Left mouse click or A  Display on the screen the current cursor position\n");
+  printf(">                   Move to the next sub-band\n");
+  printf("<                   Move to the previous sub-band\n");
+  printf("+                   Move to the next spectral dump\n");
+  printf("-                   Move to the previous spectral dump\n");
+  printf("f                   Toggle how the flagging is dealt with\n");
+  printf("l                   Toggle displaying the spectrum on a logarithmic scale\n");
+  printf("L                   List to the screen the data (frequency, pol1) for the current plot\n");
+  printf("m                   Toggle overlaying the rest frequency of the molecular lines\n");
+  printf("o                   Write the data corresponding to the current zoom region to a local file\n");
+  printf("p                   Toggle plotting 2 polarisations and 1\n");
+  printf("q                   Quit. Exit the program\n");
+  printf("r                   Toggle overlaying the rest frequency of recombination lines\n");
+  printf("s                   Define a region using the mouse and then print the statistical properties of the data in that region\n");
+  printf("u                   Unzoom - back to the original plot scales\n");
+  printf("w                   Toggle dividing the spectra by the weights in the file\n");
+  printf("x                   Toggle the x-axis\n");
+  printf("z                   Start a zoom region from the current mouse position, move the mouse and click to set the zoom region\n");
 }
 
 
@@ -75,7 +100,7 @@ int main(int argc,char *argv[])
   int ibeam=0;
   char grDev[128]="/xs";
   
-  help();
+  //  help();
   
   // Defaults
   idump = iband = 0;
@@ -540,8 +565,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    }
 	  else if (key=='A')
 	    printf("Mouse cursor = (%g,%g)\n",mx,my);
-	  else if (key=='1') {plot=1; t=0;}
-	  else if (key=='2') {plot=2; t=1;}
+	  else if (key=='1') {plot=1; t=0;} // DOES THIS DO ANYTHING?
+	  else if (key=='2') {plot=2; t=1;} // DOES THIS DO ANYTHING?
 	  else if (key=='l')
 	    {setLog*=-1; t=0;}
 	  else if (key=='p')
