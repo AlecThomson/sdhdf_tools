@@ -47,6 +47,21 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
 
 void help()
 {
+  printf("sdhdf_flag\n");
+  printf("sdhfProc version:   %s\n",SOFTWARE_VER);
+  printf("author:             George Hobbs\n");
+  printf("\n");
+  printf("Software to flag a spectrum in an interactive matter\n");
+  printf("\n\nCommand line arguments:\n\n");
+
+  printf("-f <string>          Input file name\n");
+  printf("-h                   This help\n");
+  printf("-setnband <number>   Set the maximum number of sub-bands to process\n");
+  printf("-sb <number>         Set the band number for the initial plot (starting from 0)\n");
+
+  printf("\n\n");
+  printf("The plot is interactive and the following commands are available\n\n");
+  
   printf("1        Select only polarisation channel 1\n");
   printf("2        Select only polarisation channel 2\n");
   printf("+        Move to next spectral dump\n");
@@ -54,7 +69,7 @@ void help()
   printf(">        Move to next sub-band\n");
   printf("<        Move to previous sub-band\n");
   printf("a        Toggle between flagging all the spectral dumps (default) or just the current one\n");
-  printf("b        Flag 5% of the Parkes UWL band edges\n");
+  printf("b        Flag 5 percent of the Parkes UWL band edges\n");
   printf("d        Toggle between showing and hiding (default) the flagged channels\n");
   printf("f (or Z) Define a region to flag specific channels\n");
   printf("h        This help\n");
@@ -97,7 +112,7 @@ int main(int argc,char *argv[])
       if (strcmp(argv[i],"-f")==0)	       strcpy(fname,argv[++i]);	
       else if (strcmp(argv[i],"-setnband")==0) sscanf(argv[++i],"%d",&setnband);
       else if (strcmp(argv[i],"-sb")==0)       sscanf(argv[++i],"%d",&iband);
-
+      else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
     }
   
   sdhdf_openFile(fname,inFile,1);
