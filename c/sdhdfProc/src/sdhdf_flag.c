@@ -357,10 +357,18 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      {
 		for (zz=0;zz<=26;zz++)
 		  {
-		    if (inFile->beam[ibeam].bandData[ii].astro_data.freq[jj+iband*inFile->beam[ibeam].bandHeader[ii].nchan] >= 704-6.4+zz*128.0 &&
-			inFile->beam[ibeam].bandData[ii].astro_data.freq[jj+iband*inFile->beam[ibeam].bandHeader[ii].nchan] < 704+6.4+zz*128.0)
+		    if (inFile->beam[ibeam].bandData[ii].astro_data.freq[jj] >= 704-6.4+zz*128.0 &&
+			inFile->beam[ibeam].bandData[ii].astro_data.freq[jj] < 704+6.4+zz*128.0)
 		      {
-			inFile->beam[ibeam].bandData[ii].astro_data.dataWeights[jj+iband*inFile->beam[ibeam].bandHeader[ii].nchan] = 0;
+			if (zapAllDumps==1)
+			  {
+			    for (k=0;k<ndump;k++)
+			      inFile->beam[ibeam].bandData[ii].astro_data.dataWeights[jj+k*inFile->beam[ibeam].bandHeader[ii].nchan] = 0;
+			  }
+			else
+			  {
+			    inFile->beam[ibeam].bandData[ii].astro_data.dataWeights[jj+idump*inFile->beam[ibeam].bandHeader[ii].nchan] = 0;
+			  }
 		      }
 		  }
 	      }	
