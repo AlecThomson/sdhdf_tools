@@ -1,0 +1,13 @@
+#
+# <observatory label> <freq0 MHz> <freq1 MHz> <MJD0> <MJD1> <text string for label>
+#
+
+#
+# Parkes RFI
+#
+Parkes 758	768		0	999999 Optus transmission tower
+Parkes 768 	788 	 	0 	999999 Telstra transmission tower
+Parkes 869.95 	875.05 		0	999999 Vodafone transmission tower
+Parkes 875.05   889.95		0 	999999 Telstra transmission tower
+Parkes 943.4	951.8		0	999999 Optus transmission tower
+Parkes 953.7	958.7		0	999999 Vodafone transmission tower	
