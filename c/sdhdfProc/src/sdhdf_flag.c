@@ -57,7 +57,7 @@ void help()
   printf("-f <string>          Input file name\n");
   printf("-h                   This help\n");
   printf("-setnband <number>   Set the maximum number of sub-bands to process\n");
-  printf("-sb <number>         Set the band number for the initial plot (starting from 0)\n");
+  printf("-sb <number>         Set the band number for the initial plot (starting from 0)   [can also use -band instead of -sb]\n");
 
   printf("\n\n");
   printf("The plot is interactive and the following commands are available\n\n");
@@ -111,7 +111,7 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-f")==0)	       strcpy(fname,argv[++i]);	
       else if (strcmp(argv[i],"-setnband")==0) sscanf(argv[++i],"%d",&setnband);
-      else if (strcmp(argv[i],"-sb")==0)       sscanf(argv[++i],"%d",&iband);
+      else if (strcmp(argv[i],"-sb")==0 || strcmp(argv[i],"-band")==0)       sscanf(argv[++i],"%d",&iband);
       else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
     }
   
