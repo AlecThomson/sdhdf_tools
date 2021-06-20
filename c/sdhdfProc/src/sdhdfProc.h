@@ -195,6 +195,11 @@ double sdhdf_dotproduct(double *v1,double *v2);
 void sdhdf_para(double dxd,double ddc,double q,double *axd,double *eld);
 void displayMatrix_4x4(float matrix[4][4]);
 
+// String manipulation
+char *sdhdf_trim(char *s);
+char *sdhdf_rtrim(char *s);
+char *sdhdf_ltrim(char *s);
+
 // Rest frequencies
 void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFreq);
 
