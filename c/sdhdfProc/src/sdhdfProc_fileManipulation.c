@@ -865,3 +865,48 @@ void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float 
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 }
+
+void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFreq)
+{
+  char runtimeDir[1024];
+  char fname[1024];
+  FILE *fin;
+  int i;
+  char line[4096];
+  char *tok;
+  
+  if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("=========================================================\n");
+      printf("Error: we require that the SDHDF_RUNTIME directory is set\n");
+      printf("=========================================================\n");
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  sprintf(fname,"%s/spectralLines/spectralLines.dat",runtimeDir);
+  
+  *nRestFreq=0;
+  if (!(fin = fopen(fname,"r")))
+    printf("ERROR: unable to open file: %s .... trying to continue \n",fname);
+  else
+    {
+      while (!feof(fin))
+	{
+	  if (fgets(line,4096,fin)!=NULL)
+	    {
+	      if (line[0]=='#' || strlen(line)<2) // Comment line
+		{}
+	      else
+		{
+		  tok = strtok(line," ");
+		  sscanf(tok,"%lf",&(restFreq[*nRestFreq].f0));
+		  tok = strtok(NULL," ");
+		  sscanf(tok,"%d",&(restFreq[*nRestFreq].flag));
+		  tok = strtok(NULL,"\n");
+		  strcpy(restFreq[*nRestFreq].label,tok);
+		  (*nRestFreq)++;
+		}		  
+	    }					 
+	}
+    }
+}

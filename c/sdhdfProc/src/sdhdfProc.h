@@ -36,6 +36,13 @@
 #define GRS80_A 6378137.0          // semi-major axis (m) 
 #define GRS80_F 1.0/298.257222101  // flattening 
 
+// Rest frequency list
+typedef struct sdhdf_restfrequency_struct {
+  char   label[MAX_STRLEN];
+  double f0;   // Rest frequency in MHz
+  int    flag;
+} sdhdf_restfrequency_struct;
+  
 
 // Calibrator temperature structure
 typedef struct sdhdf_tcal_struct {
@@ -187,6 +194,9 @@ void sdhdf_mult4x4(float src1[4][4], float src2[4][4], float dest[4][4]);
 double sdhdf_dotproduct(double *v1,double *v2);
 void sdhdf_para(double dxd,double ddc,double q,double *axd,double *eld);
 void displayMatrix_4x4(float matrix[4][4]);
+
+// Rest frequencies
+void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFreq);
 
 // Function definitions (OLD)
 
