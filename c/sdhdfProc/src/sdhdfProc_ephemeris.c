@@ -31,9 +31,20 @@ long sdhdf_loadEOP(sdhdf_eopStruct *eop)
   int idummy;
   float year;
   double mjd,x,y,dut1;
-  // HARDCODING
-  printf("WARNING: HARDCODE POSITION OF EOP FILE\n");
-  fin = fopen("/pulsar/psr/software/stable/src/workspace/psr-tempo2-build/label/stretch/tempo2/T2runtime/earth/eopc04_IAU2000.62-now","r");
+  char runtimeDir[1024];
+  char fname[1024];
+
+
+    if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("=======================================================================\n");
+      printf("Error: sdhdf_convertTo requires that the SDHDF_RUNTIME directory is set\n");
+      printf("=======================================================================\n");
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  sprintf(fname,"%s/earth/eopc04_IAU2000.62-now",runtimeDir);
+  fin = fopen(fname,"r");
   while(!feof(fin))
     {
       if (fgets(line,4096,fin)!=NULL)
@@ -52,7 +63,7 @@ long sdhdf_loadEOP(sdhdf_eopStruct *eop)
 	}
     }
   fclose(fin);
-  printf("Have loaded %d entries from the EOP file\n",n);
+  //  printf("Have loaded %d entries from the EOP file\n",n);
   return n;
 }
 
@@ -75,7 +86,7 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   printf("HARDCODE EPHEMERIS POSITION\n");
   eph = calceph_open("/pulsar/psr/software/stable/src/workspace/psr-tempo2-build/label/stretch/tempo2/T2runtime/ephemeris/DE436.1950.2050");
   if (eph) {
-    printf("Successfully opened ephemeris\n");
+    //    printf("Successfully opened ephemeris\n");
   } else {
     printf("Error: unable to open ephemeris\n");
     return 0;
@@ -108,15 +119,15 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   zenith[1] = height_grs80 * sin(long_grs80) * cos(lat_grs80);
   zenith[2] = height_grs80 * sin(lat_grs80);
 
-  printf("Inputs to IAU2000B: %g %g %g %g\n",trs[0],trs[1],trs[2],(double)inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd);
+  //  printf("Inputs to IAU2000B: %g %g %g %g\n",trs[0],trs[1],trs[2],(double)inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd);
   
   sdhdf_obsCoord_IAU2000B(trs, zenith,
 			  inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,
 			  inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,
 			  observatory_earth, zenith, siteVel,eop,nEOP);
 
-  printf("Observatory_Earth = %g %g %g\n",observatory_earth[0],observatory_earth[1],observatory_earth[2]);
-  printf("Site velocity = %g %g %g\n",siteVel[0],siteVel[1],siteVel[2]);
+  //  printf("Observatory_Earth = %g %g %g\n",observatory_earth[0],observatory_earth[1],observatory_earth[2]);
+  //  printf("Site velocity = %g %g %g\n",siteVel[0],siteVel[1],siteVel[2]);
   
   for (i=0;i<3;i++)
     vobs[i] += siteVel[i];
@@ -142,7 +153,7 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   alpha = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raDeg*M_PI/180.;
   delta = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decDeg*M_PI/180.;
   
-  printf("Source position = %g %g\n",alpha,delta);
+  //  printf("Source position = %g %g\n",alpha,delta);
   ca = cos(alpha);
   sa = sin(alpha);
   cd = cos(delta);
@@ -157,8 +168,8 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
     pos[k] /= pospos;
 
   voverc = sdhdf_dotproduct(pos,vobs)/SPEED_LIGHT;
-  printf("voverc inputs: %g %g %g | %g %g %g\n",pos[0],pos[1],pos[2],vobs[0],vobs[1],vobs[2]);
-  printf("mjd = %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,voverc);
+  //  printf("voverc inputs: %g %g %g | %g %g %g\n",pos[0],pos[1],pos[2],vobs[0],vobs[1],vobs[2]);
+  //  printf("mjd = %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,voverc);
   return voverc;
 }
 
