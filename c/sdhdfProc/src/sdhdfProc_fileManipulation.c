@@ -874,6 +874,7 @@ void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFr
   int i;
   char line[4096];
   char *tok;
+  char trim[4096];
   
   if (getenv("SDHDF_RUNTIME")==0)
     {
@@ -894,19 +895,42 @@ void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFr
 	{
 	  if (fgets(line,4096,fin)!=NULL)
 	    {
+	      strcpy(trim,sdhdf_trim(line)); strcpy(line,trim);
 	      if (line[0]=='#' || strlen(line)<2) // Comment line
 		{}
 	      else
 		{
 		  tok = strtok(line," ");
-		  sscanf(tok,"%lf",&(restFreq[*nRestFreq].f0));
+		  strcpy(trim,sdhdf_trim(tok));
+		  sscanf(trim,"%lf",&(restFreq[*nRestFreq].f0));
 		  tok = strtok(NULL," ");
-		  sscanf(tok,"%d",&(restFreq[*nRestFreq].flag));
+		  strcpy(trim,sdhdf_trim(tok));
+		  sscanf(trim,"%d",&(restFreq[*nRestFreq].flag));
 		  tok = strtok(NULL,"\n");
-		  strcpy(restFreq[*nRestFreq].label,tok);
+		  strcpy(trim,sdhdf_trim(tok));
+		  strcpy(restFreq[*nRestFreq].label,trim);
 		  (*nRestFreq)++;
 		}		  
 	    }					 
 	}
     }
+}
+
+char *sdhdf_ltrim(char *s)
+{
+    while(isspace(*s)) s++;
+    return s;
+}
+
+char *sdhdf_rtrim(char *s)
+{
+    char* back = s + strlen(s);
+    while(isspace(*--back));
+    *(back+1) = '\0';
+    return s;
+}
+
+char *sdhdf_trim(char *s)
+{
+    return sdhdf_rtrim(sdhdf_ltrim(s)); 
 }
