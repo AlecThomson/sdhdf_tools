@@ -102,7 +102,7 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   for (i=0;i<3;i++)
     vobs[i] = earth_ssb[i+3];
   
-  printf("%Lg %g %g %g %g %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,earth_ssb[0],earth_ssb[1],earth_ssb[2],earth_ssb[3],earth_ssb[4],earth_ssb[5]);
+  printf("%g %g %g %g %g %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,earth_ssb[0],earth_ssb[1],earth_ssb[2],earth_ssb[3],earth_ssb[4],earth_ssb[5]);
   calceph_close(eph);
 
 
