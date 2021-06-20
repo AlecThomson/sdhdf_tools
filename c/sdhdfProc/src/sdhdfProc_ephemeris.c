@@ -83,8 +83,21 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   double long_grs80, lat_grs80,height_grs80;
   double vlsr_ra,vlsr_dec;
 
-  printf("HARDCODE EPHEMERIS POSITION\n");
-  eph = calceph_open("/pulsar/psr/software/stable/src/workspace/psr-tempo2-build/label/stretch/tempo2/T2runtime/ephemeris/DE436.1950.2050");
+  char runtimeDir[1024];
+  char fname[1024];
+
+
+    if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("=======================================================================\n");
+      printf("Error: sdhdf_convertTo requires that the SDHDF_RUNTIME directory is set\n");
+      printf("=======================================================================\n");
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  sprintf(fname,"%s/ephemeris/DE436.1950.2050",runtimeDir);
+
+  eph = calceph_open(fname);
   if (eph) {
     //    printf("Successfully opened ephemeris\n");
   } else {
@@ -102,7 +115,7 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   for (i=0;i<3;i++)
     vobs[i] = earth_ssb[i+3];
   
-  printf("%g %g %g %g %g %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,earth_ssb[0],earth_ssb[1],earth_ssb[2],earth_ssb[3],earth_ssb[4],earth_ssb[5]);
+  //  printf("%g %g %g %g %g %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,earth_ssb[0],earth_ssb[1],earth_ssb[2],earth_ssb[3],earth_ssb[4],earth_ssb[5]);
   calceph_close(eph);
 
 
@@ -250,7 +263,7 @@ void sdhdf_interpolate_EOP(double mjd, double *xp, double *yp, double *dut1, dou
     {
       isamp = nEOP-1;
       mjd = eop[nEOP-1].mjd;
-      printf("WARNING: Should update EOP file\n");
+      printf("WARNING: You need to update the EOP file in the SDHDF_RUNTIME/earth directory.\n");
     }
   // cope with leap second ... take it off second point as jump happens
   // right AT second point
