@@ -730,7 +730,7 @@ void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
   int nT=0;
   int i,j;
   int nzap=0;
-  int zapAllTransmitters = 1;
+  int zapAllTransmitters = 0;
   //
   // Fixed mobile transmission towers
   // We see persistent emission from these at all telescope pointing angles
