@@ -36,11 +36,12 @@
 
 void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit,
 		  char *grDev);
-void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
+void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY,int drawLabel);
 void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
 
 #define VNUM "v0.2"
+#define MAX_REST_FREQUENCIES 1024
 
 void help()
 {
@@ -188,7 +189,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   char xlabel[1024];
   char legend[1024];
   int plot=1;
-  int molecularLines=-1;
+  int molecularLines=0;
   int recombLines=-1;
   int nchan,maxNchan;
   float *pol1,*pol2,*pol3,*pol4;
@@ -197,6 +198,13 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   int npol=4;
   int reload=1;
   int flagIt=2;
+  int nFreq;
+  
+  sdhdf_restfrequency_struct *restFrequencies;
+  restFrequencies = (sdhdf_restfrequency_struct *)malloc(sizeof(sdhdf_restfrequency_struct)*MAX_REST_FREQUENCIES);
+  sdhdf_loadRestFrequencies(restFrequencies,&nFreq);
+  
+
   
   cpgbeg(0,grDev,1,1);
   cpgask(0);
@@ -407,19 +415,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
       cpgtext(minx+0.05*(maxx-minx),maxy-0.2*(maxy-miny),legend);
       cpgsch(1.4);
       
-      if (molecularLines==1)
+      if (molecularLines==1 || molecularLines==2)
 	{
-	  drawMolecularLine(1420.405752,"HI",minx,maxx,miny,maxy);
-	  drawMolecularLine(1612.2310,"OH",minx,maxx,miny,maxy);
-	  drawMolecularLine(1665.4018,"OH",minx,maxx,miny,maxy);
-	  drawMolecularLine(1667.3590,"OH",minx,maxx,miny,maxy);
-	  drawMolecularLine(1720.5300,"OH",minx,maxx,miny,maxy);
-	  drawMolecularLine(704.1750,"CH",minx,maxx,miny,maxy);
-	  drawMolecularLine(722.3030,"CH",minx,maxx,miny,maxy);
-	  drawMolecularLine(724.7910,"CH",minx,maxx,miny,maxy);
-	  drawMolecularLine(3263.7939,"CH",minx,maxx,miny,maxy);
-	  drawMolecularLine(3335.4810,"CH",minx,maxx,miny,maxy);
-	  drawMolecularLine(3349.1931,"CH",minx,maxx,miny,maxy);
+	  for (i=0;i<nFreq;i++)	    
+	    drawMolecularLine(restFrequencies[i].f0,restFrequencies[i].label,minx,maxx,miny,maxy,molecularLines);
 	}
       if (recombLines==1)
 	{
@@ -601,8 +600,11 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      t=-1;
 	    }
 	  else if (key=='m')
-	    molecularLines*=-1;
-	  else if (key=='r')
+	    {
+	      molecularLines++;
+	      if (molecularLines==3) molecularLines=0;
+	    }
+	    else if (key=='r')
 	    recombLines*=-1;
 	  else if (key=='-')
 	    {
@@ -645,7 +647,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   free(pol2);
   free(pol3);
   free(pol4);
-
+  free(restFrequencies);
   
   /*
   for (i=0;i<inFile->bandHeader[iband].nchan;i++)
@@ -658,7 +660,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 
 }
 
-void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY)
+void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY,int drawLabel)
 {
   float fx[2],fy[2];
 
@@ -666,7 +668,12 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
   fy[0] = minY;
   fy[1] = maxY;
   cpgsci(3); cpgsls(4); cpgline(2,fx,fy); cpgsls(1); cpgsci(1);
-
+  if (drawLabel==2)
+    {
+      cpgsch(0.8);
+      cpgtext(fx[0],fy[1]-0.1*(fy[1]-fy[0]),label);
+      cpgsch(1.4);
+    }  
 }
 
 //
