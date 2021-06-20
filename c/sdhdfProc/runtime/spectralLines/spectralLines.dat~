@@ -1,0 +1,44 @@
+# <spectral line name> <rest frequency (MHz)> <flag>
+# The flag can be set to any value and is used by the various programs
+# For instance  in sdhdf_plotSpectrum the line is only plotted if the flag = 1 (so the spectra are not covered in the rest frequencies
+# of lines that are not expected to be seen)
+
+CH 704.175 1
+CH 722.303 1
+CH 724.791 1
+CH_3OH 834.285 2
+CH_3CHO 1065.076 2
+CH_2CHCN 1371.723 2
+CH_2CHCN 1371.796 2
+CH_2CHCN 1371.931 2
+HI: Neutral hydrogen 1420.405752 1
+NH_2CHO 1538.108 2
+NH_2CHO 1538.676 2
+NH_2CHO 1539.264 2
+NH_2CHO 1539.527 2
+NH_2CHO 1539.832 2
+NH_2CHO 1540.998 2
+NH_2^13CHO 1570.805 2
+^18OH 1584.274 2
+CH_3OCHO 1610.247 2
+CH_3OCHO 1610.900 2
+OH: Hydroxyl radical 1612.2310 1
+^17OH 1624.518 2
+^17OH 1626.161 2
+^18OH 1637.564 2
+HCOOH 1638.805 2
+^18OH 1639.503 2  
+OH: Hydroxyl radical 1665.4018 1
+OH: Hydroxyl radical 1667.3590 1
+^18OH 1692.795 2  
+OH: Hydroxyl radical 1720.5300 1
+CH_3OCHO 1849.634 2
+CNCHO 2078.068 2
+HC_5N 2661.604 2
+HC_5N 2662.877 2
+HC_5N 2664.786 2
+H_2CS 3139.405 2
+CH_3CHO 3195.162 2
+CH 3263.794 1
+CH 3335.481 1
+CH 3349.193 1
