@@ -12,11 +12,11 @@ README for sdhdfProc
 
 ## Prerequisites
 ---
-* Pgplot
-* Hdf5 library
-* Erfa library
-* Calceph library
-* Cfitsio library
+* PGPLOT (http://astro.caltech.edu/~tjp/pgplot/)
+* HDF5 library (http://hdfgroup.org/HDF5/)
+* ERFA library (https://github.com/liberfa/erfa)
+* calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
+
 
 ## Installing
 ---
