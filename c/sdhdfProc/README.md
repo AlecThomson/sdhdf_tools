@@ -4,26 +4,26 @@ README for sdhdfProc
 
 # About
 ---
-**sdhdfProc** is a software package to read, manipulate and process radio astronomy data in Single Dish Hierarchical Data Format (SDHDF) 
+**sdhdfProc** is a software package to read, manipulate and process radio astronomy data in Single Dish Hierarchical Data Format (SDHDF)
 
-**Author**    George.Hobbs@csiro.au  
-**Copyright** CSIRO 2020 
+**Author**    George.Hobbs@csiro.au
+**Copyright** CSIRO 2020
 
 
 ## Prerequisites
 ---
-* Pgplot
-* Hdf5 library
-* Erfa library
-* Calceph library
-* Cfitsio library
+* PGPLOT (http://astro.caltech.edu/~tjp/pgplot/)
+* HDF5 library (http://hdfgroup.org/HDF5/)
+* ERFA library (https://github.com/liberfa/erfa)
+* calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
+
 
 ## Installing
 ---
 ```
-./bootstrap  
-./configure  
-make  
+./bootstrap
+./configure
+make
 make install
 ```
 
