@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 #include "sdhdfProc.h"
+#include <ctype.h>
 
 //
 // Initialise the sdhdf_fileStruct structure
