@@ -56,24 +56,24 @@ def sdhdf_access_data(f):
         with h5py.File(f, 'r') as h5:
             # list the HDF attributes
             print('\nData attribute keys: \n%s' %
-                  h5['beam_0/band_SB7/astronomy_data/data'].attrs.keys())
+                  h5['beam_0/band_SB0/astronomy_data/data'].attrs.keys())
             print('\nFrequency attribute keys: \n%s' %
-                  h5['beam_0/band_SB7/astronomy_data/frequency'].attrs.keys())
+                  h5['beam_0/band_SB0/astronomy_data/frequency'].attrs.keys())
 
             # describe the dimensions of the data
             print('\nData dimension labels: \n%s' %
-                  h5['beam_0/band_SB7/astronomy_data/data'].attrs['DIMENSION_LABELS'])
+                  h5['beam_0/band_SB0/astronomy_data/data'].attrs['DIMENSION_LABELS'])
 
             # describe the frequency axis unit
             print('\nFrequency unit: \n%s' %
-                  h5['beam_0/band_SB7/astronomy_data/frequency'].attrs['UNIT'])
+                  h5['beam_0/band_SB0/astronomy_data/frequency'].attrs['UNIT'])
 
             # load the data for a particular sub-band into a numpy array e.g.:
-            data = np.array(h5['beam_0/band_SB7/astronomy_data/data'])
+            data = np.array(h5['beam_0/band_SB0/astronomy_data/data'])
             print('\nData array shape: \n%s' % str(data.shape))
 
             # load the frequency axis for sub-band 5 into an Numpy array e.g.:
-            freq_axis = np.array(h5['beam_0/band_SB7/astronomy_data/frequency'])
+            freq_axis = np.array(h5['beam_0/band_SB0/astronomy_data/frequency'])
             print('\nFrequency array shape: \n%s' % str(freq_axis.shape))
     except Exception as e:
         print('ERROR: failed to read file %s' % f, e)
