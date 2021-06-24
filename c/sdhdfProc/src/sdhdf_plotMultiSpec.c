@@ -194,6 +194,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   int molecularLines=1;
   int nchan,maxNchan;
   float *pol1,*pol2,*pol3,*pol4;
+  int *useP1,*useP2;
   float *freq;
   float xp1,xp2,yp1,yp2;
   float wx1 = 0.1, wx2 = 0.9;
@@ -226,6 +227,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 
   nchan = inFile->beam[ibeam].bandHeader[iband].nchan;
   freq = (float *)malloc(sizeof(float)*nchan);
+  useP1 = (int *)malloc(sizeof(int)*nchan);
+  useP2 = (int *)malloc(sizeof(int)*nchan);
   pol1 = (float *)malloc(sizeof(float)*nchan);
   pol2 = (float *)malloc(sizeof(float)*nchan);
   pol3 = (float *)malloc(sizeof(float)*nchan);
@@ -237,6 +240,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
     {
       for (i=0;i<nchan;i++)
 	{
+	  useP1[i] = 1;
+	  useP2[i] = 1;
 	  if (fref < 0)
 	    freq[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
 	  else
@@ -253,8 +258,18 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	  
 	  if (setLog == 1)
 	    {
-	      pol1[i]=log10(pol1[i]);
-	      if (npol > 1) pol2[i]=log10(pol2[i]);
+	      if (pol1[i] > 0)
+		pol1[i]=log10(pol1[i]);
+	      else
+		{pol1[i] = -100; useP1[i] = 0;}
+	      
+	      if (npol > 1)
+		{
+		  if (pol2[i] > 0)
+		    pol2[i]=log10(pol2[i]);
+		  else
+		    {pol2[i] = -100; useP2[i] = 0;}
+		}
 	    }
 	  if (freq[i] > bl_f0 && freq[i] <= bl_f1)
 	    {
@@ -354,12 +369,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	    }
 	  else
 	    {
-	      if (pol1[i] > maxy) maxy = pol1[i];
-	      if (pol1[i] < miny) miny = pol1[i];
+	      if (useP1[i] == 1 && pol1[i] > maxy) maxy = pol1[i];
+	      if (useP1[i] == 1 && pol1[i] < miny) miny = pol1[i];
 	      if (npol > 1)
 		{
-		  if (pol2[i] > maxy) maxy = pol2[i];
-		  if (pol2[i] < miny) miny = pol2[i];
+		  if (useP2[i] == 1 && pol2[i] > maxy) maxy = pol2[i];
+		  if (useP2[i] == 1 && pol2[i] < miny) miny = pol2[i];
 		}
 	      if (polPlot==2)
 		{
@@ -480,7 +495,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
     }
 
-  
+  free(useP1);
+  free(useP2);
   free(pol1);
   free(pol2);
   free(pol3);
