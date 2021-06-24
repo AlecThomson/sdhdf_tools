@@ -37,7 +37,7 @@
 #define VNUM "v0.1"
 
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog);
 
 
 void help()
@@ -77,6 +77,7 @@ int main(int argc,char *argv[])
   double fref=-1;
   float bl_f0=0,bl_f1=0;
   int setBaseline=0;
+  int setLog=-1;
   
   //  help();
   
@@ -97,6 +98,8 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-h")==0)
 	{help(); exit(1);}
+      else if (strcmp(argv[i],"-log")==0)
+	setLog=1;      
       else if (strcmp(argv[i],"-g")==0)
 	strcpy(grDev,argv[++i]);
       else if (strcmp(argv[i],"-fref")==0)
@@ -159,7 +162,7 @@ int main(int argc,char *argv[])
 	  //	    }
 
 
-	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline);	  	  
+	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog);	  	  
 
 	  sdhdf_closeFile(inFile);
 
@@ -170,7 +173,7 @@ int main(int argc,char *argv[])
 }
 
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline)
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog)
 {
   static int entry=0;
   static int entryX=0;
@@ -183,7 +186,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   float minx,maxx,miny,maxy,minz,maxz;
   float ominx,omaxx,ominy,omaxy;
   int t=0;
-  int setLog=-1;
   char title[1024];
   char xlabel[1024];
   char ylabel[1024];
@@ -459,6 +461,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       drawMolecularLine(1667.3590,"OH",minx,maxx,miny,maxy);
       drawMolecularLine(1720.5300,"OH",minx,maxx,miny,maxy);
     }
+  //  for (i=0;i<nchan;i++)
+  //    printf("[Spectrum:] %.6f %g %g %g %g\n",freq[i],pol1[i],pol2[i],pol3[i],pol4[i]);
   if (polPlot==1)
     {
       cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
