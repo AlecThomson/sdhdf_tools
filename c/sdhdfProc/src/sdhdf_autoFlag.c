@@ -34,11 +34,13 @@
 #include <cpgplot.h>
 #include "TKfit.h"
 
+#define MAX_RFI 128
+
 void saveFile(sdhdf_fileStruct *inFile);
 
 int main(int argc,char *argv[])
 {
-  int i,j,ii,b;
+  int i,j,ii,b,k,s;
   char fname[MAX_STRLEN];
   char fromFileName[MAX_STRLEN];
   sdhdf_fileStruct *inFile,*fromFile;
@@ -47,6 +49,9 @@ int main(int argc,char *argv[])
   //  spectralDumpStruct spectrum;
   int npol=4;
   int setnband=-1;
+  int flagType=-1;
+  sdhdf_rfi rfi[MAX_RFI];
+  int nRFI;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -59,21 +64,26 @@ int main(int argc,char *argv[])
       exit(1);
     }
 
-    
+  // Two types of flagging.  Type 1 is copying a flag table
+  // from one file to another.  Type 2 is running an algorithm to choose what to flag  
+  flagType=2;
   for (i=1;i<argc;i++)
     {      
-      if (strcmp(argv[i],"-from")==0)	strcpy(fromFileName,argv[++i]);	
+      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1;}
     }
 
-  sdhdf_initialiseFile(fromFile);
-  sdhdf_openFile(fromFileName,fromFile,1);
-  sdhdf_loadMetaData(fromFile);
-  printf("Loading the bands\n");
-  for (b=0;b<fromFile->nBeam;b++)
+  if (flagType==1)
     {
-      // This is a waste as don't need to load in all the data: FIX ME
-      for (i=0;i<fromFile->beam[b].nBand;i++)
-	sdhdf_loadBandData(fromFile,b,i,1);
+      sdhdf_initialiseFile(fromFile);
+      sdhdf_openFile(fromFileName,fromFile,1);
+      sdhdf_loadMetaData(fromFile);
+      printf("Loading the bands\n");
+      for (b=0;b<fromFile->nBeam;b++)
+	{
+	  // This is a waste as don't need to load in all the data: FIX ME
+	  for (i=0;i<fromFile->beam[b].nBand;i++)
+	    sdhdf_loadBandData(fromFile,b,i,1);
+	}
     }
   //
 
@@ -84,28 +94,69 @@ int main(int argc,char *argv[])
       else
 	{
 	  strcpy(fname,argv[ii]);
+
+	  
 	  sdhdf_initialiseFile(inFile);
 	  sdhdf_openFile(fname,inFile,1);
 	  sdhdf_loadMetaData(inFile);
+	  if (flagType==2)
+	    {
+	      printf("Observatory site = %s\n",inFile->primary[0].telescope);
+	      if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
+		printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
+	      sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
+	      printf("Have loaded %d RFI signals\n",nRFI);
+	    }
 	  for (b=0;b<inFile->nBeam;b++)
 	    {
 	      nband = inFile->beam[b].nBand;
 	      for (i=0;i<nband;i++)
 		{
-		  // Again a waste as don't need to load in the data: FIX ME
+		  // A waste as don't need to load in the data: FIX ME
+		  // NOT APPLYING TO ALL SPECTRAL DUMPS **** FIX ME
 		  sdhdf_loadBandData(inFile,b,i,1);
-		  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-		    inFile->beam[b].bandData[i].astro_data.dataWeights[j] =
-		      fromFile->beam[b].bandData[i].astro_data.dataWeights[j];
+		  if (flagType==1)
+		    {
+ 		      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+			inFile->beam[b].bandData[i].astro_data.dataWeights[j] =
+			  fromFile->beam[b].bandData[i].astro_data.dataWeights[j];
+		    }
+		  else if (flagType==2)
+		    {
+		      double freq;
+		      int flagIt;
+
+		      for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
+			{
+			  printf("Processing spectral dump %d\n",s);
+			  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+			    {
+			      freq = inFile->beam[b].bandData[i].astro_data.freq[j];
+			      for (k=0;k<nRFI;k++) // CAN DO THIS MUCH QUICKER			   
+				{
+				  //			      printf("Checking %.5f %g %g\n",freq,rfi[k].f0,rfi[k].f1);
+				  if (freq > rfi[k].f0 && freq < rfi[k].f1)
+				    {
+				      inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
+				      break;
+				    }
+				}
+			    }
+			}
+		    }
 		}
 	    }
 	  saveFile(inFile);
 	  sdhdf_closeFile(inFile);
 	}
     }
-  sdhdf_closeFile(fromFile);
   free(inFile);
-  free(fromFile);
+
+  if (flagType==1)
+    {
+      sdhdf_closeFile(fromFile);     
+      free(fromFile);
+    }
   
 }
 

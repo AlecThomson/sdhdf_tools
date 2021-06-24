@@ -36,6 +36,19 @@
 #define GRS80_A 6378137.0          // semi-major axis (m) 
 #define GRS80_F 1.0/298.257222101  // flattening 
 
+
+// RFI structure
+typedef struct sdhdf_rfi {
+  int type;
+  char observatory[MAX_STRLEN];
+  char receiver[MAX_STRLEN];
+  double f0;
+  double f1;
+  double mjd0;
+  double mjd1;
+  char description[MAX_STRLEN];  
+} sdhdf_rfi;
+
 // Rest frequency list
 typedef struct sdhdf_restfrequency_struct {
   char   label[MAX_STRLEN];
@@ -96,6 +109,7 @@ void sdhdf_add2arg(char *args,char *add1,char *add2);
 
 
 // Loading metadata information
+void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile);  // Include loading attributes
 void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile);
 void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile);

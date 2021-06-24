@@ -1267,3 +1267,44 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrNam
   
 
 }
+
+void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel)
+{
+  FILE *fin;
+  char fname[MAX_STRLEN];
+  char runtimeDir[MAX_STRLEN];
+  char str[4096];
+  
+  if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("=======================================================================\n");
+      printf("Error: require that the SDHDF_RUNTIME directory is set\n");
+      printf("=======================================================================\n");
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  
+  sprintf(fname,"%s/observatory/%s/rfi/persistentRFI.dat",runtimeDir,tel);
+  if (!(fin = fopen(fname,"r")))
+    {
+      printf("ERROR: unable to open filename >%s<\n",fname);
+    }
+  else
+    {
+      while (!feof(fin))
+	{
+	  if (fgets(str,4096,fin)!=NULL)
+	    {
+	      if (str[0]!='#' && strlen(str) > 2) // Not a comment line
+		{
+		  sscanf(str,"%d %s %s %lf %lf %lf %lf",&(rfi[*nRFI].type),
+			 rfi[*nRFI].observatory,rfi[*nRFI].receiver,&(rfi[*nRFI].f0),&(rfi[*nRFI].f1),
+			 &(rfi[*nRFI].mjd0),&(rfi[*nRFI].mjd1));
+		  (*nRFI)++;
+		  // SHOULD CHCEK IF EXCEEDS MAXRFI -- FIX ME
+		}
+	    }
+	}
+    }
+  fclose(fin);
+}
