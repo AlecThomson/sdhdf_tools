@@ -797,7 +797,7 @@ int main(int argc,char *argv[])
 					  // Update the data weights
 					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
 					  // Note that we don't have j*out_nchan here as we're time scrunching
-					  dataWts[k] += inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
+					  dataWts[k] += wt;
 					  swt += wt;
 					}
 					  //				      printf("Done\n");
@@ -836,7 +836,7 @@ int main(int argc,char *argv[])
 				    }
 				}
 			      
-			      
+			      //			      printf("data_wts = %g\n",dataWts[k]);
 			    }
 
 
@@ -928,7 +928,8 @@ int main(int argc,char *argv[])
 				  for (l=k;l<k+fAv;l++)
 				    {
 				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
-				      avFreq += in_freq[l]; // Should be a weighted sum
+				      //				      printf("wt = %g\n",wt);
+				      avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
 				      if (npol==1)
 					av1 += wt*out_Tdata[l+j*npol*nchan];
 				      else if (npol==2)
@@ -938,6 +939,8 @@ int main(int argc,char *argv[])
 					}
 				      else
 					{
+					  //					  printf("Got here with %g %g %g\n",wt,out_Tdata[l+j*npol*nchan],av1);
+				  
 					  av1 += wt*out_Tdata[l+j*npol*nchan];
 					  av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
 					  av3 += wt*out_Tdata[l+j*npol*nchan+2*nchan];
@@ -948,10 +951,9 @@ int main(int argc,char *argv[])
 				      dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
 				      swt += wt;
 				      //				      printf("Done write\n");
-				    }  
+				    }
 				  //				  printf("Updating the sum\n");
 				  if (j==0) out_freq[kp] = avFreq/fAv;
-
 				  if (npol==1)
 				    {
 				      if (swt > 0)
@@ -1001,7 +1003,9 @@ int main(int argc,char *argv[])
 			    {
 			      for (k=0;k<out_nchan;k++)
 				{
-				  dataWts[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+j];
+				  // We've already set the weights above ???  FIX ME *** CHECK *****
+				  if (tScrunch!=1)
+				    dataWts[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+j];
 				  if (npol==1)
 				    out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
 				  else if (npol==2)

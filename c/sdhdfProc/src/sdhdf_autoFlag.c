@@ -34,7 +34,7 @@
 #include <cpgplot.h>
 #include "TKfit.h"
 
-#define MAX_RFI 128
+#define MAX_RFI 512
 
 void saveFile(sdhdf_fileStruct *inFile);
 
@@ -52,6 +52,7 @@ int main(int argc,char *argv[])
   int flagType=-1;
   sdhdf_rfi rfi[MAX_RFI];
   int nRFI;
+  float bandEdge=0;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -70,7 +71,9 @@ int main(int argc,char *argv[])
   for (i=1;i<argc;i++)
     {      
       if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1;}
+      else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge);}
     }
+     
 
   if (flagType==1)
     {
@@ -89,7 +92,7 @@ int main(int argc,char *argv[])
 
   for (ii=1;ii<argc;ii++)
     {
-      if (strcmp(argv[ii],"-from")==0)
+      if (strcmp(argv[ii],"-from")==0 || strcmp(argv[ii],"-edge")==0)
 	ii++;
       else
 	{
@@ -105,6 +108,26 @@ int main(int argc,char *argv[])
 	      if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
 		printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
 	      sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
+	      if (bandEdge > 0)
+		{
+		  double freq0,freq1,chbw;
+		  printf("In band edge\n");
+		  nband = inFile->beam[0].nBand; // FIX ME - USING BEAM 0
+		  printf("nband = %d\n",nband);
+		  for (i=0;i<nband;i++)
+		    {
+		      sdhdf_loadBandData(inFile,0,i,1); // FIX ME - USING BEAM 0
+		  
+		      printf("Setting RFI %d\n",nRFI);
+		      freq0 = inFile->beam[0].bandData[i].astro_data.freq[0];
+		      freq1 = inFile->beam[0].bandData[i].astro_data.freq[inFile->beam[0].bandHeader[i].nchan-1];
+		      chbw = inFile->beam[0].bandData[i].astro_data.freq[1]-inFile->beam[0].bandData[i].astro_data.freq[0];
+		      printf("Got %g %g\n",freq0,freq1);
+		      rfi[nRFI].type=1;  rfi[nRFI].f0 = freq0-chbw/2.; rfi[nRFI].f1 = freq0+(freq1-freq0)*bandEdge/100.+chbw/2.; nRFI++;
+		      rfi[nRFI].type=1;  rfi[nRFI].f0 = freq1 -chbw/2.-(freq1-freq0)*bandEdge/100.; rfi[nRFI].f1 = freq1+chbw/2.; nRFI++;
+		      printf("Adding RFI at %g %g\n",freq0,freq0+(freq1-freq0)*bandEdge/100.);
+		    }
+		}
 	      printf("Have loaded %d RFI signals\n",nRFI);
 	    }
 	  for (b=0;b<inFile->nBeam;b++)
@@ -151,7 +174,7 @@ int main(int argc,char *argv[])
 	}
     }
   free(inFile);
-
+    
   if (flagType==1)
     {
       sdhdf_closeFile(fromFile);     

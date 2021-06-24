@@ -362,7 +362,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
     {
       if (freq[i] >= minx && freq[i] <= maxx)
 	{
-	  if (t==0)
+	  if (useP1[i] == 1 && t==0)
 	    {
 	      miny = maxy = pol1[i];
 	      t=1;
