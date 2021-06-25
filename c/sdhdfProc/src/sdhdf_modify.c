@@ -280,7 +280,7 @@ int main(int argc,char *argv[])
 		  if (getenv("SDHDF_RUNTIME")==0)
 		    {
 		      printf("=======================================================================\n");
-		      printf("Error: sdhdf_convertTo requires that the SDHDF_RUNTIME directory is set\n");
+		      printf("Error: sdhdf_modify requires that the SDHDF_RUNTIME directory is set\n");
 		      printf("=======================================================================\n");
 		      exit(1);
 		    }
