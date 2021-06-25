@@ -269,10 +269,25 @@ int main(int argc,char *argv[])
 		}
 	      fclose(fScale);
 	    }
-
+	
 	  if (strcmp(scalFname,"NULL")!=0)
 	    {
 	      FILE *fin;
+
+	      if (strcmp(scalFname,"auto")==0)
+		{
+		  char runtimeDir[1024];
+		  if (getenv("SDHDF_RUNTIME")==0)
+		    {
+		      printf("=======================================================================\n");
+		      printf("Error: sdhdf_convertTo requires that the SDHDF_RUNTIME directory is set\n");
+		      printf("=======================================================================\n");
+		      exit(1);
+		    }
+		  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+		  sprintf(scalFname,"%s/observatory/parkes/calibration/scalAverage.dat",runtimeDir); // FIX ME -- TOO MUCH HARDCODED HERE
+		  printf("Using SCAL = %s\n",scalFname);
+		}
 	      
 	      nScal=0;
 	      if ((fin = fopen(scalFname,"r"))==NULL)
@@ -573,7 +588,7 @@ int main(int argc,char *argv[])
 			out_ndump = 1;
 		      else
 			out_ndump = inFile->beam[b].bandHeader[ii].ndump;
-
+		    
 
 		      if (nScal > 0)
 			{
