@@ -38,6 +38,23 @@
 
 void saveFile(sdhdf_fileStruct *inFile);
 
+void help()
+{
+  printf("sdhdf_autoFlag:   code to carry out automatic flagging of a data file\n");
+  printf("Note 1: sdhdf_flag is used for manual flagging\n");
+  printf("Note 2: here we use the term 'flagging', but it is the weights table in the SDHDF file that is set to zero\n");
+  printf("\n\n");
+  printf("-from <filename.hdf>      Input file that has flagging information that should be copied to other files\n");
+  printf("-edge <value>             Percent of the sub-band boundaries that should be flagged\n");
+  printf("-persistent               Remove persistent RFI specific to the observatory\n");
+  printf("\n");
+  printf("Example: sdhdf_autoFlag -from manualZap.hdf uwl*.hdf\n");
+	 
+
+  exit(1);
+}
+
+
 int main(int argc,char *argv[])
 {
   int i,j,ii,b,k,s;
@@ -53,6 +70,9 @@ int main(int argc,char *argv[])
   sdhdf_rfi rfi[MAX_RFI];
   int nRFI;
   float bandEdge=0;
+  int fromFlag=0;
+  int bandEdgeFlag=0;
+  int persistentFlag=0;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -67,13 +87,21 @@ int main(int argc,char *argv[])
 
   // Two types of flagging.  Type 1 is copying a flag table
   // from one file to another.  Type 2 is running an algorithm to choose what to flag  
-  flagType=2;
+  flagType=0;
   for (i=1;i<argc;i++)
     {      
-      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1;}
-      else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge);}
+      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}
+      else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge); bandEdgeFlag=1;}
+      else if (strcmp(argv[i],"-persistent")==0) {persistentFlag=1; flagType=2;}
+      else if (strcmp(argv[i],"-h")==0) help();
     }
-     
+
+  if (fromFlag==0 && bandEdgeFlag==0 && persistentFlag==0)
+    {
+      printf("ERROR: You need to use either the -from, -edge or -persistent command line options\n");
+      exit(1);
+    }
+  
 
   if (flagType==1)
     {
@@ -94,6 +122,10 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[ii],"-from")==0 || strcmp(argv[ii],"-edge")==0)
 	ii++;
+      else if (strcmp(argv[ii],"-persistent")==0)
+	{
+	// Do nothing
+	}
       else
 	{
 	  strcpy(fname,argv[ii]);
