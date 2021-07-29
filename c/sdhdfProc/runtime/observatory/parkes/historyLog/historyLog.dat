@@ -1,2 +1,11 @@
 #
+# History log
 #
+# This file contains changes that occurred at the observatory of relevance
+# to the SDHDF files and processing
+#
+# Each entry is on a single line and starts with a type number
+#
+# type 1: <mjdStart> <mjdEnd> <detailReportFile> report
+#
+1 0.000 59418 topoFreqError.txt Topocentric frequency labelling in the SDHDF files incorrect
