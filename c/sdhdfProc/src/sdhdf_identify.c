@@ -44,6 +44,23 @@ typedef struct infoStruct {
 
 double haversine(double centre_long,double centre_lat,double src_long,double src_lat);
 
+void help()
+{
+  printf("sdhdf_identify\n\n");
+  printf("Command line options\n\n");
+  printf("-coord <ra0> <dec0> <raddist>   - selects file within a particular angular radius of those coordinates\n");
+  printf("-h                              - this help\n");
+  printf("-o <outFile>                    - write the output to an output file\n");
+  printf("-pair                           - produce paired 'on' and 'off' output - need -on and -off set\n");
+  printf("-partial                        - does not require an exact match when checking source names\n");
+  printf("-src <name>                     - selects based on source name\n");
+  printf("-on <source name>               - defines 'on' source to be the specified name\n");
+  printf("-off <source name>              - defines 'off' source to be the specified name\n");
+  printf("\n\n");
+  printf("Example: sdhdf_identify -pair -on 0407-658 -off 0407-658_R *.hdf\n");
+
+}
+
 int main(int argc,char *argv[])
 {
   int i,j,k,l;
@@ -96,6 +113,8 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&dec0);
 	  sscanf(argv[++i],"%f",&raddist);
 	}
+      else if (strcmp(argv[i],"-h")==0)
+	help();
       else if (strcmp(argv[i],"-o")==0)
 	{
 	  strcpy(outFile,argv[++i]);
