@@ -1,0 +1,8 @@
+Before Jul 23rd 2021 around 10:19 Euryale was incorrectly writing the topocentric frequency axis into the SDHDF files.
+
+The issues were:
+
+1) the channel bandwidth should have been taken as (f_end - f_start)/nchan, but instead was taken as (f_end - f_start)/(nchan-1).  This has little effect for spectral line data with a large number of channels, but would significantly affect the noise source data streams and continuum observations.
+
+2) the frequency reported (even though wrong - see above) was for the start of the frequency channel. It has now been updated to be the centre of the frequency channel.
+
