@@ -1,0 +1,4 @@
+#
+# File containing directory name for an observatory and telescope names within SDHDF files
+#
+parkes Parkes PARKES parkes
