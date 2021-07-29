@@ -36,6 +36,7 @@
 
 #define VNUM "v0.1"
 
+void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
 void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog);
 
@@ -194,6 +195,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   int molecularLines=1;
   int nchan,maxNchan;
   float *pol1,*pol2,*pol3,*pol4;
+  float *wt;
   int *useP1,*useP2;
   float *freq;
   float xp1,xp2,yp1,yp2;
@@ -229,6 +231,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   freq = (float *)malloc(sizeof(float)*nchan);
   useP1 = (int *)malloc(sizeof(int)*nchan);
   useP2 = (int *)malloc(sizeof(int)*nchan);
+  wt = (float *)malloc(sizeof(float)*nchan);
   pol1 = (float *)malloc(sizeof(float)*nchan);
   pol2 = (float *)malloc(sizeof(float)*nchan);
   pol3 = (float *)malloc(sizeof(float)*nchan);
@@ -247,6 +250,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	  else
 	    freq[i] = (1.0-inFile->beam[ibeam].bandData[iband].astro_data.freq[i]/(fref))*SPEED_LIGHT/1000.; // km/s
 	  pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
+	  wt[i]   = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+idump*nchan];
+	  if (wt[i] == 0) {useP1[i] = 0; useP2[i] = 0;}
 	  if (npol > 1)
 	    pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
 	  if (polPlot==2)
@@ -378,15 +383,14 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 		}
 	      if (polPlot==2)
 		{
-		  if (pol3[i] > maxy) maxy = pol3[i];
-		  if (pol4[i] > maxy) maxy = pol4[i];
-		  if (pol3[i] < miny) miny = pol3[i];
-		  if (pol4[i] < miny) miny = pol4[i];
-		  
+		  if (pol3[i] > maxy && useP1[i]==1) maxy = pol3[i];
+		  if (pol4[i] > maxy && useP1[i]==1) maxy = pol4[i];
+		  if (pol3[i] < miny && useP1[i]==1) miny = pol3[i];
+		  if (pol4[i] < miny && useP1[i]==1) miny = pol4[i];		  
 		}
 	    }
 	}
-    }      
+    }
 
   if (locky1 != locky2)
     {
@@ -476,25 +480,25 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       drawMolecularLine(1667.3590,"OH",minx,maxx,miny,maxy);
       drawMolecularLine(1720.5300,"OH",minx,maxx,miny,maxy);
     }
-  //  for (i=0;i<nchan;i++)
-  //    printf("[Spectrum:] %.6f %g %g %g %g\n",freq[i],pol1[i],pol2[i],pol3[i],pol4[i]);
+
   if (polPlot==1)
     {
-      cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
+      // Do not plot flagged channels
+      cpgsci(1); drawIncludeWeights(nchan,freq,pol1,wt); cpgsci(1);
       if (sump==0 && npol > 1)
 	{
-	  cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
+	  cpgsci(2); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
 	}
     }
   else if (polPlot==2)
     {
-      cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
-      cpgsci(4); 
-      cpgline(nchan,freq,pol3); cpgsci(1);
-      cpgsci(5);  cpgline(nchan,freq,pol4); cpgsci(1);
-      cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
+      cpgsci(2); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
+      cpgsci(4); drawIncludeWeights(nchan,freq,pol3,wt); cpgsci(1);
+      cpgsci(5); drawIncludeWeights(nchan,freq,pol4,wt); cpgsci(1);
+      cpgsci(1); drawIncludeWeights(nchan,freq,pol1,wt); cpgsci(1);
     }
 
+  free(wt);
   free(useP1);
   free(useP2);
   free(pol1);
@@ -520,6 +524,30 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       entryX = 0;
       entryY ++;
     }
+}
+
+void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt)
+{
+  int i,j,i0;
+  int drawIt=-1;
+
+  for (i=0;i<nchan;i++)
+    {
+      if (wt[i] != 0 && drawIt==-1)
+	{
+	  drawIt=1;
+	  i0=i;
+	}
+      if (wt[i] == 0 && drawIt==1)
+	{
+	  cpgline(i-1-i0,freq+i0,pol+i0);
+	  drawIt=-1;
+	  
+	}	      
+    }
+  if (drawIt==1) cpgline(i-1-i0,freq+i0,pol+i0); 
+  
+  //  cpgline(nchan,freq,pol);
 }
 
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY)
