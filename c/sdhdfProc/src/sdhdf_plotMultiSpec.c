@@ -49,11 +49,32 @@ void help()
   printf("\n");
   printf("Software to plot multiple spectra\n");
   printf("\n\nCommand line arguments:\n\n");
+
+
+  printf("-4pol               Plot 4 polarisations (default is just 1 or 2 polarisation)\n");
+  printf("-av <av>            Frequency average this number of channels\n");
+  printf("-ch <chSize>        Character size\n");
   printf("-h                  This help\n");
+  printf("-f0 <freq0>         Start frequency (should be within specified band)\n");
+  printf("-f1 <freq1>         End frequency (should be within specified band)\n");
   printf("-f <filename>       SDHDF file corresponding to observations\n");
+  printf("-fref <freq>        Set a reference frequency in MHz\n");
+  printf("-g <display>        Set display type\n");
+  printf("-join               Join plots together\n");
+  printf("-locky <y1> <y2>    Fix the y-axis to be between y1 and y2\n");
+  printf("-log                Set logarithmic plotting\n");
+  printf("-nx <nx>            Set nx panels in the x-direction\n");  
+  printf("-ny <ny>            Set ny panels in the y-direction\n");
+  printf("-p                  Sum polarisations\n");
+  printf("-sb <bandNumber>    Plot data within specified band number\n");
+  printf("-sd <dumpNumber>    Plot data within specified spectral dump\n");
+  
+    
+  
+  
   
   printf("\nExample:\n\n");
-  printf("TO DO\n");
+  printf("sdhdf_plotMultiSpec -sb 0 -f0 810 -f1 812 uwl_210722_214441.hdf.T.flag\n");
   printf("---------------------\n");
 }
 
