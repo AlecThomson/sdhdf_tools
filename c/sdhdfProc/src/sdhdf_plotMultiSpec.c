@@ -81,7 +81,7 @@ void help()
 
 int main(int argc,char *argv[])
 {
-  int        i,j,ii;
+  int        i,j,ii,k;
   char       fname[MAX_STRLEN];
   char       grDev[MAX_STRLEN];
   sdhdf_fileStruct *inFile;
@@ -100,6 +100,7 @@ int main(int argc,char *argv[])
   float bl_f0=0,bl_f1=0;
   int setBaseline=0;
   int setLog=-1;
+  int setBand=0;
   
   //  help();
   
@@ -158,7 +159,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-ch")==0) // Character height
 	sscanf(argv[++i],"%f",&chSize);
       else if (strcmp(argv[i],"-sb")==0)
-	sscanf(argv[++i],"%d",&iband);
+	{sscanf(argv[++i],"%d",&iband); setBand=1;}
 	//	i++;
       else
 	{
@@ -183,6 +184,22 @@ int main(int argc,char *argv[])
 	  //		iband = sdhdf_getBandID(inFile,argv[++ii]);
 	  //	    }
 
+	  // Check frequency range
+	  if (setBand==0 && setf0 == 1 && setf1 == 1)
+	    {	      
+	      printf("Trying to identify suitable band number\n");
+	      for (k=0;k<inFile->beam[ibeam].nBand;k++)
+		{
+		  if (inFile->beam[ibeam].bandHeader[k].f0 < f0 && inFile->beam[ibeam].bandHeader[k].f1 > f1)
+		    {
+		      setBand=1;
+		      iband = k;
+		      printf("Selecting sub-band number %d\n",k);
+		      break;
+		    }
+		}
+	    }
+	  
 
 	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog);	  	  
 
@@ -204,6 +221,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   char key;
   float mx,my;
   int i,j,k;
+  int useData=0;
   float *aa,*bb,*ab,*abs;
   float minx,maxx,miny,maxy,minz,maxz;
   float ominx,omaxx,ominy,omaxy;
@@ -390,6 +408,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	{
 	  if (useP1[i] == 1 && t==0)
 	    {
+	      useData=1;
 	      miny = maxy = pol1[i];
 	      t=1;
 	    }
@@ -413,6 +432,14 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	}
     }
 
+  if (useData==0)
+    {
+      printf("*************************************************\n");
+      printf("WARNING: No data in range to plot\n");
+      printf("Remember to select the correct sub-band using -sb\n");
+      printf("*************************************************\n");
+    }
+  
   if (locky1 != locky2)
     {
       miny = locky1;
