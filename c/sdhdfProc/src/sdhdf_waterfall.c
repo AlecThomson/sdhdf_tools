@@ -39,7 +39,7 @@ typedef struct dumpStruct {
 } dumpStruct;
 
 
-void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1);
+void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1,float *wt);
 
 int main(int argc,char *argv[])
 {
@@ -68,7 +68,8 @@ int main(int argc,char *argv[])
   int min=1;
   float *elVal,*azVal;
   float *signalVal;
-
+  float *wt;
+  
   FILE *fin;
   FILE *fout;
   FILE *fout2;
@@ -148,14 +149,15 @@ int main(int argc,char *argv[])
 	  if (!(signalVal = (float *)malloc(sizeof(float)*setNdump*nchan)))
 	    {
 	      printf("ERROR: unable to allocate enough memory for the data: %g\n",(float)(setNdump*nchan));
-	      exit(1);
+	      exit(1);	      
 	    }
+	  wt = (float *)malloc(sizeof(float)*nchan*setNdump);
 	  dumpParams = (dumpStruct *)malloc(sizeof(dumpStruct)*setNdump);
 	  f0 = inFile->beam[ibeam].bandData[iband].astro_data.freq[0];
 	  f1 = inFile->beam[ibeam].bandData[iband].astro_data.freq[1];
 	  chbw = f1-f0;
 	}
-
+    
       for (jj=0;jj<ndump;jj++)
 	{
 	  printf("Processing dump %d\n",jj);
@@ -164,10 +166,15 @@ int main(int argc,char *argv[])
 	  dumpParams[jj+sdump].scale = 1;
 	  for (ii=0;ii<nchan;ii++)
 	    {
-	      if (poln == 1)
+	      if (poln == 1)		
 		signalVal[(jj+sdump)*nchan+ii] = (inFile->beam[ibeam].bandData[iband].astro_data.pol1[ii+jj*nchan]);
 	      else
 		signalVal[(jj+sdump)*nchan+ii] = (inFile->beam[ibeam].bandData[iband].astro_data.pol1[ii+jj*nchan]+inFile->beam[ibeam].bandData[iband].astro_data.pol2[ii+jj*nchan]);
+
+	      wt[(jj+sdump)*nchan+ii] = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[ii+jj*nchan];
+	      //	      if (jj==1)
+	      //		printf("flag1: %d %d %g\n",ii,jj,wt[(jj*sdump)*nchan+ii]);
+	      
 	      signalVal[(jj+sdump)*nchan+ii] /= (double)inFile->beam[ibeam].bandHeader[iband].dtime;
 	      //	      printf("dtim = %g\n",(double)inFile->beam[ibeam].bandHeader[iband].dtime);
 	      signalVal[(jj+sdump)*nchan+ii] = log10(signalVal[(jj+sdump)*nchan+ii]);
@@ -177,14 +184,25 @@ int main(int argc,char *argv[])
       sdump+=ndump;
     }
 
-  makePlot(signalVal,nchan,sdump,f0,chbw,dumpParams,minx,maxx,cleanF0,cleanF1);
-  
+  /*
+  for (ii=0;ii<nchan;ii++)
+    {
+      for (jj=0;jj<sdump;jj++)
+	{
+	  if (jj==1)
+	    printf("flag2: %d %d %g\n",ii,jj,wt[(jj*sdump)*nchan+ii]);
 
+	}
+    }
+  */  
+  makePlot(signalVal,nchan,sdump,f0,chbw,dumpParams,minx,maxx,cleanF0,cleanF1,wt);
+  
+  free(wt);
   free(signalVal);
   free(dumpParams);
 }
 
-void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1)
+void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1,float *wt)
 {
   int i,j;
   float tr[6];
@@ -202,15 +220,16 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
   float *heatMap;
   
   int specSelect=-1;
-  float minz,maxz;
+  float minz=0,maxz=0;
 
   float heatMiny = 0;
   float heatMaxy = ndump;
   
 
-  int t=0;
+  int t=0,t_z=0;
   int log=-1;
   int colourScale=1;
+  int imax,jmax;
   
   if (specMinx == -1) specMinx = f0;
   if (specMaxx == -1) specMaxx = f0+nchan*chbw;
@@ -249,20 +268,21 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	      scl=0;
 	      for (j=0;j<nchan;j++)
 		{
-		  if (specX[j] > cleanF0 && specX[j] <= cleanF1)
+		  if (specX[j] > cleanF0 && specX[j] <= cleanF1 && wt[i*nchan+j] != 0)
 		    {
 		      scl += pow(10,signalVal[i*nchan+j]);
 		      nv++;
-		    }
-		  if (nv > 0)
+		    }	
+	  if (nv > 0)
 		    dumpParams[i].scale = 1.0/(scl/nv);
 		  else
-		    dumpParams[i].scale = 1.0;;
+		    dumpParams[i].scale = 1.0;
 		}
 	    }
 	}
 
       t=0;
+      t_z=0;
       for (i=0;i<nchan;i++)
 	{
 	  specY[i] = 0.0;
@@ -270,21 +290,35 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	  
 	  for (j=0;j<ndump;j++)
 	    {
-	      val = dumpParams[j].scale*pow(10,signalVal[j*nchan+i]);
-	      if (log==1)
+	      if (wt[j*nchan+i] == 0)
+		val = 0;
+	      else		
+		val = dumpParams[j].scale*pow(10,signalVal[j*nchan+i]);
+	      //	      if (j==1)
+		//		printf("Have %d %d %g\n",i,j,wt[j*nchan+i]);
+	      //	      if (val > 0 && j > 0)
+	      //		printf("%d %d Val = %g\n",i,j,val);
+	      if (log==1 && val > 0)
 		heatMap[j*nchan+i] = log10(val);
 	      else
 		heatMap[j*nchan+i] = val;
 	      
-	      if (specX[i] > specMinx && specX[i] < specMaxx)
+	      if (specX[i] > specMinx && specX[i] < specMaxx  && wt[j*nchan+i] > 0)
 		{
-		  if (t==0 && j==0)
+		  if (t_z==0)
 		    {
+		      imax = i; jmax = j;
 		      minz = maxz = heatMap[j*nchan+i];
+		      printf("In here setting %g %g\n",minz,maxz);
+		      t_z=1;
 		    }
-		  if (minz > heatMap[j*nchan+i]) minz = heatMap[j*nchan+i];
-		  if (maxz < heatMap[j*nchan+i]) maxz = heatMap[j*nchan+i];
-		}
+		  else
+		    {
+		      if (minz > heatMap[j*nchan+i]) minz = heatMap[j*nchan+i];
+		      if (maxz < heatMap[j*nchan+i]) {maxz = heatMap[j*nchan+i]; imax = i; jmax = j;}
+		    }
+		    }
+	    
 	      if (j==specSelect)
 		{
 		  if (log==1)
@@ -318,8 +352,8 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	    specY[i] = log10(specY[i]/ndump);
 	  else
 	    specY[i] = (specY[i]/ndump);
-	  
-	    if (specX[i] > specMinx && specX[i] < specMaxx)
+	
+	  if (specX[i] > specMinx && specX[i] < specMaxx)
 	    {
 	      if (t==0)
 		{
@@ -332,6 +366,11 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	      if (specMaxy < specY3[i]) specMaxy = specY3[i];      
 	    }
 	}
+      //      maxz = 2000;
+      printf("Have colour range from %g to %g\n",minz,maxz);
+      printf("Brightest pixel at (%d,%d) corresponding to frequency %.6f\n",imax,jmax,specX[imax]);
+      printf("X range from %g to %g\n",specMinx,specMaxx);
+      printf("Y range from %g to %g\n",specMiny,specMaxy);
       cpgeras();
       cpgsvp(0.1,0.95,0.15,0.4);
       cpgswin(specMinx,specMaxx,specMiny,specMaxy);
