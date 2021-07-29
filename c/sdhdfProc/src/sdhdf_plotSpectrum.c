@@ -70,6 +70,7 @@ void help()
   printf("+                   Move to the next spectral dump\n");
   printf("-                   Move to the previous spectral dump\n");
   printf("f                   Toggle how the flagging is dealt with\n");
+  printf("h                   This help\n");
   printf("l                   Toggle displaying the spectrum on a logarithmic scale\n");
   printf("L                   List to the screen the data (frequency, pol1) for the current plot\n");
   printf("m                   Toggle overlaying the rest frequency of the molecular lines\n");
@@ -497,6 +498,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		printf("Not dividing spectra by weights\n");
 	      t=0;
 	    }
+	  else if (key=='h')
+	    help();
 	  else if (key=='L')
 	    {
 	      printf("Number of channels = %d\n",nchan);
