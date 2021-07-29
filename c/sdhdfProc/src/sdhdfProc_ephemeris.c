@@ -87,7 +87,7 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
   char fname[1024];
 
 
-    if (getenv("SDHDF_RUNTIME")==0)
+  if (getenv("SDHDF_RUNTIME")==0)
     {
       printf("=======================================================================\n");
       printf("Error: sdhdf_convertTo requires that the SDHDF_RUNTIME directory is set\n");
@@ -120,14 +120,58 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
 
 
   // Get site velocity
-  // For Parkes:  -4554231.5     2816759.1       -3454036.3
-  printf("WARNING: Hardcoding site to Parkes\n");
-  trs[0] = -4554231.5;
-  trs[1] =  2816759.1;
-  trs[2] = -3454036.3;
+  {
+    FILE *fin;
+    char fname1[1024];
+    char fname2[1024];
+    char loadLine[1024];
+    char observatoryDir[1024]="NULL";
+    char label[1024];
+    char entry[1024];
+    // Obtain the coordinates of the observatory
+    sprintf(fname1,"%s/observatory/observatories.list",runtimeDir);
+    fin = fopen(fname1,"r");
+    while (!feof(fin))
+      {
+	if (fgets(loadLine,1024,fin)!=NULL)
+	  {
+	    if (loadLine[0]!='#')
+	      {
+		if (strstr(loadLine,inFile->primary[0].telescope)!=NULL)
+		  {
+		    sscanf(loadLine,"%s",observatoryDir);
+		    break;
+		  }
+	      }
+	  }	
+      }
+    fclose(fin);
+    if (strcmp(observatoryDir,"NULL")==0)
+      {
+	printf("ERROR: in sdhdfProc_ephemeris.c - unable to find observatory %s in %s\n",inFile->primary[0].telescope,fname1);
+	exit(1);
+      }
+    sprintf(fname2,"%s/observatory/%s/observatory.properties",runtimeDir,observatoryDir);
+    fin = fopen(fname2,"r");
+    while (!feof(fin))
+      {
+	if (fgets(loadLine,1024,fin)!=NULL)
+	  {
+	    if (loadLine[0]!='#')
+	      {
+		sscanf(loadLine,"%s %s",label,entry);
+		if (strcasecmp(label,"antenna_x")==0) sscanf(entry,"%lf",&trs[0]);
+		if (strcasecmp(label,"antenna_y")==0) sscanf(entry,"%lf",&trs[1]);
+		if (strcasecmp(label,"antenna_z")==0) sscanf(entry,"%lf",&trs[2]);
+	      }
+	  }
+      }
+    fclose(fin);
+  printf("Loaded trs = %g %g %g\n",trs[0],trs[1],trs[2]);
 
+  }
   sdhdf_ITRF_to_GRS80(trs[0],trs[1],trs[2],&long_grs80,&lat_grs80,&height_grs80);
-  
+    
   zenith[0] = height_grs80 * cos(long_grs80) * cos(lat_grs80);
   zenith[1] = height_grs80 * sin(long_grs80) * cos(lat_grs80);
   zenith[2] = height_grs80 * sin(lat_grs80);
