@@ -4,7 +4,7 @@ from astropy.table import QTable
 import numpy as np
 import argparse
 
-__version__ = '1.9'
+__version__ = '2.1'
 __author__ = 'Lawrence Toomey'
 
 
