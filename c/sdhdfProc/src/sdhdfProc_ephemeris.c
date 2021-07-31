@@ -67,7 +67,7 @@ long sdhdf_loadEOP(sdhdf_eopStruct *eop)
   return n;
 }
 
-double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr)
+double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName)
 {
   t_calcephbin *eph;
   int i,j,k;
@@ -95,7 +95,8 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
       exit(1);
     }
   strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
-  sprintf(fname,"%s/ephemeris/DE436.1950.2050",runtimeDir);
+  //  sprintf(fname,"%s/ephemeris/DE436.1950.2050",runtimeDir);
+  sprintf(fname,"%s/ephemeris/%s",ephemName,runtimeDir);
 
   eph = calceph_open(fname);
   if (eph) {

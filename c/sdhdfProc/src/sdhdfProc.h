@@ -179,7 +179,7 @@ void sdhdf_loadHeaderDouble(hid_t header_id,char *parameter,double *outDouble);
 
 // Ephemerides
 long   sdhdf_loadEOP(sdhdf_eopStruct *eop);
-double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr);
+double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName);
 void sdhdf_obsCoord_IAU2000B(double observatory_trs[3],
 			     double zenith_trs[3],
 			     long double tt_mjd, long double utc_mjd,

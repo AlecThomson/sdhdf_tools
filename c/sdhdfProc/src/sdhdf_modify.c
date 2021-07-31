@@ -138,6 +138,9 @@ int main(int argc,char *argv[])
   int origNchan = -1;
   double chbw;
   float tdumpRequest = -1;
+
+  char ephemName[1024] = "DE436.1950.2050";
+
   
   cc_eps1=cc_eps2=0;
   
@@ -176,6 +179,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-e")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
+      else if (strcmp(argv[i],"-ephem")==0)
+	strcpy(ephemName,argv[++i]);
       else if (strcmp(argv[i],"-origNchan")==0)
 	sscanf(argv[++i],"%d",&origNchan);
       else if (strcmp(argv[i],"-divideCal")==0)
@@ -356,7 +361,7 @@ int main(int argc,char *argv[])
 		      int totNchan_cal=0;
 
 		      for (ci=0;ci<inFile->beam[b].nBand;ci++)
-			  totNchan_cal+=inFile->beam[b].calBandHeader[ci].nchan;
+			totNchan_cal+=inFile->beam[b].calBandHeader[ci].nchan;
 		      
 		      
 		      printf("Calibrating\n");
@@ -519,7 +524,7 @@ int main(int argc,char *argv[])
 			fclose(fout);
 		      }
 		      
-		      
+		    
 		      printf("Loaded cal %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %d %d %d\n",scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1],scA_rf1[2],scB_rf1[2],
 			     scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf2[2],scB_rf2[2],scA_rf3[0],scB_rf3[0],scA_rf3[1],scA_rf3[2],scB_rf3[2],
 			     scB_rf3[1],nRF1,nRF2,nRF3);
@@ -910,23 +915,23 @@ int main(int argc,char *argv[])
 			      for (k=0;k<nchan;k++)
 				{
 				  if (npol==1)
-				    out_Tdata[k+j*nchan*npol] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
+				    out_Tdata[k+j*nchan*npol] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
 				  else if (npol==2)
 				    {
-				      out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+j*nchan*npol+nchan]   = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]/(float)nsd;
+				      out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
+				      out_Tdata[k+j*nchan*npol+nchan]   = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; ///(float)nsd;
 				    }
 				  else if (npol==4)
 				    {
-				      out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+j*nchan*npol+nchan]   = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+j*nchan*npol+2*nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]/(float)nsd;
-				      out_Tdata[k+j*nchan*npol+3*nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]/(float)nsd; 
+				      out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
+				      out_Tdata[k+j*nchan*npol+nchan]   = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; ///(float)nsd;
+				      out_Tdata[k+j*nchan*npol+2*nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; ///(float)nsd;
+				      out_Tdata[k+j*nchan*npol+3*nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; ///(float)nsd; 
 				    }
 				}	
 			    }
 			}
-
+		    
 		      // Frequency averaging (note: weighted mean)
 		      if (fAv >= 2)
 			{
@@ -940,6 +945,7 @@ int main(int argc,char *argv[])
 				{				  
 				  av1 = av2 = av3 = av4 = avFreq = 0.0;
 				  swt=0;
+				  dataWts[j*out_nchan+kp] = 0; 
 				  for (l=k;l<k+fAv;l++)
 				    {
 				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
@@ -954,10 +960,9 @@ int main(int argc,char *argv[])
 					}
 				      else
 					{
-					  //					  printf("Got here with %g %g %g\n",wt,out_Tdata[l+j*npol*nchan],av1);
-				  
+					  //					  printf("Got here with %g %g %g\n",wt,out_Tdata[l+j*npol*nchan],av1);				  
 					  av1 += wt*out_Tdata[l+j*npol*nchan];
-					  av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
+					  av2 += wt*out_Tdata[l+j*npol*nchan+1*nchan];
 					  av3 += wt*out_Tdata[l+j*npol*nchan+2*nchan];
 					  av4 += wt*out_Tdata[l+j*npol*nchan+3*nchan];
 					}
@@ -967,6 +972,7 @@ int main(int argc,char *argv[])
 				      swt += wt;
 				      //				      printf("Done write\n");
 				    }
+			       
 				  //				  printf("Updating the sum\n");
 				  if (j==0) out_freq[kp] = avFreq/fAv;
 				  if (npol==1)
@@ -1201,11 +1207,11 @@ int main(int argc,char *argv[])
 
 				  // Just need g_e
 				  getScal(in_freq[k],sysGain_freq,g_e,diffPhase,c_nchan,&ge,&phi); // Note interpolating two together and so need to pass phi again - FIX THIS
-				  //				  ge = 1; // FIX THIS
-				  //				  printf("diffGain: %.6f %g %g %g\n",in_freq[k],dgain2,phi,ge);
+				  // ge = 1; // FIX THIS
+				  // printf("diffGain: %.6f %g %g %g\n",in_freq[k],dgain2,phi,ge);
 
 				  //
-				  //				  ge/=(double)calBin;
+				  // ge/=(double)calBin;
 
 				  // Should set the outFile, or search the correct place in the inFile???? **** FIX
 				  if (j==0 && k==0)
@@ -1360,7 +1366,7 @@ int main(int argc,char *argv[])
 			  double iX,iY;
 			  for (j=0;j<out_ndump;j++)
 			    {
-			      vOverC=sdhdf_calcVoverC(inFile,b,ii,j,eop,nEOP,lsr);
+			      vOverC=sdhdf_calcVoverC(inFile,b,ii,j,eop,nEOP,lsr,ephemName);
 			      if (regrid==0)
 				{
 				  printf("Changing frequency axis => not regridding. V/c = %g. Out_nchan = %d\n",vOverC,out_nchan);				  
