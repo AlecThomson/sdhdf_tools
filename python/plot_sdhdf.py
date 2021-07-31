@@ -6,7 +6,7 @@ import h5py
 import matplotlib as mpl
 from astropy.table import QTable
 
-__version__ = '1.9'
+__version__ = '2.1'
 __author__ = 'Lawrence Toomey'
 
 # increase matplotlib chunk size above default -
@@ -40,10 +40,10 @@ def read_sdhdf_header(f_pth, dset_pth):
     try:
         with h5py.File(f_pth, 'r') as h5:
             tb = QTable.read(h5, path=dset_pth)
-            print('Displaying primary header for file:\n%s\n' % f_pth)
-            print_hdr(tb)
     except Exception as e:
         print('ERROR: failed to read file %s' % f_pth, e)
+
+    return tb
 
 
 def get_available_subbands(sb_dict):
@@ -101,7 +101,11 @@ def plot_sdhdf(f):
 
     # display primary header astropy.QTable object
     print('----------------------------------------------------')
-    read_sdhdf_header(f, '/metadata/primary_header')
+    hdr = read_sdhdf_header(f, '/metadata/primary_header')
+    print_hdr(hdr)
+
+    # get header version
+    hdr_ver = float(hdr['HDR_DEFN_VERSION'][0])
 
     # display available beam groups in file
     print('\n----------------------------------------------------')
@@ -150,20 +154,26 @@ def plot_sdhdf(f):
 
     sb_data = beam_label + '/' + sb_label + '/astronomy_data/data'
     sb_freq = beam_label + '/' + sb_label + '/astronomy_data/frequency'
-    n_pol = h5[sb_data].shape[2]
+    if hdr_ver >= 2.1:
+        n_pol = h5[sb_data].shape[1]
+    else:
+        n_pol = h5[sb_data].shape[2]
     op = QTable.read(h5, path=beam_label + '/' + sb_label + '/metadata/obs_params')
 
-    if ph['CAL_MODE'] is 'ON':
+    if ph['CAL_MODE'] == 'ON':
         sb_cal_data_on = beam_label + '/' + sb_label + '/calibrator_data/cal_data_on'
         sb_cal_data_off = beam_label + '/' + sb_label + '/calibrator_data/cal_data_off'
         sb_cal_freq = beam_label + '/' + sb_label + '/calibrator_data/cal_frequency'
-        cal_n_pol = h5[sb_cal_data_on].shape[2]
+        if hdr_ver >= 2.1:
+            cal_n_pol = h5[sb_cal_data_on].shape[1]
+        else:
+            cal_n_pol = h5[sb_cal_data_on].shape[2]
 
     print('Data array shape: %r' % str(h5[sb_data].shape))
     print('Frequency array shape: %r' % str(h5[sb_freq].shape))
     print('Number of polarisations: %r' % n_pol)
 
-    if ph['CAL_MODE'] is 'ON':
+    if ph['CAL_MODE'] == 'ON':
         print('Calibration data array shape (cal on): %r' % str(h5[sb_cal_data_on].shape))
         print('Calibration data array shape (cal off): %r' % str(h5[sb_cal_data_off].shape))
         print('Calibration frequency array shape: %r' % str(h5[sb_cal_freq].shape))
@@ -196,10 +206,18 @@ def plot_sdhdf(f):
             else:
                 plt.ylabel('Flux [counts]')
             if zoom is True:
-                plt.plot(h5[sb_freq][z_min:z_max], h5[sb_data][0, 0, ii, z_min:z_max],
+                if hdr_ver >= 2.1:
+                    data_arr = h5[sb_data][0, ii, z_min:z_max]
+                else:
+                    data_arr = h5[sb_data][0, 0, ii, z_min:z_max]
+                plt.plot(h5[sb_freq][z_min:z_max], data_arr,
                          linewidth=1, color=lc, label='Pol' + str(ii))
             else:
-                plt.plot(h5[sb_freq][:], h5[sb_data][0, 0, ii, :],
+                if hdr_ver >= 2.1:
+                    data_arr = h5[sb_data][0, ii, :]
+                else:
+                    data_arr = h5[sb_data][0, 0, ii, :]
+                plt.plot(h5[sb_freq][:], data_arr,
                          linewidth=1, color=lc, label='Pol' + str(ii))
             plt.legend(loc='upper right')
         plt.xlabel('Frequency [MHz]')
@@ -207,10 +225,18 @@ def plot_sdhdf(f):
     elif n_pol == 1:
         plt.figure(figsize=(8, 8))
         if zoom is True:
-            plt.plot(h5[sb_freq][z_min:z_max], h5[sb_data][0, 0, :, z_min:z_max],
+            if hdr_ver >= 2.1:
+                data_arr = h5[sb_data][0, :, z_min:z_max]
+            else:
+                data_arr = h5[sb_data][0, 0, :, z_min:z_max]
+            plt.plot(h5[sb_freq][z_min:z_max], data_arr,
                      linewidth=1, label='Pol' + str(n_pol))
         else:
-            plt.plot(h5[sb_freq][:], h5[sb_data][0, 0, :, :],
+            if hdr_ver >= 2.1:
+                data_arr = h5[sb_data][0, :, :]
+            else:
+                data_arr = h5[sb_data][0, 0, :, :]
+            plt.plot(h5[sb_freq][:], data_arr,
                      linewidth=1, label='Pol' + str(n_pol))
         plt.xlabel('Frequency [MHz]')
         plt.ylabel('Flux [counts]')
@@ -224,8 +250,13 @@ def plot_sdhdf(f):
         plt.figure(figsize=(10, 8))
         plt.title('Waterfall - Sub-band %r' % sb, fontsize=14)
         if zoom is True:
-            av = np.mean(h5[sb_data], axis=4)
-            plt.imshow(av[:, 0, 0, z_min:z_max],
+            if hdr_ver >= 2.1:
+                av = np.mean(h5[sb_data], axis=3)
+                av_arr = av[:, 0, z_min:z_max]
+            else:
+                av = np.mean(h5[sb_data], axis=4)
+                av_arr = av[:, 0, 0, z_min:z_max]
+            plt.imshow(av_arr,
                        aspect='auto',
                        extent=(z_window_lo,
                                z_window_hi,
@@ -233,8 +264,13 @@ def plot_sdhdf(f):
                                op['MJD'][-1]),
                        interpolation='nearest')
         else:
-            av = np.mean(h5[sb_data], axis=4)
-            plt.imshow(av[:, 0, 0, :],
+            if hdr_ver >= 2.1:
+                av = np.mean(h5[sb_data], axis=3)
+                av_arr = av[:, 0, :]
+            else:
+                av = np.mean(h5[sb_data], axis=4)
+                av_arr = av[:, 0, 0, :]
+            plt.imshow(av_arr,
                        aspect='auto',
                        extent=(h5[sb_freq][0],
                                h5[sb_freq][-1],

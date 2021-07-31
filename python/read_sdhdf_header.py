@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 from astropy.table import QTable
 
-__version__ = '1.9'
+__version__ = '2.1'
 __author__ = 'Lawrence Toomey'
 
 

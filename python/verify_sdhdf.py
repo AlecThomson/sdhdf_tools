@@ -10,7 +10,7 @@ import matplotlib as mpl
 from astropy.table import QTable
 from show_sdhdf_definition import show_sdhdf_definition
 
-__version__ = '1.9'
+__version__ = '2.1'
 __author__ = 'Lawrence Toomey'
 
 # increase matplotlib chunk size above default -
@@ -135,7 +135,7 @@ def check_atoa_ingest(f_pth):
     return None
 
 
-def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, op=None):
+def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, hdr_ver, op=None):
     """
     Create 2 types of plot objects, spectrum and waterfall
 
@@ -145,12 +145,19 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, op=None):
     :param string sb_freq: HDF path to frequency dataset
     :param string sb_data: HDF path to data
     :param astropy.QTable op: astropy.QTable metadata object
+    :param float hdr_ver: SDHDF header version
     :return None
     """
     if op is not None:
         if len(op['MJD']) > 1:
-            av = np.mean(h5_obj[sb_data], axis=4)
-            axs[1, sb_id].imshow(av[:, 0, 0, :],
+            if hdr_ver >= 2.1:
+                av = np.mean(h5_obj[sb_data], axis=3)
+                av_arr = av[:, 0, :]
+            else:
+                av = np.mean(h5_obj[sb_data], axis=4)
+                av_arr = av[:, 0, 0, :]
+
+            axs[1, sb_id].imshow(av_arr,
                                  aspect='auto',
                                  extent=(h5_obj[sb_freq][0],
                                          h5_obj[sb_freq][-1],
@@ -162,7 +169,11 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, op=None):
         lc = 'b'
         np.mean(h5_obj[sb_data], axis=0)
         plt.yscale('log')
-        axs[0, sb_id].plot(h5_obj[sb_freq][:], h5_obj[sb_data][0, 0, 0, :],
+        if hdr_ver >= 2.1:
+            data_arr = h5_obj[sb_data][0, 0, :]
+        else:
+            data_arr = h5_obj[sb_data][0, 0, 0, :]
+        axs[0, sb_id].plot(h5_obj[sb_freq][:], data_arr,
                            linewidth=0.5, color=lc)
         axs[0, sb_id].set_title(sb_id, fontsize=6)
         axs[0, sb_id].axis('off')
@@ -197,6 +208,9 @@ def verify_sdhdf(f_pth, out_pth):
     hdr = read_sdhdf_header(f_pth, '/metadata/primary_header')
     print_hdr(hdr)
 
+    # get header version
+    hdr_ver = float(hdr['HDR_DEFN_VERSION'][0])
+
     # create quick-look plots for web monitor
     # loop over the beams
     for beam in range(0, len(bp)):
@@ -217,11 +231,11 @@ def verify_sdhdf(f_pth, out_pth):
 
                 # plot spectra (flux vs. frequency)
                 print('Plotting spectra for sub-band %s ...' % sb_label)
-                plot_data(h5, axs, sb_id, sb_freq, sb_data)
+                plot_data(h5, axs, sb_id, sb_freq, sb_data, hdr_ver)
 
                 # plot waterfall (time vs. frequency)
                 print('Plotting waterfall data for sub-band %s ...' % sb_label)
-                plot_data(h5, axs, sb_id, sb_freq, sb_data, op=op)
+                plot_data(h5, axs, sb_id, sb_freq, sb_data, hdr_ver, op=op)
             else:
                 # leave the plots empty
                 axs[0, sb_id].set_title(sb_id, fontsize=6)
