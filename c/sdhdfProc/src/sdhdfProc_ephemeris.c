@@ -96,7 +96,7 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
     }
   strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
   //  sprintf(fname,"%s/ephemeris/DE436.1950.2050",runtimeDir);
-  sprintf(fname,"%s/ephemeris/%s",ephemName,runtimeDir);
+  sprintf(fname,"%s/ephemeris/%s",runtimeDir,ephemName);
 
   eph = calceph_open(fname);
   if (eph) {
