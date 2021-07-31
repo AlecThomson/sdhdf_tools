@@ -1,6 +1,7 @@
 LIBS = -lcfitsio -lhdf5 -lerfa -lcalceph
 
 bin_PROGRAMS = sdhdf_describe \
+  sdhdf_checkFile \
   sdhdf_extractBand \
   sdhdf_extractDump \
   sdhdf_quickdump \
@@ -8,6 +9,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_fluxDensity \
   sdhdf_sum \
   sdhdf_modify \
+  sdhdf_calibrate \
   sdhdf_join \
   sdhdf_identify \
   sdhdf_cal \
@@ -25,6 +27,9 @@ COMMON_SRCS = sdhdfProc_maths.c \
   TKfit.c
 
 sdhdf_describe_SOURCES = sdhdf_describe.c \
+  $(COMMON_SRCS)
+
+sdhdf_checkFile_SOURCES = sdhdf_checkFile.c \
   $(COMMON_SRCS)
 
 sdhdf_extractBand_SOURCES = sdhdf_extractBand.c \
@@ -46,6 +51,9 @@ sdhdf_sum_SOURCES = sdhdf_sum.c \
   $(COMMON_SRCS)
 
 sdhdf_modify_SOURCES = sdhdf_modify.c \
+  $(COMMON_SRCS)
+
+sdhdf_calibrate_SOURCES = sdhdf_calibrate.c \
   $(COMMON_SRCS)
 
 sdhdf_join_SOURCES = sdhdf_join.c \
