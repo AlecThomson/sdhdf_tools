@@ -1,0 +1,62 @@
+#
+# File containing lists of clean bands for the Parkes observatory
+# These are used for e.g., determining whether RFI is on in another part of the band and forming baselines etc.
+#
+# Each line first starts with a <type> integer value
+
+# If type = 1 the line is
+# <type> <observatory label> <receiver label> <freq0 MHz> <freq1 MHz> <MJD0> <MJD1> <text string for label>
+#
+#
+# For the <receiver label> if the band is clean in all receiver systems then the receiver label can be "all"
+#
+
+#
+# Parkes RFI
+#
+1 Parkes all	821.5	823		0	999999 Parkes Clean SB0
+1 Parkes all	861	862		0	999999 Parkes Clean SB1
+1 Parkes all	934.5	936		0	999999 Parkes Clean SB2
+1 Parkes all	994     998		0	999999 Parkes Clean SB3
+1 Parkes all	1116    1114		0	999999 Parkes Clean SB5
+1 Parkes all	1302    1308		0	999999 Parkes Clean SB5
+1 Parkes all	1368    1372		0	999999 Parkes Clean SB6
+1 Parkes all	1515    1520		0	999999 Parkes Clean SB7
+1 Parkes all	1765    1775		0	999999 Parkes Clean SB8
+1 Parkes all	1905    1915		0	999999 Parkes Clean SB9
+1 Parkes all	2010    2020		0	999999 Parkes Clean SB10
+1 Parkes all	2130    2136		0	999999 Parkes Clean SB11
+1 Parkes all	2266    2270		0	999999 Parkes Clean SB12
+1 Parkes all	2385    2395		0	999999 Parkes Clean SB13
+1 Parkes all	2530    2550		0	999999 Parkes Clean SB14
+1 Parkes all	2700    2720		0	999999 Parkes Clean SB15
+1 Parkes all	2780    2790		0	999999 Parkes Clean SB16
+1 Parkes all	2915    2930		0	999999 Parkes Clean SB17
+1 Parkes all	3030    3050		0	999999 Parkes Clean SB18
+1 Parkes all	3155    3170		0	999999 Parkes Clean SB19
+1 Parkes all	3280    3300		0	999999 Parkes Clean SB20
+1 Parkes all	3420    3428		0	999999 Parkes Clean SB21
+1 Parkes all	3535    3545		0	999999 Parkes Clean SB22
+1 Parkes all	3680    3690		0	999999 Parkes Clean SB23
+1 Parkes all	3800    3830		0	999999 Parkes Clean SB24
+1 Parkes all	3935    3845		0	999999 Parkes Clean SB25
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
