@@ -8,4 +8,9 @@
 #
 # type 1: <mjdStart> <mjdEnd> <detailReportFile> report
 #
+1 59386 49401 NULL Subbands 11 and 12 are missing one polarisation channel.
+1 0.000 59416 NULL The astronomy and noise source data streams are not normalised by the number of hits in each spectral channel
+1 0.000 59425 NULL The data tables were recorded with 5-dimensions. After MJD 59425 we record 4-dimensions (without beam number).
 1 0.000 59418 topoFreqError.txt Topocentric frequency labelling in the SDHDF files incorrect
+
+
