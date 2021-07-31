@@ -34,8 +34,11 @@
 #include <cpgplot.h>
 #include "TKfit.h"
 
+#define MAX_RFI 512
+
 void doPlot(sdhdf_fileStruct *inFile,int ibeam);
 void saveFile(sdhdf_fileStruct *inFile,int ibeam);
+void zapPersistent(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
 void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAll);
@@ -383,8 +386,12 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     else if (key=='p') // Zap for Parkes UWL data for persistent RFI
       {
 	needSave=1;
-	autoZapTransmitters(inFile,ibeam,zapAllDumps);
-	autoZapDigitisers(inFile,ibeam,zapAllDumps);
+	zapPersistent(inFile,ibeam,zapAllDumps);
+	//	autoZapTransmitters(inFile,ibeam,zapAllDumps);
+	//	autoZapDigitisers(inFile,ibeam,zapAllDumps);
+
+
+
 	//	autoZapAircraft(inFile,ibeam,zapAllDumps);
 	//	autoZapSatellites(inFile,ibeam,zapAllDumps);
 	//	autoZapWiFi(inFile,ibeam,zapAllDumps);
@@ -1136,3 +1143,38 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
   printf("Save completed\n");
 }
 
+
+void zapPersistent(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
+{
+  sdhdf_rfi rfi[MAX_RFI];
+  int nRFI;
+  float f0[MAX_RFI],f1[MAX_RFI];
+  int i;
+  int n=0;
+  float freq;
+  double mjd;
+  
+  if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
+    printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
+  sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
+
+  for (i=0;i<nRFI;i++)
+    {
+      if (rfi[i].type == 1) 
+	{
+	  mjd = inFile->beam[ibeam].bandData[0].astro_obsHeader[0].mjd; // FIX 0 FOR BAND AND DUMP HERE
+	  if (mjd >= rfi[i].mjd0 && mjd <= rfi[i].mjd1)
+	    {
+	      f0[n] = rfi[i].f0;
+	      f1[n] = rfi[i].f1;
+	      n++;
+	    }
+	}
+      else
+	{
+	  printf("WARNING: unknown RFI type in sdhdf_flag\n");
+	}
+    }
+  
+  flagChannels(inFile,ibeam,f0,f1,n,zapAll);  
+}
