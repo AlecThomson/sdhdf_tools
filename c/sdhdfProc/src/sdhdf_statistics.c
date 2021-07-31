@@ -30,11 +30,21 @@
 #include "TKfit.h"
 
 #define VNUM "v0.1"
-#define MAX_CHANS 262144
-#define MAX_DUMPS 1024
-#define MAX_TRANSMITTERS 1024
 
 void loadBaselineRegions(char *fname, float *baselineX1,float *baselineX2,int *nBaseline);
+
+void help()
+{
+  printf("sdhdf_statistics\n\n");
+  printf("-h            This help\n");
+  printf("-sb <sb>      Select sub-band number sb\n");
+  printf("-fr <f0> <f1> Define frequency range (can also use -freqRange)\n");
+  printf("\n\n");
+  printf("Example\n");
+  printf("sdhdf_statistics -sb 5 -fr 1400 1410 *.hdf\n");
+  exit(1);
+}
+
 
 int main(int argc,char *argv[])
 {
@@ -48,11 +58,6 @@ int main(int argc,char *argv[])
   int nx=1;
   int ny=1;
   int polPlot=1;
-  double *highResX,*highResY1,*highResY2;
-  float *zoomX,*zoomY1,*zoomY2;
-  float *zoomY12;
-  double *bX,*bY1,*bY2;
-  int *bI;
   int nB;
   long writepos;
   int allocateMemory=0;
@@ -71,19 +76,15 @@ int main(int argc,char *argv[])
   int nfit;
   float fx[2],fy[2];
   float fc;
-  double sx,sx2,sx_2,sx2_2,sdev1,sdev2,mean1,mean2;
+  double sx,sx2,sx_2,sx2_2,sdev1,sdev2,mean1,mean2,min1,min2,max1,max2;
   double freq;
-  int np;
+  int np,t;
   int noBaseline=0,nc;
   float freq0 = 1660;
   float freq1 = 1665;
   
   //  loadBaselineRegions("cleanRegions.dat",baselineX1,baselineX2,&nBaseline);
   
-  highResX = (double *)malloc(sizeof(double)*MAX_CHANS);
-  highResY1 = (double *)calloc(sizeof(double),MAX_CHANS);
-  highResY2 = (double *)calloc(sizeof(double),MAX_CHANS);
-
   // Defaults
   idump = iband = ibeam = 0;
   strcpy(grDev,"/xs");
@@ -101,11 +102,15 @@ int main(int argc,char *argv[])
   sdhdf_initialiseFile(inFile);
 
   inFiles=0;
+
+  // Have options for mean, median, peak
   for (i=1;i<argc;i++)
     {
-      if (strcmp(argv[i],"-sb")==0)
+      if (strcmp(argv[i],"-sb")==0)  // FIX ME -- WORK OUT BAND FROM FREQUENCY RANGE
 	sscanf(argv[++i],"%d",&iband);
-      else if (strcmp(argv[i],"-freqRange")==0)
+      else if (strcmp(argv[i],"-h")==0)
+	help();
+      else if (strcasecmp(argv[i],"-freqRange")==0 || strcasecmp(argv[i],"-fr")==0)
 	{
 	  sscanf(argv[++i],"%f",&freq0);
 	  sscanf(argv[++i],"%f",&freq1);
@@ -113,6 +118,12 @@ int main(int argc,char *argv[])
       else
 	strcpy(fname[inFiles++],argv[i]);
     }
+
+
+  printf("\n Results for frequency range %g to %g MHz\n\n\n",freq0,freq1);
+  printf("------------------------------------------------------------------------------------------------------\n");
+  printf("Label File Source Dump Mean_pol1 Mean_pol2 Sdev_pol1 Sdev_pol2 Min_pol1 Max_pol1 Min_pol2 Max-Pol2 MJD\n");
+  printf("------------------------------------------------------------------------------------------------------\n");
   
   for (i=0;i<inFiles;i++)
     {
@@ -120,100 +131,59 @@ int main(int argc,char *argv[])
       sdhdf_openFile(fname[i],inFile,1);
 
       sdhdf_loadMetaData(inFile);
-
-      printf("Loading data for band %d\n",iband);
       sdhdf_loadBandData(inFile,ibeam,iband,1);
       
       // Process each band
       //      for (j=0;j<inFile->beam[ibeam].nBand;j++)
-      j=iband;
+      j=iband; // FIX ME -- UPDATE TO PROCESS EACH BAND
       {
-	printf("Processing band: %d\n",j);
-	
 	// Process each dump
-	for (nAv = 1; nAv < inFile->beam[ibeam].bandHeader[j].ndump/2; nAv ++)
+	for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l++) 
 	  {
-	    //	nAv = 1;
-	    for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l+=nAv) 
+	    sx=sx2=sx_2=sx2_2=0.0;
+	    np=0;
+	    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	      {
-		mean1=mean2=0.0;
-		for (ll=0;ll<nAv;ll++)
+		freq = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
+		
+		if (freq > freq0 && freq < freq1)
 		  {
-		    np=0;
-		    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
+		    val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
+		    val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
+		    if (np==0)
 		      {
-			freq = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
-			//		    if (freq > 1416 && freq < 1417)
-			//		    if (freq > 1416.7 && freq < 1416.8)
-			if (freq > freq0 && freq < freq1)
-			  {
-			    if (ll+l < inFile->beam[ibeam].bandHeader[j].ndump)
-			      {
-				val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
-				val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
-				if (ll==0)
-				  {
-				    highResX[np] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
-				    highResY1[np] = val1;
-				    highResY2[np] = val2;
-				  }
-				else
-				  {
-				    highResY1[np] += val1;
-				    highResY2[np] += val2;
-				  }
-				mean1+=val1;
-				mean2+=val2;
-				np++;
-			      }
-			  }
+			min1=max1 = val1;
+			min2=max2 = val2;
 		      }
-		  }
-		if (np > 0)
-		  {
-		    for (kk=0;kk<np;kk++)
+		    else
 		      {
-			highResY1[kk]/=(double)nAv;
-			highResY2[kk]/=(double)nAv;
+			if (min1 > val1) min1 = val1;
+			if (max1 < val1) max1 = val1;
+			if (min2 > val2) min2 = val2;
+			if (max2 < val2) max2 = val2;
 		      }
-		    mean1/=(double)(np*nAv);
-		    mean2/=(double)(np*nAv);
-		    nfit = 1;
-		    
-		    TKremovePoly_d(highResX,highResY1,np,nfit);
-		    TKremovePoly_d(highResX,highResY2,np,nfit);
-		    
-		    // Get mean and variance in the baseline region		
-		    
-		    sx=sx2=0;
-		    sx_2=sx2_2=0;
-		    nc = 0;
-		    for (kk=0;kk<np;kk++)
-		      {
-			sx    += highResY1[kk];
-			sx2   += pow(highResY1[kk],2);
-			sx_2  += highResY2[kk];
-			sx2_2 += pow(highResY2[kk],2);
-			nc++;
-		      }	       		
-		    sdev1 = sqrt(1./(double)nc*sx2 - pow(1.0/(double)nc * sx,2));
-		    sdev2 = sqrt(1./(double)nc*sx2_2 - pow(1.0/(double)nc * sx_2,2));
-		    
-		    // Mean = before polynomial subtraction
-		    // Sdev = after polynomial subtraction
-		    printf("[stats] %d %d %d %g %g %g %g %.5f\n",i,l,ll,mean1,mean2,sdev1,sdev2,inFile->beam[0].bandData[j].astro_obsHeader[ll+l].mjd);	  
+		    sx+=val1;
+		    sx2+=val2;
+		    sx_2 += pow(val1,2);
+		    sx2_2 += pow(val2,2);
+		    np++;
 		  }
 	      }
+	    mean1=sx/(double)np;
+	    mean2=sx2/(double)np;
+
+	    sdev1 = sqrt(1.0/(double)np * sx_2 - pow(1.0/(double)np * sx,2));
+	    sdev2 = sqrt(1.0/(double)np * sx2_2 - pow(1.0/(double)np * sx2,2));
+	    
+	    printf("[stats] %s %s %d %g %g %g %g %g %g %g %g %.5f\n",inFile->fname,inFile->beamHeader[0].source,l,mean1,mean2,sdev1,sdev2,min1,max1,min2,max2,inFile->beam[0].bandData[j].astro_obsHeader[l].mjd);	  
 	  }
       }
-      
            
       sdhdf_closeFile(inFile);
 
     }
 
   
-  free(highResX); free(highResY1); free(highResY2);
 }
 
 
