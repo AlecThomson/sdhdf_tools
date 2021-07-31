@@ -1,4 +1,6 @@
 #
 # File containing directory name for an observatory and telescope names within SDHDF files
+# The first column is the directory name containing the information for that observatory
+# The remaining columns on the same line are aliases to that observatory
 #
-parkes Parkes PARKES parkes
+parkes Parkes PARKES parkes Murriyang PKS pks
