@@ -37,6 +37,37 @@
 #define GRS80_F 1.0/298.257222101  // flattening 
 
 
+// Structure to contain the calibration information
+typedef struct sdhdf_calibration {
+  double freq; // MHz - centre of frequency channel corresponding to provided information
+
+  // These are 7 parameters that represent the constant properties of the feed and calibration system as well as
+  // the Stokes parameters of the noise source
+
+  float noiseSource_QoverI; // Q/I
+  float noiseSource_UoverI; // U/I
+  float noiseSource_VoverI; // V/I
+
+  float constant_gain;
+  float constant_diff_gain;
+  float constant_diff_phase;
+  float constant_b1;
+  float constant_b2;
+  float constant_r1;
+  float constant_r2;  
+
+  // Flux calibration properties
+  float scalAA;
+  float scalBB;
+  
+  // Time dependent properties
+  double gain;
+  double diff_gain;
+  double diff_phase;
+
+} sdhdf_calibration;
+
+
 // RFI structure
 typedef struct sdhdf_rfi {
   int type;
