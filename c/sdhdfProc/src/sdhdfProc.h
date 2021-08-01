@@ -23,13 +23,13 @@
 #include "sdhdf_v1.9.h"
 
 #define SOFTWARE_VER "v0.1"
-#define MAX_STRLEN    512
-#define MAX_FILES     8192         // Maximum number of files to be processed in batch processing
-#define MAX_CHAN_SCAL 65536        // Maximum number of channels in the SCAL measurements
+#define MAX_STRLEN     512
+#define MAX_FILES      8192         // Maximum number of files to be processed in batch processing
+#define MAX_CHAN_SCAL  65536        // Maximum number of channels in the SCAL measurements
 
-#define SPEED_LIGHT   299792458.0  // Speed of light
-#define BOLTZMANN 1.38064852e-23   // Boltzmann constant
-#define MAX_EOP_LINES 208480       // Maximum number of lines in the Earth Orientation parameter file
+#define SPEED_LIGHT    299792458.0  // Speed of light
+#define BOLTZMANN      1.38064852e-23   // Boltzmann constant
+#define MAX_EOP_LINES  208480       // Maximum number of lines in the Earth Orientation parameter file
 #define MAX_POLY_COEFF 16          // Maximum number of coefficients in baseline fits
 
 // Handling of geodetic coordinates
@@ -56,10 +56,6 @@ typedef struct sdhdf_calibration {
   float constant_r1;
   float constant_r2;  
 
-  // Flux calibration properties
-  float scalAA;
-  float scalBB;
-  
   // Time dependent properties
   double gain;
   double diff_gain;
@@ -67,6 +63,14 @@ typedef struct sdhdf_calibration {
 
 } sdhdf_calibration;
 
+
+// Flux calibration
+typedef struct sdhdf_fluxCalibration {
+  double freq;
+  // Flux calibration properties
+  float scalAA;
+  float scalBB;
+} sdhdf_fluxCalibration;
 
 // RFI structure
 typedef struct sdhdf_rfi {
@@ -168,6 +172,9 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrNam
 void sdhdf_loadFrequencies(sdhdf_fileStruct *inFile,int ibeam,int iband,int type);
 void sdhdf_loadData(sdhdf_fileStruct *inFile,int ibeam,int iband,float *in_data,int type);
 int  sdhdf_loadFlagData(sdhdf_fileStruct *inFile);
+
+// Calibration
+void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile);
 int  sdhdf_loadTcal(sdhdf_tcal_struct *tcalData,char *fname);
 int  sdhdf_loadTsys(sdhdf_fileStruct *inFile,int band,float *tsys);
 int  sdhdf_loadPhase(sdhdf_fileStruct *inFile,int band,float *phase);
