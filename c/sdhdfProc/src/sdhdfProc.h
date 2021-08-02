@@ -21,6 +21,7 @@
 #include <math.h>
 #include <hdf5.h>
 #include "sdhdf_v1.9.h"
+#include <complex.h>
 
 #define SOFTWARE_VER "v0.1"
 #define MAX_STRLEN     512
@@ -54,7 +55,10 @@ typedef struct sdhdf_calibration {
   float constant_b1;
   float constant_b2;
   float constant_r1;
-  float constant_r2;  
+  float constant_r2;
+
+  // PCM response
+  double complex response_pcm[2][2];
 
   // Time dependent properties
   double gain;
@@ -230,6 +234,8 @@ void sdhdf_ITRF_to_GRS80(double x,double y,double z,double *long_grs80,double *l
 // Mathematics
 //int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
 
+void sdhdf_copy_complex_matrix_2x2(double complex to[2][2],double complex from[2][2]);
+void sdhdf_complex_matrix_2x2(double complex J[2][2],double complex e00,double complex e01,double complex e10,double complex e11);
 void sdhdf_setIdentity_4x4(float mat[4][4]);
 void sdhdf_display_vec4(float *vec);
 void sdhdf_setFeed(float mf[4][4],float gamma);
