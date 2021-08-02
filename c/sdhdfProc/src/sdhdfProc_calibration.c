@@ -21,6 +21,49 @@
 #include <string.h>
 #include "sdhdfProc.h"
 #include "fitsio.h"
+#include <complex.h> 
+
+void sdhdf_set_pcm_response(sdhdf_calibration *polCal,double complex J1[2][2],double complex J2[2][2],double complex J3[2][2],double complex J4[2][2],
+			    double complex J5[2][2],double complex J6[2][2],double complex J7[2][2]);
+
+
+//
+// Routine to form the system response from a PCM parameterisation
+//
+void sdhdf_formPCM_response(sdhdf_calibration *polCal,int nPolCalChan)
+{
+  int i;
+
+  // The response is formed from 7 Jones matrices. The elements of the Jones matrices are complex
+  double complex J1[2][2];
+  double complex J2[2][2];
+  double complex J3[2][2];
+  double complex J4[2][2];
+  double complex J5[2][2];
+  double complex J6[2][2];
+  double complex J7[2][2];
+
+  for (i=0;i<nPolCalChan;i++)
+    {
+      sdhdf_complex_matrix_2x2(J1,polCal[i].constant_gain,0,0,polCal[i].constant_gain);
+      sdhdf_complex_matrix_2x2(J2,cosh(polCal[i].constant_diff_gain)+sinh(polCal[i].constant_diff_gain),0,0,cosh(polCal[i].constant_diff_gain)-sinh(polCal[i].constant_diff_gain));
+      sdhdf_complex_matrix_2x2(J3,cos(polCal[i].constant_diff_phase)+I*sin(polCal[i].constant_diff_phase),0,0,cos(polCal[i].constant_diff_phase)-I*sin(polCal[i].constant_diff_phase));
+      sdhdf_complex_matrix_2x2(J4,cosh(polCal[i].constant_b1),sinh(polCal[i].constant_b1),sinh(polCal[i].constant_b1),cosh(polCal[i].constant_b1));
+      sdhdf_complex_matrix_2x2(J5,cosh(polCal[i].constant_b2),-I*sinh(polCal[i].constant_b2),I*sinh(polCal[i].constant_b2),cosh(polCal[i].constant_b2));
+      sdhdf_complex_matrix_2x2(J6,cos(polCal[i].constant_r1),I*sin(polCal[i].constant_r1),I*sin(polCal[i].constant_r1),cos(polCal[i].constant_r1));
+      sdhdf_complex_matrix_2x2(J7,cos(polCal[i].constant_r2),sin(polCal[i].constant_r2),-sin(polCal[i].constant_r2),cos(polCal[i].constant_r2));
+
+      sdhdf_set_pcm_response(&polCal[i],J1,J2,J3,J4,J5,J6,J7);
+      
+    }
+}
+
+void sdhdf_set_pcm_response(sdhdf_calibration *polCal,double complex J1[2][2],double complex J2[2][2],double complex J3[2][2],double complex J4[2][2],
+			    double complex J5[2][2],double complex J6[2][2],double complex J7[2][2])
+{
+  sdhdf_copy_complex_matrix_2x2(polCal->response_pcm,J1);
+}
+
 
 //
 // Routine to load a PCM file (FITS format)

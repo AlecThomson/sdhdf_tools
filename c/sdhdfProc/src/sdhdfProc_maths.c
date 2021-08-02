@@ -20,8 +20,23 @@
 #include <math.h>
 #include <string.h>
 #include "sdhdfProc.h"
+#include <complex.h>
 
+void sdhdf_complex_matrix_2x2(double complex J[2][2],double complex e00,double complex e01,double complex e10,double complex e11)
+{
+  J[0][0] = e00;
+  J[1][0] = e01;
+  J[0][1] = e10;
+  J[1][1] = e11;
+}
 
+void sdhdf_copy_complex_matrix_2x2(double complex to[2][2],double complex from[2][2])
+{
+  to[0][0] = from[0][0];
+  to[0][1] = from[0][1];
+  to[1][0] = from[1][0];
+  to[1][1] = from[1][1];
+}
 
 void sdhdf_setIdentity_4x4(float mat[4][4])
 {
