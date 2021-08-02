@@ -15,6 +15,13 @@
  *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
  */
 
+
+// To fix:
+//
+// Should check if the user actually wants polarisation and flux calibration, or just 1
+// Need a way to read the calibration information from an earlier file - or inject an earlier cal into a different file
+// Need a way to specify which fluxcal/pcm file to use (and how the user can know what options exist)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,14 +87,22 @@ int main(int argc,char *argv[])
       else
 	{
 	  sdhdf_loadMetaData(inFile);
+
+	  // FIX ME: Should check if the user wants polarisation calibration	
+	  
+	  // Load the information within the PCM file
 	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm"); // REMOVE HARDCODE
+	  sdhdf_formPCM_response(polCal,nPolCalChan);
+
 	  for (j=0;j<nPolCalChan;j++)
 	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
 		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
 		   polCal[j].constant_gain,polCal[j].constant_diff_gain,polCal[j].constant_diff_phase,
 		   polCal[j].constant_b1,polCal[j].constant_b2,polCal[j].constant_r1,polCal[j].constant_r2);
-	  // Load the relevant PCM file
-	  // FIX ME: Should check if the user wants polarisation calibration	
+
+	  // Obtain NOISE ON - NOISE OFF
+	  // Should be able to do this from a different file ** FIX ME	  
+
 	  
 	  for (beam=0;beam<inFile->nBeam;beam++)
 	    {
