@@ -297,8 +297,8 @@ int main(int argc,char *argv[])
 
 			  out_data[ii+nchan*k*npol] = final_aa;
 			  out_data[ii+nchan*k*npol+nchan] = final_bb;
-			  out_data[ii+nchan*k*npol+nchan] = final_rab;
-			  out_data[ii+nchan*k*npol+nchan] = final_iab;
+			  out_data[ii+nchan*k*npol+2*nchan] = final_rab;
+			  out_data[ii+nchan*k*npol+3*nchan] = final_iab;
 			
 			  //			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
 			  //				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB);
