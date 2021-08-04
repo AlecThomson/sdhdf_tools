@@ -704,7 +704,7 @@ int main(int argc,char *argv[])
 			      */
 			    }
 			}
-		    
+		    		    
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
 		      if (tScrunch==1)
 			sdhdf_copySingleObsParams(inFile,b,ii,0,&outObsParams[0]);
@@ -727,7 +727,7 @@ int main(int argc,char *argv[])
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      dataWts   = (float *)calloc(sizeof(float),out_nchan*out_ndump);
 		      tav=0;
-		      
+		    
 		      sdhdf_loadBandData(inFile,b,ii,1);
 		      for (j=0;j<nchan;j++)
 			{
@@ -1453,7 +1453,7 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-
+		   
 		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      // Write out the obs_params file
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump,1);
