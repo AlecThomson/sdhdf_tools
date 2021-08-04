@@ -214,14 +214,10 @@ int main(int argc,char *argv[])
 	      nchan = onFile->beam[b].bandHeader[i].nchan;
 	      npol  = onFile->beam[b].bandHeader[i].npol;
 	      ndump = 1;
-	      printf("pos a\n");
 	      out_data = (float *)malloc(sizeof(float)*nchan*npol*ndump);
 	      freq = (float *)malloc(sizeof(float)*nchan);      
-	      printf("pos b\n");
 	      sdhdf_loadBandData(onFile,b,i,1);
-	      printf("pos c\n");
 	      sdhdf_loadBandData(offFile,b,i,1);
-	      printf("pos d\n");
 	      /* FIX ME
 		 sdhdf_loadFrequencyAttributes(onFile,i);
 		 sdhdf_loadDataAttributes(onFile,i);
@@ -231,7 +227,6 @@ int main(int argc,char *argv[])
 	      */
 	      for (k=0;k<nchan;k++)
 		freq[k] = onFile->beam[b].bandData[i].astro_data.freq[k];
-	      printf("Pos e\n");
 	      for (k=0;k<nchan;k++)
 		{
 		  // 0 here should be the spectral dump number
@@ -314,12 +309,11 @@ int main(int argc,char *argv[])
 	      
 	      // 0 should be replaced by dump number
 		}
-	      printf("Copying attributes\n");
 
 	      // Note that this is getting the attributes from the ON file -- really should check if they are the same as in the OFF file
 	      sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
 	      sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);	  
-	      printf("Done copying attributes\n");
+
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
 	      
