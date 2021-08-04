@@ -45,6 +45,45 @@ void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float min
 void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
 	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title);
 
+void help()
+{
+  printf("sdhdf_plotWide\n\n");
+  printf("Command line arguments\n\n");
+  printf("-dispAz               Display as a function of Azimuth\n");
+  printf("-flag <val1> <val2>   Flag data between val1 and val2 (MHz)\n");
+  printf("-g <grDevice>         Set PGPLOT graphics device for plot\n");
+  printf("-maxhold              Plot a 'max hold' spectrum\n");
+  printf("-maxx <val>           Maximum frequency to plot (MHz)\n");
+  printf("-maxy <val>           Maximumy-value for plot\n");
+  printf("-minx <val>           Minimum frequency to plot (MHz)\n");
+  printf("-miny <val>           Minimum y-value for plot\n");
+  printf("-nolog                Do not take the logarithm of the values\n");
+  printf("-sb <val>             Select specific sub-band\n");
+  printf("-sd <val>             Select specifc spectral dump\n");
+  printf("-shade <f0> <f1> <col> Shade region with colour 'col' between F0 and F1 in MHz\n");
+  printf("-splitRF              Split the plot into the 3 RF bands for the Parkes UWL receiver\n");
+  printf("-transmitters         Plot known RFI transmitters\n");
+  printf("-waterfall            Plot as a waterfall plot\n");
+  
+  printf("\n");
+  printf("Example usage: sdhdf_plotWide -nolog onoff.hdf\n");
+
+  printf("\n\n");
+  printf("Interactive key presses\n\n");
+  printf("left mouse click      Identify cursor position\n");
+  printf("h                     This help\n");
+  printf("m                     Toggle plotting the max hold spectrum\n");
+  printf("M                     Toggle plotting rest frequencies for molecular lines\n");
+  printf("q                     Quit\n");
+  printf("t                     Plot toggling transmitters\n");
+  printf("u                     Un-zoom back to original scale\n");
+  printf("w                     Set new minimum and maximum values\n");
+  printf("z                     Zoom into specific part of the spectrum\n");
+  
+
+}
+
+
 int main(int argc,char *argv[])
 {  
   int        i,j,k,l,ii;
@@ -101,7 +140,6 @@ int main(int argc,char *argv[])
   float flagF0[MAX_FLAG],flagF1[MAX_FLAG];
   int haveFlagged=0;
 
-  printf("Starting\n");
 
   miny = maxy = -1.0;
 
@@ -122,6 +160,7 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-minx")==0)
 	sscanf(argv[++i],"%f",&setMinX);
+      else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
       else if (strcmp(argv[i],"-maxx")==0)
 	sscanf(argv[++i],"%f",&setMaxX);
       else if (strcmp(argv[i],"-miny")==0)
@@ -140,7 +179,7 @@ int main(int argc,char *argv[])
 	strcpy(grDev,argv[++i]);
       else if (strcmp(argv[i],"-dispAz")==0)
 	dispAz=1;
-      else if (strcmp(argv[i],"-nolog")==0)
+      else if (strcasecmp(argv[i],"-nolog")==0)
 	log=0;
       else if (strcmp(argv[i],"-sd")==0)
 	sscanf(argv[++i],"%d",&sd);
@@ -326,8 +365,11 @@ int main(int argc,char *argv[])
 	  py2[i]/=(float)psum[i];
 	  if (log==1)
 	    {
-	      py1[i] = log10(py1[i]);
-	      py2[i] = log10(py2[i]);
+	      if (py1[i] > 0) py1[i] = log10(py1[i]);
+	      else py1[i] = -3; // FIX ME -- SHOULD SET SENSIBLY
+
+	      if (py2[i] > 0) py2[i] = log10(py2[i]);
+	      else py2[i] = -3; // FIX ME -- SHOULD SET SENSIBLY
 	      
 	      py1_max[i] = log10(py1_max[i]);
 	      py2_max[i] = log10(py2_max[i]);
@@ -594,6 +636,7 @@ int main(int argc,char *argv[])
 	    else
 	      printf("Please press 'z' and then move somewhere and click left mouse button\n");
 	  }
+	else if (key=='h') help();
 	else if (key=='A')
 	  printf("Mouse press at (%.6f,%g)\n",mx,my);		 
 	else if (key=='m')
