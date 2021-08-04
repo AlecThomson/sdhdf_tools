@@ -137,9 +137,21 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 
 	  if (normalise==1)
 	    {
-	      int calBin = 32; // FIX ME -- DON'T HARDCODE
-	      tdump = inFile->beam[ibeam].calBandHeader[iband].dtime;
-	      scaleFactor = 1.0/((double)nchanCal/(double)tdump*(double)calBin); // FIX ME -- SHOULD CHECK IF TDUMP IS CORRECT
+	      // NOT DOING NORMLIASTION HERE NOW *** CHECK LOTS OF TIMES
+	      //	      int calBin = 32; // FIX ME -- DON'T HARDCODE
+
+	      //	      calBin = 32;
+	      //	      calBin = 2;
+	      // bin - 32 => 10^-6
+	      // bin = 1 => 10^-4
+	      //	      tdump = inFile->beam[ibeam].calBandHeader[iband].dtime;
+	      // printf("tdump = %g\n",tdump);
+	      //	      fluxScale *= ((double)32768.0/(double)128. * (double)1.0/(double)32.0 * 5 /4.997); 
+	      //	      scaleFactor = 1.0/((double)nchanCal/(double)tdump*(double)calBin); // FIX ME -- SHOULD CHECK IF TDUMP IS CORRECT
+	      //	      scaleFactor = 1.0/((double)nchanCal/(double)calBin); // FIX ME -- SHOULD CHECK IF TDUMP IS CORRECT
+	      //	      scaleFactor = 1.0/((double)calBin*(double)nchanCal); // FIX ME -- SHOULD CHECK IF TDUMP IS CORRECT
+	      //	      scaleFactor = 1.0/((double)calBin*(double)nchanCal); // FIX ME -- SHOULD CHECK IF TDUMP IS CORRECT
+	      scaleFactor=1;
 	    }
 	  else
 	    scaleFactor=1;

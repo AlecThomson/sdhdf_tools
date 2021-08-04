@@ -101,7 +101,11 @@ int main(int argc,char *argv[])
   int normCal=0;    // Normalise the noise source counts
   int normAstro=0;  // Normalise the astronomy source counts
   double scaleFactor;
-  double tdumpAstro;
+  double tdumpAstro=-1;
+  int setTdumpAstro=0;
+  double tdumpCal=-1;
+  int nchanAstro=-1;
+  int setNchanAstro=0;
   
   char extension[1024];
   char oname[1024];
@@ -121,6 +125,10 @@ int main(int argc,char *argv[])
 	  normCal=1;
 	  normAstro=1;
 	}
+      else if (strcmp(argv[i],"-tdumpAstro")==0)
+	{sscanf(argv[++i],"%lf",&tdumpAstro); setTdumpAstro=1;}
+      else if (strcmp(argv[i],"-nchanAstro")==0)
+	{sscanf(argv[++i],"%d",&nchanAstro); setNchanAstro=1;}
       else if (strcmp(argv[i],"-h")==0)
 	help();
       else
@@ -219,8 +227,12 @@ int main(int argc,char *argv[])
 		  out_freq  = (float *)malloc(sizeof(float)*nchan);
 		  out_data  = (float *)calloc(sizeof(float),nchan*npol*ndump);
 		  dataWts   = (float *)calloc(sizeof(float),nchan*ndump);
-		  tdumpAstro = inFile->beam[b].bandHeader[j].dtime;
 
+		  if (setTdumpAstro==0)
+		    tdumpAstro = inFile->beam[b].bandHeader[j].dtime;
+		  if (setNchanAstro==0)
+		    nchanAstro = nchan;
+		  
 		  for (k=0;k<inFile->beam[b].bandHeader[j].ndump;k++)
 		    {		      
 		      //		      printf("Processing: %d %d %d\n",b,j,k);
@@ -233,13 +245,19 @@ int main(int argc,char *argv[])
 			      dataWts[ii]  = inFile->beam[b].bandData[j].astro_data.dataWeights[k*nchan+ii];
 			    }
 			  // FIX ME: SHOULD ACCOUNT FOR WEIGHTING
+
 			  if (normAstro==1)
-			    scaleFactor = 1.0/((double)nchan/(double)tdumpAstro); // FIX ME -- SHOULD CHECK IF TDUMPASTRO IS CORRECT
+			    {
+			      //			      printf("Normalising using tdumpAstro = %g and nchanAstro = %d\n",tdumpAstro,nchanAstro);
+			      //			      scaleFactor = 1.0/((double)nchanAstro/(double)tdumpAstro); 
+
+			    }
 			  else
 			    scaleFactor=1;
+			  scaleFactor=1;
 			  
-			  aa = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol1[ii+k*nchan];
-			  bb = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
+			  aa  = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol1[ii+k*nchan];
+			  bb  = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
 			  rab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
 			  iab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
 			  // FIX ME HARDCDE
@@ -306,14 +324,28 @@ int main(int argc,char *argv[])
 			  // printf("%d finalJ ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
 
 			  fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
+
+			  if (normAstro == 1 || normCal==1)// Currently normalising both
+			    {
+			      int nbinCal = 32; // WARNING HARDCODED
+			      nchanCal = inFile->beam[b].calBandHeader[j].nchan;
+			      tdumpCal = inFile->beam[b].calBandHeader[j].dtime;
+			      fluxScale *= ((double)nchanAstro/(double)nchanCal * (double)1.0/(double)nbinCal * tdumpCal /tdumpAstro); 
+			    }
+			  // NORMALISATION
+			  //			  fluxScale *= ((double)262144.0/(double)128. * (double)1.0/(double)32.0 * 5 /0.983);
+			  //			  fluxScale *= ((double)32768.0/(double)128. * (double)1.0/(double)32.0 * 5 /4.997); 
+			  //			  /262144./128.*5./0.983/32.
+
+
 			  //			  fluxScale = 1;
 			  final_aa  = fluxScale*creal(finalJ[0][0]);
 			  final_bb  = fluxScale*creal(finalJ[1][1]);
 			  final_rab = fluxScale*creal(finalJ[1][0]);
 			  final_iab = fluxScale*cimag(finalJ[0][1]);
 
-			  out_data[ii+nchan*k*npol] = final_aa;
-			  out_data[ii+nchan*k*npol+nchan] = final_bb;
+			  out_data[ii+nchan*k*npol]         = final_aa;
+			  out_data[ii+nchan*k*npol+nchan]   = final_bb;
 			  out_data[ii+nchan*k*npol+2*nchan] = final_rab;
 			  out_data[ii+nchan*k*npol+3*nchan] = final_iab;
 			
