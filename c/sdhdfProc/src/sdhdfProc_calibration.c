@@ -93,7 +93,7 @@ void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolC
     }
     
 }
-void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan)
+void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan,int normalise)
 {
   int i,j;
   int ichan,nchanCal,ndumpCal;
@@ -103,6 +103,8 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
   double aa,bb,rab,iab;
   double aa_on,bb_on,rab_on,iab_on;
   double aa_off,bb_off,rab_off,iab_off;
+  double scaleFactor;
+  double tdump;
   
   for (i=0;i<nPolCalChan;i++)
     {
@@ -132,6 +134,16 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	  aa_off = bb_off = rab_off = iab_off = 0.0;
 	  nchanCal = inFile->beam[ibeam].calBandHeader[iband].nchan;
 	  ndumpCal = inFile->beam[ibeam].calBandHeader[iband].ndump;
+
+	  if (normalise==1)
+	    {
+	      int calBin = 32; // FIX ME -- DON'T HARDCODE
+	      tdump = inFile->beam[ibeam].calBandHeader[iband].dtime;
+	      scaleFactor = 1.0/((double)nchanCal/(double)tdump*(double)calBin); // FIX ME -- SHOULD CHECK IF TDUMP IS CORRECT
+	    }
+	  else
+	    scaleFactor=1;
+
 	  for (j=0;j<ndumpCal;j++)
 	    {
 	      // FIX ME -- SHOULD ACCOUNT FOR ANY WEIGHTING
@@ -153,10 +165,10 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	  iab_on /= (double)ndumpCal;	  iab_off /= (double)ndumpCal;
 
 	  // FIX ME -- should check for OFF > ON issues
-	  aa = aa_on-aa_off;
-	  bb = bb_on-bb_off;
-	  rab = rab_on-rab_off;
-	  iab = iab_on-iab_off;
+	  aa = (aa_on-aa_off)*scaleFactor;
+	  bb = (bb_on-bb_off)*scaleFactor;
+	  rab = (rab_on-rab_off)*scaleFactor;
+	  iab = (iab_on-iab_off)*scaleFactor;
 
 	  // HARDCODE FIX
 	  /*

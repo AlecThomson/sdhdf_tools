@@ -98,6 +98,11 @@ int main(int argc,char *argv[])
   int npol,nchan,ndump,nchanCal,ndumpCal;
   int ichan;
 
+  int normCal=0;    // Normalise the noise source counts
+  int normAstro=0;  // Normalise the astronomy source counts
+  double scaleFactor;
+  double tdumpAstro;
+  
   char extension[1024];
   char oname[1024];
   char args[MAX_STRLEN]="";
@@ -111,6 +116,11 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-e")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
+      else if (strcmp(argv[i],"-norm")==0)
+	{
+	  normCal=1;
+	  normAstro=1;
+	}
       else if (strcmp(argv[i],"-h")==0)
 	help();
       else
@@ -171,7 +181,7 @@ int main(int argc,char *argv[])
 
 	  // Request CAL_ON-CAL_OFF for specfic frequency covered by the PCM file
 	  beam=0; // FIX ME
-	  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan);
+	  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan,normCal);
 	  sdhdf_calculate_gain_diffgain_diffphase(polCal,nPolCalChan);
 	  sdhdf_calculate_timedependent_response(polCal,nPolCalChan);
 
@@ -209,8 +219,10 @@ int main(int argc,char *argv[])
 		  out_freq  = (float *)malloc(sizeof(float)*nchan);
 		  out_data  = (float *)calloc(sizeof(float),nchan*npol*ndump);
 		  dataWts   = (float *)calloc(sizeof(float),nchan*ndump);
+		  tdumpAstro = inFile->beam[b].bandHeader[j].dtime;
+
 		  for (k=0;k<inFile->beam[b].bandHeader[j].ndump;k++)
-		    {
+		    {		      
 		      //		      printf("Processing: %d %d %d\n",b,j,k);
 		      for (ii=0;ii<nchan;ii++)
 			{
@@ -221,10 +233,15 @@ int main(int argc,char *argv[])
 			      dataWts[ii]  = inFile->beam[b].bandData[j].astro_data.dataWeights[k*nchan+ii];
 			    }
 			  // FIX ME: SHOULD ACCOUNT FOR WEIGHTING
-			  aa = inFile->beam[b].bandData[j].astro_data.pol1[ii+k*nchan];
-			  bb = inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
-			  rab = inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
-			  iab = inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
+			  if (normAstro==1)
+			    scaleFactor = 1.0/((double)nchan/(double)tdumpAstro); // FIX ME -- SHOULD CHECK IF TDUMPASTRO IS CORRECT
+			  else
+			    scaleFactor=1;
+			  
+			  aa = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol1[ii+k*nchan];
+			  bb = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
+			  rab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
+			  iab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
 			  // FIX ME HARDCDE
 			  /*
 			  aa = 1157.44;
