@@ -27,6 +27,269 @@ void sdhdf_set_pcm_response(sdhdf_calibration *polCal,double complex J1[2][2],do
 			    double complex J5[2][2],double complex J6[2][2],double complex J7[2][2]);
 
 
+void sdhdf_calculate_timedependent_response(sdhdf_calibration *polCal,int nPolCalChan)
+{
+  int i;
+  double complex gain[2][2];
+  double complex diffgain[2][2];
+  double complex diffphase[2][2];  
+  double complex R1[2][2];
+  double complex R1_inv[2][2];
+
+  
+  for (i=0;i<nPolCalChan;i++)
+    {
+      sdhdf_complex_matrix_2x2(gain,polCal[i].gain,0,0,polCal[i].gain);
+      sdhdf_complex_matrix_2x2(diffgain,cosh(polCal[i].diff_gain) + sinh(polCal[i].diff_gain),0,0,cosh(polCal[i].diff_gain) - sinh(polCal[i].diff_gain));
+      sdhdf_complex_matrix_2x2(diffphase,cos(polCal[i].diff_phase) + I*sin(polCal[i].diff_phase),0,0,cos(polCal[i].diff_phase) - I*sin(polCal[i].diff_phase));
+      
+      sdhdf_copy_complex_matrix_2x2(R1,gain);
+      sdhdf_multiply_complex_matrix_2x2(R1,diffgain);
+      sdhdf_multiply_complex_matrix_2x2(R1,diffphase);
+
+      // Now we multiply this by the system response
+      sdhdf_multiply_complex_matrix_2x2(R1,polCal[i].response_pcm);
+
+      // Now we need the inverse of this
+      if (sdhdf_complex_matrix_2x2_inverse(R1,R1_inv)==1) 
+	polCal[i].bad=1;
+      else
+	{
+	  // We are able to form an inverse
+	  sdhdf_copy_complex_matrix_2x2(polCal[i].td_response,R1_inv);
+	  //	  printf("%d set td_response = ",i);
+	  //	  sdhdf_display_complex_matrix_2x2(polCal[i].td_response);
+
+	}
+    }
+}
+
+
+
+
+void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolCalChan)
+{
+  int i;
+  double In,Qn,Un,Vn;
+  double Im,Qm,Um,Vm;
+  double G2;
+  for (i=0;i<nPolCalChan;i++)
+    {
+      In = polCal[i].stokes_noise_actual[0];
+      Qn = polCal[i].stokes_noise_actual[1];
+      Un = polCal[i].stokes_noise_actual[2];
+      Vn = polCal[i].stokes_noise_actual[3];
+
+      Im = polCal[i].stokes_noise_measured[0];
+      Qm = polCal[i].stokes_noise_measured[1];
+      Um = polCal[i].stokes_noise_measured[2];
+      Vm = polCal[i].stokes_noise_measured[3];
+
+      polCal[i].diff_gain = 0.5*atanh((In*Qm-Im*Qn)/(In*Im - Qn*Qm));
+      polCal[i].diff_phase = 0.5*atan2(Um*Vn - Vm*Un,Un*Um + Vn*Vm);
+
+      G2 = sqrt((pow(Im,2) - pow(Qm,2))/(pow(In,2)-pow(Qn,2)));
+      polCal[i].gain = sqrt(G2);
+    }
+    
+}
+void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan)
+{
+  int i,j;
+  int ichan,nchanCal,ndumpCal;
+  int iband=-1;
+  double freq,f0,f1;
+  double chbw;
+  double aa,bb,rab,iab;
+  double aa_on,bb_on,rab_on,iab_on;
+  double aa_off,bb_off,rab_off,iab_off;
+  
+  for (i=0;i<nPolCalChan;i++)
+    {
+      // Should set better or using interpolation -- FIX ME
+      freq = polCal[i].freq;
+      iband=-1;
+      for (j=0;j<inFile->beam[ibeam].nBand;j++)   // CAN SPEED THIS UP -- DON'T NEED TO CHECK SO OFTEN
+	{
+	  f0   = inFile->beam[ibeam].bandHeader[j].f0;
+	  f1   = inFile->beam[ibeam].bandHeader[j].f1;
+	  if (freq >= f0 && freq <= f1)
+	    {
+	      iband=j;
+	      break;
+	    }
+	}
+      if (iband==-1)
+	polCal[i].bad=1;
+      else
+	{
+	  sdhdf_loadBandData(inFile,ibeam,iband,2);
+	  sdhdf_loadBandData(inFile,ibeam,iband,3);
+	  f0   = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[0];
+	  chbw = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[1]-f0;
+	  ichan = (int)(((freq - f0)/(double)chbw)+0.5);  // FIX ME -- DOUBLE CHECK THIS AND INTERPOLATE IF NEEDED
+	  aa_on = bb_on = rab_on = iab_on = 0.0;
+	  aa_off = bb_off = rab_off = iab_off = 0.0;
+	  nchanCal = inFile->beam[ibeam].calBandHeader[iband].nchan;
+	  ndumpCal = inFile->beam[ibeam].calBandHeader[iband].ndump;
+	  for (j=0;j<ndumpCal;j++)
+	    {
+	      // FIX ME -- SHOULD ACCOUNT FOR ANY WEIGHTING
+	      aa_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol1[j*nchanCal+ichan];
+	      aa_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol1[j*nchanCal+ichan];
+	      bb_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol2[j*nchanCal+ichan];
+	      bb_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol2[j*nchanCal+ichan];
+	      rab_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol3[j*nchanCal+ichan];
+	      rab_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol3[j*nchanCal+ichan];
+	      iab_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol4[j*nchanCal+ichan];
+	      iab_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol4[j*nchanCal+ichan];
+	    }
+	  sdhdf_releaseBandData(inFile,ibeam,iband,2);
+	  sdhdf_releaseBandData(inFile,ibeam,iband,3);
+
+	  aa_on /= (double)ndumpCal;	  aa_off /= (double)ndumpCal;
+	  bb_on /= (double)ndumpCal;	  bb_off /= (double)ndumpCal;
+	  rab_on /= (double)ndumpCal;	  rab_off /= (double)ndumpCal;
+	  iab_on /= (double)ndumpCal;	  iab_off /= (double)ndumpCal;
+
+	  // FIX ME -- should check for OFF > ON issues
+	  aa = aa_on-aa_off;
+	  bb = bb_on-bb_off;
+	  rab = rab_on-rab_off;
+	  iab = iab_on-iab_off;
+
+	  // HARDCODE FIX
+	  /*
+	  aa = 23.3073;
+	  bb = 19.66;
+	  rab = -16.3943;
+	  iab = -4.90985;
+	  */
+	  
+	  polCal[i].stokes_noise_measured[0] = aa+bb;
+	  polCal[i].stokes_noise_measured[1] = aa-bb;
+	  polCal[i].stokes_noise_measured[2] = 2*rab;
+	  polCal[i].stokes_noise_measured[3] = 2*iab;
+	}
+    }
+}
+
+
+// Find the best estimate of the noise source Stokes parameters for the specified frequency
+// FIX ME: Currently only doing a linear interpolation
+// FIX ME: IMPORTANT: ISSUE IN THAT SHOULDN'T INTERPOLATE USING BAD ENTIRES (AS THEY ARE ZERO)
+void sdhdf_get_pcmcal_stokes(double freq,sdhdf_calibration *polCal,int nPolCalChan,double *actualNoiseStokes)
+{
+  int i;
+  double m,c,y1,y2,x1,x2;
+  int set=0;
+  double aa,bb,cc,dd;
+
+  aa=bb=cc=dd=0.0; 
+  
+  for (i=0;i<nPolCalChan-1;i++)
+    {
+      if (freq <= polCal[i].freq)
+	{
+	  if (i!=0)
+	    {
+	      // Stokes I
+	      //
+	      x1 = polCal[i-1].freq; x2 = polCal[i].freq;
+	      y1 = polCal[i-1].noiseSource_I_postResponse; y2 = polCal[i].noiseSource_I_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      aa = m*freq+c; 
+
+	      // Stokes Q
+	      //
+	      y1 = polCal[i-1].noiseSource_Q_postResponse; y2 = polCal[i].noiseSource_Q_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      bb = m*freq+c; 
+
+	      // Stokes U
+	      //
+	      y1 = polCal[i-1].noiseSource_U_postResponse; y2 = polCal[i].noiseSource_U_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      cc = m*freq+c; 
+
+	      // Stokes V
+	      //
+	      y1 = polCal[i-1].noiseSource_V_postResponse; y2 = polCal[i].noiseSource_V_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      dd = m*freq+c; 
+
+	    }
+	  else
+	    {
+	      // Stokes I
+	      //
+	      x1 = polCal[i+1].freq; x2 = polCal[i].freq;
+	      y1 = polCal[i+1].noiseSource_I_postResponse; y2 = polCal[i].noiseSource_I_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      aa = m*freq+c; 
+
+	      // Stokes Q
+	      //
+	      y1 = polCal[i+1].noiseSource_Q_postResponse; y2 = polCal[i].noiseSource_Q_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      bb = m*freq+c; 
+
+	      // Stokes U
+	      //
+	      y1 = polCal[i+1].noiseSource_U_postResponse; y2 = polCal[i].noiseSource_U_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      cc = m*freq+c; 
+
+	      // Stokes V
+	      //
+	      y1 = polCal[i+1].noiseSource_V_postResponse; y2 = polCal[i].noiseSource_V_postResponse;
+	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+	      dd = m*freq+c; 
+
+
+	    }
+	  set=1;
+	      
+	  break;
+	}
+    }
+  if (set==0)
+    {
+      // Stokes I
+      //
+      x1 = polCal[i-2].freq; x2 = polCal[i-1].freq;
+      y1 = polCal[i-2].noiseSource_I_postResponse; y2 = polCal[i-1].noiseSource_I_postResponse;
+      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+      aa = m*freq+c; 
+      
+      // Stokes Q
+      //
+      y1 = polCal[i-2].noiseSource_Q_postResponse; y2 = polCal[i-1].noiseSource_Q_postResponse;
+      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+      bb = m*freq+c; 
+      
+      // Stokes U
+      //
+      y1 = polCal[i-2].noiseSource_U_postResponse; y2 = polCal[i-1].noiseSource_U_postResponse;
+      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+      cc = m*freq+c; 
+      
+      // Stokes V
+      //
+      y1 = polCal[i-2].noiseSource_V_postResponse; y2 = polCal[i-1].noiseSource_V_postResponse;
+      m = (y2-y1)/(x2-x1); c = y1-m*x1;
+      dd = m*freq+c; 
+
+
+      
+    }
+  actualNoiseStokes[0] = aa;
+  actualNoiseStokes[1] = bb;
+  actualNoiseStokes[2] = cc;
+  actualNoiseStokes[3] = dd;
+  
+}
+
 //
 // Routine to form the system response from a PCM parameterisation
 //
@@ -43,17 +306,72 @@ void sdhdf_formPCM_response(sdhdf_calibration *polCal,int nPolCalChan)
   double complex J6[2][2];
   double complex J7[2][2];
 
+  // Note this is "feed" in PSRCHIVE, but probably more relates to the injection of the noise source into the LNAs (for the Parkes UWL)
+  double complex feed[2][2];
+  double alpha = -45.0*M_PI/180.0;  // FIX ME -- DON'T HARDCODE
+
+  // Hermition of response
+  double complex Rdag[2][2];
+  
+  // Coherency products for the noise source
+  double complex rho[2][2];
+  double complex R_rho_Rdag[2][2];
+  
+  sdhdf_complex_matrix_2x2(feed,0-I*sin(alpha),0+I*cos(alpha),0+I*cos(alpha),0+I*sin(alpha));
+  //  sdhdf_complex_matrix_2x2(feed,1,0,0,1);
+  //  printf("Feed = \n");
+  //  sdhdf_display_complex_matrix_2x2(feed);
+    
   for (i=0;i<nPolCalChan;i++)
     {
-      sdhdf_complex_matrix_2x2(J1,polCal[i].constant_gain,0,0,polCal[i].constant_gain);
-      sdhdf_complex_matrix_2x2(J2,cosh(polCal[i].constant_diff_gain)+sinh(polCal[i].constant_diff_gain),0,0,cosh(polCal[i].constant_diff_gain)-sinh(polCal[i].constant_diff_gain));
+      sdhdf_complex_matrix_2x2(J1,polCal[i].constant_gain,0,0,polCal[i].constant_gain);      
+      sdhdf_complex_matrix_2x2(J2,(cosh(polCal[i].constant_diff_gain)+sinh(polCal[i].constant_diff_gain)),0,0,(cosh(polCal[i].constant_diff_gain)-sinh(polCal[i].constant_diff_gain)));
+      //      sdhdf_display_complex_matrix_2x2(J2);
+
       sdhdf_complex_matrix_2x2(J3,cos(polCal[i].constant_diff_phase)+I*sin(polCal[i].constant_diff_phase),0,0,cos(polCal[i].constant_diff_phase)-I*sin(polCal[i].constant_diff_phase));
       sdhdf_complex_matrix_2x2(J4,cosh(polCal[i].constant_b1),sinh(polCal[i].constant_b1),sinh(polCal[i].constant_b1),cosh(polCal[i].constant_b1));
       sdhdf_complex_matrix_2x2(J5,cosh(polCal[i].constant_b2),-I*sinh(polCal[i].constant_b2),I*sinh(polCal[i].constant_b2),cosh(polCal[i].constant_b2));
       sdhdf_complex_matrix_2x2(J6,cos(polCal[i].constant_r1),I*sin(polCal[i].constant_r1),I*sin(polCal[i].constant_r1),cos(polCal[i].constant_r1));
       sdhdf_complex_matrix_2x2(J7,cos(polCal[i].constant_r2),sin(polCal[i].constant_r2),-sin(polCal[i].constant_r2),cos(polCal[i].constant_r2));
-
       sdhdf_set_pcm_response(&polCal[i],J1,J2,J3,J4,J5,J6,J7);
+
+      // Add in feed response
+      sdhdf_copy_complex_matrix_2x2(polCal[i].response_pcm_feed,polCal[i].response_pcm);
+      sdhdf_multiply_complex_matrix_2x2(polCal[i].response_pcm_feed,feed); // FIX ME -- NOT RESPONSE_PCM
+
+
+      sdhdf_complex_matrix_2x2_dagger(polCal[i].response_pcm_feed,Rdag);
+
+      //      printf("%d Response_pcm = ",i);
+      //      sdhdf_display_complex_matrix_2x2(polCal[i].response_pcm_feed);
+
+      
+      // Now we have the response of the system in terms of the noise source.
+      // We now can apply that to the "actual" Stokes parameters of the noise source
+      sdhdf_complex_matrix_2x2(rho,
+			       0.5*(1.0+polCal[i].noiseSource_QoverI),
+			       0.5*(polCal[i].noiseSource_UoverI - I*polCal[i].noiseSource_VoverI),
+			       0.5*(polCal[i].noiseSource_UoverI + I*polCal[i].noiseSource_VoverI),
+			       0.5*(1.0-polCal[i].noiseSource_QoverI));
+      //      printf("%d rho = ",i);
+      //      sdhdf_display_complex_matrix_2x2(rho);
+
+      sdhdf_copy_complex_matrix_2x2(R_rho_Rdag,polCal[i].response_pcm_feed);
+      sdhdf_multiply_complex_matrix_2x2(R_rho_Rdag,rho);
+      //      printf("%d J rho = ",i);
+      // This doesn't seem identical to the PSRCHIVE version -- CHECK?   FIX ME
+      //      sdhdf_display_complex_matrix_2x2(R_rho_Rdag);
+
+      sdhdf_multiply_complex_matrix_2x2(R_rho_Rdag,Rdag); // R * rho * R^dagger
+      //      printf("%d Response_rho_Rdag = ",i);
+      //      sdhdf_display_complex_matrix_2x2(R_rho_Rdag);
+
+      polCal[i].stokes_noise_actual[0] = creal(R_rho_Rdag[0][0])+creal(R_rho_Rdag[1][1]);
+      polCal[i].stokes_noise_actual[1] = creal(R_rho_Rdag[0][0])-creal(R_rho_Rdag[1][1]);
+      polCal[i].stokes_noise_actual[2] = 2*creal(R_rho_Rdag[1][0]);
+      polCal[i].stokes_noise_actual[3] = 2*cimag(R_rho_Rdag[0][1]);
+      //      printf("Noise source postResponse = (%g,%g,%g,%g)\n",polCal[i].stokes_noise_actual[0],
+      //	     polCal[i].stokes_noise_actual[1],polCal[i].stokes_noise_actual[2],polCal[i].stokes_noise_actual[3]);
       
     }
 }
@@ -62,6 +380,12 @@ void sdhdf_set_pcm_response(sdhdf_calibration *polCal,double complex J1[2][2],do
 			    double complex J5[2][2],double complex J6[2][2],double complex J7[2][2])
 {
   sdhdf_copy_complex_matrix_2x2(polCal->response_pcm,J1);
+  sdhdf_multiply_complex_matrix_2x2(polCal->response_pcm,J2);  
+  sdhdf_multiply_complex_matrix_2x2(polCal->response_pcm,J3);
+  sdhdf_multiply_complex_matrix_2x2(polCal->response_pcm,J4);
+  sdhdf_multiply_complex_matrix_2x2(polCal->response_pcm,J5);
+  sdhdf_multiply_complex_matrix_2x2(polCal->response_pcm,J6);
+  sdhdf_multiply_complex_matrix_2x2(polCal->response_pcm,J7);
 }
 
 
@@ -143,20 +467,36 @@ void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory,
   data = (float *)malloc(sizeof(float)*nchan_pcm*7);
   fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum_data,&status);
 
-  printf("data column = %d\n",colnum_data);
+
   fits_report_error(stderr,status);
   // NOTE SOME OF THESE SEEM TO BE NAN - BE CAREFUL READING IN -- FIX ME
   fits_read_col(fptr,TFLOAT,colnum_data,1,1,nchan_pcm*7,&n_fval,data,&initflag,&status);
   fits_report_error(stderr,status);
   for (i=0;i<nchan_cal_poln;i++)
     {
-      polCal[i].constant_gain = data[i*7];
-      polCal[i].constant_diff_gain = data[i*7+1];
-      polCal[i].constant_diff_phase = data[i*7+2];
-      polCal[i].constant_b1 = data[i*7+3];
-      polCal[i].constant_b2 = data[i*7+4];
-      polCal[i].constant_r1 = data[i*7+5];
-      polCal[i].constant_r2 = data[i*7+6];	    
+      if (isnan(data[i*7+6]) || isnan(data[i*7+5]) || isnan(data[i*7+5]) ||
+	  isnan(data[i*7+4]) || isnan(data[i*7+3]) || isnan(data[i*7+2]) || isnan(data[i*7+1]) || isnan(data[i*7+0]))
+	{
+	  polCal[i].constant_gain = 0;
+	  polCal[i].constant_diff_gain = 0;
+	  polCal[i].constant_diff_phase = 0;
+	  polCal[i].constant_b1 = 0;
+	  polCal[i].constant_b2 = 0;
+	  polCal[i].constant_r1 = 0;
+	  polCal[i].constant_r2 = 0;
+	  polCal[i].bad = 1;
+	}
+      else
+	{
+	  polCal[i].constant_gain = data[i*7];
+	  polCal[i].constant_diff_gain = data[i*7+1];
+	  polCal[i].constant_diff_phase = data[i*7+2];
+	  polCal[i].constant_b1 = data[i*7+3];
+	  polCal[i].constant_b2 = data[i*7+4];
+	  polCal[i].constant_r1 = data[i*7+5];
+	  polCal[i].constant_r2 = data[i*7+6];
+	  polCal[i].bad = 0;
+	}
     }
   free(data);
 
@@ -230,4 +570,70 @@ void sdhdf_convertStokes(float p1,float p2,float p3,float p4,float *stokesI,floa
   *stokesQ = p1 - p2;
   *stokesU = 2*p3;
   *stokesV = 2*p4;
+}
+
+//
+// Routine to load a PCM file (FITS format)
+// to model cross-coupling within the receiver and noise source system
+//
+void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile)
+{
+  int status=0;
+  fitsfile *fptr;
+  char fname[1024];
+  char runtimeDir[1024];
+  int nchan;
+  
+  int colnum_data,colnum_freq;
+  float *data;
+  double *dataFreq;
+  
+  float n_fval=0;
+  double n_dval=0;
+  
+  int initflag=0;
+  int i,j;
+
+  
+  if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("=======================================================================\n");
+      printf("Error: sdhdfProc_calibration requires that the SDHDF_RUNTIME directory is set\n");
+      printf("=======================================================================\n");
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  sprintf(fname,"%s/observatory/%s/calibration/%s/%s",runtimeDir,observatory,rcvr,fluxCalFile);
+  printf("Opening: %s\n",fname);
+  
+  fits_open_file(&fptr,fname,READONLY,&status);
+  fits_report_error(stderr,status);
+
+  fits_movnam_hdu(fptr,BINARY_TBL,"FLUX_CAL",1,&status);
+  fits_read_key(fptr,TINT,"NCHAN",&nchan,NULL,&status);
+  //  printf("Number of channels = %d\n",nchan);
+  fits_get_colnum(fptr,CASEINSEN,"S_CAL",&colnum_data,&status);
+
+  data = (float *)malloc(sizeof(float)*nchan*2); // HAVE AA and BB
+  fits_read_col(fptr,TFLOAT,colnum_data,1,1,nchan*2,&n_fval,data,&initflag,&status);
+  for (i=0;i<nchan;i++)
+    {
+      fluxCal[i].scalAA = data[i]/1000.; // /1000. because stored in mJy
+      fluxCal[i].scalBB = data[nchan+i]/1000.; // Note stored as all AA then all BB
+      //      printf("scal = %d %g %g\n",i,fluxCal[i].scalAA,fluxCal[i].scalBB);
+    }
+  *nFluxCalChan = nchan;
+  free(data);
+  
+  // Read the frequency axis
+  dataFreq = (double *)malloc(sizeof(double)*nchan);
+  fits_get_colnum(fptr,CASEINSEN,"DAT_FREQ",&colnum_freq,&status);
+  fits_read_col(fptr,TDOUBLE,colnum_freq,1,1,nchan,&n_dval,dataFreq,&initflag,&status);
+  fits_report_error(stderr,status);
+  for (i=0;i<nchan;i++)
+    fluxCal[i].freq = dataFreq[i];
+  
+  free(dataFreq);
+
+  fits_close_file(fptr,&status);
 }

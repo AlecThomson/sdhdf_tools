@@ -851,7 +851,7 @@ void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float 
   herr_t status;
 
 
-  printf("In here and writing data weights for ndump and nchan = %d and %d\n",ndump,nchan);
+  //  printf("In here and writing data weights for ndump and nchan = %d and %d\n",ndump,nchan);
   dims[0] = ndump; 
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);

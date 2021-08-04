@@ -22,20 +22,114 @@
 #include "sdhdfProc.h"
 #include <complex.h>
 
-void sdhdf_complex_matrix_2x2(double complex J[2][2],double complex e00,double complex e01,double complex e10,double complex e11)
+
+// FIX ME: Check this one
+// Conjugate and transpose
+void sdhdf_complex_matrix_2x2_dagger(double complex R[2][2],double complex Rdag[2][2])
 {
+  Rdag[0][0] = creal(R[0][0])-I*cimag(R[0][0]);
+  Rdag[0][1] = creal(R[1][0])-I*cimag(R[1][0]);
+  Rdag[1][0] = creal(R[0][1])-I*cimag(R[0][1]);
+  Rdag[1][1] = creal(R[1][1])-I*cimag(R[1][1]);
+}
+
+// CHECK THIS ONE VERY CAREFULLY --- FIX ME
+// return 0 if okay
+// return 1 if bad
+int sdhdf_complex_matrix_2x2_inverse(double complex a[2][2],double complex inv[2][2])
+{
+  double complex det;
+  double rdet;
+  
+  det = a[0][0]*a[1][1] - a[1][0]*a[0][1];
+  rdet = creal(det);
+  if (isnan(rdet) || rdet == 0)
+    return 1;
+
+
+  inv[0][0] =  1.0/rdet * a[1][1];
+  inv[1][0] = -1.0/rdet * a[1][0];
+  inv[0][1] = -1.0/rdet * a[0][1];
+  inv[1][1] =  1.0/rdet * a[0][0];
+  return 0;
+}
+
+
+void sdhdf_complex_matrix_2x2(double complex J[2][2],double complex e00,double complex e10,double complex e01,double complex e11)
+{
+  //  printf("Entering with %g %g %g %g\n",creal(e00),creal(e10),creal(e01),creal(e11));
+  //  printf("Entering with %g %g %g %g\n",cimag(e00),cimag(e10),cimag(e01),cimag(e11));
   J[0][0] = e00;
-  J[1][0] = e01;
-  J[0][1] = e10;
+  J[1][0] = e10;
+  J[0][1] = e01;
   J[1][1] = e11;
 }
 
 void sdhdf_copy_complex_matrix_2x2(double complex to[2][2],double complex from[2][2])
 {
   to[0][0] = from[0][0];
-  to[0][1] = from[0][1];
   to[1][0] = from[1][0];
+  to[0][1] = from[0][1];
   to[1][1] = from[1][1];
+}
+
+void sdhdf_multiply_complex_matrix_2x2(double complex a[2][2],double complex b[2][2])
+{
+  double a_11r,a_11i;
+  double a_12r,a_12i;
+  double a_21r,a_21i;
+  double a_22r,a_22i;
+
+  double b_11r,b_11i;
+  double b_12r,b_12i;
+  double b_21r,b_21i;
+  double b_22r,b_22i;
+
+  double c_11r,c_11i;
+  double c_12r,c_12i;
+  double c_21r,c_21i;
+  double c_22r,c_22i;
+
+
+  a_11r = creal(a[0][0]); a_11i = cimag(a[0][0]);
+  a_12r = creal(a[1][0]); a_12i = cimag(a[1][0]);
+  a_21r = creal(a[0][1]); a_21i = cimag(a[0][1]);
+  a_22r = creal(a[1][1]); a_22i = cimag(a[1][1]);
+
+  b_11r = creal(b[0][0]); b_11i = cimag(b[0][0]);
+  b_12r = creal(b[1][0]); b_12i = cimag(b[1][0]);
+  b_21r = creal(b[0][1]); b_21i = cimag(b[0][1]);
+  b_22r = creal(b[1][1]); b_22i = cimag(b[1][1]);
+  
+  c_11r = a_11r*b_11r - a_11i*b_11i + a_12r*b_21r - a_12i*b_21i;
+  c_11i = a_11i*b_11r + a_11r*b_11i + a_12i*b_21r + a_12r*b_21i;
+
+  c_12r = a_11r*b_12r - a_11i*b_12i + a_12r*b_22r - a_12i*b_22i;
+  c_12i = a_11i*b_12r + a_11r*b_12i + a_12i*b_22r + a_12r*b_22i;
+
+  c_21r = a_21r*b_11r - a_21i*b_11i + a_22r*b_21r - a_22i*b_21i;
+  c_21i = a_21i*b_11r + a_21r*b_11i + a_22i*b_21r + a_22r*b_21i;
+
+  c_22r = a_21r*b_12r - a_21i*b_12i + a_22r*b_22r - a_22i*b_22i;
+  c_22i = a_21i*b_12r + a_21r*b_12i + a_22i*b_22r + a_22r*b_22i;
+
+  // Now replace
+  a[0][0] = c_11r + I*c_11i;
+  a[1][0] = c_12r + I*c_12i;
+  a[0][1] = c_21r + I*c_21i;
+  a[1][1] = c_22r + I*c_22i;
+  
+}
+
+
+void sdhdf_display_complex_matrix_2x2(double complex J[2][2])
+{
+  /*
+  printf("%g + i%g         %g + i%g\n",creal(J[0][0]),cimag(J[0][0]),creal(J[1][0]),cimag(J[1][0]));
+  printf("%g + i%g         %g + i%g\n",creal(J[0][1]),cimag(J[0][1]),creal(J[1][1]),cimag(J[1][1]));
+  */
+
+  printf("%g + i%g         %g + i%g      %g + i%g      %g + i%g\n",creal(J[0][0]),cimag(J[0][0]),creal(J[1][0]),cimag(J[1][0]),creal(J[0][1]),cimag(J[0][1]),creal(J[1][1]),cimag(J[1][1]));
 }
 
 void sdhdf_setIdentity_4x4(float mat[4][4])

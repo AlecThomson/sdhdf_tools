@@ -40,6 +40,7 @@
 
 // Structure to contain the calibration information
 typedef struct sdhdf_calibration {
+  int    bad;  
   double freq; // MHz - centre of frequency channel corresponding to provided information
 
   // These are 7 parameters that represent the constant properties of the feed and calibration system as well as
@@ -49,6 +50,11 @@ typedef struct sdhdf_calibration {
   float noiseSource_UoverI; // U/I
   float noiseSource_VoverI; // V/I
 
+  float noiseSource_I_postResponse; 
+  float noiseSource_Q_postResponse; 
+  float noiseSource_U_postResponse;
+  float noiseSource_V_postResponse; 
+    
   float constant_gain;
   float constant_diff_gain;
   float constant_diff_phase;
@@ -59,12 +65,17 @@ typedef struct sdhdf_calibration {
 
   // PCM response
   double complex response_pcm[2][2];
-
+  double complex response_pcm_feed[2][2];
+  
   // Time dependent properties
+  double stokes_noise_measured[4];
+  double stokes_noise_actual[4];
   double gain;
   double diff_gain;
   double diff_phase;
 
+  double complex td_response[2][2];
+  
 } sdhdf_calibration;
 
 
@@ -178,7 +189,13 @@ void sdhdf_loadData(sdhdf_fileStruct *inFile,int ibeam,int iband,float *in_data,
 int  sdhdf_loadFlagData(sdhdf_fileStruct *inFile);
 
 // Calibration
+void sdhdf_calculate_timedependent_response(sdhdf_calibration *polCal,int nPolCalChan);
+void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolCalChan);
+void sdhdf_formPCM_response(sdhdf_calibration *polCal,int nPolCalChan);
+void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan);
+void sdhdf_get_pcmcal_stokes(double freq,sdhdf_calibration *polCal,int nPolCalChan,double *actualNoiseStokes);
 void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile);
+void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile);
 int  sdhdf_loadTcal(sdhdf_tcal_struct *tcalData,char *fname);
 int  sdhdf_loadTsys(sdhdf_fileStruct *inFile,int band,float *tsys);
 int  sdhdf_loadPhase(sdhdf_fileStruct *inFile,int band,float *phase);
@@ -233,8 +250,11 @@ void sdhdf_ITRF_to_GRS80(double x,double y,double z,double *long_grs80,double *l
 
 // Mathematics
 //int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
-
+int sdhdf_complex_matrix_2x2_inverse(double complex a[2][2],double complex inv[2][2]);
+void sdhdf_complex_matrix_2x2_dagger(double complex R[2][2],double complex Rdag[2][2]);
+void sdhdf_display_complex_matrix_2x2(double complex J[2][2]);
 void sdhdf_copy_complex_matrix_2x2(double complex to[2][2],double complex from[2][2]);
+void sdhdf_multiply_complex_matrix_2x2(double complex a[2][2],double complex b[2][2]);
 void sdhdf_complex_matrix_2x2(double complex J[2][2],double complex e00,double complex e01,double complex e10,double complex e11);
 void sdhdf_setIdentity_4x4(float mat[4][4]);
 void sdhdf_display_vec4(float *vec);

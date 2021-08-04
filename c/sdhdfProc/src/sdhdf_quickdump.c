@@ -39,8 +39,9 @@ void help()
   printf("\n");
   printf("Command line arguments:\n\n");
   exit(1);
-
 }
+
+void readPhaseResolvedCal(sdhdf_fileStruct *inFile,int band,int cal32_chN,int cal32_tav);
 
 int main(int argc,char *argv[])
 {
@@ -65,6 +66,9 @@ int main(int argc,char *argv[])
   int   setDumpRange=0;
   int nchan;
   int dataType=1;
+  int cal32_chN=-1;
+  int cal32_tav=-1;
+  int band0=-1,band1=-1;
   
   for (i=1;i<argc;i++)
     {
@@ -74,6 +78,12 @@ int main(int argc,char *argv[])
 	dataType=2;
       else if (strcmp(argv[i],"-cal")==0)
 	dataType=3;
+      else if (strcmp(argv[i],"-cal32")==0)
+	dataType=4;
+      else if (strcmp(argv[i],"-cal32_ch")==0)
+	sscanf(argv[++i],"%d",&cal32_chN);
+      else if (strcmp(argv[i],"-cal32_tav")==0)
+	cal32_tav=1;
       else if (strcmp(argv[i],"-freqRange")==0)
 	{
 	  sscanf(argv[++i],"%f",&freq0);
@@ -84,6 +94,12 @@ int main(int argc,char *argv[])
 	{
 	  sscanf(argv[++i],"%d",&sd0);
 	  sscanf(argv[++i],"%d",&sd1);
+	  setDumpRange=1;
+	}
+      else if (strcmp(argv[i],"-bandRange")==0)
+	{
+	  sscanf(argv[++i],"%d",&band0);
+	  sscanf(argv[++i],"%d",&band1);
 	  setDumpRange=1;
 	}
       else if (strcmp(argv[i],"-e")==0)
@@ -117,11 +133,16 @@ int main(int argc,char *argv[])
 	  
 	  for (beam=0;beam<inFile->nBeam;beam++)
 	    {
-	      for (band=0;band<inFile->beam[beam].nBand;band++)
+	      if (band0 < 0)
+		{
+		  band0 = 0;
+		  band1 = inFile->beam[beam].nBand;
+		}
+		  for (band=band0;band<band1;band++)
 		{
 		  npol = inFile->beam[beam].bandHeader[band].npol;
 		  nchan = inFile->beam[beam].bandHeader[band].nchan;
-		  if (dataType!=3)
+		  if (dataType!=3 && dataType!=4)
 		    sdhdf_loadBandData(inFile,beam,band,1);
 		  if (dataType==2 || dataType==3)
 		    {
@@ -217,12 +238,20 @@ int main(int argc,char *argv[])
 			      display=1;
 			      //			  printf("Loading freq\n");
 			      freq = inFile->beam[beam].bandData[band].cal_on_data.freq[k];
-			      printf("%s %d %d %d %d %.6f %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal]);
+			      if (setFreqRange==1 && (freq < freq0 || freq > freq1))
+				display=0;
+			      if (display==1)
+				printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal]);
 
 			    }
 			}
 		    }
-		      
+		  else if (dataType==4)
+		    {
+		      readPhaseResolvedCal(inFile,band,cal32_chN,cal32_tav);
+		    }
+		  
+		  
 		  sdhdf_releaseBandData(inFile,beam,band,1);
 		  
 		}
@@ -234,4 +263,86 @@ int main(int argc,char *argv[])
     }
 
   free(inFile);
+}
+
+
+void readPhaseResolvedCal(sdhdf_fileStruct *inFile,int band,int cal32_chN,int cal32_tav)
+{
+  int i,j,k,b;
+  char dataName[1024];
+  int beam=0; // FIX ME
+  hid_t dataset_id;
+  herr_t status;
+  int ndump = inFile->beam[beam].calBandHeader[band].ndump;
+  int npol = 4; // FIX ME
+  int nchan = inFile->beam[beam].calBandHeader[band].nchan;
+  int nbin = 32; // FIX ME
+  float *data;
+  int k0,k1;
+
+  
+  if (cal32_chN < 0)
+    {
+      k0 = 0;
+      k1 = nchan;
+    }
+  else
+    {
+      k0 = cal32_chN;
+      k1 = k0+1;
+    }
+  sprintf(dataName,"beam_%d/%s/calibrator_data/cal32_data",beam,inFile->beam[beam].bandHeader[band].label);
+  dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
+  data = (float *)malloc(sizeof(float)*nchan*npol*ndump*nbin);
+  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);  
+  if (cal32_tav == 1)
+    {
+      float bin1[nbin],bin2[nbin],bin3[nbin],bin4[nbin];
+      for (k=k0;k<k1;k++)
+	{
+	  for (b=0;b<nbin;b++)
+	    bin1[b] = bin2[b] = bin3[b] = bin4[b] = 0;
+	  for (i=0;i<ndump;i++)
+	    {
+	      for (b=0;b<nbin;b++)
+		{
+		  bin1[b] += data[i*npol*nchan*nbin + 0*nchan*nbin +k*nbin + b];
+		  bin2[b] += data[i*npol*nchan*nbin + 1*nchan*nbin +k*nbin + b];
+		  bin3[b] += data[i*npol*nchan*nbin + 2*nchan*nbin +k*nbin + b];
+		  bin4[b] += data[i*npol*nchan*nbin + 3*nchan*nbin +k*nbin + b];
+		}
+	    }
+	  for (b=0;b<nbin;b++)
+	    {
+	      bin1[b]/=(double)ndump;
+	      bin2[b]/=(double)ndump;
+	      bin3[b]/=(double)ndump;
+	      bin4[b]/=(double)ndump;
+	      printf("%d %d %d %g %g %g %g GEORGE\n",0,k,b,
+		     bin1[b],bin2[b],bin3[b],bin4[b]);
+	    }
+	    }
+      printf("\n");
+      
+    }
+  else
+    {
+      for (i=0;i<ndump;i++)
+	{
+	  for (k=k0;k<k1;k++)
+	    {
+	      for (b=0;b<nbin;b++)
+		printf("%d %d %d %g %g %g %g GEORGE\n",i,k,b,
+		       data[i*npol*nchan*nbin + 0*nchan*nbin +k*nbin + b],
+		       data[i*npol*nchan*nbin + 1*nchan*nbin +k*nbin + b],
+		       data[i*npol*nchan*nbin + 2*nchan*nbin +k*nbin + b],
+		       data[i*npol*nchan*nbin + 3*nchan*nbin +k*nbin + b]);
+	    }
+	  printf("\n");
+	}
+  }
+
+  status = H5Dclose(dataset_id);
+  free(data);
+  //  exit(1);
 }

@@ -190,17 +190,18 @@ int main(int argc,char *argv[])
 		  if (showDump==1)
 		    {
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		      printf("          ElapsedTime MJD           UTC         AEST        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB\n");
+		      printf("          ElapsedTime MJD           UTC         AEST        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB     PA \n");
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
 		      for (j=0;j<inFile->beam[beam].bandData[iband].nAstro_obsHeader;j++)
 			{
-			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f\n",
+			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %s\n",
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].astro_obsHeader[j].mjd,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].utc,inFile->beam[beam].bandData[iband].astro_obsHeader[j].aest,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decStr,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decDeg,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].az,inFile->beam[beam].bandData[iband].astro_obsHeader[j].el,
-				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].gl,inFile->beam[beam].bandData[iband].astro_obsHeader[j].gb);
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].gl,inFile->beam[beam].bandData[iband].astro_obsHeader[j].gb,
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].paraAngle,inFile->fname);
 			}
 		    }
 

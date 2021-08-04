@@ -21,6 +21,11 @@
 // Should check if the user actually wants polarisation and flux calibration, or just 1
 // Need a way to read the calibration information from an earlier file - or inject an earlier cal into a different file
 // Need a way to specify which fluxcal/pcm file to use (and how the user can know what options exist)
+// Currrently hardcode alpha = -45 degrees in sdhdfProc_calibration.c -- FIX THIS!
+// Currently always time-averaging the noise source signal
+// FIX ME: IMPORTANT: ISSUE IN THAT SHOULDN'T INTERPOLATE USING BAD ENTIRES (AS THEY ARE ZERO) (important for noise source stokes)
+// Must work with older-style, non-normalised files.
+//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,38 +43,91 @@ void help()
   printf("Purpose: to calibrate the data sets\n");
   printf("\n");
   printf("Command line arguments:\n\n");
+  printf("-e <ext>    Output file extension\n");
+  printf("-h          This help\n");
+  printf("\n\n");
+  printf("Example: sdhdf_calibrate -e cal uwl_*.hdf.T.f1024\n");
   exit(1);
 }
 
 
 int main(int argc,char *argv[])
 {
-  int i,j,k,ii,beam,band;
+  int b,i,j,k,ii,kk,beam,band;
   int nFiles=0;
   char fname[MAX_FILES][MAX_STRLEN];
   char runtimeDir[MAX_STRLEN];
   float pol1,pol2,pol3,pol4;
-  sdhdf_fileStruct *inFile;
+
+  float *out_data,*out_freq;
+
+  sdhdf_fileStruct *inFile,*outFile;
   sdhdf_calibration *polCal;
+  sdhdf_fluxCalibration *fluxCal;
   int nPolCalChan=0;
+  int nFluxCalChan=0;
   FILE *fout;
 
+  sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
+
+  sdhdf_bandHeaderStruct *inBandParams;
+  sdhdf_obsParamsStruct  *outObsParams;
+  float *dataWts;
+  
+  double stokesCalMeasured[4];
+  double actualNoiseStokes[4];
+  double coherencyCalMeasuredOn[4];
+  double coherencyCalMeasuredOff[4];
+  double complex rho[2][2];
+  double complex Jast[2][2];
+  double complex Rdag[2][2];
+  double complex R_feed_pa[2][2];
+  double complex R_feed_pa_dag[2][2];
+  double complex finalJ[2][2];
+  double aa,bb,rab,iab;
+  double final_aa,final_bb,final_rab,final_iab;
+  double fluxScale;
+  double paraAng;
+  double alpha = -45.0*M_PI/180.0; // FIX ME
+  double freq;
+  int nc=0;
+  
   int npol,nchan,ndump,nchanCal,ndumpCal;
+  int ichan;
 
+  char extension[1024];
+  char oname[1024];
+  char args[MAX_STRLEN]="";
 
-
+  // Setup output defaults
+  strcpy(oname,"sdhdf_calibrate_output.hdf");
+  strcpy(extension,"calibrate");
   
   // Load in the file names
   for (i=1;i<argc;i++)
     {
-      strcpy(fname[nFiles++],argv[i]);
+      if (strcmp(argv[i],"-e")==0)
+	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
+      else if (strcmp(argv[i],"-h")==0)
+	help();
+      else
+	strcpy(fname[nFiles++],argv[i]);
     }
   
   inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct));
   polCal = (sdhdf_calibration *)malloc(sizeof(sdhdf_calibration)*MAX_POL_CAL_CHAN);
+  fluxCal = (sdhdf_fluxCalibration *)malloc(sizeof(sdhdf_fluxCalibration)*MAX_POL_CAL_CHAN); //  Should change to MAX_FLUXCAL OR SIMILAR ** FIX ME
+  if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
+    {
+      printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
+      exit(1);
+    }
 
 
-
+  
   if (getenv("SDHDF_RUNTIME")==0)
     {
       printf("=======================================================================\n");
@@ -86,55 +144,191 @@ int main(int argc,char *argv[])
 	printf("Warning: unable to open file >%s<. Skipping\n",fname[i]);
       else
 	{
-	  sdhdf_loadMetaData(inFile);
+	  sprintf(oname,"%s.%s",fname[i],extension);
+	  printf("Opening file >%s<\n",oname);
+	  sdhdf_openFile(oname,outFile,3);
 
+	  sdhdf_loadMetaData(inFile);
+	  sdhdf_allocateBeamMemory(outFile,inFile->nBeam);
 	  // FIX ME: Should check if the user wants polarisation calibration	
 	  
 	  // Load the information within the PCM file
 	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm"); // REMOVE HARDCODE
 	  sdhdf_formPCM_response(polCal,nPolCalChan);
 
-	  for (j=0;j<nPolCalChan;j++)
-	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
-		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
-		   polCal[j].constant_gain,polCal[j].constant_diff_gain,polCal[j].constant_diff_phase,
-		   polCal[j].constant_b1,polCal[j].constant_b2,polCal[j].constant_r1,polCal[j].constant_r2);
+	  // Load the Scal information
+	  sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
+	  
+	  //	  for (j=0;j<nPolCalChan;j++)
+	  //	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
+	  //		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
+	  //		   polCal[j].constant_gain,polCal[j].constant_diff_gain,polCal[j].constant_diff_phase,
+	  //		   polCal[j].constant_b1,polCal[j].constant_b2,polCal[j].constant_r1,polCal[j].constant_r2);
 
+	  
 	  // Obtain NOISE ON - NOISE OFF
 	  // Should be able to do this from a different file ** FIX ME	  
 
-	  
-	  for (beam=0;beam<inFile->nBeam;beam++)
+	  // Request CAL_ON-CAL_OFF for specfic frequency covered by the PCM file
+	  beam=0; // FIX ME
+	  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan);
+	  sdhdf_calculate_gain_diffgain_diffphase(polCal,nPolCalChan);
+	  sdhdf_calculate_timedependent_response(polCal,nPolCalChan);
+
+	  /*
+	  for (j=0;j<nPolCalChan;j++)
 	    {
-	      for (band=0;band<inFile->beam[beam].nBand;band++)
-		{
-		  printf("Loading beam %d and band %d\n",beam,band);
-
-
-		  npol = inFile->beam[beam].bandHeader[band].npol;
-		  nchan = inFile->beam[beam].bandHeader[band].nchan;
-		  ndump = inFile->beam[beam].bandHeader[band].ndump;
-		  sdhdf_loadBandData(inFile,beam,band,1);
-		  sdhdf_loadBandData(inFile,beam,band,2);
-		  sdhdf_loadBandData(inFile,beam,band,3);
-
-		  printf("Have loaded data\n");
-
-		  nchanCal = inFile->beam[beam].calBandHeader[band].nchan;
-		  ndumpCal = inFile->beam[beam].calBandHeader[band].ndump;
-
-
-		  sdhdf_releaseBandData(inFile,beam,band,1);
-		  sdhdf_releaseBandData(inFile,beam,band,2);
-		  sdhdf_releaseBandData(inFile,beam,band,3);
-		  
-		}
+	      	      printf("%g Have (%g,%g,%g,%g) and (%g,%g,%g,%g) gain = %g diffgain = %g diffphase = %g\n",polCal[j].freq,polCal[j].stokes_noise_measured[0],polCal[j].stokes_noise_measured[1],
+		     polCal[j].stokes_noise_measured[2],polCal[j].stokes_noise_measured[3],
+		     polCal[j].stokes_noise_actual[0],polCal[j].stokes_noise_actual[1],polCal[j].stokes_noise_actual[2],polCal[j].stokes_noise_actual[3],
+		     polCal[j].gain,polCal[j].diff_gain,polCal[j].diff_phase);
+		     
 	    }
+	  */
+	  
+	  // Now process the astronomy data
+	  for (b=0;b<inFile->nBeam;b++)
+	    {
+	      inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
+	      sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
+	      
+	      for (j=0;j<inFile->beam[b].nBand;j++)
+		{
+		  sdhdf_loadBandData(inFile,b,j,1);
+		  nchan = inFile->beam[b].bandHeader[j].nchan;
+		  npol  = inFile->beam[b].bandHeader[j].npol;
+		  ndump  = inFile->beam[b].bandHeader[j].ndump;
+
+		  // Copy observation parameters
+
+		  outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
+		  for (kk=0;kk<ndump;kk++)
+		    sdhdf_copySingleObsParams(inFile,b,j,kk,&outObsParams[kk]);
+
+		  
+		  out_freq  = (float *)malloc(sizeof(float)*nchan);
+		  out_data  = (float *)calloc(sizeof(float),nchan*npol*ndump);
+		  dataWts   = (float *)calloc(sizeof(float),nchan*ndump);
+		  for (k=0;k<inFile->beam[b].bandHeader[j].ndump;k++)
+		    {
+		      //		      printf("Processing: %d %d %d\n",b,j,k);
+		      for (ii=0;ii<nchan;ii++)
+			{
+			  freq = inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan];
+			  if (k==0)
+			    {
+			      out_freq[ii] = freq;  // NOTE: Assuming that the frequency is constant in all bands - not true if Doppler corrected -- FIX ME
+			      dataWts[ii]  = inFile->beam[b].bandData[j].astro_data.dataWeights[k*nchan+ii];
+			    }
+			  // FIX ME: SHOULD ACCOUNT FOR WEIGHTING
+			  aa = inFile->beam[b].bandData[j].astro_data.pol1[ii+k*nchan];
+			  bb = inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
+			  rab = inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
+			  iab = inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
+			  // FIX ME HARDCDE
+			  /*
+			  aa = 1157.44;
+			  bb = 1283.55;
+			  rab = -6.95146;
+			  iab = 5.08572;
+			  */
+			  
+			  // Convert into a 2x2 complex matrix
+			  // FIX ME **** CHECK THIS A LOT ***** GEORGE GOT TO HERE
+			  sdhdf_complex_matrix_2x2(rho,aa,rab-I*iab,rab+I*iab,bb);
+
+			  // Should obtain the relevant channel in the PCM structure
+			  ichan = (int)((freq-polCal[0].freq)/(polCal[1].freq-polCal[0].freq)+0.5); // FIX ME ******
+			  //			  ichan = 29; // FIX ME HARDCODE ******
+			  // NOT SURE THIS IS TD_RESPNSE -- SHOULD BE R_PCM --- CHECK -- FIX ME
+			  //			  sdhdf_copy_complex_matrix_2x2(Jast,polCal[ichan].td_response); // NEEDS FIXING WITH ICHAN
+
+			  
+			  // printf("%d td_response = ",ichan); sdhdf_display_complex_matrix_2x2(polCal[ichan].td_response);
+
+			  sdhdf_copy_complex_matrix_2x2(Jast,polCal[ichan].td_response); 
+			  sdhdf_multiply_complex_matrix_2x2(Jast,rho);
+
+
+			  //  printf("%d rho = ",ii);  sdhdf_display_complex_matrix_2x2(rho);
+
+
+			  // Form conjugate
+			  sdhdf_complex_matrix_2x2_dagger(polCal[ichan].td_response,Rdag);
+			  sdhdf_multiply_complex_matrix_2x2(Jast,Rdag);
+			  // printf("%d Jast = ",ii);  sdhdf_display_complex_matrix_2x2(Jast);
+
+			  // Obtain parallactic angle in radians
+			  paraAng = inFile->beam[b].bandData[j].astro_obsHeader[k].paraAngle * M_PI/180.0;
+
+			  // HARDCODE FIX
+			  //			  paraAng = -82.677*M_PI/180.0;
+
+			  sdhdf_complex_matrix_2x2(R_feed_pa,
+						   I*sin(alpha+paraAng),
+						   -I*cos(alpha+paraAng),
+						   -I*cos(alpha+paraAng),
+						   -I*sin(alpha+paraAng));
+			  // printf("%d Feed PA = ",ii); sdhdf_display_complex_matrix_2x2(R_feed_pa);
+			  sdhdf_complex_matrix_2x2_dagger(R_feed_pa,R_feed_pa_dag);
+			  // printf("%d Feed PA_dag = ",ii);  sdhdf_display_complex_matrix_2x2(R_feed_pa_dag);
+
+
+
+			  sdhdf_copy_complex_matrix_2x2(finalJ,R_feed_pa);
+			  sdhdf_multiply_complex_matrix_2x2(finalJ,Jast);
+			  // printf("%d Rfeed x Jast = ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
+
+			  sdhdf_multiply_complex_matrix_2x2(finalJ,R_feed_pa_dag);
+			  // printf("%d finalJ = ",ii); sdhdf_display_complex_matrix_2x2(finalJ);
+
+
+			  
+			  // Multiply by Scal
+			  // FIX ME -- NEED TO INTERPLATE -- USE DIFFERENT ICHAN (IN CASE NCHAN IS DIFFERENT WITH FLUXCAL
+			  // printf("%d finalJ ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
+
+			  fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
+			  //			  fluxScale = 1;
+			  final_aa  = fluxScale*creal(finalJ[0][0]);
+			  final_bb  = fluxScale*creal(finalJ[1][1]);
+			  final_rab = fluxScale*creal(finalJ[1][0]);
+			  final_iab = fluxScale*cimag(finalJ[0][1]);
+
+			  out_data[ii+nchan*k*npol] = final_aa;
+			  out_data[ii+nchan*k*npol+nchan] = final_bb;
+			  out_data[ii+nchan*k*npol+nchan] = final_rab;
+			  out_data[ii+nchan*k*npol+nchan] = final_iab;
+			
+			  //			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
+			  //				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB);
+			  //			  exit(1);
+			}
+		    }
+		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[j].label,b,j,
+					  out_data,out_freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[j].label,b,j,outObsParams,ndump,1);
+		  sdhdf_writeDataWeights(outFile,b,j,dataWts,nchan,ndump,inFile->beam[b].bandHeader[j].label);
+		  sdhdf_releaseBandData(inFile,b,j,1); 		      
+		  free(out_freq); free(out_data); free(dataWts);
+		  free(outObsParams);
+
+		}
+	      sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
+	      free(inBandParams);
+
+	    }
+	  sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
+	  sdhdf_copyRemainder(inFile,outFile,0);
+
 	  sdhdf_closeFile(inFile);
+	  sdhdf_closeFile(outFile);
 	}
     }
 
   free(inFile);
+  free(outFile);
+  free(fluxCal);
   free(polCal);
 }
 
