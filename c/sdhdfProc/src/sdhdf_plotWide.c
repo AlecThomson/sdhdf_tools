@@ -496,7 +496,10 @@ int main(int argc,char *argv[])
 	//	cpgsci(2);
 	cpgsch(1.0);
 	cpgsvp(0.10,0.95,0.10,0.90);
-	sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
+	if (sb >= 0 && sd >= 0)
+	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
+	else
+	  sprintf(title,"%s",fname[0]);
 	drawBand(minx,maxx,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title);
 
 	//	cpgline(nVals,px,py1);
