@@ -143,7 +143,7 @@ int main(int argc,char *argv[])
   int nFlag=0;
   float flagF0[MAX_FLAG],flagF1[MAX_FLAG];
   int haveFlagged=0;
-
+  float charHeight=1.0;
 
   miny = maxy = -1.0;
 
@@ -164,6 +164,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-minx")==0)
 	sscanf(argv[++i],"%f",&setMinX);
+      else if (strcmp(argv[i],"-ch")==0)
+	sscanf(argv[++i],"%f",&charHeight);
       else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
       else if (strcmp(argv[i],"-maxx")==0)
 	sscanf(argv[++i],"%f",&setMaxX);
@@ -514,8 +516,11 @@ int main(int argc,char *argv[])
 	//	  cpgenv(minx,maxx,miny,maxy,0,1);
 	//	cpglab("Observing frequency (MHz)","Signal strength","");
 	//	cpgsci(2);
-	cpgsch(1.0);
-	cpgsvp(0.10,0.95,0.10,0.90);
+	cpgsch(charHeight);
+	if (charHeight < 1.1)
+	  cpgsvp(0.10,0.95,0.10,0.90);
+	else
+	  cpgsvp(0.10,0.95,0.15,0.90);
 	if (sb >= 0 && sd >= 0)
 	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
 	else
