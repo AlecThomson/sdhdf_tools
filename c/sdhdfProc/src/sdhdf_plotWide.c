@@ -37,6 +37,8 @@
 #define VNUM "v0.1"
 #define MAX_SHADE 128
 #define MAX_FLAG 128
+#define MAX_OVERLAY_COEFF 8
+
 
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
 void plotSpectrum(sdhdf_fileStruct *inFile,int iband,int idump,char *grDev,char *fname,float f0,float f1,int av,int sump,int nx,int ny,int polPlot);
@@ -44,13 +46,14 @@ void showTransmitter(float freq,float bw,char *label,float miny,float maxy);
 void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float miny,float maxy);
 void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,
 	      float *py3,float *py4,int plotPol,float *flagF0,float *flagF1,int nFlag,
-	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title);
+	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title,char *ylabel);
 
 void help()
 {
   printf("sdhdf_plotWide\n\n");
   printf("Command line arguments\n\n");
   printf("-4pol                 Plot 4 polarisations (defaults to 2)\n");
+  printf("-ch <val>             Set the font size to val\n");
   printf("-dispAz               Display as a function of Azimuth\n");
   printf("-flag <val1> <val2>   Flag data between val1 and val2 (MHz)\n");
   printf("-g <grDevice>         Set PGPLOT graphics device for plot\n");
@@ -60,12 +63,15 @@ void help()
   printf("-minx <val>           Minimum frequency to plot (MHz)\n");
   printf("-miny <val>           Minimum y-value for plot\n");
   printf("-nolog                Do not take the logarithm of the values\n");
+  printf("-oCoeff <val>         Overlay curve coefficient\n");
   printf("-sb <val>             Select specific sub-band\n");
   printf("-sd <val>             Select specifc spectral dump\n");
   printf("-shade <f0> <f1> <col> Shade region with colour 'col' between F0 and F1 in MHz\n");
   printf("-splitRF              Split the plot into the 3 RF bands for the Parkes UWL receiver\n");
+  printf("-stokes               Form Stokes parameters\n");
   printf("-transmitters         Plot known RFI transmitters\n");
   printf("-waterfall            Plot as a waterfall plot\n");
+  printf("-ylabel <str>         Label on the y-axis\n");
   
   printf("\n");
   printf("Example usage: sdhdf_plotWide -nolog onoff.hdf\n");
@@ -93,10 +99,13 @@ int main(int argc,char *argv[])
   sdhdf_fileStruct *inFile;
   int        idump,iband,ibeam;
   float f0=-1,f1=-1;
+  float overlay[MAX_OVERLAY_COEFF];
+  int nOverlay;
   int av=0;
   int sump=0;
   int nx=1;
   int ny=1;
+  int stokes=0;
   int polPlot=1;
   long nVals=0;
   float *px,*py1,*py2,*pflag,*py1_max,*py2_max;
@@ -118,6 +127,7 @@ int main(int argc,char *argv[])
   char key;
   char grDev[128]="/xs";
   char title[128]="";
+  char ylabel[128]="Signal strength";
   int splitRF=0;
   int waterfall=0;
   int wNchan=0;
@@ -166,6 +176,11 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%f",&setMinX);
       else if (strcmp(argv[i],"-ch")==0)
 	sscanf(argv[++i],"%f",&charHeight);
+      else if (strcasecmp(argv[i],"-oCoeff")==0)
+	{
+	  sscanf(argv[++i],"%f",&overlay[nOverlay]);
+	  nOverlay++;
+	}
       else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
       else if (strcmp(argv[i],"-maxx")==0)
 	sscanf(argv[++i],"%f",&setMaxX);
@@ -173,8 +188,12 @@ int main(int argc,char *argv[])
 	{sscanf(argv[++i],"%f",&miny); setMinMax=1;}
       else if (strcmp(argv[i],"-maxy")==0)
 	{sscanf(argv[++i],"%f",&maxy); setMinMax=1;}
+      else if (strcmp(argv[i],"-stokes")==0)
+	stokes=1;
       else if (strcmp(argv[i],"-transmitters")==0)
 	plotTransmitters=1;
+      else if (strcmp(argv[i],"-ylabel")==0)
+	strcpy(ylabel,argv[++i]);
       else if (strcmp(argv[i],"-waterfall")==0)
 	waterfall=1;
       else if (strcmp(argv[i],"-maxhold")==0)
@@ -379,6 +398,15 @@ int main(int argc,char *argv[])
 	  py2[i]/=(float)psum[i];
 	  py3[i]/=(float)psum[i];
 	  py4[i]/=(float)psum[i];
+	  if (stokes==1)
+	    {
+	      val1=py1[i]; val2=py2[i]; val3=py3[i]; val4=py4[i];
+	      py1[i] = val1+val2;
+	      py2[i] = val1-val2;
+	      py3[i] = 2*val3;
+	      py4[i] = 2*val4;
+	    }
+
 	  if (log==1)
 	    {
 	      if (py1[i] > 0) py1[i] = log10(py1[i]);
@@ -525,8 +553,26 @@ int main(int argc,char *argv[])
 	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
 	else
 	  sprintf(title,"%s",fname[0]);
-	drawBand(minx,maxx,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title);
+	drawBand(minx,maxx,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title,ylabel);
+	if (nOverlay > 0) // Draw a curve overlay	  
+	  {
+	    int nv=128;
+	    float xp[nv],yp[nv];
+	    for (i=0;i<nv;i++)
+	      {
+		xp[i] = minx + i*(maxx-minx)/(double)nv;
+		yp[i] = 0.0;
+		for (j=0;j<nOverlay;j++)
+		  yp[i] += overlay[j]*pow(log10(xp[i]/1000.0),j);
+		yp[i] = pow(10,yp[i]);
+		printf("Have %g %g\n",xp[i],yp[i]);
 
+
+	      }
+		cpgslw(3);
+		cpgline(nv,xp,yp);
+		cpgslw(1);
+	  }
 	//	cpgline(nVals,px,py1);
 	if (plotMaxHold==1)
 	  {
@@ -552,13 +598,13 @@ int main(int argc,char *argv[])
 	
 	cpgsch(1.0);
 	cpgsvp(0.10,0.95,0.10,0.35);
-	drawBand(704,1344,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title);
+	drawBand(704,1344,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title,ylabel);
 		
 	cpgsvp(0.10,0.95,0.40,0.65);
-	drawBand(1344,2368,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title);
+	drawBand(1344,2368,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title,ylabel);
 
 	cpgsvp(0.10,0.95,0.7,0.95);
-	drawBand(2368,4096,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title);
+	drawBand(2368,4096,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title,ylabel);
 
 	cpgsch(1.4);
 	if (dispAz==1)
@@ -755,7 +801,7 @@ void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float min
 }
 
 void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *py3,float *py4,int plotPol,float *flagF0,float *flagF1,int nFlag,
-	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title)
+	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title,char *ylabel)
 {
   int i,i0,i1,ii,flagit;
   float useMiny,useMaxy;
@@ -816,7 +862,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
   if (labelit==1)
     cpglab("Frequency (MHz)","",title);
   else if (labelit==2)
-    cpglab("","Signal strength",title);
+    cpglab("",ylabel,title);
   else if (labelit==3)
     cpglab("Frequency (MHz)","Signal strength",title);
   drawShades(nShade,shadeF0,shadeF1,shadeCol,useMiny,useMaxy);
