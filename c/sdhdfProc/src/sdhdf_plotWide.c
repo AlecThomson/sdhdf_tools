@@ -42,13 +42,15 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
 void plotSpectrum(sdhdf_fileStruct *inFile,int iband,int idump,char *grDev,char *fname,float f0,float f1,int av,int sump,int nx,int ny,int polPlot);
 void showTransmitter(float freq,float bw,char *label,float miny,float maxy);
 void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float miny,float maxy);
-void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
+void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,
+	      float *py3,float *py4,int plotPol,float *flagF0,float *flagF1,int nFlag,
 	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title);
 
 void help()
 {
   printf("sdhdf_plotWide\n\n");
   printf("Command line arguments\n\n");
+  printf("-4pol                 Plot 4 polarisations (defaults to 2)\n");
   printf("-dispAz               Display as a function of Azimuth\n");
   printf("-flag <val1> <val2>   Flag data between val1 and val2 (MHz)\n");
   printf("-g <grDevice>         Set PGPLOT graphics device for plot\n");
@@ -98,10 +100,12 @@ int main(int argc,char *argv[])
   int polPlot=1;
   long nVals=0;
   float *px,*py1,*py2,*pflag,*py1_max,*py2_max;
+  float *py3,*py4;
+  int plotPol=2;
   int *psum;
   long writepos;
   int allocateMemory=0;
-  float miny,maxy,val1,val2,minx,maxx;
+  float miny,maxy,val1,val2,val3,val4,minx,maxx;
   float ominy,omaxy,ominx,omaxx;
   float setMinX=-1;
   float setMaxX=-1;
@@ -173,6 +177,8 @@ int main(int argc,char *argv[])
 	waterfall=1;
       else if (strcmp(argv[i],"-maxhold")==0)
 	plotMaxHold=1;
+      else if (strcmp(argv[i],"-4pol")==0)
+	plotPol=4;
       else if (strcmp(argv[i],"-splitRF")==0)
 	splitRF=1;
       else if (strcmp(argv[i],"-g")==0)
@@ -240,6 +246,8 @@ int main(int argc,char *argv[])
 	      pflag   = (float *)malloc(sizeof(float)*nVals);
 	      py1     = (float *)calloc(sizeof(float),nVals);
 	      py2     = (float *)calloc(sizeof(float),nVals);
+	      py3     = (float *)calloc(sizeof(float),nVals);
+	      py4     = (float *)calloc(sizeof(float),nVals);
 	      py1_max = (float *)calloc(sizeof(float),nVals);
 	      py2_max = (float *)calloc(sizeof(float),nVals);
 	      psum    = (int *)calloc(sizeof(int),nVals);
@@ -339,8 +347,12 @@ int main(int argc,char *argv[])
 			{
 			  val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
 			  val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
+			  val3 = inFile->beam[ibeam].bandData[j].astro_data.pol3[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
+			  val4 = inFile->beam[ibeam].bandData[j].astro_data.pol4[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
 			  py1[writepos+k] += val1;
 			  py2[writepos+k] += val2;
+			  py3[writepos+k] += val3;
+			  py4[writepos+k] += val4;
 			  if (val1 > py1_max[writepos+k]) py1_max[writepos+k] = val1;
 			  if (val2 > py2_max[writepos+k]) py2_max[writepos+k] = val2;
 			  psum[writepos+k] ++;
@@ -363,6 +375,8 @@ int main(int argc,char *argv[])
 	{
 	  py1[i]/=(float)psum[i];
 	  py2[i]/=(float)psum[i];
+	  py3[i]/=(float)psum[i];
+	  py4[i]/=(float)psum[i];
 	  if (log==1)
 	    {
 	      if (py1[i] > 0) py1[i] = log10(py1[i]);
@@ -370,7 +384,13 @@ int main(int argc,char *argv[])
 
 	      if (py2[i] > 0) py2[i] = log10(py2[i]);
 	      else py2[i] = -3; // FIX ME -- SHOULD SET SENSIBLY
+
+	      if (py3[i] > 0) py3[i] = log10(py3[i]);
+	      else py3[i] = -3; // FIX ME -- SHOULD SET SENSIBLY
 	      
+	      if (py3[i] > 0) py3[i] = log10(py3[i]);
+	      else py3[i] = -3; // FIX ME -- SHOULD SET SENSIBLY
+
 	      py1_max[i] = log10(py1_max[i]);
 	      py2_max[i] = log10(py2_max[i]);
 	    }
@@ -500,7 +520,7 @@ int main(int argc,char *argv[])
 	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
 	else
 	  sprintf(title,"%s",fname[0]);
-	drawBand(minx,maxx,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title);
+	drawBand(minx,maxx,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title);
 
 	//	cpgline(nVals,px,py1);
 	if (plotMaxHold==1)
@@ -527,13 +547,13 @@ int main(int argc,char *argv[])
 	
 	cpgsch(1.0);
 	cpgsvp(0.10,0.95,0.10,0.35);
-	drawBand(704,1344,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title);
+	drawBand(704,1344,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title);
 		
 	cpgsvp(0.10,0.95,0.40,0.65);
-	drawBand(1344,2368,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title);
+	drawBand(1344,2368,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title);
 
 	cpgsvp(0.10,0.95,0.7,0.95);
-	drawBand(2368,4096,nVals,px,pflag,py1,py2,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title);
+	drawBand(2368,4096,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title);
 
 	cpgsch(1.4);
 	if (dispAz==1)
@@ -678,6 +698,8 @@ int main(int argc,char *argv[])
       free(pflag);
       free(py1);
       free(py2);
+      free(py3);
+      free(py4);
       free(py1_max);
       free(py2_max);      
       free(psum);
@@ -727,7 +749,7 @@ void drawShades(int nShade,float *shadeF0,float *shadeF1,int *shadeCol,float min
   cpgsfs(1);
 }
 
-void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *flagF0,float *flagF1,int nFlag,
+void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,float *py2,float *py3,float *py4,int plotPol,float *flagF0,float *flagF1,int nFlag,
 	      int nShade,float *shadeF0,float *shadeF1,int *shadeCol,int log,int labelit,float miny,float maxy,int setMinMax,char *title)
 {
   int i,i0,i1,ii,flagit;
@@ -826,7 +848,14 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
 	  cpgline(i1-i0,px+i0,py1+i0);
 	  cpgsci(4);
 	  cpgline(i1-i0,px+i0,py2+i0);
-	  cpgsci(1);
+	  if (plotPol==4)
+	    {
+	      cpgsci(5);
+	      cpgline(i1-i0,px+i0,py3+i0);
+	      cpgsci(8);
+	      cpgline(i1-i0,px+i0,py4+i0);
+	    }
+	  cpgsci(1);	  
 	  region=2;
 	  printf("Plotting %d\n",i1-i0);
 	}
@@ -838,6 +867,13 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
       cpgline(i1-i0,px+i0,py1+i0);
       cpgsci(4);
       cpgline(i1-i0,px+i0,py2+i0);
+      if (plotPol==4)
+	{
+	  cpgsci(5);
+	  cpgline(i1-i0,px+i0,py3+i0);
+	  cpgsci(8);
+	  cpgline(i1-i0,px+i0,py4+i0);
+	}
       cpgsci(1);
       
     }
