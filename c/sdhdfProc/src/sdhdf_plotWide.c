@@ -864,7 +864,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
   else if (labelit==2)
     cpglab("",ylabel,title);
   else if (labelit==3)
-    cpglab("Frequency (MHz)","Signal strength",title);
+    cpglab("Frequency (MHz)",ylabel,title);
   drawShades(nShade,shadeF0,shadeF1,shadeCol,useMiny,useMaxy);
 
   i0=0;	
