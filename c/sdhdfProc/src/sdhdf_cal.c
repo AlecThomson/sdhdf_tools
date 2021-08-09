@@ -217,7 +217,7 @@ int main(int argc,char *argv[])
 		  obtainScal(freq,scalFreq,scalAA,scalBB,nScal,&retAA,&retBB,1);
 		  s1 = retAA*offP1/(onP1-offP1);
 		  s2 = retBB*offP2/(onP2-offP2);
-		  printf("Ssys %.6f %g %g\n",freq,s1,s2);
+		  printf("Ssys %s %d %d %d %.6f %g %g %g %g\n",inFile->fname,k,i,j,freq,s1,s2,inFile->beam[beam].bandData[i].cal_obsHeader[k].el,inFile->beam[beam].bandData[i].cal_obsHeader[k].paraAngle);
 		  np++;
 		}
 	    }

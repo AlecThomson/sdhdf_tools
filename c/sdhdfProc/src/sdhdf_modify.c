@@ -727,7 +727,7 @@ int main(int argc,char *argv[])
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      dataWts   = (float *)calloc(sizeof(float),out_nchan*out_ndump);
 		      tav=0;
-		    
+		   
 		      sdhdf_loadBandData(inFile,b,ii,1);
 		      for (j=0;j<nchan;j++)
 			{
@@ -948,6 +948,7 @@ int main(int argc,char *argv[])
 				  dataWts[j*out_nchan+kp] = 0; 
 				  for (l=k;l<k+fAv;l++)
 				    {
+				      // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
 				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
 				      //				      printf("wt = %g\n",wt);
 				      avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
@@ -972,7 +973,7 @@ int main(int argc,char *argv[])
 				      swt += wt;
 				      //				      printf("Done write\n");
 				    }
-			       
+				
 				  //				  printf("Updating the sum\n");
 				  if (j==0) out_freq[kp] = avFreq/fAv;
 				  if (npol==1)
@@ -1015,7 +1016,9 @@ int main(int argc,char *argv[])
 				  kp++;
 				  
 				}
+			      printf("Processed dump %d\n",j);
 			    }
+			  printf("Finished frequency averaging\n");
 			}
 		      else
 			{
@@ -1045,7 +1048,9 @@ int main(int argc,char *argv[])
 			    }
 			}
 		      // This was moved lower because of the need to read the weights
+		      printf("Releasing band data\n");
 		      sdhdf_releaseBandData(inFile,b,ii,1); 		      
+		      printf("Creating final data\n");
 		      // Now create final data
 		      // Do polarisation summing as required
 		      if (pol==0)

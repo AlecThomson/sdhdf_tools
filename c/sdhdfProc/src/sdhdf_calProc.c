@@ -51,7 +51,9 @@ int main(int argc,char *argv[])
   
   tcalData = (sdhdf_tcal_struct *)malloc(sizeof(sdhdf_tcal_struct)*3328); // 3328 = number of channels in Tcal files  
   // HARDCODED
-  nTcal = sdhdf_loadTcal(tcalData,"/u/hob044/software/new_c/sdhdfProc/runtime/Tcal_result.12.6.6.dat");
+  printf("DO NOT USE THIS CODE\n");
+  exit(1);
+  //  nTcal = sdhdf_loadTcal(tcalData,"/u/hob044/software/new_c/sdhdfProc/runtime/Tcal_result.12.6.6.dat");
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {

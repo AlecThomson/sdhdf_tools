@@ -544,7 +544,7 @@ void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory,
   fits_close_file(fptr,&status);
   
 }
-
+/*
 int sdhdf_loadTcal(sdhdf_tcal_struct *tcalData,char *fname)
 {
   FILE *fin;
@@ -562,6 +562,8 @@ int sdhdf_loadTcal(sdhdf_tcal_struct *tcalData,char *fname)
   fclose(fin);
   return n;
 }
+*/
+
 
 void sdhdf_get_tcal(sdhdf_tcal_struct *tcalData,int n,double f0,double *tcalA,double *tcalB)
 {
@@ -596,9 +598,40 @@ void sdhdf_convertStokes(float p1,float p2,float p3,float p4,float *stokesI,floa
   *stokesV = 2*p4;
 }
 
+void sdhdf_loadTcal(sdhdf_fluxCalibration *fluxCal,int *nFluxCal,char *observatory,char *rcvr,char *tcalFile)
+{
+  char fname[1024];
+  char runtimeDir[1024];
+  int nchan;
+  int i,j;
+  FILE *fin;
+  
+  if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("=======================================================================\n");
+      printf("Error: sdhdfProc_calibration requires that the SDHDF_RUNTIME directory is set\n");
+      printf("=======================================================================\n");
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  sprintf(fname,"%s/observatory/%s/calibration/%s/%s",runtimeDir,observatory,rcvr,tcalFile);
+  printf("Opening: %s\n",fname);
+  fin = fopen(fname,"r");
+  while (!feof(fin))
+    {
+      if (fscanf(fin,"%lf %f %f",&(fluxCal[*nFluxCal].freq),&(fluxCal[*nFluxCal].scalAA),&(fluxCal[*nFluxCal].scalBB))==3)
+	{
+	  // Note that we're assuming that we add AA + BB to get Stokes I
+	  fluxCal[*nFluxCal].scalAA /= 2.;  // SHOULD CHECK THIS CAREFULLY
+	  fluxCal[*nFluxCal].scalBB /= 2.;
+	  fluxCal[*nFluxCal].type = 2;
+	  (*nFluxCal)++;
+	}
+    }
+  fclose(fin);
+}
 //
-// Routine to load a PCM file (FITS format)
-// to model cross-coupling within the receiver and noise source system
+// Routine to load a flux calibration file
 //
 void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile)
 {
@@ -645,7 +678,9 @@ void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *ob
       fluxCal[i].scalAA = data[i]/1000.; // /1000. because stored in mJy
       fluxCal[i].scalBB = data[nchan+i]/1000.; // Note stored as all AA then all BB
       //      printf("scal = %d %g %g\n",i,fluxCal[i].scalAA,fluxCal[i].scalBB);
+      fluxCal[i].type = 1;
     }
+
   *nFluxCalChan = nchan;
   free(data);
   

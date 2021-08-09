@@ -58,7 +58,8 @@ int main(int argc,char *argv[])
   char fname[MAX_FILES][MAX_STRLEN];
   char runtimeDir[MAX_STRLEN];
   float pol1,pol2,pol3,pol4;
-
+  int tcal = 0;  // Scal if tcal = 0.
+  
   float *out_data,*out_freq;
 
   sdhdf_fileStruct *inFile,*outFile;
@@ -120,6 +121,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-e")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
+      else if (strcmp(argv[i],"-tcal")==0)
+	tcal=1;
       else if (strcmp(argv[i],"-norm")==0)
 	{
 	  normCal=1;
@@ -170,13 +173,16 @@ int main(int argc,char *argv[])
 	  sdhdf_allocateBeamMemory(outFile,inFile->nBeam);
 	  // FIX ME: Should check if the user wants polarisation calibration	
 	  
-	  // Load the information within the PCM file
+	  // Load the information within the PCM file	  
 	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm"); // REMOVE HARDCODE
 	  sdhdf_formPCM_response(polCal,nPolCalChan);
 
 	  // Load the Scal information
-	  sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
-	  
+	  if (tcal==0)
+	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
+	  else
+	    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
+	    
 	  //	  for (j=0;j<nPolCalChan;j++)
 	  //	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
 	  //		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,

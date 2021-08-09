@@ -81,6 +81,7 @@ typedef struct sdhdf_calibration {
 
 // Flux calibration
 typedef struct sdhdf_fluxCalibration {
+  int    type;   // 1 = scal, 2 = tcal
   double freq;
   // Flux calibration properties
   float scalAA;
@@ -196,7 +197,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 void sdhdf_get_pcmcal_stokes(double freq,sdhdf_calibration *polCal,int nPolCalChan,double *actualNoiseStokes);
 void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile);
 void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile);
-int  sdhdf_loadTcal(sdhdf_tcal_struct *tcalData,char *fname);
+void sdhdf_loadTcal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile);
 int  sdhdf_loadTsys(sdhdf_fileStruct *inFile,int band,float *tsys);
 int  sdhdf_loadPhase(sdhdf_fileStruct *inFile,int band,float *phase);
 int  sdhdf_loadGain(sdhdf_fileStruct *inFile,int band,float *gain);
