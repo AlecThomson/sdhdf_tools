@@ -39,7 +39,7 @@
 
 void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,double yscale);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,double yscale,int rlcp,int flipV);
 
 void help()
 {
@@ -59,6 +59,7 @@ void help()
   printf("-f0 <freq0>         Start frequency (should be within specified band)\n");
   printf("-f1 <freq1>         End frequency (should be within specified band)\n");
   printf("-f <filename>       SDHDF file corresponding to observations\n");
+  printf("-flipV              Flip the sign of Stokes V\n");
   printf("-fref <freq>        Set a reference frequency in MHz\n");
   printf("-g <display>        Set display type\n");
   printf("-hline <val>        Draw a horizontal line at val\n");
@@ -68,6 +69,7 @@ void help()
   printf("-nx <nx>            Set nx panels in the x-direction\n");  
   printf("-ny <ny>            Set ny panels in the y-direction\n");
   printf("-p                  Sum polarisations\n");
+  printf("-RLCP               Plot right and left hand circular polarisation\n");
   printf("-sb <bandNumber>    Plot data within specified band number\n");
   printf("-sd <dumpNumber>    Plot data within specified spectral dump\n");
   printf("-stokes             Plot as Stokes parameters\n");
@@ -91,7 +93,8 @@ int main(int argc,char *argv[])
   char ylabel[1024] = "Signal strength";
 
   double yscale=1;
-
+  int rlcp = 0;
+  int flipV = 0;
   float hline[MAX_HLINE];
   int nHline=0;
   float chSize=1.4;
@@ -145,6 +148,10 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&hline[nHline]);
 	  nHline++;
 	}
+      else if (strcasecmp(argv[i],"-rlcp")==0)
+	rlcp = 1;
+      else if (strcasecmp(argv[i],"-flipV")==0)
+	flipV = 1;
       else if (strcmp(argv[i],"-fref")==0)
 	sscanf(argv[++i],"%lf",&fref);
       else if (strcmp(argv[i],"-nx")==0) 
@@ -222,7 +229,7 @@ int main(int argc,char *argv[])
 	  
 
 	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,
-		       hline,nHline,yscale);	  	  
+		       hline,nHline,yscale,rlcp,flipV);	  	  
 
 	  sdhdf_closeFile(inFile);
 
@@ -233,7 +240,7 @@ int main(int argc,char *argv[])
 }
 
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,double yscale)
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,double yscale,int rlcp,int flipV)
 {
   static int entry=0;
   static int entryX=0;
@@ -314,13 +321,26 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	  if (wt[i] == 0) {useP1[i] = 0; useP2[i] = 0;}
 	  if (npol > 1)
 	    pol2[i] = yscale*inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
-	  if (polPlot==2)
+	  if (polPlot==2 || rlcp == 1)
 	    {
 	      pol3[i] = yscale*inFile->beam[ibeam].bandData[iband].astro_data.pol3[i+idump*nchan];
 	      pol4[i] = yscale*inFile->beam[ibeam].bandData[iband].astro_data.pol4[i+idump*nchan];
 	    }
 
-	  if (stokes==1)
+	  if (rlcp == 1)
+	    {
+	      double p1,p2,p3,p4;
+	      double Iv,Qv,Uv,Vv;
+	      p1 = pol1[i]; p2 = pol2[i]; p3 = pol3[i]; p4 = pol4[i];
+	      Iv = p1+p2;
+	      Qv = p1-p2;
+	      Uv = 2*p3;
+	      Vv = 2*p4;
+	      if (flipV==1) Vv = -Vv;
+	      pol1[i] = 0.5*(Iv+Vv);
+	      pol2[i] = 0.5*(Iv-Vv);	      
+	    }	  
+	  else if (stokes==1)
 	    {
 	      double p1,p2,p3,p4;
 	      p1 = pol1[i]; p2 = pol2[i]; p3 = pol3[i]; p4 = pol4[i];
@@ -328,7 +348,9 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	      pol2[i] = p1-p2;
 	      pol3[i] = 2*p3;
 	      pol4[i] = 2*p4;
+	      if (flipV==1) pol4[i] = -pol4[i];
 	    }
+
 	  
 	  if (sump==1 && npol > 1) pol1[i] = pol1[i]+pol2[i];
 	  
