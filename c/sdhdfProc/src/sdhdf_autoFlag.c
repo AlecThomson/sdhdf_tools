@@ -126,10 +126,9 @@ int main(int argc,char *argv[])
 	{
 	// Do nothing
 	}
-      else
+      else // Processing file
 	{
 	  strcpy(fname,argv[ii]);
-
 	  
 	  sdhdf_initialiseFile(inFile);
 	  sdhdf_openFile(fname,inFile,1);
