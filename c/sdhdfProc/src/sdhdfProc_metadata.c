@@ -1274,6 +1274,8 @@ void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel)
   char fname[MAX_STRLEN];
   char runtimeDir[MAX_STRLEN];
   char str[4096];
+
+  *nRFI = 0;
   
   if (getenv("SDHDF_RUNTIME")==0)
     {
