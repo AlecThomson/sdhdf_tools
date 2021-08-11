@@ -36,7 +36,7 @@
 
 #define MAX_RFI 512
 
-void saveFile(sdhdf_fileStruct *inFile);
+void saveFile(sdhdf_fileStruct *inFile,char *extension);
 
 void help()
 {
@@ -44,6 +44,7 @@ void help()
   printf("Note 1: sdhdf_flag is used for manual flagging\n");
   printf("Note 2: here we use the term 'flagging', but it is the weights table in the SDHDF file that is set to zero\n");
   printf("\n\n");
+  printf("-e <extension>            Set the output file extension\n");
   printf("-from <filename.hdf>      Input file that has flagging information that should be copied to other files\n");
   printf("-edge <value>             Percent of the sub-band boundaries that should be flagged\n");
   printf("-persistent               Remove persistent RFI specific to the observatory\n");
@@ -60,6 +61,7 @@ int main(int argc,char *argv[])
   int i,j,ii,b,k,s;
   char fname[MAX_STRLEN];
   char fromFileName[MAX_STRLEN];
+  char extension[MAX_STRLEN]="autoFlag";
   sdhdf_fileStruct *inFile,*fromFile;
   int iband=0,nchan,idump,nband;
   int ndump=0,totSize,chanPos;
@@ -91,6 +93,7 @@ int main(int argc,char *argv[])
   for (i=1;i<argc;i++)
     {      
       if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}
+      else if (strcmp(argv[i],"-e")==0) strcpy(extension,argv[++i]);
       else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge); bandEdgeFlag=1;}
       else if (strcmp(argv[i],"-persistent")==0) {persistentFlag=1; flagType=2;}
       else if (strcmp(argv[i],"-h")==0) help();
@@ -120,7 +123,7 @@ int main(int argc,char *argv[])
 
   for (ii=1;ii<argc;ii++)
     {
-      if (strcmp(argv[ii],"-from")==0 || strcmp(argv[ii],"-edge")==0)
+      if (strcmp(argv[ii],"-from")==0 || strcmp(argv[ii],"-edge")==0 || strcmp(argv[ii],"-e")==0)
 	ii++;
       else if (strcmp(argv[ii],"-persistent")==0)
 	{
@@ -200,7 +203,7 @@ int main(int argc,char *argv[])
 		    }
 		}
 	    }
-	  saveFile(inFile);
+	  saveFile(inFile,extension);
 	  sdhdf_closeFile(inFile);
 	}
     }
@@ -217,7 +220,7 @@ int main(int argc,char *argv[])
 
 // Should make a generic saveFile function and also update sdhdf_flag.c
 
-void saveFile(sdhdf_fileStruct *inFile)
+void saveFile(sdhdf_fileStruct *inFile,char *extension)
 {
   char oname[MAX_STRLEN];
   char flagName[MAX_STRLEN];
@@ -230,7 +233,7 @@ void saveFile(sdhdf_fileStruct *inFile)
 
   // Should check if already .flag extension
   //
-  sprintf(oname,"%s.autoflag",inFile->fname);
+  sprintf(oname,"%s.%s",inFile->fname,extension);
 
   
   if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
