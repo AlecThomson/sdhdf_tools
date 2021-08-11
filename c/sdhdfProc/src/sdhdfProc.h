@@ -88,7 +88,7 @@ typedef struct sdhdf_fluxCalibration {
   float scalBB;
 } sdhdf_fluxCalibration;
 
-// RFI structure
+// RFI structure for persistent RFI
 typedef struct sdhdf_rfi {
   int type;
   char observatory[MAX_STRLEN];
@@ -99,6 +99,21 @@ typedef struct sdhdf_rfi {
   double mjd1;
   char description[MAX_STRLEN];  
 } sdhdf_rfi;
+
+// RFI structure for transient RFI
+typedef struct sdhdf_transient_rfi {
+  int type;
+  char observatory[MAX_STRLEN];
+  char receiver[MAX_STRLEN];
+  double f0;
+  double f1;
+  double f2;
+  double f3;
+  double threshold;
+  double mjd0;
+  double mjd1;
+  char description[MAX_STRLEN];  
+} sdhdf_transient_rfi;
 
 // Rest frequency list
 typedef struct sdhdf_restfrequency_struct {
@@ -161,6 +176,7 @@ void sdhdf_add2arg(char *args,char *add1,char *add2);
 
 // Loading metadata information
 void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel);
+void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile);  // Include loading attributes
 void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile);
 void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile);
@@ -193,9 +209,9 @@ int  sdhdf_loadFlagData(sdhdf_fileStruct *inFile);
 void sdhdf_calculate_timedependent_response(sdhdf_calibration *polCal,int nPolCalChan);
 void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolCalChan);
 void sdhdf_formPCM_response(sdhdf_calibration *polCal,int nPolCalChan);
-void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan,int normalise);
+void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan,int normalise,int av,float av1freq,float av2freq);
 void sdhdf_get_pcmcal_stokes(double freq,sdhdf_calibration *polCal,int nPolCalChan,double *actualNoiseStokes);
-void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile);
+void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile,int av,float av1freq,float av2freq);
 void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile);
 void sdhdf_loadTcal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile);
 int  sdhdf_loadTsys(sdhdf_fileStruct *inFile,int band,float *tsys);
