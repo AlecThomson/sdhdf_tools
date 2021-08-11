@@ -36,10 +36,11 @@
 
 #define VNUM "v0.1"
 #define MAX_HLINE 16
+#define MAX_VLINE 16
 
 void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,double yscale,int rlcp,int flipV);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV);
 
 void help()
 {
@@ -73,6 +74,7 @@ void help()
   printf("-sb <bandNumber>    Plot data within specified band number\n");
   printf("-sd <dumpNumber>    Plot data within specified spectral dump\n");
   printf("-stokes             Plot as Stokes parameters\n");
+  printf("-vline <val>        Draw a vertical line at val\n");
   printf("-ylabel <str>       Label to display on y-axis\n");
   printf("-yscale <val>       Scale (multiply) the values in the spectra by val\n");
   
@@ -97,6 +99,8 @@ int main(int argc,char *argv[])
   int flipV = 0;
   float hline[MAX_HLINE];
   int nHline=0;
+  float vline[MAX_HLINE];
+  int nVline=0;
   float chSize=1.4;
   float f0=-1,f1=-1;
   int setf0=0,setf1=0;
@@ -147,6 +151,11 @@ int main(int argc,char *argv[])
 	{
 	  sscanf(argv[++i],"%f",&hline[nHline]);
 	  nHline++;
+	}
+      else if (strcmp(argv[i],"-vline")==0)
+	{
+	  sscanf(argv[++i],"%f",&vline[nVline]);
+	  nVline++;
 	}
       else if (strcasecmp(argv[i],"-rlcp")==0)
 	rlcp = 1;
@@ -229,7 +238,7 @@ int main(int argc,char *argv[])
 	  
 
 	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,
-		       hline,nHline,yscale,rlcp,flipV);	  	  
+		       hline,nHline,vline,nVline,yscale,rlcp,flipV);	  	  
 
 	  sdhdf_closeFile(inFile);
 
@@ -240,7 +249,7 @@ int main(int argc,char *argv[])
 }
 
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,double yscale,int rlcp,int flipV)
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV)
 {
   static int entry=0;
   static int entryX=0;
@@ -595,6 +604,18 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       cpgsls(1);
       cpgsci(1);
     }
+
+    for (i=0;i<nVline;i++)
+    {
+      fx[0] = fx[1] = vline[i]; 
+      fy[0] = miny; fy[1] = maxy;
+      cpgsci(i+1);
+      cpgsls(2);
+      cpgline(2,fx,fy);
+      cpgsls(1);
+      cpgsci(1);
+    }
+
   
   if (molecularLines==1)
     {
