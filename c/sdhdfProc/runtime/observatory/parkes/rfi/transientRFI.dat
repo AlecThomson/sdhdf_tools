@@ -1,0 +1,14 @@
+#
+# Each line first starts with a <type> integer value
+
+# If type = 1 the line is as follows and the threshold is based on comparing the peak value to the average signal in the specified frequency ranges
+# <type> <observatory label> <receiver label> <freq0 MHz> <freq1 MHz> <MJD0> <MJD1> <power threshold multiplier> <cleanF0> <cleanF1> <text string for label>
+#
+#
+# For the <receiver label> if the RFI is present in all receiver systems then the receiver label can be "all"
+#
+
+#
+# Parkes RFI
+#
+1 Parkes all	713	733		0	999999 100 821.5 823 Mobile handset
