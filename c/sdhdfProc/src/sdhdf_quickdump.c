@@ -69,6 +69,8 @@ int main(int argc,char *argv[])
   int cal32_chN=-1;
   int cal32_tav=-1;
   int band0=-1,band1=-1;
+  double fref=-1;
+
   
   for (i=1;i<argc;i++)
     {
@@ -76,6 +78,8 @@ int main(int argc,char *argv[])
 	help();
       else if (strcmp(argv[i],"-tsys")==0)
 	dataType=2;
+      else if (strcmp(argv[i],"-fref")==0)
+	sscanf(argv[++i],"%lf",&fref);
       else if (strcmp(argv[i],"-cal")==0)
 	dataType=3;
       else if (strcmp(argv[i],"-cal32")==0)
@@ -190,9 +194,19 @@ int main(int argc,char *argv[])
 			      if (display==1)
 				{
 				  if (outFile==1)
-				    fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
+				    {
+				      if (fref < 0)
+					fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
+				      else
+					fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %.5g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight,(1.0-freq/fref)*SPEED_LIGHT/1000.); // km/s);
+				    }
 				  else
-				    printf("%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
+				    {
+				      if (fref < 0)
+					printf("%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
+				      else
+					printf("%s %d %d %d %d %.6f %g %g %g %g %g %.6f\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight,(1.0-freq/fref)*SPEED_LIGHT/1000.); // km/s);
+				    }
 				}
 			    }
 			}
