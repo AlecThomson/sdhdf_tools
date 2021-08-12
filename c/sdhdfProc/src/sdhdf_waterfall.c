@@ -221,7 +221,8 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
   
   int specSelect=-1;
   float minz=0,maxz=0;
-
+  int setZrange=0;
+  
   float heatMiny = 0;
   float heatMaxy = ndump;
   
@@ -308,16 +309,22 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 		  if (t_z==0)
 		    {
 		      imax = i; jmax = j;
-		      minz = maxz = heatMap[j*nchan+i];
-		      printf("In here setting %g %g\n",minz,maxz);
+		      if (setZrange==0)
+			{
+			  minz = maxz = heatMap[j*nchan+i];
+			  printf("In here setting %g %g\n",minz,maxz);
+			}
 		      t_z=1;
 		    }
 		  else
 		    {
-		      if (minz > heatMap[j*nchan+i]) minz = heatMap[j*nchan+i];
-		      if (maxz < heatMap[j*nchan+i]) {maxz = heatMap[j*nchan+i]; imax = i; jmax = j;}
+		      if (setZrange == 0)
+			{
+			  if (minz > heatMap[j*nchan+i]) minz = heatMap[j*nchan+i];
+			  if (maxz < heatMap[j*nchan+i]) {maxz = heatMap[j*nchan+i]; imax = i; jmax = j;}
+			}
 		    }
-		    }
+		}
 	    
 	      if (j==specSelect)
 		{
@@ -407,6 +414,14 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	  
 	  printf("Selected spectrum #%d\n",specSelect);
 	  printf("Selecting spectra from %s, spectral dump number %d\n",dumpParams[specSelect].fname,dumpParams[specSelect].dump);
+	}
+      else if (key=='r') // Set z-range
+	{
+	  setZrange=1;
+	  printf("Current z-range = %g %g\n",minz,maxz);
+	  printf("Enter new range ");
+	  scanf("%f %f",&minz,&maxz);
+
 	}
       else if (key=='c')
 	{
