@@ -16,11 +16,11 @@
 1 Parkes all	869.95 	875.05 		0	999999 Vodafone transmission tower
 1 Parkes all	875.05  889.95		0 	999999 Telstra transmission tower
 1 Parkes all	943.4	951.8		0	999999 Optus transmission tower
-1 Parkes all	953.7	958.7		0	999999 Vodafone transmission tower	
+1 Parkes all	953.7	960		0	999999 Vodafone transmission tower (should be to 958.7)	
 1 Parkes all	1017	1019		0	999999 Parkes airport
 1 Parkes UWL    1023    1025   		0       999999 Digitiser related signal always present
 1 Parkes all	1029	1031		0	999999 Parkes airport
-1 Parkes UWL	1081.7  1086.7		0	999999 Aliased signal
+1 Parkes UWL	1081.7  1088		0	999999 Aliased signal (should be to 1086.7?)
 1 Parkes UWL    1720    1736.2 		0	999999 Aliased signal
 1 Parkes all	1805    1825		0 	999999 Telstra transmission tower
 1 Parkes all    1824    1845            58000   999999 Transmission tower -- CHECK WHEN SWITCHED ON
