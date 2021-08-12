@@ -64,6 +64,7 @@ int main(int argc,char *argv[])
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
+  int polAv=1;
 
   int nBeam=0;
   int nBand=0;
@@ -205,6 +206,8 @@ int main(int argc,char *argv[])
 	{strcpy(scalFname,argv[++i]); tcal=0;}
       else if (strcmp(argv[i],"-tcal")==0)
 	{strcpy(scalFname,argv[++i]); tcal=1;}
+      else if (strcmp(argv[i],"-psum")==0)
+	polAv=0;
       else if (strcmp(argv[i],"-para")==0)
 	{
 	  setPara=1;
@@ -1081,7 +1084,12 @@ int main(int argc,char *argv[])
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      for (k=0;k<out_nchan;k++)
-				out_data[k+out_nchan*j] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j*4+out_nchan]); 
+				{
+				  if (polAv==1)
+				    out_data[k+out_nchan*j] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j*4+out_nchan])/2.;
+				  else
+				    out_data[k+out_nchan*j] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j*4+out_nchan]); 
+				}
 			      // out_data[k+out_nchan*j*4] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j+4+out_nchan])/2.;
 			    }
 			}
