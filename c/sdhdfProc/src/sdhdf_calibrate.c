@@ -111,7 +111,10 @@ int main(int argc,char *argv[])
   char extension[1024];
   char oname[1024];
   char args[MAX_STRLEN]="";
-
+  float averageCalValuesF0=-1;
+  float averageCalValuesF1=-1;
+  int averageCal=0;
+  
   // Setup output defaults
   strcpy(oname,"sdhdf_calibrate_output.hdf");
   strcpy(extension,"calibrate");
@@ -123,6 +126,12 @@ int main(int argc,char *argv[])
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
       else if (strcmp(argv[i],"-tcal")==0)
 	tcal=1;
+      else if (strcmp(argv[i],"-averageCal")==0)
+	{
+	  averageCal=1;
+	  sscanf(argv[++i],"%f",&averageCalValuesF0);
+	  sscanf(argv[++i],"%f",&averageCalValuesF1);
+	}
       else if (strcmp(argv[i],"-norm")==0)
 	{
 	  normCal=1;
@@ -174,7 +183,7 @@ int main(int argc,char *argv[])
 	  // FIX ME: Should check if the user wants polarisation calibration	
 	  
 	  // Load the information within the PCM file	  
-	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm"); // REMOVE HARDCODE
+	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm",averageCal,averageCalValuesF0,averageCalValuesF1); // REMOVE HARDCODE
 	  sdhdf_formPCM_response(polCal,nPolCalChan);
 
 	  // Load the Scal information
@@ -195,7 +204,7 @@ int main(int argc,char *argv[])
 
 	  // Request CAL_ON-CAL_OFF for specfic frequency covered by the PCM file
 	  beam=0; // FIX ME
-	  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan,normCal);
+	  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan,normCal,averageCal,averageCalValuesF0,averageCalValuesF1);
 	  sdhdf_calculate_gain_diffgain_diffphase(polCal,nPolCalChan);
 	  sdhdf_calculate_timedependent_response(polCal,nPolCalChan);
 
@@ -328,8 +337,23 @@ int main(int argc,char *argv[])
 			  // Multiply by Scal
 			  // FIX ME -- NEED TO INTERPLATE -- USE DIFFERENT ICHAN (IN CASE NCHAN IS DIFFERENT WITH FLUXCAL
 			  // printf("%d finalJ ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
-
-			  fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
+			  if (averageCal==1 && ii == 0)
+			    {
+			      int c,nv=0;
+			      fluxScale=0;
+			      for (c=0;c<nFluxCalChan;c++)
+				{
+				  if (fluxCal[c].freq >= averageCalValuesF0 && fluxCal[c].freq <= averageCalValuesF1)
+				    {
+				      fluxScale += (fluxCal[c].scalAA + fluxCal[c].scalBB);
+				      nv++;
+				    }
+				}
+			      fluxScale/=(double)nv;
+			      printf("Using averaged flux scale of %g\n",fluxScale);
+			    }
+			  else if (averageCal==0)
+			    fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
 
 			  if (normAstro == 1 || normCal==1)// Currently normalising both
 			    {

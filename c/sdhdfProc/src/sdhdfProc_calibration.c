@@ -93,7 +93,7 @@ void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolC
     }
     
 }
-void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan,int normalise)
+void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_calibration *polCal,int nPolCalChan,int normalise,int av,float av1freq,float av2freq)
 {
   int i,j;
   int ichan,nchanCal,ndumpCal;
@@ -105,7 +105,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
   double aa_off,bb_off,rab_off,iab_off;
   double scaleFactor;
   double tdump;
-  
+
   for (i=0;i<nPolCalChan;i++)
     {
       // Should set better or using interpolation -- FIX ME
@@ -194,6 +194,35 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	  polCal[i].stokes_noise_measured[1] = aa-bb;
 	  polCal[i].stokes_noise_measured[2] = 2*rab;
 	  polCal[i].stokes_noise_measured[3] = 2*iab;
+	}
+    }
+  // If requested should change to an averaged value
+  if (av==1)
+    {
+      double av1=0,av2=0,av3=0,av4=0;
+      int n=0;
+      for (i=0;i<nPolCalChan;i++)
+	{
+	  if (polCal[i].freq >= av1freq && polCal[i].freq <= av2freq)
+	    {
+	      av1 += polCal[i].stokes_noise_measured[0];
+	      av2 += polCal[i].stokes_noise_measured[1];
+	      av3 += polCal[i].stokes_noise_measured[2];
+	      av4 += polCal[i].stokes_noise_measured[3];
+	      n++;
+	    }
+	}
+      av1 /= (double)n;
+      av2 /= (double)n;
+      av3 /= (double)n;
+      av4 /= (double)n;
+      printf("Setting input measurement of the noise source to (%g,%g,%g,%g)\n",av1,av2,av3,av4);
+      for (i=0;i<nPolCalChan;i++)
+	{
+	  polCal[i].stokes_noise_measured[0] = av1;
+	  polCal[i].stokes_noise_measured[1] = av2;
+	  polCal[i].stokes_noise_measured[2] = av3;
+	  polCal[i].stokes_noise_measured[3] = av4;
 	}
     }
 }
@@ -417,7 +446,7 @@ void sdhdf_set_pcm_response(sdhdf_calibration *polCal,double complex J1[2][2],do
 // Routine to load a PCM file (FITS format)
 // to model cross-coupling within the receiver and noise source system
 //
-void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile)
+void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory, char *rcvr,char *pcmFile,int av,float av1freq,float av2freq)
 {
   int status=0;
   fitsfile *fptr;
@@ -468,6 +497,7 @@ void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory,
       polCal[i].noiseSource_UoverI = data[i*3+1];
       polCal[i].noiseSource_VoverI = data[i*3+2];      
     }
+  
   *nPolCalChan = nchan_cal_poln;
 
   free(data);
@@ -535,6 +565,51 @@ void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory,
   
   free(dataFreq);
 
+
+  // Do we require any averaging?
+    if (av==1)
+    {
+      double av1,av2,av3,av4,av5,av6,av7,av8,av9,av10;
+      int n=0;
+      av1=av2=av3=av4=av5=av6=av7=av8=av9=av10=0;
+      for (i=0;i<nchan_cal_poln;i++)
+	{
+	  if (polCal[i].freq >= av1freq  && polCal[i].freq <= av2freq)
+	    {
+	      av1 += polCal[i].noiseSource_QoverI;
+	      av2 += polCal[i].noiseSource_UoverI;
+	      av3 += polCal[i].noiseSource_VoverI;
+	      av4 += polCal[i].constant_gain;
+	      av5 += polCal[i].constant_diff_gain;
+	      av6 += polCal[i].constant_diff_phase;
+	      av7 += polCal[i].constant_b1;
+	      av8 += polCal[i].constant_b2;
+	      av9 += polCal[i].constant_r1;
+	      av10 += polCal[i].constant_r2;
+	      n++;
+	    }
+	}
+      av1 /= (double)n;
+      av2 /= (double)n;
+      av3 /= (double)n;
+      av4 /= (double)n;       av5 /= (double)n;      av6 /= (double)n;       av7 /= (double)n;
+      av8 /= (double)n;       av9 /= (double)n;      av10 /= (double)n;
+      printf("Setting PCM noise source to (%g,%g,%g)\n",av1,av2,av3);
+      printf("Setting PCM 7-parameters to (%g,%g,%g,%g,%g,%g,%g)\n",av4,av5,av6,av7,av8,av9,av10);
+      for (i=0;i<nchan_cal_poln;i++)
+	{
+	  polCal[i].noiseSource_QoverI = av1;
+	  polCal[i].noiseSource_UoverI = av2;
+	  polCal[i].noiseSource_VoverI = av3;
+	  polCal[i].constant_gain = av4;
+	  polCal[i].constant_diff_gain = av5;
+	  polCal[i].constant_diff_phase = av6;
+	  polCal[i].constant_b1 = av7;
+	  polCal[i].constant_b2 = av8;
+	  polCal[i].constant_r1 = av9;
+	  polCal[i].constant_r2 = av10;	  
+	}      
+    }
 
   
 
