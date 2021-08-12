@@ -304,9 +304,10 @@ int main(int argc,char *argv[])
 	  foundOn=0;
 	  for (j=0;j<nOnSrc;j++)
 	    {
-	      if (strcmp(onSrc[j],info[i].source)==0)
+	      if ((exactMatch==1 && strcmp(onSrc[j],info[i].source)==0) || (exactMatch==0 && strstr(info[i].source,onSrc[j])!=NULL))
 		{foundOn=1; break;}
 	    }
+	  //	  printf("Found = %d %d\n",foundOn,exactMatch);
 	  if (foundOn==1)
 	    {
 	      // Now find a matching off source
@@ -314,10 +315,9 @@ int main(int argc,char *argv[])
 	      for (j=0;j<nEntry;j++)
 		{
 		  foundOff=0;
-
 		  for (k=0;k<nOffSrc;k++)
 		    {
-		      if (strcmp(offSrc[k],info[j].source)==0)
+		      if ((exactMatch==1 && strcmp(offSrc[k],info[j].source)==0) || (exactMatch==0 && strstr(info[j].source,offSrc[k])!=NULL))
 			{foundOff=1; break;}
 		    }
 		  if (foundOff==1)
