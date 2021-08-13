@@ -73,6 +73,7 @@ int main(int argc,char *argv[])
   int pol=0;
   int stokes=0;
   int fAv=0;
+  float fchbw=-1;
   int nchanRequested=-1;
   int bary=0,lsr=0;
   int regrid=0;
@@ -249,6 +250,8 @@ int main(int argc,char *argv[])
 	}
       else if (strcasecmp(argv[i],"-fav")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&fAv);}
+      else if (strcasecmp(argv[i],"-fchbw")==0)
+	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%f",&fchbw);}
       else if (strcasecmp(argv[i],"-nch")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&nchanRequested);}
       else
@@ -571,6 +574,15 @@ int main(int argc,char *argv[])
 		      
 		      if (fScrunch==1)
 			fAv = nchan;
+		   
+		      if (fchbw > 0)
+			{
+			  double chbw;
+			  sdhdf_loadBandData(inFile,b,ii,1);
+			  chbw = fabs(inFile->beam[b].bandData[ii].astro_data.freq[1]-inFile->beam[b].bandData[ii].astro_data.freq[0]); // Assuming time ordered, evenly spaced channels -- FIX ME
+			  fAv = (int)(fabs(fchbw)/chbw);
+			  printf("Frequency averaging by %d channels\n",fAv);
+			}
 		      
 		      if (fAv < 2)
 			out_nchan = nchan;
