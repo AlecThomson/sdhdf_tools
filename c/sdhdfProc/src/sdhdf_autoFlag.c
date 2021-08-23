@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
   int fromFlag=0;
   int bandEdgeFlag=0;
   int persistentFlag=0;
-  int transientFlag=1;
+  int transientFlag=0;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -148,12 +148,8 @@ int main(int argc,char *argv[])
 	      if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
 		printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
 	      if (transientFlag==1)
-		{
-		  printf("LAOD\n");
 		  sdhdf_loadTransientRFI(transient_rfi,&nTransientRFI,MAX_RFI,"parkes");
-		  printf("DONE\n");
-		}
-		  if (persistentFlag==1)
+	      if (persistentFlag==1)
 		sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
 
 	      if (bandEdge > 0)
