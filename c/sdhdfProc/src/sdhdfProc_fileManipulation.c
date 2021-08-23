@@ -225,7 +225,6 @@ void sdhdf_loadBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int typ
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
 	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
-
       status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
       status = H5Dclose(dataset_id);
     }
@@ -301,6 +300,13 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       //      printf("Done reading data attributes\n");
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);
+      if (allData==NULL)
+	{
+          printf("ERROR: Failure in sdhdfProc_fileManipulation to allocate memory\n");
+          printf("ERROR: Cannot recover. Sorry\n");
+          exit(1);
+	}
+	  
       status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);  
       sdhdf_extractPols(&(inFile->beam[beam].bandData[band].astro_data),allData,nchan,ndump,npol);
       free(allData);
