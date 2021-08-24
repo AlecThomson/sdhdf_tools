@@ -172,8 +172,8 @@ int main(int argc,char *argv[])
 		      rfi[nRFI].type=1;  rfi[nRFI].f0 = freq0-chbw/2.; rfi[nRFI].f1 = freq0+(freq1-freq0)*bandEdge/100.+chbw/2.; nRFI++;
 		      rfi[nRFI].type=1;  rfi[nRFI].f0 = freq1 -chbw/2.-(freq1-freq0)*bandEdge/100.; rfi[nRFI].f1 = freq1+chbw/2.; nRFI++;
 		      printf("Adding RFI at %g %g\n",freq0,freq0+(freq1-freq0)*bandEdge/100.);
-		      sdhdf_releaseBandData(inFile,b,i,1);
-
+		      sdhdf_releaseBandData(inFile,0,i,1);
+		      printf("Complete data release\n");
 		    }
 		}
 	      printf("Have loaded %d RFI signals\n",nRFI);
