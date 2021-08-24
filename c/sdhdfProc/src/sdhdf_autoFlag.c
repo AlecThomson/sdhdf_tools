@@ -36,7 +36,6 @@
 
 #define MAX_RFI 512
 
-void saveFile(sdhdf_fileStruct *inFile,char *extension);
 
 void help()
 {
@@ -79,12 +78,22 @@ int main(int argc,char *argv[])
   int bandEdgeFlag=0;
   int persistentFlag=0;
   int transientFlag=0;
+  // Should check if already .flag extension
+  //
+  char oname[MAX_STRLEN];
+  sdhdf_fileStruct *outFile;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
       exit(1);
     }
+  if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
+    {
+      printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
+      exit(1);
+    }
+
   if (!(fromFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >fromFile<\n");
@@ -142,6 +151,13 @@ int main(int argc,char *argv[])
 	  sdhdf_initialiseFile(inFile);
 	  sdhdf_openFile(fname,inFile,1);
 	  sdhdf_loadMetaData(inFile);
+	  sprintf(oname,"%s.%s",inFile->fname,extension);
+	  
+	  
+	  sdhdf_initialiseFile(outFile);
+	  sdhdf_openFile(oname,outFile,3);
+	  sdhdf_copyRemainder(inFile,outFile,0);
+	  
 	  if (flagType==2)
 	    {
 	      printf("Observatory site = %s\n",inFile->primary[0].telescope);
@@ -196,7 +212,7 @@ int main(int argc,char *argv[])
 		    {
 		      double freq;
 		      int flagIt;
-
+		      int haveFlag=0;
 		      if (persistentFlag==1)
 			{
 			  // ii, b, i (band)
@@ -207,16 +223,22 @@ int main(int argc,char *argv[])
 				  || (rfi[k].f1 > inFile->beam[b].bandHeader[i].f0 && rfi[k].f1 < inFile->beam[b].bandHeader[i].f1))
 				{
 				  // Now zap from each sub-band
-				  printf("Removing persistent RFI: %s\n",rfi[k].description);
+				  printf("Processing persistent RFI: %s (%g to %g)\n",rfi[k].description,rfi[k].f0,rfi[k].f1);
+				  haveFlag=0;
 				  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
 				    {
 				      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
 					{
 					  freq = inFile->beam[b].bandData[i].astro_data.freq[j];
 					  if (freq > rfi[k].f0 && freq < rfi[k].f1)
-					    inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
-					}
+					    {
+					      inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
+					      haveFlag=1;
+					    }
+					}				      
 				    }
+				  if (haveFlag==1)
+				    printf(" ... have flagged this RFI\n");
 				}
 			    }
 			}
@@ -285,51 +307,17 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-/*
-		      for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
-			{
-			  printf("Processing spectral dump %d\n",s);
-			  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-			    {
-			      freq = inFile->beam[b].bandData[i].astro_data.freq[j];
-			      if (persistentFlag==1)
-				{
-				  for (k=0;k<nRFI;k++) // CAN DO THIS MUCH QUICKER			   
-				    {
-				      //			      printf("Checking %.5f %g %g\n",freq,rfi[k].f0,rfi[k].f1);
-				      if (freq > rfi[k].f0 && freq < rfi[k].f1)
-					{
-					  inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
-					  break;
-					}
-				    }
-				}
-			      if (transientFlag==1)
-				{
-				  for (k=0;k<nTransientRFI;k++) // CAN DO THIS MUCH QUICKER			   
-				    {
-				      // WHAT ABOUT RFI ACROSS SUB-BAND BOUNDARIES?
-				      //			      printf("Checking %.5f %g %g\n",freq,rfi[k].f0,rfi[k].f1);
-				      if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
-					{
-					  inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
-					  break;
-					}
-				    }
-
-				}
-			    }
-			}
-		      */
 		    }
+		  sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
 		  sdhdf_releaseBandData(inFile,b,i,1);
 		}
 	    }
-	  saveFile(inFile,extension);
 	  sdhdf_closeFile(inFile);
+	  sdhdf_closeFile(outFile);	  
 	}
     }
   free(inFile);
+  free(outFile);
     
   if (flagType==1)
     {
@@ -340,45 +328,4 @@ int main(int argc,char *argv[])
 }
 
 
-// Should make a generic saveFile function and also update sdhdf_flag.c
-
-void saveFile(sdhdf_fileStruct *inFile,char *extension)
-{
-  char oname[MAX_STRLEN];
-  char flagName[MAX_STRLEN];
-  sdhdf_fileStruct *outFile;
-  int i,j,b;
-  hsize_t dims[1];
-  hid_t dset_id,dataspace_id;
-  herr_t status;
-  int *outFlags;
-
-  // Should check if already .flag extension
-  //
-  sprintf(oname,"%s.%s",inFile->fname,extension);
-
-  
-  if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
-    {
-      printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
-      exit(1);
-    }
-
-  sdhdf_initialiseFile(outFile);
-  sdhdf_openFile(oname,outFile,3);
-  sdhdf_copyRemainder(inFile,outFile,0);
-  
-  // Now add the flag table
-  for (b=0;b<inFile->nBeam;b++)
-    {
-      for (i=0;i<inFile->beam[b].nBand;i++)
-	{
-	  sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
-	}
-    }
-
-  sdhdf_closeFile(outFile);
-
-  free(outFile);
-}
 
