@@ -638,6 +638,44 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
 
 }
 
+void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,int nsub,int npol,int nchan)
+{
+  int i;
+  hid_t dset_id,datatype_id,group_id,ocpl_id;
+  herr_t status=0;
+  hid_t dataspace_id,stid;
+  char groupName[MAX_STRLEN];
+  char dsetName[MAX_STRLEN],label[MAX_STRLEN];
+  hsize_t dims[5];
+
+  sprintf(groupName,"beam_%d/%s/astronomy_data",ibeam,blabel);
+  if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+    {
+      group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status = H5Gclose(group_id);
+    }
+  dims[0] = nsub;
+  dims[1] = 1;
+  dims[2] = npol;
+  dims[3] = nchan;
+  dims[4] = 1;
+  // FIX ME -- NOW 4 DIMENSIONS
+  dataspace_id = H5Screate_simple(5,dims,NULL);
+  
+  printf("Replacing data %d\n",dataspace_id);
+  sprintf(dsetName,"%s/data",groupName);
+  dset_id = H5Dopen2(outFile->fileID,dsetName,H5P_DEFAULT);
+  printf("dset_id = %d\n",dset_id);
+  status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
+  printf("Status 1 = %d\n",status);
+  status = H5Dclose(dset_id);
+  status = H5Sclose(dataspace_id);
+
+  //  status = H5Gclose(group_id);
+
+
+}
+
 // type = 0: copy all
 void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int type)
 {
