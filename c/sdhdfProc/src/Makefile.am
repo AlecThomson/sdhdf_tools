@@ -99,7 +99,8 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_plotMultiSpec \
   sdhdf_map \
   sdhdf_weightSpectra \
-  sdhdf_plotSpectrum 
+  sdhdf_plotSpectrum \
+  sdhdf_model 
 
 sdhdf_primaryFluxCal_SOURCES = sdhdf_primaryFluxCal.c \
   $(COMMON_SRCS)
@@ -153,6 +154,9 @@ sdhdf_plotMultiSpec_SOURCES = sdhdf_plotMultiSpec.c \
   $(COMMON_SRCS)
 
 sdhdf_plotSpectrum_SOURCES = sdhdf_plotSpectrum.c \
+  $(COMMON_SRCS)
+
+sdhdf_model_SOURCES = sdhdf_model.c \
   $(COMMON_SRCS)
 
 AM_CFLAGS = @PGPLOT_CFLAGS@
