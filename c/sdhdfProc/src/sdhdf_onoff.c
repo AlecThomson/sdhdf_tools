@@ -33,7 +33,7 @@
 #include "hdf5.h"
 
 #define VNUM "v0.1"
-#define MAX_FILES_BATCH 128
+#define MAX_FILES_BATCH 1024
 
 void help()
 {

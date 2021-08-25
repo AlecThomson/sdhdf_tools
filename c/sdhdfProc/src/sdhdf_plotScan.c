@@ -72,7 +72,7 @@ int main(int argc,char *argv[])
   modelFitStruct modelFit[MAX_BANDS];
   float maxFlux=0,minFlux=1e99;
   int nFile=0;
-  int useWeights=1;
+  int useWeights=0;
   float wSum;
   int sbHighlight=-1;
   int okay;
@@ -110,6 +110,8 @@ int main(int argc,char *argv[])
        strcpy(fname,argv[++i]);
      else if (strcmp(argv[i],"-src")==0)
        strcpy(srcName,argv[++i]);
+     else if (strcasecmp(argv[i],"-divWeights")==0)
+       useWeights=1;
      else if (strcmp(argv[i],"-freqRange")==0)
        {
 	 sscanf(argv[++i],"%f",&f0);
@@ -193,7 +195,13 @@ int main(int argc,char *argv[])
 		      onBB = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+sub*nchan]; 
 		      fluxAA[i][sub] += onAA;
 		      fluxBB[i][sub] += onBB;
-		      wSum+=1;
+		      if (useWeights==1)
+			{
+			  wSum += inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+sub*inFile->beam[ibeam].bandHeader[i].nchan];
+			  printf("%d %d wSum = %g\n",j,sub,wSum);
+			}
+		      else
+			wSum+=1;
 		    }
 		}
 	    }

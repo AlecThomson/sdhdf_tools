@@ -89,7 +89,7 @@ typedef struct sdhdf_spectralDumpsStruct {
   
   float  *freq;                // Frequency
   float  *dataWeights;         // Weight information for channels and spectral dumps
-  int    *flag;                // Flagging information only for channels
+  unsigned char *flag;                // Flagging information only for channels
   
   float  *pol1;
   float  *pol2;

@@ -97,7 +97,7 @@ void help()
 int main(int argc,char *argv[])
 {
   int i,j,k,l;
-  char fname[MAX_FILES][64];
+  char fname[MAX_FILES][128];
   int nFiles=0;
   int ibeam=0;
   int iband=0;
@@ -226,12 +226,12 @@ int main(int argc,char *argv[])
 	}
     }
 
-
   info = (infoStruct *)malloc(sizeof(infoStruct)*nFiles*MAX_BANDS); // SHOULD FIX THE MAX_BANDS HERE
 
   nEntry=0;
   for (i=0;i<nFiles;i++)
     {
+
       sdhdf_initialiseFile(inFile);
       openFile = sdhdf_openFile(fname[i],inFile,1);
       if (openFile==-1)

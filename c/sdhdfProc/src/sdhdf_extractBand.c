@@ -346,7 +346,6 @@ int main(int argc,char *argv[])
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 		    
-
 		      printf("Output nchan = %d (%d), npol = %d\n",nchan,totNchan,npol);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
 		      sdhdf_writeSpectrumData(outFile,outBandParams[j].label,b,j,outVals,freqVals,totNchan,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);

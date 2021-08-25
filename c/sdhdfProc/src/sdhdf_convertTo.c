@@ -34,11 +34,10 @@
 
 void help()
 {
-  printf("sdhdf_plotSpectrum: %s\n",VNUM);
+  printf("sdhdf_convertTo: %s\n",VNUM);
   printf("sdhfProc version:   %s\n",SOFTWARE_VER);
   printf("author:             George Hobbs\n");
   printf("\n");
-  printf("Software to plot a spectrum in an interactive matter\n");
   printf("\n\nCommand line arguments:\n\n");
   printf("-band <integer>     Sub-band selection (starting from 0 for the first subband in the file)\n");
   printf("-e <string>         Output file extension (defaults to sdfits)  (note that this is not used if the -o option is set)\n");

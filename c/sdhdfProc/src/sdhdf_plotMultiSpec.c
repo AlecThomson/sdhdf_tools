@@ -117,6 +117,9 @@ int main(int argc,char *argv[])
   int setLog=-1;
   int setBand=0;
   int stokes=0;
+  char queryFile[1024]="query.txt";
+  int recordQuery=0;
+  FILE *fout;
   
   //  help();
   
@@ -137,6 +140,12 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-h")==0)
 	{help(); exit(1);}
+      else if (strcmp(argv[i],"-query")==0)
+	{
+	  strcpy(queryFile,argv[++i]);
+	  recordQuery=1;
+	  fout = fopen(queryFile,"a");
+	}
       else if (strcmp(argv[i],"-ylabel")==0)
 	strcpy(ylabel,argv[++i]);
       else if (strcmp(argv[i],"-yscale")==0)
@@ -240,12 +249,22 @@ int main(int argc,char *argv[])
 	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,
 		       hline,nHline,vline,nVline,yscale,rlcp,flipV);	  	  
 
+	  if (recordQuery==1)
+	    {
+	      char response[MAX_STRLEN];
+	      printf("Please enter a response to this file (%s) ",inFile->fname);
+	      scanf("%s",response);
+	      fprintf(fout,"%s %s\n",inFile->fname,response);
+	    }
+	  
 	  sdhdf_closeFile(inFile);
 
 	}
     }
   cpgend();  
   free(inFile);
+  if (recordQuery==1)
+    fclose(fout);
 }
 
 
@@ -541,7 +560,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	sprintf(xlabel,"Frequency (MHz)");
       else
 	sprintf(xlabel,"Velocity (km/s)");
-
+      
       cpglab(xlabel,ylabel,fname);
       
     }
@@ -558,8 +577,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	{
 	  cpgsvp(wx1,wx2,wy1,wy2);
 	  cpgswin(0,1,0,1);
-	  sprintf(title,"%s: Spectral dump %d",inFile->beam[ibeam].bandHeader[iband].label,idump);
-
+	  if (nx == 1)
+	    sprintf(title,"%s: Spectral dump %d",inFile->beam[ibeam].bandHeader[iband].label,idump);
+	  else
+	    sprintf(title,"");
 	  // FIX ME
 	  //	  sdhdf_loadFrequencyAttributes(inFile,iband);
 	  //	  sdhdf_loadDataAttributes(inFile,iband);
@@ -591,7 +612,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	cpgbox("BCNTS",0,0,"BCTSN",0,0);
       else
 	cpgbox("BCTS",0,0,"BCTSN",0,0);
-      cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,inFile->fname);
+      if (nx == 1)
+	cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,inFile->fname);
     }
 
   for (i=0;i<nHline;i++)

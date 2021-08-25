@@ -646,7 +646,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  else if (key=='2') nFit=2;
 	  else if (key=='3') nFit=3;
 	  else if (key=='4') nFit=4;
-	  else if (key=='4') nFit=5;
+	  else if (key=='5') nFit=5;
 	  else if (key=='f')  // Fit a polynomial
 	    {
 	      printf("Nfit = %d\n",nFit);

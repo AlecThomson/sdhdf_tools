@@ -1451,7 +1451,7 @@ int main(int argc,char *argv[])
 
 					      // out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
 					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;
-
+					    
 					      // GEORGE HACK
 					      //					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY1;
 					    }
