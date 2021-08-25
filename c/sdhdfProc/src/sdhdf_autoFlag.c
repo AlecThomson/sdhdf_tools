@@ -46,6 +46,8 @@ void help()
   printf("-e <extension>            Set the output file extension\n");
   printf("-from <filename.hdf>      Input file that has flagging information that should be copied to other files\n");
   printf("-edge <value>             Percent of the sub-band boundaries that should be flagged\n");
+  printf("-noflags                  Do not write out a flag table\n");
+  printf("-noweights                Do not write out a weights table\n");
   printf("-persistent               Remove persistent RFI specific to the observatory\n");
   printf("-transient                Remove transient RFI specific to the observatory\n");
   printf("\n");
@@ -82,7 +84,10 @@ int main(int argc,char *argv[])
   //
   char oname[MAX_STRLEN];
   sdhdf_fileStruct *outFile;
-  
+
+  int writeWeights = 1;
+  int writeFlags = 1;
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -107,6 +112,8 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}
       else if (strcmp(argv[i],"-e")==0) strcpy(extension,argv[++i]);
+      else if (strcasecmp(argv[i],"-noflags")==0) writeFlags=0;
+      else if (strcasecmp(argv[i],"-noweights")==0) writeWeights=0;
       else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge); bandEdgeFlag=1;}
       else if (strcmp(argv[i],"-persistent")==0) {persistentFlag=1; flagType=2;}
       else if (strcmp(argv[i],"-transient")==0) {transientFlag=1; flagType=2;}
@@ -139,7 +146,7 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[ii],"-from")==0 || strcmp(argv[ii],"-edge")==0 || strcmp(argv[ii],"-e")==0)
 	ii++;
-      else if (strcmp(argv[ii],"-persistent")==0 || strcmp(argv[ii],"-transient")==0)
+      else if (strcmp(argv[ii],"-persistent")==0 || strcmp(argv[ii],"-transient")==0 	  || strcasecmp(argv[ii],"-noweights")==0 || strcasecmp(argv[ii],"-noflags")==0)
 	{
 	  // Do nothing
 	}
@@ -152,8 +159,7 @@ int main(int argc,char *argv[])
 	  sdhdf_openFile(fname,inFile,1);
 	  sdhdf_loadMetaData(inFile);
 	  sprintf(oname,"%s.%s",inFile->fname,extension);
-	  
-	  
+	  	  
 	  sdhdf_initialiseFile(outFile);
 	  sdhdf_openFile(oname,outFile,3);
 	  sdhdf_copyRemainder(inFile,outFile,0);
@@ -164,7 +170,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
 		printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
 	      if (transientFlag==1)
-		  sdhdf_loadTransientRFI(transient_rfi,&nTransientRFI,MAX_RFI,"parkes");
+		sdhdf_loadTransientRFI(transient_rfi,&nTransientRFI,MAX_RFI,"parkes");
 	      if (persistentFlag==1)
 		sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
 
@@ -205,8 +211,15 @@ int main(int argc,char *argv[])
 		  if (flagType==1)
 		    {
  		      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-			inFile->beam[b].bandData[i].astro_data.dataWeights[j] =
-			  fromFile->beam[b].bandData[i].astro_data.dataWeights[j];
+			{
+			  inFile->beam[b].bandData[i].astro_data.dataWeights[j] =
+			    fromFile->beam[b].bandData[i].astro_data.dataWeights[j];
+			  if (inFile->beam[b].bandData[i].astro_data.dataWeights[j] > 0)
+			    inFile->beam[b].bandData[i].astro_data.flag[j]=0;
+			  else
+			    inFile->beam[b].bandData[i].astro_data.flag[j]=1;
+			}
+
 		    }
 		  else if (flagType==2)
 		    {
@@ -233,6 +246,7 @@ int main(int argc,char *argv[])
 					  if (freq > rfi[k].f0 && freq < rfi[k].f1)
 					    {
 					      inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
+					      inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan]=1;
 					      haveFlag=1;
 					    }
 					}				      
@@ -300,7 +314,10 @@ int main(int argc,char *argv[])
 					    {					      
 					      freq = inFile->beam[b].bandData[i].astro_data.freq[j];
 					      if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
-						inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
+						{
+						  inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
+						  inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan] = 1;					  
+						}
 					    }					  
 					}
 				    }
@@ -308,7 +325,10 @@ int main(int argc,char *argv[])
 			    }
 			}
 		    }
-		  sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
+		  if (writeWeights==1)
+		    sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
+		  if (writeFlags==1)
+		    sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
 		  sdhdf_releaseBandData(inFile,b,i,1);
 		}
 	    }

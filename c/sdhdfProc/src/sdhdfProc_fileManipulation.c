@@ -316,8 +316,14 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
 	  dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-	  status = H5Dread(dataset_id,H5T_NATIVE_INT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.flag);        
+	  status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.flag);        
 	  status = H5Dclose(dataset_id);
+	}
+      else
+	{
+	  printf("No flags in the SDHDF file. Setting to 0\n");
+	  for (i=0;i<nchan*ndump;i++)
+	    inFile->beam[beam].bandData[band].astro_data.flag[i] = 0;
 	}
 
       // Data weights
@@ -418,7 +424,7 @@ void sdhdf_allocateBandData(sdhdf_spectralDumpsStruct *spec,int nchan,int ndump,
     }
   if (spec->flagAllocatedMemory == 0)
     {
-      spec->flag = (int *)calloc(sizeof(int),nchan); // Initialise to 0
+      spec->flag = (unsigned char *)calloc(sizeof(unsigned char),nchan); // Initialise to 0
       spec->flagAllocatedMemory = 1;
     }
   if (spec->dataWeightsAllocatedMemory == 0)
@@ -864,7 +870,7 @@ void sdhdf_copyEntireGroupDifferentLabels(char *bandLabelIn,sdhdf_fileStruct *in
   H5Pclose(lcpl_id);
 }
 
-void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,int *flag,int nchan,char *bandLabel)
+void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned char *flag,int nchan,int ndump,char *bandLabel)
 {
   char dSetName[MAX_STRLEN];
   char groupName[MAX_STRLEN];
@@ -872,16 +878,17 @@ void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,int *flag,in
   hsize_t dims[1];
   herr_t status;
   
-  dims[0] = nchan;
-  dataspace_id = H5Screate_simple(1,dims,NULL);
+  dims[0] = ndump; 
+  dims[1] = nchan;
+  dataspace_id = H5Screate_simple(2,dims,NULL);
 
   sprintf(dSetName,"beam_%d/%s/astronomy_data/flag",ibeam,bandLabel);
   if (sdhdf_checkGroupExists(outFile,dSetName) == 1)
-    dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_INT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+    dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
   else
     dset_id = H5Dopen2(outFile->fileID,dSetName,H5P_DEFAULT);
   
-  status  = H5Dwrite(dset_id,H5T_NATIVE_INT,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);  
+  status  = H5Dwrite(dset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);  
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 }
