@@ -322,8 +322,8 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       else
 	{
 	  printf("No flags in the SDHDF file. Setting to 0\n");
-	  for (i=0;i<nchan*ndump;i++)
-	    inFile->beam[beam].bandData[band].astro_data.flag[i] = 0;
+	  //	  for (i=0;i<nchan*ndump;i++)
+	  //	    inFile->beam[beam].bandData[band].astro_data.flag[i] = 0;
 	}
 
       // Data weights
