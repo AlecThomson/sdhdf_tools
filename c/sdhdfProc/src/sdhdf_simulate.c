@@ -1,0 +1,226 @@
+//  Copyright (C) 2021 George Hobbs
+
+/*
+ *    This file is part of sdhdfProc. 
+ * 
+ *    sdhdfProc is free software: you can redistribute it and/or modify 
+ *    it under the terms of the GNU General Public License as published by 
+ *    the Free Software Foundation, either version 3 of the License, or 
+ *    (at your option) any later version. 
+ *    sdhdfProc is distributed in the hope that it will be useful, 
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ *    GNU General Public License for more details. 
+ *    You should have received a copy of the GNU General Public License 
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ */
+
+/* To include
+
+- Have configuration file
+- Properly specify RCVR, observer, project ID etc.
+- Background sky from Haslam or equivalent
+- HI from GASS or equivalent
+- Able to specify frequency bands (and simulate PAF properly)
+- Able to specify pointing or scan observations
+- Able to include bright continuum sources (Haslam update or NVSS/SUMSS?)
+
+- Include bandpass shape/slope across band
+- Correctly model gain in different pols and allow gain variations
+- Include ripples
+- Include RFI
+      - persistent
+      - impulsive (aircraft/satellites)
+- Have ability to convert to counts (or Kelvin)
+*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "sdhdfProc.h"
+#include "T2toolkit.h"
+#include "hdf5.h"
+
+int main(int argc,char *argv[])
+{
+  int i,j,k,ii,jj;
+  long iseed = TKsetSeed();
+  char fname[MAX_STRLEN]="unset";
+  char labelStr[MAX_STRLEN];
+  sdhdf_fileStruct *outFile;
+  sdhdf_beamHeaderStruct *beamHeader;
+  sdhdf_primaryHeaderStruct *primaryHeader;
+  sdhdf_bandHeaderStruct    *bandHeader;
+  sdhdf_obsParamsStruct     *obsParams;
+  int nbeam=0;
+  int ibeam=0;
+  int ndump=0;
+  int idump,iband;
+  int nband;
+  int nchan,nsub,npol;
+  int nDataAttributes=0;
+  int nFreqAttributes=0;
+  sdhdf_attributes_struct *freqAttributes;
+  sdhdf_attributes_struct *dataAttributes;
+  float *freq,*data;
+  float ssys_aa = 22;
+  float ssys_bb = 23;
+  float chbw;
+  float req_chbw = 0.5e3; // in Hz
+  float band_bw  = 192; // in MHz
+  float rcvr_f0 = 700.0; // MHz
+  float rcvr_f1 = 1852.0; // MHz. How will the band be split ??
+  float signal;
+  
+  if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
+    {
+      printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
+      exit(1);
+    }
+  sdhdf_initialiseFile(outFile);
+  if (sdhdf_openFile("try.hdf",outFile,3)==-1)
+    {
+      printf("Unable to open output file >%s<\n",fname);
+      free(outFile);
+      exit(1);
+    }
+
+  nbeam = 2;
+
+  nband = (int)((rcvr_f1-rcvr_f0)/band_bw+0.5);
+  printf("Simulating %d bands\n",nband);
+  
+  beamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nbeam);
+  primaryHeader = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
+
+  for (i=0;i<nbeam;i++)
+    {
+      strcpy(beamHeader[i].label,"beam_001"); // FIX ME -- SET LABEL PROPERLY
+      beamHeader[i].nBand = nband;
+      strcpy(beamHeader[i].source,"simulate"); // FIX ME  
+    }
+  sdhdf_writeBeamHeader(outFile,beamHeader,nbeam);
+
+  // Write the primary header
+  strcpy(primaryHeader[0].date,"unknown");
+  strcpy(primaryHeader[0].hdr_defn,"unknown");
+  strcpy(primaryHeader[0].hdr_defn_version,"unknown");
+  strcpy(primaryHeader[0].file_format,"unknown");
+  strcpy(primaryHeader[0].file_format_version,"unknown");
+  primaryHeader[0].sched_block_id = 1;
+  strcpy(primaryHeader[0].cal_mode,"unknown");
+  strcpy(primaryHeader[0].instrument,"unknown");
+  strcpy(primaryHeader[0].observer,"unknown");
+  strcpy(primaryHeader[0].pid,"unknown");
+  strcpy(primaryHeader[0].rcvr,"unknown");
+  strcpy(primaryHeader[0].telescope,"unknown");
+  strcpy(primaryHeader[0].utc0,"unknown");
+  primaryHeader[0].nbeam = nbeam;
+  sdhdf_writePrimaryHeader(outFile,primaryHeader);
+
+
+  // Simulate data for each beam
+  for (i=0;i<nbeam;i++)
+    {
+      bandHeader = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nband); // FIX ME -- may have different numbers of bands 
+      for (j=0;j<nband;j++)
+	{
+	  ndump = 1;
+	  bandHeader[j].f0 = rcvr_f0 + (float)j*(rcvr_f1-rcvr_f0)/(double)nband;
+	  bandHeader[j].f1 = bandHeader[j].f0 + band_bw;
+	  bandHeader[j].fc = (bandHeader[j].f0+bandHeader[j].f1)/2.0;
+
+	  nchan = (int)(1e6*band_bw/req_chbw + 0.5);
+	  npol = 4;
+	  obsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
+	  freq = (float *)malloc(sizeof(float)*nchan);
+	  data = (float *)malloc(sizeof(float)*nchan*ndump*npol);
+	  sprintf(bandHeader[j].label,"band_%03d",j);
+
+	  bandHeader[j].nchan = nchan;
+	  bandHeader[j].npol = npol;
+	  strcpy(bandHeader[j].pol_type,"unknown");
+	  bandHeader[j].dtime = 0.999;
+	  bandHeader[j].ndump = ndump;	 
+	  chbw = (bandHeader[j].f1 - bandHeader[j].f0)/(float)nchan;
+	  // Setup the observation parameters for each band
+	  for (k=0;k<nchan;k++)
+	    freq[k] = bandHeader[j].f0+k*(bandHeader[j].f1-bandHeader[j].f0)/(float)nchan + chbw/2.0;
+	  
+	  for (k=0;k<ndump;k++)
+	    {
+	      obsParams[k].timeElapsed = 0;
+	      strcpy(obsParams[k].timedb,"unknown");
+	      obsParams[k].mjd = 54000;
+	      strcpy(obsParams[k].utc,"unknown");
+	      strcpy(obsParams[k].ut_date,"unknown");
+	      strcpy(obsParams[k].aest,"aest_unknown");
+	      strcpy(obsParams[k].raStr,"unknown");
+	      strcpy(obsParams[k].decStr,"unknown");
+	      obsParams[k].raOffset = 0;
+	      obsParams[k].decOffset = 0;
+	      obsParams[k].gl = 0;
+	      obsParams[k].gb = 0;
+	      obsParams[k].az = 0;
+	      obsParams[k].el = 0;
+	      obsParams[k].az_drive_rate = 0;
+	      obsParams[k].ze_drive_rate = 0;
+	      obsParams[k].hourAngle = 0;
+	      obsParams[k].paraAngle = 0;
+	      obsParams[k].windDir = 0;
+	      obsParams[k].windSpd = 0;		      
+	      for (ii=0;ii<nchan;ii++)
+		{
+		  signal = 40*exp(-pow(freq[ii]-1421.0,2)/2./0.2/0.2);
+		  if (freq[ii] > 754 && freq[ii] < 768)
+		    signal += 1e6;
+		  else if (freq[ii] > 768 && freq[ii] < 788)
+		    signal += 8e5;
+		  else if (freq[ii] > 869.95 && freq[ii] < 875.05)
+		    signal += 4e5;
+		  else if (freq[ii] > 875.05 && freq[ii] < 889.95)
+		    signal += 3e5;
+		  else if (freq[ii] > 943.4 && freq[ii] < 951.8)
+		    signal += 3e5;
+		  else if (freq[ii] > 953.7 && freq[ii] < 960)
+		    signal += 3e5;
+		  else if (freq[ii] > 1017 && freq[ii] < 1019)
+		    signal += 3e5;
+		  else if (freq[ii] > 1023 && freq[ii] < 1025)
+		    signal += 9e5;
+		  else if (freq[ii] > 1029 && freq[ii] < 1031)
+		    signal += 8e5;
+		  else if (freq[ii] > 1805 && freq[ii] < 1865)
+		    signal += 9e5;
+
+
+		  
+		  data[k*nchan*npol + ii]           = TKgaussDev(&iseed) + ssys_aa + signal;
+		  data[k*nchan*npol + nchan + ii]   = TKgaussDev(&iseed) + ssys_bb + signal;
+		  data[k*nchan*npol + 2*nchan + ii] = TKgaussDev(&iseed);
+		  data[k*nchan*npol + 3*nchan + ii] = TKgaussDev(&iseed);
+		}
+	    }
+	  sdhdf_writeObsParams(outFile,bandHeader[j].label,i,j,obsParams,ndump,1);			       
+	  free(obsParams);
+
+	  // SHOULD SET UP ATTRIBUTES
+	  sdhdf_writeSpectrumData(outFile,bandHeader[j].label,i,j,data,freq,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  free(freq);
+	  free(data);
+
+	}
+      sdhdf_writeBandHeader(outFile,bandHeader,i,nband,1);
+      free(bandHeader);
+
+    }
+
+  
+  sdhdf_closeFile(outFile);
+  free(outFile);
+  free(primaryHeader);
+  free(beamHeader);
+}
+
