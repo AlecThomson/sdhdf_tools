@@ -463,12 +463,12 @@ int main(int argc,char *argv[])
   if (setMinX >= 0)
     minx = setMinX;
   else
-    minx = 700;
+    minx = px[0];
 
   if (setMaxX >= 0)
     maxx = setMaxX;
   else
-    maxx = 4040;
+    maxx = px[nVals-1];
 
   if (waterfall==1)
     {
