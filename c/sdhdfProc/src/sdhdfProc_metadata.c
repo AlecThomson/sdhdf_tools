@@ -57,7 +57,7 @@ void sdhdf_loadConfig(sdhdf_fileStruct *inFile)
   sprintf(groupName,"config");
   if (sdhdf_checkGroupExists(inFile,groupName) == 1)
     {
-      printf("Warning: No configuration table in SDHDF file\n");
+      //      printf("Warning: No configuration table in SDHDF file\n");
     }
   else
     {  
@@ -203,9 +203,9 @@ void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile)
 	  printf("ERROR: Unexpected number of beams >%d<.\n",nbeam);
 	  exit(1);
 	}
-      inFile->beam = (sdhdf_beamStruct *)malloc(sizeof(sdhdf_beamStruct)*nbeam);
+      inFile->beam       = (sdhdf_beamStruct *)malloc(sizeof(sdhdf_beamStruct)*nbeam);
       inFile->beamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nbeam);
-      inFile->nBeam = nbeam; 
+      inFile->nBeam      = nbeam; 
       inFile->beamAllocatedMemory = 1;
     }
 
@@ -217,15 +217,17 @@ void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile)
   space      = H5Dget_space(header_id);
   ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
 
-  if (ndims != nbeam)
+  if (dims[0] != nbeam)
     {
       printf("ERROR: wrong number of beams in beam_params\n");
+      printf("nbeam = %d\n",nbeam);
+      printf("ndims = %d\n",ndims);
       exit(1);      
     }
 
   val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_beamHeaderStruct));
-  stid = H5Tcopy(H5T_C_S1);
-  status = H5Tset_size(stid,MAX_STRLEN); // Should set to value defined in sdhdf_v1.9.h
+  stid    = H5Tcopy(H5T_C_S1);
+  status  = H5Tset_size(stid,MAX_STRLEN); // Should set to value defined in sdhdf_v1.9.h
   
   H5Tinsert(val_tid,"LABEL",HOFFSET(sdhdf_beamHeaderStruct,label),stid);
   H5Tinsert(val_tid,"N_BANDS",HOFFSET(sdhdf_beamHeaderStruct,nBand),H5T_NATIVE_INT);
@@ -365,15 +367,16 @@ void sdhdf_writeBeamHeader(sdhdf_fileStruct *outFile,sdhdf_beamHeaderStruct *bea
   char groupName[1024];
 			   
   dims[0] = nBeams;
-
+  //  printf("outbands = %d\n",nBeams);
+  
   datatype_id = H5Tcreate (H5T_COMPOUND, sizeof(sdhdf_beamHeaderStruct));
   stid = H5Tcopy(H5T_C_S1);
   status = H5Tset_size(stid,MAX_STRLEN); 
-
+  printf("Setting size to %d with status %d\n",MAX_STRLEN,status);
   H5Tinsert(datatype_id,"LABEL",HOFFSET(sdhdf_beamHeaderStruct,label),stid);
   H5Tinsert(datatype_id,"N_BANDS",HOFFSET(sdhdf_beamHeaderStruct,nBand),H5T_NATIVE_INT);
   H5Tinsert(datatype_id,"SOURCE",HOFFSET(sdhdf_beamHeaderStruct,source),stid);
-
+  printf("In beam write with %s\n",beamHeader[0].label);
   dataspace_id = H5Screate_simple(1,dims,NULL);
 
   sprintf(groupName,"metadata");
@@ -382,20 +385,22 @@ void sdhdf_writeBeamHeader(sdhdf_fileStruct *outFile,sdhdf_beamHeaderStruct *bea
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  sprintf(name,"metadata/beam_params");
+  sprintf(name,"metadata/beam_params"); 
   if (sdhdf_checkGroupExists(outFile,name) == 1)
-      dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+    dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   else
+    {
       dset_id  = H5Dopen2(outFile->fileID,name,H5P_DEFAULT);
+      //      H5Dextend(dset_id,dims);
+    }
+  //
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,beamHeader);
+  //  status  = H5Dwrite(dset_id,datatype_id,dataspace_id,dataspace_id,H5P_DEFAULT,beamHeader);
   status  = H5Dclose(dset_id);
 
   status  = H5Sclose(dataspace_id);  
   status  = H5Tclose(datatype_id);
-
-  status  = H5Tclose(stid);
-
-  
+  status  = H5Tclose(stid);  
 }
 
 //

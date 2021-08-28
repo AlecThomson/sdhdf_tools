@@ -2,6 +2,7 @@ LIBS = -lcfitsio -lhdf5 -lerfa -lcalceph
 
 bin_PROGRAMS = sdhdf_describe \
   sdhdf_checkFile \
+  sdhdf_simulate \
   sdhdf_extractBand \
   sdhdf_extractDump \
   sdhdf_quickdump \
@@ -30,6 +31,9 @@ sdhdf_describe_SOURCES = sdhdf_describe.c \
   $(COMMON_SRCS)
 
 sdhdf_checkFile_SOURCES = sdhdf_checkFile.c \
+  $(COMMON_SRCS)
+
+sdhdf_simulate_SOURCES = sdhdf_simulate.c \
   $(COMMON_SRCS)
 
 sdhdf_extractBand_SOURCES = sdhdf_extractBand.c \
