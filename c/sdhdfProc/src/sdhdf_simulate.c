@@ -17,19 +17,23 @@
 
 /* To include
 
-- Have configuration file
-- Properly specify RCVR, observer, project ID etc.
 - Background sky from Haslam or equivalent
 - HI from GASS or equivalent
-- Able to specify frequency bands (and simulate PAF properly)
-- Able to specify pointing or scan observations
 - Able to include bright continuum sources (Haslam update or NVSS/SUMSS?)
+/*
+# DON'T FORGET:
+#
+# BANDPASS - SLOPES
+# RIPPLES
+# GAIN VARIATIONS
+# TONES AND COMBS
+# PARALLACTIFY??
+*/
 
 - Include bandpass shape/slope across band
 - Correctly model gain in different pols and allow gain variations
 - Include ripples
 - Include RFI
-      - persistent
       - impulsive (aircraft/satellites)
 - Have ability to convert to counts (or Kelvin)
 */
@@ -42,6 +46,16 @@
 #include "sdhdfProc.h"
 #include "T2toolkit.h"
 #include "hdf5.h"
+
+
+typedef struct dumpParameterStruct {
+  float tdump; // Time of spectral dump
+  float raj0;   // Pointing position in degrees at centre of spectral dump (RA)
+  float decj0;   // Pointing position in degrees at centre of spectral dump (DEC)
+
+  double timeFromStart;
+  double mjd;
+} dumpParameterStruct;
 
 typedef struct bandParameterStruct {
   char  label[MAX_STRLEN];    // Band label
@@ -65,9 +79,17 @@ typedef struct parameterStruct {
   int ndumps;
   int npols;
   char fname[MAX_STRLEN];
-
+  double mjd0;
+  char pid[MAX_STRLEN];
+  char observer[MAX_STRLEN];
+  char telescope[MAX_STRLEN];
+  char rcvr[MAX_STRLEN];
   beamParameterStruct *beam;
   bandParameterStruct *band;
+  dumpParameterStruct *dump;
+
+  int persistentRFI;
+  int galacticHI;
 } parameterStruct;
 
 int main(int argc,char *argv[])
@@ -82,6 +104,7 @@ int main(int argc,char *argv[])
   sdhdf_primaryHeaderStruct *primaryHeader;
   sdhdf_bandHeaderStruct    *bandHeader;
   sdhdf_obsParamsStruct     *obsParams;
+  double dt;
   int nbeam=0;
   int ibeam=0;
   int ndump=0;
@@ -125,6 +148,10 @@ int main(int argc,char *argv[])
       exit(1);
     }
   params = (parameterStruct *)malloc(sizeof(parameterStruct));
+  // initialise
+  params->persistentRFI=0;
+  params->galacticHI=0;
+  
   while (!feof(fin))
     {
       if (fgets(line,MAX_STRLEN,fin)!=NULL)
@@ -141,6 +168,10 @@ int main(int argc,char *argv[])
 		      params->beam = (beamParameterStruct *)malloc(sizeof(beamParameterStruct)*params->nbeams);
 		      ibeam=0;
 		    }
+		  else if (strcmp(word1,"persistent_rfi:")==0 && strcmp(word2,"on")==0)
+		    params->persistentRFI=1;
+		  else if (strcmp(word1,"galactic_hi:")==0 && strcmp(word2,"gaussian")==0)
+		    params->galacticHI=1;
 		  else if (strcmp(word1,"beam:")==0)
 		    {
 		      if (ibeam == params->nbeams)
@@ -175,16 +206,52 @@ int main(int argc,char *argv[])
 			}
 		    }
 		  else if (strcmp(word1,"ndumps:")==0)
-		    sscanf(word2,"%d",&(params->ndumps));
+		    {
+		      sscanf(word2,"%d",&(params->ndumps));
+		      params->dump = (dumpParameterStruct *)malloc(sizeof(dumpParameterStruct)*params->ndumps);
+		      idump=0;
+		    }
+		  else if (strcmp(word1,"dump:")==0)
+		    {
+		      if (idump == params->ndumps)
+			  printf("WARNING: TOO MANY DUMPS SPECIFIED. IGNORING >%s<\n",line);
+		      else
+			{
+			  sscanf(line,"%s %f %f %f",word1,
+				 &(params->dump[idump].tdump), &(params->dump[idump].raj0),&(params->dump[idump].decj0));
+			  idump++;
+			}
+		    }
 		  else if (strcmp(word1,"npols:")==0)
 		    sscanf(word2,"%d",&(params->npols));
+		  else if (strcmp(word1,"start_mjd:")==0)
+		    sscanf(word2,"%lf",&(params->mjd0));
 		  else if (strcmp(word1,"output:")==0)
 		    strcpy(params->fname,word2);
+		  else if (strcmp(word1,"pid:")==0)
+		    strcpy(params->pid,word2);
+		  else if (strcmp(word1,"observer:")==0)
+		    strcpy(params->observer,line+10);
+		  else if (strcmp(word1,"receiver:")==0)
+		    strcpy(params->rcvr,word2);
+		  else if (strcmp(word1,"telescope:")==0)
+		    strcpy(params->telescope,word2);
 		}
 	    }
 	}
     }
   fclose(fin);
+
+  // Calculate times
+  dt=0;
+  for (i=0;i<params->ndumps;i++)
+    {
+      dt+=params->dump[i].tdump/2.;
+      params->dump[i].timeFromStart = dt;
+      params->dump[i].mjd = params->mjd0 + dt/86400.0;
+      dt+=params->dump[i].tdump/2.;
+    }
+
   
   
   if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
@@ -217,17 +284,17 @@ int main(int argc,char *argv[])
 
   // Write the primary header
   strcpy(primaryHeader[0].date,"unknown");
-  strcpy(primaryHeader[0].hdr_defn,"unknown");
-  strcpy(primaryHeader[0].hdr_defn_version,"unknown");
+  strcpy(primaryHeader[0].hdr_defn,"5");
+  strcpy(primaryHeader[0].hdr_defn_version,"1.9");
   strcpy(primaryHeader[0].file_format,"unknown");
   strcpy(primaryHeader[0].file_format_version,"unknown");
   primaryHeader[0].sched_block_id = 1;
-  strcpy(primaryHeader[0].cal_mode,"unknown");
-  strcpy(primaryHeader[0].instrument,"unknown");
-  strcpy(primaryHeader[0].observer,"unknown");
-  strcpy(primaryHeader[0].pid,"unknown");
-  strcpy(primaryHeader[0].rcvr,"unknown");
-  strcpy(primaryHeader[0].telescope,"unknown");
+  strcpy(primaryHeader[0].cal_mode,"OFF");
+  strcpy(primaryHeader[0].instrument,"simulate");
+  strcpy(primaryHeader[0].observer,params->observer);
+  strcpy(primaryHeader[0].pid,params->pid);
+  strcpy(primaryHeader[0].rcvr,params->rcvr);
+  strcpy(primaryHeader[0].telescope,params->telescope);
   strcpy(primaryHeader[0].utc0,"unknown");
   primaryHeader[0].nbeam = nbeam;
   sdhdf_writePrimaryHeader(outFile,primaryHeader);
@@ -255,8 +322,13 @@ int main(int argc,char *argv[])
 
 	  bandHeader[j].nchan = nchan;
 	  bandHeader[j].npol = npol;
-	  strcpy(bandHeader[j].pol_type,"unknown");
-	  bandHeader[j].dtime = 0.999;
+	  if (npol==4)
+	    strcpy(bandHeader[j].pol_type,"AABBCRCI");
+	  else if (npol==2)
+	    strcpy(bandHeader[j].pol_type,"AA,BB");
+	  else if (npol==1)
+	    strcpy(bandHeader[j].pol_type,"AA+BB");
+	  bandHeader[j].dtime = params->dump[0].tdump; 
 	  bandHeader[j].ndump = ndump;	 
 	  chbw = (bandHeader[j].f1 - bandHeader[j].f0)/(float)nchan;
 	  // Setup the observation parameters for each band
@@ -265,9 +337,9 @@ int main(int argc,char *argv[])
 	  
 	  for (k=0;k<ndump;k++)
 	    {
-	      obsParams[k].timeElapsed = 0;
+	      obsParams[k].timeElapsed = params->dump[k].timeFromStart;
 	      strcpy(obsParams[k].timedb,"unknown");
-	      obsParams[k].mjd = 54000;
+	      obsParams[k].mjd = params->dump[k].mjd;
 	      strcpy(obsParams[k].utc,"unknown");
 	      strcpy(obsParams[k].ut_date,"unknown");
 	      strcpy(obsParams[k].aest,"aest_unknown");
@@ -287,28 +359,31 @@ int main(int argc,char *argv[])
 	      obsParams[k].windSpd = 0;		      
 	      for (ii=0;ii<nchan;ii++)
 		{
-		  signal = 40*exp(-pow(freq[ii]-1421.0,2)/2./0.2/0.2);
-		  if (freq[ii] > 754 && freq[ii] < 768)
-		    signal += 1e6;
-		  else if (freq[ii] > 768 && freq[ii] < 788)
-		    signal += 8e5;
-		  else if (freq[ii] > 869.95 && freq[ii] < 875.05)
-		    signal += 4e5;
-		  else if (freq[ii] > 875.05 && freq[ii] < 889.95)
-		    signal += 3e5;
-		  else if (freq[ii] > 943.4 && freq[ii] < 951.8)
-		    signal += 3e5;
-		  else if (freq[ii] > 953.7 && freq[ii] < 960)
-		    signal += 3e5;
-		  else if (freq[ii] > 1017 && freq[ii] < 1019)
-		    signal += 3e5;
-		  else if (freq[ii] > 1023 && freq[ii] < 1025)
-		    signal += 9e5;
-		  else if (freq[ii] > 1029 && freq[ii] < 1031)
-		    signal += 8e5;
-		  else if (freq[ii] > 1805 && freq[ii] < 1865)
-		    signal += 9e5;
-		  
+		  if (params->galacticHI==1)
+		    signal = 40*exp(-pow(freq[ii]-1421.0,2)/2./0.2/0.2);
+		  if (params->persistentRFI==1)
+		    {
+		      if (freq[ii] > 754 && freq[ii] < 768)
+			signal += 1e6;
+		      else if (freq[ii] > 768 && freq[ii] < 788)
+			signal += 8e5;
+		      else if (freq[ii] > 869.95 && freq[ii] < 875.05)
+			signal += 4e5;
+		      else if (freq[ii] > 875.05 && freq[ii] < 889.95)
+			signal += 3e5;
+		      else if (freq[ii] > 943.4 && freq[ii] < 951.8)
+			signal += 3e5;
+		      else if (freq[ii] > 953.7 && freq[ii] < 960)
+			signal += 3e5;
+		      else if (freq[ii] > 1017 && freq[ii] < 1019)
+			signal += 3e5;
+		      else if (freq[ii] > 1023 && freq[ii] < 1025)
+			signal += 9e5;
+		      else if (freq[ii] > 1029 && freq[ii] < 1031)
+			signal += 8e5;
+		      else if (freq[ii] > 1805 && freq[ii] < 1865)
+			signal += 9e5;
+		    }
 		  data[k*nchan*npol + ii]           = TKgaussDev(&iseed) + ssys_aa + signal;
 		  data[k*nchan*npol + nchan + ii]   = TKgaussDev(&iseed) + ssys_bb + signal;
 		  data[k*nchan*npol + 2*nchan + ii] = TKgaussDev(&iseed);
@@ -336,6 +411,7 @@ int main(int argc,char *argv[])
   free(beamHeader);
   free(params->beam);
   free(params->band);
+  free(params->dump);
   free(params);
 }
 
