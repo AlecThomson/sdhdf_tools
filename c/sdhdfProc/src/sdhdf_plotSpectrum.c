@@ -52,6 +52,7 @@ void help()
   printf("Software to plot a spectrum in an interactive matter\n");
   printf("\n\nCommand line arguments:\n\n");
 
+  printf("-beam <num>         Set beam number\n");
   printf("-f <filename>       SDHDF file corresponding to observation\n");
   printf("-g <string>         PGPLOT graphical device\n");
   printf("-h                  This help\n");
@@ -69,6 +70,8 @@ void help()
   printf("<                   Move to the previous sub-band\n");
   printf("+                   Move to the next spectral dump\n");
   printf("-                   Move to the previous spectral dump\n");
+  printf("b                   Plot next beam\n");
+  printf("B                   Plot previous beam\n");
   printf("f                   Toggle how the flagging is dealt with\n");
   printf("h                   This help\n");
   printf("l                   Toggle displaying the spectrum on a logarithmic scale\n");
@@ -120,6 +123,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-fref")==0)   sscanf(argv[++i],"%lf",&fref);
       else if (strcmp(argv[i],"-h")==0)      {help(); exit(1);}
       else if (strcmp(argv[i],"-g")==0)      strcpy(grDev,argv[++i]);
+      else if (strcmp(argv[i],"-beam")==0)   sscanf(argv[++i],"%d",&ibeam);
       else if (strcmp(argv[i],"-sd")==0)     sscanf(argv[++i],"%d",&idump);
       else if (strcmp(argv[i],"-sb")==0) // FIX ME - ENABLE BAND DESCRIPTORS
 	sscanf(argv[++i],"%d",&iband);
@@ -488,6 +492,20 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	      else
 		printf("Please press 'z' and then move somewhere and click left mouse button\n");
+	    }
+	  else if (key=='b')
+	    {
+	      if (ibeam < inFile->nBeam-1)
+		{
+		  ibeam++; reload=1;
+		}
+	    }
+	  else if (key=='B')
+	    {
+	      if (ibeam > 0)
+		{
+		  ibeam--; reload=1;
+		}
 	    }
 	  else if (key=='w')
 	    {
