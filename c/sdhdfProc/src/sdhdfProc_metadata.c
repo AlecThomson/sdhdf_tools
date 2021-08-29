@@ -328,7 +328,6 @@ void sdhdf_writeSoftwareVersions(sdhdf_fileStruct *outFile,sdhdf_softwareVersion
   H5Tinsert(datatype_id,"SOFTWARE",HOFFSET(sdhdf_softwareVersionsStruct,software),stid);
   H5Tinsert(datatype_id,"SOFTWARE_DESCR",HOFFSET(sdhdf_softwareVersionsStruct,software_descr),stid);
   H5Tinsert(datatype_id,"SOFTWARE_VERSION",HOFFSET(sdhdf_softwareVersionsStruct,software_version),stid);
-  printf("Compelte insert\n");
   
   dataspace_id = H5Screate_simple(1,dims,NULL);
 
@@ -423,7 +422,6 @@ void sdhdf_writePrimaryHeader(sdhdf_fileStruct *outFile,sdhdf_primaryHeaderStruc
 
 
 
-  printf("Inserting\n");
   H5Tinsert(datatype_id,"DATE",HOFFSET(sdhdf_primaryHeaderStruct,date),stid);
   H5Tinsert(datatype_id,"HDR_DEFN",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn),stid);
   H5Tinsert(datatype_id,"HDR_DEFN_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn_version),stid);
@@ -440,7 +438,7 @@ void sdhdf_writePrimaryHeader(sdhdf_fileStruct *outFile,sdhdf_primaryHeaderStruc
   H5Tinsert(datatype_id,"TELESCOPE",HOFFSET(sdhdf_primaryHeaderStruct,telescope),stid);
   H5Tinsert(datatype_id,"UTC_START",HOFFSET(sdhdf_primaryHeaderStruct,utc0),stid);
   H5Tinsert(datatype_id,"N_BEAMS",HOFFSET(sdhdf_primaryHeaderStruct,nbeam),H5T_NATIVE_INT);
-  printf("Compelte insert\n");
+
   
   dataspace_id = H5Screate_simple(1,dims,NULL);
 

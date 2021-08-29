@@ -43,14 +43,42 @@
 #include "T2toolkit.h"
 #include "hdf5.h"
 
+typedef struct bandParameterStruct {
+  char  label[MAX_STRLEN];    // Band label
+  float f0;
+  float f1;
+  int   nchan;
+} bandParameterStruct;
+
+typedef struct beamParameterStruct {
+  char  label[MAX_STRLEN];   // Beam label
+  float tsys_aa;             // System temperature for this beam for AA polarisation (K)
+  float tsys_bb;             // System temperature for this beam for BB polarisation (K)
+  float delta_ra;            // Offset of beam from nominal pointing direction in RA (deg)
+  float delta_dec;           // Offset of beam from nominal pointing direction in DEC (deg)
+  char  src[MAX_STRLEN];     // Source name
+} beamParameterStruct;
+
+typedef struct parameterStruct {
+  int nbeams;
+  int nbands;
+  int ndumps;
+  int npols;
+  char fname[MAX_STRLEN];
+
+  beamParameterStruct *beam;
+  bandParameterStruct *band;
+} parameterStruct;
+
 int main(int argc,char *argv[])
 {
   int i,j,k,ii,jj;
   long iseed = TKsetSeed();
   char fname[MAX_STRLEN]="unset";
+  char paramFile[MAX_STRLEN]="unset";
   char labelStr[MAX_STRLEN];
-  sdhdf_fileStruct *outFile;
-  sdhdf_beamHeaderStruct *beamHeader;
+  sdhdf_fileStruct          *outFile;
+  sdhdf_beamHeaderStruct    *beamHeader;
   sdhdf_primaryHeaderStruct *primaryHeader;
   sdhdf_bandHeaderStruct    *bandHeader;
   sdhdf_obsParamsStruct     *obsParams;
@@ -70,9 +98,94 @@ int main(int argc,char *argv[])
   float chbw;
   float req_chbw = 0.5e3; // in Hz
   float band_bw  = 192; // in MHz
-  float rcvr_f0 = 700.0; // MHz
-  float rcvr_f1 = 1852.0; // MHz. How will the band be split ??
+  float rcvr_f0  = 700.0; // MHz
+  float rcvr_f1  = 1852.0; // MHz. How will the band be split ??
   float signal;
+  FILE *fin;
+  char line[MAX_STRLEN];
+  char word1[MAX_STRLEN];
+  char word2[MAX_STRLEN];
+  parameterStruct *params;
+  
+  for (i=1;i<argc;i++)
+    {
+      if (strcmp(argv[i],"-p")==0)
+	strcpy(paramFile,argv[++i]);
+    }
+
+  if (strcmp(paramFile,"unset")==0)
+    {
+      printf("ERROR: must set a parameter filename using the -p option\n");
+      exit(1);
+    }
+
+  if (!(fin = fopen(paramFile,"r")))
+    {
+      printf("ERROR: unable to open parameter file >%s<\n",paramFile);
+      exit(1);
+    }
+  params = (parameterStruct *)malloc(sizeof(parameterStruct));
+  while (!feof(fin))
+    {
+      if (fgets(line,MAX_STRLEN,fin)!=NULL)
+	{
+	  if (line[0]!='#' && strlen(line) > 1) // Not a comment line
+	    {
+	      strcpy(word2,"NULL");
+	      if (sscanf(line,"%s %s",word1,word2)==2)
+		{
+		  if (strcmp(word1,"nbeams:")==0)
+		    {
+		      sscanf(word2,"%d",&(params->nbeams));
+		      // Allocate memory for this number of beams
+		      params->beam = (beamParameterStruct *)malloc(sizeof(beamParameterStruct)*params->nbeams);
+		      ibeam=0;
+		    }
+		  else if (strcmp(word1,"beam:")==0)
+		    {
+		      if (ibeam == params->nbeams)
+			printf("WARNING: TOO MANY BEAMS SPECIFIED. IGNORING >%s<\n",line);
+		      else
+			{
+			  sscanf(line,"%s %s %s %f %f %f %f",word1,params->beam[ibeam].label,params->beam[ibeam].src,
+				 &(params->beam[ibeam].tsys_aa),
+				 &(params->beam[ibeam].tsys_bb),&(params->beam[ibeam].delta_ra),&(params->beam[ibeam].delta_dec));
+			  ibeam++;
+			}
+		    }
+		  else if (strcmp(word1,"nbands:")==0)
+		    {
+		      sscanf(word2,"%d",&(params->nbands));
+		      params->band = (bandParameterStruct *)malloc(sizeof(bandParameterStruct)*params->nbands);
+		      iband=0;
+		    }
+		  else if (strcmp(word1,"band:")==0)
+		    {
+		      if (iband == params->nbands)
+			{
+			  printf("WARNING: TOO MANY BANDS SPECIFIED. IGNORING >%s<\n",line);
+			  printf("word1 = %s, word2 = %s\n",word1,word2);
+			  printf("iband = %d, nbands = %d\n",iband,params->nbands);
+			}
+			  else
+			{
+			  sscanf(line,"%s %s %f %f %d",word1,params->band[iband].label,
+				 &(params->band[iband].f0), &(params->band[iband].f1),&(params->band[iband].nchan));
+			  iband++;
+			}
+		    }
+		  else if (strcmp(word1,"ndumps:")==0)
+		    sscanf(word2,"%d",&(params->ndumps));
+		  else if (strcmp(word1,"npols:")==0)
+		    sscanf(word2,"%d",&(params->npols));
+		  else if (strcmp(word1,"output:")==0)
+		    strcpy(params->fname,word2);
+		}
+	    }
+	}
+    }
+  fclose(fin);
+  
   
   if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -80,16 +193,15 @@ int main(int argc,char *argv[])
       exit(1);
     }
   sdhdf_initialiseFile(outFile);
-  if (sdhdf_openFile("try.hdf",outFile,3)==-1)
+  if (sdhdf_openFile(params->fname,outFile,3)==-1)
     {
       printf("Unable to open output file >%s<\n",fname);
       free(outFile);
       exit(1);
     }
 
-  nbeam = 2;
-
-  nband = (int)((rcvr_f1-rcvr_f0)/band_bw+0.5);
+  nbeam = params->nbeams;
+  nband = params->nbands; 
   printf("Simulating %d bands\n",nband);
   
   beamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nbeam);
@@ -97,9 +209,9 @@ int main(int argc,char *argv[])
 
   for (i=0;i<nbeam;i++)
     {
-      strcpy(beamHeader[i].label,"beam_001"); // FIX ME -- SET LABEL PROPERLY
+      strcpy(beamHeader[i].label,params->beam[i].label);
       beamHeader[i].nBand = nband;
-      strcpy(beamHeader[i].source,"simulate"); // FIX ME  
+      strcpy(beamHeader[i].source,params->beam[i].src); 
     }
   sdhdf_writeBeamHeader(outFile,beamHeader,nbeam);
 
@@ -127,17 +239,19 @@ int main(int argc,char *argv[])
       bandHeader = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nband); // FIX ME -- may have different numbers of bands 
       for (j=0;j<nband;j++)
 	{
-	  ndump = 1;
-	  bandHeader[j].f0 = rcvr_f0 + (float)j*(rcvr_f1-rcvr_f0)/(double)nband;
-	  bandHeader[j].f1 = bandHeader[j].f0 + band_bw;
+	  ndump = params->ndumps;
+	  npol  = params->npols;
+	  
+	  bandHeader[j].f0 = params->band[j].f0;
+	  bandHeader[j].f1 = params->band[j].f1;
 	  bandHeader[j].fc = (bandHeader[j].f0+bandHeader[j].f1)/2.0;
 
-	  nchan = (int)(1e6*band_bw/req_chbw + 0.5);
-	  npol = 4;
+	  nchan = params->band[j].nchan;
+
 	  obsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 	  freq = (float *)malloc(sizeof(float)*nchan);
 	  data = (float *)malloc(sizeof(float)*nchan*ndump*npol);
-	  sprintf(bandHeader[j].label,"band_%03d",j);
+	  strcpy(bandHeader[j].label,params->band[j].label);
 
 	  bandHeader[j].nchan = nchan;
 	  bandHeader[j].npol = npol;
@@ -194,8 +308,6 @@ int main(int argc,char *argv[])
 		    signal += 8e5;
 		  else if (freq[ii] > 1805 && freq[ii] < 1865)
 		    signal += 9e5;
-
-
 		  
 		  data[k*nchan*npol + ii]           = TKgaussDev(&iseed) + ssys_aa + signal;
 		  data[k*nchan*npol + nchan + ii]   = TKgaussDev(&iseed) + ssys_bb + signal;
@@ -222,5 +334,8 @@ int main(int argc,char *argv[])
   free(outFile);
   free(primaryHeader);
   free(beamHeader);
+  free(params->beam);
+  free(params->band);
+  free(params);
 }
 
