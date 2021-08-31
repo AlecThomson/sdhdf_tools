@@ -20,6 +20,7 @@
 - Background sky from Haslam or equivalent
 - HI from GASS or equivalent
 - Able to include bright continuum sources (Haslam update or NVSS/SUMSS?)
+*/
 /*
 # DON'T FORGET:
 #
@@ -28,7 +29,7 @@
 # GAIN VARIATIONS
 # TONES AND COMBS
 # PARALLACTIFY??
-*/
+
 
 - Include bandpass shape/slope across band
 - Correctly model gain in different pols and allow gain variations
