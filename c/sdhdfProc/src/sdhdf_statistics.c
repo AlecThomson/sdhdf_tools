@@ -28,6 +28,7 @@
 #include "hdf5.h"
 #include <cpgplot.h>
 #include "TKfit.h"
+#include "T2toolkit.h"
 
 #define VNUM "v0.1"
 
@@ -39,6 +40,7 @@ void help()
   printf("-h            This help\n");
   printf("-sb <sb>      Select sub-band number sb\n");
   printf("-fr <f0> <f1> Define frequency range (can also use -freqRange)\n");
+  printf("-scaleRMS     Produces the rms as a function of N where N = number of dumps averaged\n");
   printf("\n\n");
   printf("Example\n");
   printf("sdhdf_statistics -sb 5 -fr 1400 1410 *.hdf\n");
@@ -77,9 +79,12 @@ int main(int argc,char *argv[])
   float fx[2],fy[2];
   float fc;
   double sx,sx2,sx_2,sx2_2,sdev1,sdev2,mean1,mean2,min1,min2,max1,max2;
+  float *avData1,*avData2;
   double freq;
   int np,t;
-  int noBaseline=0,nc;
+  int noBaseline=0;
+  int scaleRMS=0;
+  int nc;
   float freq0 = 1660;
   float freq1 = 1665;
   
@@ -115,6 +120,8 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&freq0);
 	  sscanf(argv[++i],"%f",&freq1);
 	}
+      else if (strcasecmp(argv[i],"-scaleRMS")==0)
+	scaleRMS=1;
       else
 	strcpy(fname[inFiles++],argv[i]);
     }
@@ -138,10 +145,17 @@ int main(int argc,char *argv[])
       j=iband; // FIX ME -- UPDATE TO PROCESS EACH BAND
       {
 	// Process each dump
+	if (scaleRMS == 1)
+	  {
+	    avData1 = (float *)calloc(sizeof(float),inFile->beam[ibeam].bandHeader[j].nchan);
+	    avData2 = (float *)calloc(sizeof(float),inFile->beam[ibeam].bandHeader[j].nchan);
+	  }
+	    
 	for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l++) 
 	  {
 	    sx=sx2=sx_2=sx2_2=0.0;
 	    np=0;
+	    nc=0;
 	    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	      {
 		freq = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
@@ -150,6 +164,12 @@ int main(int argc,char *argv[])
 		  {
 		    val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
 		    val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
+		    if (scaleRMS==1)
+		      {
+			avData1[nc] += val1;
+			avData2[nc] += val2;			
+		      }
+		    nc++;
 		    if (np==0)
 		      {
 			min1=max1 = val1;
@@ -176,7 +196,26 @@ int main(int argc,char *argv[])
 	    sdev2 = sqrt(1.0/(double)np * sx2_2 - pow(1.0/(double)np * sx2,2));
 	    
 	    printf("[stats] %s %s %d %g %g %g %g %g %g %g %g %.5f\n",inFile->fname,inFile->beamHeader[0].source,l,mean1,mean2,sdev1,sdev2,min1,max1,min2,max2,inFile->beam[0].bandData[j].astro_obsHeader[l].mjd);	  
+	    if (scaleRMS == 1)
+	      {
+		float calcVals1[nc],calcVals2[nc];
+		float rms1,rms2;
+		for (i=0;i<nc;i++)
+		  {
+		    calcVals1[i] = avData1[i]/(double)(l+1);
+		    calcVals2[i] = avData2[i]/(double)(l+1);
+		  }
+		rms1 = TKfindRMS_f(calcVals1,nc);
+		rms2 = TKfindRMS_f(calcVals2,nc);
+		printf("[rmsScale] %d %g %g\n",l+1,rms1,rms2); // Note not checking all dumps are the same length -- FIX ME
+	      }
 	  }
+	if (scaleRMS == 1)
+	  {
+	    free(avData1);
+	    free(avData2);
+	  }
+	
       }
            
       sdhdf_closeFile(inFile);
