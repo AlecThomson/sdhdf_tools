@@ -29,6 +29,7 @@
 #include <cpgplot.h>
 #include "TKfit.h"
 #include "T2toolkit.h"
+#include "TKfit.h"
 
 #define VNUM "v0.1"
 
@@ -40,6 +41,7 @@ void help()
   printf("-h            This help\n");
   printf("-sb <sb>      Select sub-band number sb\n");
   printf("-fr <f0> <f1> Define frequency range (can also use -freqRange)\n");
+  printf("-nfit <val>   Set the polynomial order for least squares fitting\n");
   printf("-scaleRMS     Produces the rms as a function of N where N = number of dumps averaged\n");
   printf("\n\n");
   printf("Example\n");
@@ -75,7 +77,7 @@ int main(int argc,char *argv[])
   float baselineX1[1024],baselineX2[1024];
   int nBaseline;
   double params1[16],params2[16],v[16];
-  int nfit;
+  int nfit=0;
   float fx[2],fy[2];
   float fc;
   double sx,sx2,sx_2,sx2_2,sdev1,sdev2,mean1,mean2,min1,min2,max1,max2;
@@ -120,6 +122,8 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&freq0);
 	  sscanf(argv[++i],"%f",&freq1);
 	}
+      else if (strcmp(argv[i],"-nfit")==0) 
+	sscanf(argv[++i],"%d",&nfit);
       else if (strcasecmp(argv[i],"-scaleRMS")==0)
 	scaleRMS=1;
       else
@@ -199,11 +203,18 @@ int main(int argc,char *argv[])
 	    if (scaleRMS == 1)
 	      {
 		float calcVals1[nc],calcVals2[nc];
+		float fx[nc];
 		float rms1,rms2;
 		for (i=0;i<nc;i++)
 		  {
+		    fx[i] = i; // Probably should use the frequency instead here -- FIX ME
 		    calcVals1[i] = avData1[i]/(double)(l+1);
 		    calcVals2[i] = avData2[i]/(double)(l+1);
+		  }
+		if (nfit > 0)
+		  {
+		    TKremovePoly_f(fx,calcVals1,nc,nfit);
+		    TKremovePoly_f(fx,calcVals2,nc,nfit);
 		  }
 		rms1 = TKfindRMS_f(calcVals1,nc);
 		rms2 = TKfindRMS_f(calcVals2,nc);
