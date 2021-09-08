@@ -198,7 +198,7 @@ int main(int argc,char *argv[])
 				      if (fref < 0)
 					fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
 				      else
-					fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %.5g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight,(1.0-freq/fref)*SPEED_LIGHT/1000.); // km/s);
+					fprintf(fout,"%s %d %d %d %d %.6f %g %g %g %g %g %.6g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight,(1.0-freq/fref)*SPEED_LIGHT/1000.); // km/s);
 				    }
 				  else
 				    {
