@@ -330,7 +330,7 @@ int main(int argc,char *argv[])
 			  // printf("%d Rfeed x Jast = ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
 
 			  sdhdf_multiply_complex_matrix_2x2(finalJ,R_feed_pa_dag);
-			  // printf("%d finalJ = ",ii); sdhdf_display_complex_matrix_2x2(finalJ);
+			  printf("%d finalJ = ",ii); sdhdf_display_complex_matrix_2x2(finalJ);
 
 
 			  
@@ -355,11 +355,14 @@ int main(int argc,char *argv[])
 			  else if (averageCal==0)
 			    fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
 
-			  if (normAstro == 1 || normCal==1)// Currently normalising both
+			  if ((normAstro == 1 || normCal==1) &&
+			      (averageCal==1 && ii == 0) || averageCal == 0)// Currently normalising both
 			    {
 			      int nbinCal = 32; // WARNING HARDCODED
 			      nchanCal = inFile->beam[b].calBandHeader[j].nchan;
 			      tdumpCal = inFile->beam[b].calBandHeader[j].dtime;
+			      printf("Scaling factor = %g\n",((double)nchanAstro/(double)nchanCal * (double)1.0/(double)nbinCal * tdumpCal /tdumpAstro));
+			      printf("pre-fluxScale = %g\n",fluxScale);
 			      fluxScale *= ((double)nchanAstro/(double)nchanCal * (double)1.0/(double)nbinCal * tdumpCal /tdumpAstro); 
 			    }
 			  // NORMALISATION
@@ -379,8 +382,8 @@ int main(int argc,char *argv[])
 			  out_data[ii+nchan*k*npol+2*nchan] = final_rab;
 			  out_data[ii+nchan*k*npol+3*nchan] = final_iab;
 			
-			  //			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
-			  //				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB);
+			  			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
+			  				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB);
 			  //			  exit(1);
 			}
 		    }
