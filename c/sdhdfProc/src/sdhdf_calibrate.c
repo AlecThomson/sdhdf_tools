@@ -227,17 +227,16 @@ int main(int argc,char *argv[])
 	      
 	      for (j=0;j<inFile->beam[b].nBand;j++)
 		{
+		  printf("Processing subband %d\n",j);
 		  sdhdf_loadBandData(inFile,b,j,1);
 		  nchan = inFile->beam[b].bandHeader[j].nchan;
 		  npol  = inFile->beam[b].bandHeader[j].npol;
 		  ndump  = inFile->beam[b].bandHeader[j].ndump;
 
 		  // Copy observation parameters
-
 		  outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 		  for (kk=0;kk<ndump;kk++)
 		    sdhdf_copySingleObsParams(inFile,b,j,kk,&outObsParams[kk]);
-
 		  
 		  out_freq  = (float *)malloc(sizeof(float)*nchan);
 		  out_data  = (float *)calloc(sizeof(float),nchan*npol*ndump);
@@ -249,11 +248,12 @@ int main(int argc,char *argv[])
 		    nchanAstro = nchan;
 		  
 		  for (k=0;k<inFile->beam[b].bandHeader[j].ndump;k++)
-		    {		      
+		    {
+		      printf("Processing spectral dump %d\n",k);
 		      //		      printf("Processing: %d %d %d\n",b,j,k);
 		      for (ii=0;ii<nchan;ii++)
 			{
-			  freq = inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan];
+			  freq = inFile->beam[b].bandData[j].astro_data.freq[ii];
 			  if (k==0)
 			    {
 			      out_freq[ii] = freq;  // NOTE: Assuming that the frequency is constant in all bands - not true if Doppler corrected -- FIX ME
@@ -270,11 +270,12 @@ int main(int argc,char *argv[])
 			  else
 			    scaleFactor=1;
 			  scaleFactor=1;
-			  
+
 			  aa  = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol1[ii+k*nchan];
 			  bb  = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
 			  rab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
 			  iab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
+
 			  // FIX ME HARDCDE
 			  /*
 			  aa = 1157.44;
@@ -285,6 +286,7 @@ int main(int argc,char *argv[])
 			  
 			  // Convert into a 2x2 complex matrix
 			  // FIX ME **** CHECK THIS A LOT ***** GEORGE GOT TO HERE
+
 			  sdhdf_complex_matrix_2x2(rho,aa,rab-I*iab,rab+I*iab,bb);
 
 			  // Should obtain the relevant channel in the PCM structure
@@ -295,10 +297,8 @@ int main(int argc,char *argv[])
 
 			  
 			  // printf("%d td_response = ",ichan); sdhdf_display_complex_matrix_2x2(polCal[ichan].td_response);
-
 			  sdhdf_copy_complex_matrix_2x2(Jast,polCal[ichan].td_response); 
 			  sdhdf_multiply_complex_matrix_2x2(Jast,rho);
-
 
 			  //  printf("%d rho = ",ii);  sdhdf_display_complex_matrix_2x2(rho);
 
@@ -324,13 +324,12 @@ int main(int argc,char *argv[])
 			  // printf("%d Feed PA_dag = ",ii);  sdhdf_display_complex_matrix_2x2(R_feed_pa_dag);
 
 
-
 			  sdhdf_copy_complex_matrix_2x2(finalJ,R_feed_pa);
 			  sdhdf_multiply_complex_matrix_2x2(finalJ,Jast);
 			  // printf("%d Rfeed x Jast = ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
 
 			  sdhdf_multiply_complex_matrix_2x2(finalJ,R_feed_pa_dag);
-			  printf("%d finalJ = ",ii); sdhdf_display_complex_matrix_2x2(finalJ);
+			  //			  printf("%d finalJ = ",ii); sdhdf_display_complex_matrix_2x2(finalJ);
 
 
 			  
@@ -361,10 +360,11 @@ int main(int argc,char *argv[])
 			      int nbinCal = 32; // WARNING HARDCODED
 			      nchanCal = inFile->beam[b].calBandHeader[j].nchan;
 			      tdumpCal = inFile->beam[b].calBandHeader[j].dtime;
-			      printf("Scaling factor = %g\n",((double)nchanAstro/(double)nchanCal * (double)1.0/(double)nbinCal * tdumpCal /tdumpAstro));
-			      printf("pre-fluxScale = %g\n",fluxScale);
+			      //			      printf("Scaling factor = %g\n",((double)nchanAstro/(double)nchanCal * (double)1.0/(double)nbinCal * tdumpCal /tdumpAstro));
+			      //			      printf("pre-fluxScale = %g\n",fluxScale);
 			      fluxScale *= ((double)nchanAstro/(double)nchanCal * (double)1.0/(double)nbinCal * tdumpCal /tdumpAstro); 
 			    }
+			  //			  printf("Here fluxScale = %g\n",fluxScale);
 			  // NORMALISATION
 			  //			  fluxScale *= ((double)262144.0/(double)128. * (double)1.0/(double)32.0 * 5 /0.983);
 			  //			  fluxScale *= ((double)32768.0/(double)128. * (double)1.0/(double)32.0 * 5 /4.997); 
@@ -382,8 +382,8 @@ int main(int argc,char *argv[])
 			  out_data[ii+nchan*k*npol+2*nchan] = final_rab;
 			  out_data[ii+nchan*k*npol+3*nchan] = final_iab;
 			
-			  			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
-			  				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB);
+			  //			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
+			  //				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB,fluxScale);
 			  //			  exit(1);
 			}
 		    }
