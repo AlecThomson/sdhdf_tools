@@ -40,7 +40,7 @@ void help()
   printf("Command line arguments:\n\n");
   printf("-bandRange <b0> <b1>   Output data in bands between b0 and b1\n");
   printf("-cal                   Output calibration data\n");
-  printf("=cal32_ch <ch>         Set the channel to 'ch' when outputting data for the 32-bin cal\n");
+  printf("-cal32_ch <ch>         Set the channel to 'ch' when outputting data for the 32-bin cal\n");
   printf("-cal32_tav             Average the 32-binned calibration signal in time before output\n");  
   printf("-dumpRange <s0> <s1>   Output data in specificed sub-integration range\n");
   printf("-e <ext>               Output to data file with defined extension\n");
