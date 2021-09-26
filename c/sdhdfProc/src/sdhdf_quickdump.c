@@ -38,6 +38,19 @@ void help()
   printf("Purpose: to present data within a file\n");
   printf("\n");
   printf("Command line arguments:\n\n");
+  printf("-bandRange <b0> <b1>   Output data in bands between b0 and b1\n");
+  printf("-cal                   Output calibration data\n");
+  printf("=cal32_ch <ch>         Set the channel to 'ch' when outputting data for the 32-bin cal\n");
+  printf("-cal32_tav             Average the 32-binned calibration signal in time before output\n");  
+  printf("-dumpRange <s0> <s1>   Output data in specificed sub-integration range\n");
+  printf("-e <ext>               Output to data file with defined extension\n");
+  printf("-fref <fref> Use 'fref' as a reference frequency and output velocities as well as frequencies\n");
+  printf("-freqRange <f0> <f1>   Output data between f0 and f1 (in MHz)\n");
+  printf("-h                     this help\n");
+  printf("-stokes                Convert coherency products to Stokes (for calibrated data) or pseudo-Stokes (uncalibrated data)\n");
+  printf("-tsys                  output system temperature measurements\n");
+
+
   exit(1);
 }
 
@@ -55,6 +68,7 @@ int main(int argc,char *argv[])
   float pol1,pol2,pol3,pol4;
   sdhdf_fileStruct *inFile;
   int npol=0;
+  int stokes=0;
   int outFile=0;
   float *tsys;
   char extFileName[MAX_STRLEN];
@@ -76,6 +90,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-h")==0)
 	help();
+      else if (strcmp(argv[i],"-stokes")==0)
+	stokes=1;
       else if (strcmp(argv[i],"-tsys")==0)
 	dataType=2;
       else if (strcmp(argv[i],"-fref")==0)
@@ -188,6 +204,20 @@ int main(int argc,char *argv[])
 				}
 			      else
 				pol2 = pol3 = pol4 = 0;
+
+			      if (stokes==1)
+				{
+				  double sI,sQ,sU,sV;
+				  sI = pol1 + pol2;
+				  sQ = pol1 - pol2;
+				  sU = 2*pol3;
+				  sV = 2*pol4;
+
+				  pol1 = sI;
+				  pol2 = sQ;
+				  pol3 = sU;
+				  pol4 = sV;
+				}
 			      
 			      weight = inFile->beam[beam].bandData[band].astro_data.dataWeights[k*nchan+j];
 			    
