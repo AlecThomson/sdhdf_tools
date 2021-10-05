@@ -39,6 +39,18 @@
 // Should use the band extract first
 //
 
+void help()
+{
+  printf("sdhdf_extractDump\n\n");
+  printf("Routine to extract spectral dumps from an sdhdf file\n\n");
+  printf("-d <num>       Spectral dump number to extract (note this can be used multiple times)\n");
+  printf("-e <ext>       Output file extension\n");
+  printf("-h             This help\n");
+  printf("\n\n");
+  printf("Filenames are listed on the command line. For example\n\n");
+  printf("sdhdf_extractDump -e extract -d 0 -d 5 -d 8 *.hdf\n");
+}
+
 int main(int argc,char *argv[])
 {
   int ii,i,j,k,kk,jj,l,nchan,totNchan,b;
@@ -87,6 +99,8 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-e")==0)
 	strcpy(ext,argv[++i]);
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-d")==0)
 	sscanf(argv[++i],"%d",&selectDump[nSelectDumps++]);
       else
