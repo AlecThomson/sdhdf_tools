@@ -24,6 +24,16 @@
 
 void checkLine(float f0,float f1,char *str,float refFreq);
 
+
+void help()
+{
+  printf("sdhdf_listLines: lists rest frequencies of lines of potential interest\n");
+  printf("Use:\n");
+  printf("sdhdf_listLines <f0> <f1>\n");
+  printf("will list rest frequencies of lines between f0 and f1 in MHz\n");
+
+}
+
 int main(int argc,char *argv[])
 {
   float f0,f1;
@@ -34,7 +44,11 @@ int main(int argc,char *argv[])
   restFrequencies = (sdhdf_restfrequency_struct *)malloc(sizeof(sdhdf_restfrequency_struct)*MAX_REST_FREQUENCIES);
   sdhdf_loadRestFrequencies(restFrequencies,&nFreq);
 
-
+  if (strcmp(argv[1],"-h")==0)
+    {
+      help();
+      exit(1);
+    }
   if (argc == 3)
     {
       sscanf(argv[1],"%f",&f0);
