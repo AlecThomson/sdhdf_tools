@@ -47,9 +47,14 @@ typedef struct historyLogStruct {
 
 void help()
 {
-  printf("sdhdf_describe %s (SDHDFProc %s)\n",VERSION,SOFTWARE_VER);
+  printf("sdhdf_checkFile %s (SDHDFProc %s)\n",VERSION,SOFTWARE_VER);
   printf("Authors: G. Hobbs\n");
 
+  printf("\n\n");
+  printf("-h        This help\n");
+  printf("Filenames are given on the command line\n\n");
+  printf("Example\n");
+  printf("sdhdf_checkFile *.hdf\n");
   exit(1);
 
 }
