@@ -25,6 +25,23 @@
 
 #define VNUM "v0.1"
 
+void help()
+{
+  printf("sdhdf_convertFromFITS\n\n");
+  printf("Routine to convert FITS files to SDHDF\n");
+  printf("\n\n");
+  printf("-bin <bin>           Choice of phase bin for PSRFITS input files\n");
+  printf("-cal <filaname>      Obtain noise source information from specified file\n");
+  printf("-calOff <bin1> <bin2> Phase bins for the noise source OFF range\n");    
+  printf("-calOn <bin1> <bin2> Phase bins for the noise source ON range\n");    
+  printf("-f <filename>        FITS filename for conversion\n");
+  printf("-h                   This help\n");
+  printf("-o <filename>        Output filename\n");
+  printf("-pulseOff <bin1> <bin2> Phase bins for the pulse OFF (baseline)\n");    
+  printf("-type <type>         Type = 1 = SDFITS (default), 2 = PSRFITS\n");
+
+}
+
 int main(int argc,char *argv[])
 {
   int i,j,k,b;
@@ -113,6 +130,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-f")==0)
 	strcpy(fname,argv[++i]);
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-cal")==0)
 	{
 	  cal=1;
