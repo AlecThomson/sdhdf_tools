@@ -42,8 +42,14 @@ void help()
   printf("sdhdf_plotCal\n");
   printf("Provides ways to visualise the calibration signal/noise source\n");
   printf("\n\n");
-  
-  
+  printf("-autoSsys           Automatically determine Ssys and print out to screen\n");
+  printf("-autoSysGain        Automatically determine system gain and print out to screen\n");
+  printf("-av                 Average the noise source information in time\n");
+  printf("-f <filename>       Input filename\n");
+  printf("-h                  This help\n");
+  printf("-scal <filename>    Filename of Scal (Jy) information\n");
+  printf("-scale <float>      Value to scale the calibrator values by\n");
+
 }
 
 
@@ -81,6 +87,8 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-f")==0)
 	strcpy(fname,argv[++i]);	
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-scal")==0)
 	strcpy(scalFname,argv[++i]);
       else if (strcmp(argv[i],"-scale")==0)
