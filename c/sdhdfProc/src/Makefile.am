@@ -13,7 +13,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_calibrate \
   sdhdf_join \
   sdhdf_identify \
-  sdhdf_cal \
+  sdhdf_plotCal \
   sdhdf_convertFromFITS \
   sdhdf_convertTo \
   sdhdf_convertFromPsr \
@@ -75,7 +75,7 @@ sdhdf_convertTo_SOURCES = sdhdf_convertTo.c \
 sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \
   $(COMMON_SRCS)
 
-sdhdf_cal_SOURCES = sdhdf_cal.c \
+sdhdf_plotCal_SOURCES = sdhdf_plotCal.c \
   $(COMMON_SRCS)
 
 sdhdf_listLines_SOURCES = sdhdf_listLines.c \
