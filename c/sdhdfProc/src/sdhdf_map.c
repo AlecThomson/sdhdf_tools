@@ -39,6 +39,18 @@
 
 double haversine(double centre_long,double centre_lat,double src_long,double src_lat);
 
+void help()
+{
+  printf("sdhdf_map: routine to map a region of the sky\n\n");
+  printf("-b <n>     Select band number <n>\n");
+  printf("-h         This help\n");
+  printf("-highlight <X> <Y> highlight point at X and Y coordinate\n");
+  printf("-poly <n>  Remove n'th order polynomial\n");
+  printf("\n\n");
+  printf("filenames are given on the command line, e.g.:\n");
+  printf("sdhdf_map -b 5 uwl*.hdf\n");
+}
+
 int main(int argc,char *argv[])
 {
   int        i,j,k,l,ii,jj,kk;
@@ -131,6 +143,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-poly")==0)
 	sscanf(argv[++i],"%d",&removeFunction);
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-b")==0)
 	sscanf(argv[++i],"%d",&iband);
       else if (strcmp(argv[i],"-highlight")==0)
