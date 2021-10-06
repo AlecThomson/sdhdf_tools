@@ -47,6 +47,41 @@ void   TKcmonot (int n, double x[], double y[], double yd[][4]);
 double yd1[4096][4];
 double yd2[4096][4];
 
+void help()
+{
+  printf("sdhdf_modify: routine to process an sdhdf file\n\n");
+  printf("-bary                 Convert to solar system barycentre reference frame\n");
+  printf("-calBin <val>         Select phase bin of noise source\n");
+  printf("-calFitN <val>        1, 2 or 3 (1 =default) for fitting to the ON-OFF cal values\n");
+  printf("-divideAstro <val>    Divide values in the astronomy spectra by specified value\n");        
+  printf("-divideCal <val>      Divide values in the noise source by specified value\n");        
+  printf("-e <ext>              File extension\n");
+  printf("-ephem <name>         Name of solar system ephemeris to use\n");
+  printf("-fav <val>            Average specified number of frequency channels together\n");
+  printf("-fchbw <val>          Average to specified channel bandwidth\n");
+  printf("-F                    Average in frequency\n");
+  printf("-id <val>             Ignore spectral dump val when averaging\n");
+  printf("-interp <val>         val = 1 = linear interpolation = 2 = cubic spline\n");
+  printf("-lsr                  Convert to local standard of rest reference frame\n");
+  printf("-nch <val>            Number of channels requested in output file\n");
+  printf("-origNchan <val>      Original number of channels when file was recorded\n");
+  printf("-p1                   Form one polarisation\n");
+  printf("-p2                   Form two polarisations\n");
+  printf("-p3                   Form 4 polarisation states\n");
+  printf("-para <val>           Set parallactic angle to val (degrees)\n");
+  printf("-psum                 Sum (instead of average) polarisations\n");
+  printf("-regrid               Regrid the frequency axis\n");
+  printf("-S                    Form Stokes parameters\n");
+  printf("-scaleFile <filename> Scale values by specified file\n");
+  printf("-tdump <val>          Define dump time\n");
+  printf("-T                    average in time\n");
+  printf("\n\n");
+  printf("Example: sdhdf_modify -T -e T *.hdf\n");
+
+  
+}
+
+
 int main(int argc,char *argv[])
 {
   int i,ii,j,k,p,l,kp,b;
@@ -181,6 +216,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-e")==0)
 	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-ephem")==0)
 	strcpy(ephemName,argv[++i]);
       else if (strcmp(argv[i],"-origNchan")==0)
