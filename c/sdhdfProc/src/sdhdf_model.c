@@ -51,6 +51,29 @@ void **MATRIX(int nrows, int ncols, int first_row, int first_col,int element_siz
 void errorAction(int N, double *Y, float *ZF);
 void modelSpectrum(dataModelStruct *model,int nband,sdhdf_fileStruct *outFile);
 
+void help()
+{
+  printf("sdhdf_model: routine to model spectra (and baselines)\n");
+  printf("\n\n");
+  printf("Command line arguments:\n\n");
+  printf("-f <filename>     Input filename\n");
+  printf("-sb <band>        Input band number\n");
+  printf("\n\n");
+  printf("The output is an interactive display. The following commands are available\n\n");
+  printf(">                 Move to next band\n");
+  printf("<                 Move to previous band\n");
+  printf("d                 Toggle plotting the raw data\n");
+  printf("h                 This help\n");
+  printf("l                 Define spline length\n");
+  printf("m                 Toggle plotting the model\n");
+  printf("u                 Unzoom\n");
+  printf("q                 Quit\n");
+  printf("s                 Write a new file containing the model\n");
+  printf("v                 Define spline variance\n");
+  printf("z                 Zoom into a region\n");
+    
+}
+
 int main(int argc,char *argv[])
 {
   int i,j,k;
@@ -86,6 +109,7 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-f")==0)   	     strcpy(fname,argv[++i]);	
       else if (strcmp(argv[i],"-sb")==0) sscanf(argv[++i],"%d",&iband);
+      else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
     }
   sdhdf_openFile(oname,outFile,3);
   sdhdf_initialiseFile(inFile);
@@ -290,6 +314,8 @@ void modelSpectrum(dataModelStruct *model,int nband,sdhdf_fileStruct *outFile) /
     }
     else if (key=='u')
       recalcMinMax=1;
+    else if (key=='h')
+      help();
     else if (key=='>')
       {
 	if (iband < nband-1)
