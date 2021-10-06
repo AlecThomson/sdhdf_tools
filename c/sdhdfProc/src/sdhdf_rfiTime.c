@@ -36,6 +36,31 @@ float calcT(char *aest,char *aest0,int min);
 void drawLabels(char *labelFile,char *t0,float miny,float maxy,int min);
 void sort2d(int n,float *a,float *b);
 
+
+void help()
+{
+  printf("sdhdf_rfiTime: routine to plot RFI as a function of time\n");
+  printf("\n");
+  printf("Command line arguments\n\n");
+  printf("-b <filename>           Specify bands from file given by filename\n");
+  printf("-div1                   Divide all values by first entry\n");
+  printf("-gap <val>              Define gap size\n");
+  printf("-h                      This help\n");
+  printf("-ignoreAz <val1> <val2> Ignore azimuth ranges between val1 and val2\n");
+  printf("-l <filename>           Load labels from file\n");
+  printf("-label <x> <y> <col> <str> Place a label at x,y with colour col and the label is str\n");
+  printf("-log                    Plot on logarithmic scale\n");
+  printf("-miny <val>             Define minimum y-value for the plot\n");
+  printf("-maxy <val>             Define maximum y-value for the plot\n");
+  printf("-noEl                   Do not plot elevation\n");
+  printf("-plotAz                 Plot RFI as a function of azimuth\n");
+  printf("-showFiles              Write file information\n");
+  printf("-sm <val>               Smoothing integer value\n");
+  printf("-t0 <string>            Define local start time\n");
+  printf("\n\n");
+  printf("Filenames are given on the command line\n");
+}
+
 int main(int argc,char *argv[])
 {
   int i,j,k,ii,jj,kk,b;
@@ -127,6 +152,8 @@ int main(int argc,char *argv[])
       printf("Checking %s\n",argv[i]);
       if (strcmp(argv[i],"-b")==0)
 	strcpy(bandFile,argv[++i]);
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-log")==0)
 	log=1;
       else if (strcmp(argv[i],"-t0")==0)
