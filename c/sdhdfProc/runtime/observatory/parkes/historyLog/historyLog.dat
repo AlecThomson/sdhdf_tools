@@ -8,12 +8,18 @@
 #
 # type 1: <mjdStart> <mjdEnd> <detailReportFile> report
 #
+1 0.000 58421 NULL Before 2018-10-30: Band1 frequency range low->high; Band2 and band3 freq range high->low
+1 0.000 58469 NULL Before 2018-12-17 ~23:4 5changes to Medusa chbw from -ve to +ve ; Medusa sub-band data freq, now range from low->high, Source J1644-4559 test
+1 0.000 58525 NULL 2019-02-11 On this date the Medusa backend was updated to fix -ve bandwidth output
 1 0.000 58564 NULL Only 2-polarisations recorded for noise source signal
 1 0.000 58570 NULL Noise source time synchronisation was incorrect. Therefore the ON and OFF noise source channels will be in error.
 1 0.000 58660 NULL Metadata logging with relatively low cadence.
+1 0.000 58640 NULL Prior to 2019-06-06 Medusa will discard the final sub integration in Continuum mode instead of writing our a partial sub-integration
+1 0.000 58682 NULL Prior to 2019-07-18 it is likely that reflections are causing ripples. On this date 10dB pads fitted to all 6 UWL outputs to the Parkes Conversion System (PCS).
 1 59386 59401 NULL Subbands 11 and 12 are missing one polarisation channel.
 1 0.000 59416 NULL The astronomy and noise source data streams are not normalised by the number of hits in each spectral channel
 1 0.000 59425 NULL The data tables were recorded with 5-dimensions. After MJD 59425 we record 4-dimensions (without beam number).
 1 0.000 59418 topoFreqError.txt Topocentric frequency labelling in the SDHDF files incorrect
+
 
 

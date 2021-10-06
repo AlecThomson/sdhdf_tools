@@ -37,6 +37,21 @@
 // Should use the band extract first
 //
 
+void help()
+{
+  printf("sdhdf_join: routine to join sdhdf files together\n");
+  printf("\n\n");
+  printf("Command line arguments:\n\n");
+  printf("-buildFreq         Build a new file with specific frequency bands (defined by -dsb)\n");
+  printf("-dsb <bandNum>     Specify band number to join into output file (note this can be used multiple times)\n");
+  printf("-h                 This help\n");
+  printf("-o <filename>      Output filename\n");
+  printf("\n\n");
+  printf("Input filenames are listed on the command line:\n");
+  printf("sdhdf_join -o join.hdf uwl*.hdf\n");
+  
+}
+
 int main(int argc,char *argv[])
 {
   int ii,i,j,k,kk,jj,l,totNchan,b;
@@ -78,6 +93,7 @@ int main(int argc,char *argv[])
   long ndump,out_ndump,out_ndump_num;
   float **out_data,**out_freq;
   float *single_out_data,*single_out_freq;
+  float **dataWts;
   int offsetDump[MAX_BANDS];
   int offsetPos[MAX_BANDS];
   
@@ -102,6 +118,8 @@ int main(int argc,char *argv[])
     {      
       if (strcmp(argv[i],"-o")==0)
 	strcpy(oname,argv[++i]);
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-buildFreq")==0)
 	buildFreq=1;
       else if (strcmp(argv[i],"-dsb")==0)
@@ -159,11 +177,13 @@ int main(int argc,char *argv[])
 	      single_out_data = (float *)malloc(sizeof(float)*nchan_v*npol_v*ndump);
 	      single_out_freq = (float *)malloc(sizeof(float)*nchan_v);
 
+	      
 	      sdhdf_copyBandHeaderStruct(&(inFile->beam[b].bandHeader[defineSubband[ii]]),&outBandParams[ii],1);  
 	      outBandParams[ii].ndump = ndump;
 	      for (k=0;k<ndump;k++)
-		sdhdf_copySingleObsParams(inFile,b,defineSubband[ii],k,&singleObsParams[k]); 
-	   
+		{
+		  sdhdf_copySingleObsParams(inFile,b,defineSubband[ii],k,&singleObsParams[k]); 
+		}
 	      // Directly read the data into an array
 	      sdhdf_loadBandData2Array(inFile,b,defineSubband[ii],1,single_out_data);
 	      sdhdf_loadFrequency2Array(inFile,b,defineSubband[ii],single_out_freq);
@@ -171,7 +191,7 @@ int main(int argc,char *argv[])
 	      // SHOULD COPY ATTRIBUTES -- FIX ME
 	      if (ii!=nDefineBands-1)
 		sdhdf_closeFile(inFile);
-
+	    
 	      sdhdf_writeObsParams(outFile,outBandParams[ii].label,b,ii,singleObsParams,ndump,1);
 	      sdhdf_writeSpectrumData(outFile,outBandParams[ii].label,b,ii,single_out_data,single_out_freq,nchan_v,npol_v,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes); // FIX THE ATTRIBUTES STUFF
 	      free(singleObsParams);
@@ -232,13 +252,15 @@ int main(int argc,char *argv[])
       outObsParams = (sdhdf_obsParamsStruct **)malloc(sizeof(sdhdf_obsParamsStruct *)*nBand);
       out_data = (float **)malloc(sizeof(float *)*nBand);
       out_freq = (float **)malloc(sizeof(float *)*nBand);
+      dataWts  = (float **)malloc(sizeof(float *)*nBand);
       
       for (i=0;i<nBand;i++)
 	{
-	  //      printf("band %d, output spectral dumps %d, nchan = %d, npol = %d\n",i,outNdump[i],nchan[i],npol[i]);
+	  printf("band %d, output spectral dumps %d, nchan = %d, npol = %d\n",i,outNdump[i],nchan[i],npol[i]);
 	  outObsParams[i] = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outNdump[i]);      
 	  out_data[i] = (float *)malloc(sizeof(float)*nchan[i]*npol[i]*outNdump[i]);
 	  out_freq[i] = (float *)malloc(sizeof(float)*nchan[i]);
+	  dataWts[i]  = (float *)malloc(sizeof(float)*nchan[i]*outNdump[i]);
 	}
       
       sdhdf_initialiseFile(outFile);
@@ -274,10 +296,16 @@ int main(int argc,char *argv[])
 		  ndump        = inFile->beam[b].bandHeader[i].ndump;
 		  
 		  for (k=0;k<ndump;k++)
-		    sdhdf_copySingleObsParams(inFile,b,i,k,&outObsParams[i][k+offsetDump[i]]);
-		  
+		    {
+		      sdhdf_copySingleObsParams(inFile,b,i,k,&outObsParams[i][k+offsetDump[i]]);
+		      // offsetPos is wrong here **
+		      //		      dataWts[i][offsetPos[i]+k] = inFile->beam[b].bandData[i].astro_data.dataWeights[k*nchan[i]+];
+		    }
 		  // Directly read the data into an array
+		  printf("Loading into %d (from %s), nchan = %d\n",offsetPos[i],inFile->fname,nchan[i]);
 		  sdhdf_loadBandData2Array(inFile,b,i,1,&out_data[i][offsetPos[i]]);
+		  //		  for (j=0;j<20;j++)
+		  //		    printf("Loaded %g\n",out_data[i][offsetPos[i]+j]);
 		  if (ii==0)
 		    {
 		      // Directly read the frequency data into an array
@@ -303,6 +331,9 @@ int main(int argc,char *argv[])
 	    {
 	      sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParams[i],outNdump[i],1);
 	      // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
+	      printf("Writing data for band %d ndump = %d, npol = %d, nchan = %d\n",i,outNdump[i],npol[i],nchan[i]);
+ 
+
 	      sdhdf_writeSpectrumData(outFile,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	    }
 	  // *********** DON'T FORGET THE CAL *********

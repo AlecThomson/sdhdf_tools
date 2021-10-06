@@ -257,8 +257,9 @@ int main(int argc,char *argv[])
 			  if (k==0)
 			    {
 			      out_freq[ii] = freq;  // NOTE: Assuming that the frequency is constant in all bands - not true if Doppler corrected -- FIX ME
-			      dataWts[ii]  = inFile->beam[b].bandData[j].astro_data.dataWeights[k*nchan+ii];
 			    }
+			  dataWts[ii+k*nchan]  = inFile->beam[b].bandData[j].astro_data.dataWeights[k*nchan+ii];
+
 			  // FIX ME: SHOULD ACCOUNT FOR WEIGHTING
 
 			  if (normAstro==1)
@@ -276,18 +277,7 @@ int main(int argc,char *argv[])
 			  rab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
 			  iab = scaleFactor*inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
 
-			  // FIX ME HARDCDE
-			  /*
-			  aa = 1157.44;
-			  bb = 1283.55;
-			  rab = -6.95146;
-			  iab = 5.08572;
-			  */
-			  
-			  // Convert into a 2x2 complex matrix
-			  // FIX ME **** CHECK THIS A LOT ***** GEORGE GOT TO HERE
-
-			  sdhdf_complex_matrix_2x2(rho,aa,rab-I*iab,rab+I*iab,bb);
+	 		  sdhdf_complex_matrix_2x2(rho,aa,rab-I*iab,rab+I*iab,bb);
 
 			  // Should obtain the relevant channel in the PCM structure
 			  ichan = (int)((freq-polCal[0].freq)/(polCal[1].freq-polCal[0].freq)+0.5); // FIX ME ******
@@ -355,7 +345,7 @@ int main(int argc,char *argv[])
 			    fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
 
 			  if ((normAstro == 1 || normCal==1) &&
-			      (averageCal==1 && ii == 0) || averageCal == 0)// Currently normalising both
+			      ((averageCal==1 && ii == 0) || averageCal == 0))// Currently normalising both
 			    {
 			      int nbinCal = 32; // WARNING HARDCODED
 			      nchanCal = inFile->beam[b].calBandHeader[j].nchan;
@@ -376,14 +366,13 @@ int main(int argc,char *argv[])
 			  final_bb  = fluxScale*creal(finalJ[1][1]);
 			  final_rab = fluxScale*creal(finalJ[1][0]);
 			  final_iab = fluxScale*cimag(finalJ[0][1]);
-
+			  //			  printf("Here with fluxScale = %g\n",fluxScale);
 			  out_data[ii+nchan*k*npol]         = final_aa;
 			  out_data[ii+nchan*k*npol+nchan]   = final_bb;
 			  out_data[ii+nchan*k*npol+2*nchan] = final_rab;
 			  out_data[ii+nchan*k*npol+3*nchan] = final_iab;
-			
-			  //			  printf("Output %.6f %g %g %g %g %g %g %g %g %d %g %g %g\n",inFile->beam[b].bandData[j].astro_data.freq[ii+k*nchan],
-			  //				 aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB,fluxScale);
+
+			  //			  printf("Output [%d] [%d] %.6f %g %g %g %g %g %g %g %g %d %g %g %g\n",j,k,inFile->beam[b].bandData[j].astro_data.freq[ii], aa,bb,rab,iab,final_aa,final_bb,final_rab,final_iab,ichan,fluxCal[ichan].scalAA,fluxCal[ichan].scalBB,fluxScale);
 			  //			  exit(1);
 			}
 		    }

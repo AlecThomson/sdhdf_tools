@@ -114,8 +114,11 @@ int main(int argc,char *argv[])
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-sb")==0)  // FIX ME -- WORK OUT BAND FROM FREQUENCY RANGE
-	sscanf(argv[++i],"%d",&iband);
-      else if (strcmp(argv[i],"-h")==0)
+	{
+	  sscanf(argv[++i],"%d",&iband);
+	  printf("Setting iband to %d\n",iband);
+	}
+	  else if (strcmp(argv[i],"-h")==0)
 	help();
       else if (strcasecmp(argv[i],"-freqRange")==0 || strcasecmp(argv[i],"-fr")==0)
 	{
@@ -143,7 +146,7 @@ int main(int argc,char *argv[])
 
       sdhdf_loadMetaData(inFile);
       sdhdf_loadBandData(inFile,ibeam,iband,1);
-      
+      printf("iband = %d\n",iband);
       // Process each band
       //      for (j=0;j<inFile->beam[ibeam].nBand;j++)
       j=iband; // FIX ME -- UPDATE TO PROCESS EACH BAND
@@ -154,7 +157,7 @@ int main(int argc,char *argv[])
 	    avData1 = (float *)calloc(sizeof(float),inFile->beam[ibeam].bandHeader[j].nchan);
 	    avData2 = (float *)calloc(sizeof(float),inFile->beam[ibeam].bandHeader[j].nchan);
 	  }
-	    
+     
 	for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l++) 
 	  {
 	    sx=sx2=sx_2=sx2_2=0.0;
@@ -163,11 +166,12 @@ int main(int argc,char *argv[])
 	    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	      {
 		freq = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
-		
+
 		if (freq > freq0 && freq < freq1)
 		  {
 		    val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
 		    val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
+
 		    if (scaleRMS==1)
 		      {
 			avData1[nc] += val1;
@@ -205,6 +209,7 @@ int main(int argc,char *argv[])
 		float calcVals1[nc],calcVals2[nc];
 		float fx[nc];
 		float rms1,rms2;
+		printf("Scaling with nc = %d\n",nc);
 		for (i=0;i<nc;i++)
 		  {
 		    fx[i] = i; // Probably should use the frequency instead here -- FIX ME

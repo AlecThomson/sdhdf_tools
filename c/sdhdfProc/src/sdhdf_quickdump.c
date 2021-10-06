@@ -47,6 +47,7 @@ void help()
   printf("-fref <fref> Use 'fref' as a reference frequency and output velocities as well as frequencies\n");
   printf("-freqRange <f0> <f1>   Output data between f0 and f1 (in MHz)\n");
   printf("-h                     this help\n");
+  printf("-mjd                   Print dump time MJD in output\n");
   printf("-stokes                Convert coherency products to Stokes (for calibrated data) or pseudo-Stokes (uncalibrated data)\n");
   printf("-tsys                  output system temperature measurements\n");
 
@@ -59,6 +60,7 @@ void readPhaseResolvedCal(sdhdf_fileStruct *inFile,int band,int cal32_chN,int ca
 int main(int argc,char *argv[])
 {
   int i,j,k,beam,band;
+  int mjd=0;
   int display=0;
   int nFiles=0;
   char fname[MAX_FILES][MAX_STRLEN];
@@ -90,6 +92,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-h")==0)
 	help();
+      else if (strcmp(argv[i],"-mjd")==0)
+	mjd=1;
       else if (strcmp(argv[i],"-stokes")==0)
 	stokes=1;
       else if (strcmp(argv[i],"-tsys")==0)
@@ -141,6 +145,7 @@ int main(int argc,char *argv[])
       else
 	{
 	  sdhdf_loadMetaData(inFile);
+	  //	  printf("Have loaded %g\n",inFile->beam[0].bandData[0].astro_obsHeader
 	  if (outFile==1)
 	    {
 	      sprintf(outFileName,"%s.%s",inFile->fname,extFileName);
@@ -158,17 +163,20 @@ int main(int argc,char *argv[])
 		  band0 = 0;
 		  band1 = inFile->beam[beam].nBand;
 		}
-		  for (band=band0;band<band1;band++)
+	      for (band=band0;band<band1;band++)
 		{
 		  npol = inFile->beam[beam].bandHeader[band].npol;
 		  nchan = inFile->beam[beam].bandHeader[band].nchan;
 		  if (dataType!=3 && dataType!=4)
 		    sdhdf_loadBandData(inFile,beam,band,1);
+		  printf("Band %d\n",band);
 		  if (dataType==2 || dataType==3)
 		    {
 		      sdhdf_loadBandData(inFile,beam,band,2);
 		      sdhdf_loadBandData(inFile,beam,band,3);
 		    }
+		  printf("Got here\n");
+
 		  if (dataType==1) // Astronomy data
 		    {
 		      if (setDumpRange==0)
@@ -185,9 +193,9 @@ int main(int argc,char *argv[])
 			      display=1;
 			      //			  printf("Loading freq\n");
 			      freq = inFile->beam[beam].bandData[band].astro_data.freq[j];
-			      //			  printf("Loading pol1 %g\n",freq);
+			      //			      printf("Loading pol1 %g\n",freq);
 			      pol1 = inFile->beam[beam].bandData[band].astro_data.pol1[j+k*nchan];
-			      //			  printf("Done load\n");
+
 			      if (setFreqRange==1 && (freq < freq0 || freq > freq1))
 				display=0;
 			      
@@ -220,7 +228,7 @@ int main(int argc,char *argv[])
 				}
 			      
 			      weight = inFile->beam[beam].bandData[band].astro_data.dataWeights[k*nchan+j];
-			    
+
 			      if (display==1)
 				{
 				  if (outFile==1)
@@ -233,7 +241,8 @@ int main(int argc,char *argv[])
 				  else
 				    {
 				      if (fref < 0)
-					printf("%s %d %d %d %d %.6f %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight);
+					printf("%s %d %d %d %d %.6f %g %g %g %g %g %.6f\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight,
+					       inFile->beam[beam].bandData[0].astro_obsHeader[k].mjd);
 				      else
 					printf("%s %d %d %d %d %.6f %g %g %g %g %g %.6f\n",inFile->fname,beam,band,k,j,freq,pol1,pol2,pol3,pol4,weight,(1.0-freq/fref)*SPEED_LIGHT/1000.); // km/s);
 				    }

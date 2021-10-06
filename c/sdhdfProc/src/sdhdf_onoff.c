@@ -200,9 +200,8 @@ int main(int argc,char *argv[])
       sdhdf_loadMetaData(onFile);
       sdhdf_loadMetaData(offFile);
       // Should do checks for: (NOT DOING YET)
-      // 1) number of dumps = 1 
+      // 1) ASSUMING NDUMP = 1 --- NEED TO FIX THIS!!!
       // 2) number of channels same between files
-      // 3) number of subbands same between files
       
       //  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*onFile->nBands);      
       //  sdhdf_loadBandMetadataStruct(onFile,inBandParams);
@@ -213,7 +212,7 @@ int main(int argc,char *argv[])
 	      printf("Processing band: %d\n",i);
 	      nchan = onFile->beam[b].bandHeader[i].nchan;
 	      npol  = onFile->beam[b].bandHeader[i].npol;
-	      ndump = 1;
+	      ndump = 1; //onFile->beam[b].bandHeader[i].ndump;
 	      out_data = (float *)malloc(sizeof(float)*nchan*npol*ndump);
 	      freq = (float *)malloc(sizeof(float)*nchan);      
 	      sdhdf_loadBandData(onFile,b,i,1);
@@ -303,7 +302,6 @@ int main(int argc,char *argv[])
 			  out_data[k+0*npol*nchan+2*nchan] = on_pol3/(off_pol3-on_pol3);
 			  out_data[k+0*npol*nchan+3*nchan] = on_pol4/(off_pol4-on_pol4);
 			}
-
 		    }
 		      //	  printf("DIFF =  %g %g %g %g\n",freq[k],on_pol1,off_pol1,(on_pol1-off_pol1)/off_pol1);
 	      

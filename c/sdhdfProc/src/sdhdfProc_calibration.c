@@ -110,11 +110,13 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
     {
       // Should set better or using interpolation -- FIX ME
       freq = polCal[i].freq;
+      //      printf("At this point: checking freq %g\n",freq);
       iband=-1;
       for (j=0;j<inFile->beam[ibeam].nBand;j++)   // CAN SPEED THIS UP -- DON'T NEED TO CHECK SO OFTEN
-	{
-	  f0   = inFile->beam[ibeam].bandHeader[j].f0;
-	  f1   = inFile->beam[ibeam].bandHeader[j].f1;
+	{   
+	  f0   = inFile->beam[ibeam].calBandHeader[j].f0; // GEORGE: updated on 8th Sept 2021 to use the cal band header here
+	  f1   = inFile->beam[ibeam].calBandHeader[j].f1;
+	  //	  printf("At this point: checking j %d %g %g\n",j,f0,f1);
 	  if (freq >= f0 && freq <= f1)
 	    {
 	      iband=j;
@@ -194,7 +196,9 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	  polCal[i].stokes_noise_measured[1] = aa-bb;
 	  polCal[i].stokes_noise_measured[2] = 2*rab;
 	  polCal[i].stokes_noise_measured[3] = 2*iab;
+	  //	  printf("%d At this point setting %g , iband = %d\n",i,polCal[i].stokes_noise_measured[0],iband);
 	}
+      //      printf("%d At this point\n",i);
     }
   // If requested should change to an averaged value
   if (av==1)
@@ -219,6 +223,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
       printf("Setting input measurement of the noise source to (%g,%g,%g,%g)\n",av1,av2,av3,av4);
       for (i=0;i<nPolCalChan;i++)
 	{
+	  printf("Changing %g to %g\n",polCal[i].stokes_noise_measured[0],av1);
 	  polCal[i].stokes_noise_measured[0] = av1;
 	  polCal[i].stokes_noise_measured[1] = av2;
 	  polCal[i].stokes_noise_measured[2] = av3;
