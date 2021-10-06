@@ -1198,6 +1198,33 @@ void sdhdf_copySingleObsParams(sdhdf_fileStruct *inFile,int ibeam,int iband,int 
   obsParam->windSpd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].windSpd;
 }
 
+void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam)
+{
+  obsParam->timeElapsed = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timeElapsed;
+  strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timedb);
+  obsParam->mjd = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].mjd;
+  strcpy(obsParam->utc,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].utc);
+  strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ut_date);
+  strcpy(obsParam->aest,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].aest);
+  strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raStr);
+  strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decStr);
+  obsParam->raDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raDeg;
+  obsParam->decDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decDeg;
+  obsParam->raOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raOffset;
+  obsParam->decOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decOffset;
+  obsParam->gl = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].gl;
+  obsParam->gb = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].gb;
+  obsParam->az = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].az;
+  obsParam->ze = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ze;
+  obsParam->el = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].el;
+  obsParam->az_drive_rate = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].az_drive_rate;
+  obsParam->ze_drive_rate = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ze_drive_rate;
+  obsParam->hourAngle = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].hourAngle;
+  obsParam->paraAngle = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].paraAngle;
+  obsParam->windDir = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].windDir;
+  obsParam->windSpd = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].windSpd;
+}
+
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out)
 {
   int i;

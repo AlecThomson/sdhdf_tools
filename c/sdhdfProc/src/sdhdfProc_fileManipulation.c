@@ -167,7 +167,6 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 		      if (inFile->beam[i].bandData[j].cal_proc_diff_phase.pol4AllocatedMemory > 0)
 			{ free(inFile->beam[i].bandData[j].cal_proc_diff_phase.pol4); inFile->beam[i].bandData[j].cal_proc_diff_phase.pol4AllocatedMemory = 0; }
 				      
-
 		      if (inFile->beam[i].bandData[j].astro_obsHeaderAllocatedMemory == 1)
 			free(inFile->beam[i].bandData[j].astro_obsHeader);
 		      if (inFile->beam[i].bandData[j].cal_obsHeaderAllocatedMemory == 1)
@@ -183,6 +182,7 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 		      inFile->beam[i].calBandAllocatedMemory = 0;
 		    }
 		  inFile->beam[i].bandAllocatedMemory = 0;
+		  
 		}
 	    }
 	  free(inFile->beam);
@@ -197,6 +197,7 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 
       if (inFile->primaryAllocatedMemory > 0)
 	{free(inFile->primary); inFile->primaryAllocatedMemory = 0;}
+
       status = H5Fclose(inFile->fileID);
       inFile->fileOpen = 0;
     }

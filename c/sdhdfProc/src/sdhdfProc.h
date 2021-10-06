@@ -192,6 +192,7 @@ void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruc
 void sdhdf_allocateBeamMemory(sdhdf_fileStruct *inFile,int nbeam);
 int sdhdf_checkGroupExists(sdhdf_fileStruct *inFile,char *groupName);
 void sdhdf_copySingleObsParams(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam);
+void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam);
 void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_label,float *vals);
 
 // Attributes
