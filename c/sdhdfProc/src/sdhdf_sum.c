@@ -109,7 +109,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-divN")==0) // NEED TO UPDATE COMMAND LINE ARGUMENT LIST BELOW AS WELL -- SHOULD FIX
 	divN=1;
       else if (strcmp(argv[i],"-h")==0) // Should actually free memory
-	exit(1);
+	{help(); exit(1);}
       else
 	nFiles++;
     }
