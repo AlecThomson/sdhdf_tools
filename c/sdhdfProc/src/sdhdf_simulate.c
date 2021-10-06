@@ -53,9 +53,13 @@ typedef struct dumpParameterStruct {
   float tdump; // Time of spectral dump
   float raj0;   // Pointing position in degrees at centre of spectral dump (RA)
   float decj0;   // Pointing position in degrees at centre of spectral dump (DEC)
-
+  
   double timeFromStart;
   double mjd;
+
+  double gl;                  // Derived Galactic coordinate of beam position
+  double gb;
+
 } dumpParameterStruct;
 
 typedef struct bandParameterStruct {
@@ -93,9 +97,25 @@ typedef struct parameterStruct {
   int galacticHI;
 } parameterStruct;
 
+
+void convertGalactic(double raj,double decj,double *gl,double *gb);
+double haversine(double centre_long,double centre_lat,double src_long,double src_lat);
+float get_tsky(float *tsky_gl,float *tsky_gb,float *tsky_kelvin,int nTsky,float beamGl_deg,float beamGb_deg);
+double beamScaling(double angle,float diameter,float freq);
+
+
+void help()
+{
+  printf("sdhdf_simulate: Simulation code for sdhdf files\n");
+  printf("-h           This help\n");
+  printf("-p <file>    Input parameter file\n");
+
+}
+
 int main(int argc,char *argv[])
 {
   int i,j,k,ii,jj;
+  double beamRA_deg,beamDec_deg,beamGl_deg,beamGb_deg;
   long iseed = TKsetSeed();
   char fname[MAX_STRLEN]="unset";
   char paramFile[MAX_STRLEN]="unset";
@@ -119,6 +139,10 @@ int main(int argc,char *argv[])
   float *freq,*data;
   float ssys_aa = 22;
   float ssys_bb = 23;
+  float *tsky_gl;
+  float *tsky_gb;
+  float *tsky_kelvin;
+  int   nTsky =  3147775;
   float chbw;
   float req_chbw = 0.5e3; // in Hz
   float band_bw  = 192; // in MHz
@@ -130,11 +154,18 @@ int main(int argc,char *argv[])
   char word1[MAX_STRLEN];
   char word2[MAX_STRLEN];
   parameterStruct *params;
+  double d_raj,d_decj;
+  float tsky_model,tsky_model0;
+  float ssky_model;
+  float ssrc_model;
+  double cmb = 2.725;
   
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-p")==0)
 	strcpy(paramFile,argv[++i]);
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
     }
 
   if (strcmp(paramFile,"unset")==0)
@@ -149,6 +180,8 @@ int main(int argc,char *argv[])
       exit(1);
     }
   params = (parameterStruct *)malloc(sizeof(parameterStruct));
+
+  
   // initialise
   params->persistentRFI=0;
   params->galacticHI=0;
@@ -181,7 +214,7 @@ int main(int argc,char *argv[])
 			{
 			  sscanf(line,"%s %s %s %f %f %f %f",word1,params->beam[ibeam].label,params->beam[ibeam].src,
 				 &(params->beam[ibeam].tsys_aa),
-				 &(params->beam[ibeam].tsys_bb),&(params->beam[ibeam].delta_ra),&(params->beam[ibeam].delta_dec));
+				 &(params->beam[ibeam].tsys_bb),&(params->beam[ibeam].delta_ra),&(params->beam[ibeam].delta_dec));			  
 			  ibeam++;
 			}
 		    }
@@ -243,13 +276,31 @@ int main(int argc,char *argv[])
     }
   fclose(fin);
 
-  // Calculate times
+  // Load Tsky if required
+  tsky_gl = (float *)malloc(sizeof(float)*nTsky);
+  tsky_gb = (float *)malloc(sizeof(float)*nTsky);
+  tsky_kelvin = (float *)malloc(sizeof(float)*nTsky);
+
+  nTsky = 0;
+  fin = fopen("haslam408_ds_Remazeilles2014.allSky.dat","r");
+  while (!feof(fin))
+    {
+      if (fscanf(fin,"%f %f %f",&tsky_gl[nTsky],&tsky_gb[nTsky],&tsky_kelvin[nTsky])==3)
+	nTsky++;
+    }
+  fclose(fin);
+  printf("Loaded Tsky model\n");
+
+  // Calculate times and positions
   dt=0;
   for (i=0;i<params->ndumps;i++)
     {
       dt+=params->dump[i].tdump/2.;
       params->dump[i].timeFromStart = dt;
       params->dump[i].mjd = params->mjd0 + dt/86400.0;
+      d_raj = params->dump[i].raj0;
+      d_decj = params->dump[i].decj0;
+      convertGalactic(d_raj*M_PI/180.,d_decj*M_PI/180.0,&(params->dump[i].gl),&(params->dump[i].gb));
       dt+=params->dump[i].tdump/2.;
     }
 
@@ -304,9 +355,11 @@ int main(int argc,char *argv[])
   // Simulate data for each beam
   for (i=0;i<nbeam;i++)
     {
+      printf("Processing beam %d out of %d\n",i+1,nbeam);
       bandHeader = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nband); // FIX ME -- may have different numbers of bands 
       for (j=0;j<nband;j++)
 	{
+	  printf("Processing band %d out of %d\n",j+1,nband);
 	  ndump = params->ndumps;
 	  npol  = params->npols;
 	  
@@ -338,6 +391,12 @@ int main(int argc,char *argv[])
 	  
 	  for (k=0;k<ndump;k++)
 	    {
+	      printf("Processing spectral dump %d/%d\n",k+1,ndump);
+	      beamRA_deg = params->dump[k].raj0; // SHOULD INCLUDE BEAM OFFSET ... FIX ME
+	      beamDec_deg = params->dump[k].decj0; // SHOULD INCLUDE BEAM OFFSET ... FIX ME
+	      beamGl_deg = params->dump[k].gl;     // SHOULD INCLUDE BEAM OFFSET ... FIX ME
+	      beamGl_deg = params->dump[k].gb;    // SHOULD INCLUDE BEAM OFFSET ... FIX ME
+	      
 	      obsParams[k].timeElapsed = params->dump[k].timeFromStart;
 	      strcpy(obsParams[k].timedb,"unknown");
 	      obsParams[k].mjd = params->dump[k].mjd;
@@ -348,8 +407,11 @@ int main(int argc,char *argv[])
 	      strcpy(obsParams[k].decStr,"unknown");
 	      obsParams[k].raOffset = 0;
 	      obsParams[k].decOffset = 0;
-	      obsParams[k].gl = 0;
-	      obsParams[k].gb = 0;
+
+	      obsParams[k].raDeg  = beamRA_deg;
+	      obsParams[k].decDeg = beamDec_deg;
+	      obsParams[k].gl     = beamGl_deg;
+	      obsParams[k].gb     = beamGb_deg;
 	      obsParams[k].az = 0;
 	      obsParams[k].el = 0;
 	      obsParams[k].az_drive_rate = 0;
@@ -385,8 +447,29 @@ int main(int argc,char *argv[])
 		      else if (freq[ii] > 1805 && freq[ii] < 1865)
 			signal += 9e5;
 		    }
-		  data[k*nchan*npol + ii]           = TKgaussDev(&iseed) + ssys_aa + signal;
-		  data[k*nchan*npol + nchan + ii]   = TKgaussDev(&iseed) + ssys_bb + signal;
+
+		  // Build up ssys_aa and ssys_bb
+		  tsky_model = 0;
+		  if (ii==0)
+		    {
+		      tsky_model0 = get_tsky(tsky_gl,tsky_gb,tsky_kelvin,nTsky,beamGl_deg,beamGb_deg);
+		      //		      printf("Value = %g\n",tsky_model0);
+		    }
+		  // Add in source
+		  {
+		    double angle;
+		    //  62.0849118333333
+		    // -65.7525223888889
+		    angle = haversine(62.0849118333333,-65.7525223888889,beamRA_deg,beamDec_deg);
+		    ssrc_model = 10*beamScaling(angle,64,freq[ii]);
+		    if (ii==0)
+		      printf("%d %g %g\n",k,angle,ssrc_model);
+		  }
+		  tsky_model = (tsky_model0 - cmb) * pow(freq[ii]/408.0,-2.6) + cmb;
+		  ssky_model = tsky_model; // FIX ME -- WITH GAINS ETC.
+		  
+		  data[k*nchan*npol + ii]           = TKgaussDev(&iseed) + ssys_aa + ssky_model + ssrc_model + signal;
+		  data[k*nchan*npol + nchan + ii]   = TKgaussDev(&iseed) + ssys_bb + ssky_model + ssrc_model + signal;
 		  data[k*nchan*npol + 2*nchan + ii] = TKgaussDev(&iseed);
 		  data[k*nchan*npol + 3*nchan + ii] = TKgaussDev(&iseed);
 		}
@@ -416,3 +499,103 @@ int main(int argc,char *argv[])
   free(params);
 }
 
+
+void convertGalactic(double raj,double decj,double *gl,double *gb)
+{
+  double sinb,y,x,at;
+  double rx,ry,rz,rx2,ry2,rz2;
+  double deg2rad = M_PI/180.0;
+  double gpoleRAJ = 192.85*deg2rad;
+  double gpoleDECJ = 27.116*deg2rad;
+  double rot[4][4];
+
+  /* Note: Galactic coordinates are defined from B1950 system - e.g. must transform from J2000.0                      
+                                                  
+     equatorial coordinates to IAU 1958 Galactic coords */
+
+  /* Convert to rectangular coordinates */
+  rx = cos(raj)*cos(decj);
+  ry = sin(raj)*cos(decj);
+  rz = sin(decj);
+
+  /* Now rotate the coordinate axes to correct for the effects of precession */
+  /* These values contain the conversion between J2000 and B1950 and from B1950 to Galactic */
+  rot[0][0] = -0.054875539726;
+  rot[0][1] = -0.873437108010;
+  rot[0][2] = -0.483834985808;
+  rot[1][0] =  0.494109453312;
+  rot[1][1] = -0.444829589425;
+  rot[1][2] =  0.746982251810;
+  rot[2][0] = -0.867666135858;
+  rot[2][1] = -0.198076386122;
+  rot[2][2] =  0.455983795705;
+
+  rx2 = rot[0][0]*rx + rot[0][1]*ry + rot[0][2]*rz;
+  ry2 = rot[1][0]*rx + rot[1][1]*ry + rot[1][2]*rz;
+  rz2 = rot[2][0]*rx + rot[2][1]*ry + rot[2][2]*rz;
+
+  /* Convert the rectangular coordinates back to spherical coordinates */
+  *gb = asin(rz2);
+  *gl = atan2(ry2,rx2);
+  if (*gl < 0) (*gl)+=2.0*M_PI;
+}
+
+
+// Should do a direct determination of the place in the file to look for -- FIX ME --- the following is slow
+float get_tsky(float *tsky_gl,float *tsky_gb,float *tsky_kelvin,int nTsky,float beamGl_deg,float beamGb_deg)
+{
+  int i;
+  double dist;
+
+  for (i=0;i<nTsky;i++)
+    {
+      dist = haversine(tsky_gl[i],tsky_gb[i],beamGl_deg,beamGb_deg);
+      if (dist < 0.1)
+	{
+	  return tsky_kelvin[i];
+	  break;
+	}
+    }
+  return -1;
+}
+
+double haversine(double centre_long,double centre_lat,double src_long,double src_lat)
+{
+  double dlon,dlat,a,c;
+  double deg2rad = M_PI/180.0;
+
+  centre_long*=deg2rad;
+  centre_lat*=deg2rad;
+  src_long*=deg2rad;
+  src_lat*=deg2rad;
+  
+  /* Apply the Haversine formula */
+  dlon = (src_long - centre_long);
+  dlat = (src_lat  - centre_lat);
+  a = pow(sin(dlat/2.0),2) + cos(centre_lat) *
+    cos(src_lat)*pow(sin(dlon/2.0),2);
+  if (a==1)
+    c = M_PI;
+  else
+    c = 2.0 * atan2(sqrt(a),sqrt(1.0-a));
+  return c/deg2rad;
+}
+
+// Calculates the reduction in gain caused by the source being offset from the beam pointing direction
+// The input angle is in degrees, the diameter is the telescope diameter (m) and freq is the observing frequency (MHz).  The output value is the scaling factor
+//
+
+double beamScaling(double angle,float diameter,float freq)
+{
+  double radangle = angle*M_PI/180.0;
+  double tt;
+  double lambda = 3.0e8/(freq*1.0e6);
+  double ang;
+  ang = 1.22*lambda/diameter;
+  
+  tt = radangle*M_PI/ang;
+  if (tt == 0)
+    return 1;
+  else
+    return pow(sin(tt)/tt,2);
+}
