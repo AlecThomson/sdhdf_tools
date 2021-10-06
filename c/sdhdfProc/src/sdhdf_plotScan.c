@@ -28,7 +28,7 @@
 #include "TKnonlinearFit.h"
 
 #define MAX_CHAN 262144 // SHOULD UPDATE THIS!!
-#define MAX_SUBINT 512 // SHOULD UPDATE THIS
+#define MAX_SUBINT 4096 // SHOULD UPDATE THIS
 #define MAX_BANDS 26   // SHOULD UPDATE THIS
 
 typedef struct modelFitStruct {
@@ -41,6 +41,45 @@ typedef struct modelFitStruct {
 
 double haversine(double centre_long,double centre_lat,double src_long,double src_lat);
 
+void help()
+{
+  printf("sdhdf_plotScan: plot a scanning observation\n");
+  printf("\n\n");
+  printf("Command line arguments:\n");
+  printf("-divWeights       Divide spectra by weights\n");
+  printf("-f <file>         Input file name\n");
+  printf("-freqRange <f0> <f1> Define frequency range for plot (in MHz)\n");
+  printf("-h                This help\n");
+  printf("-src <name>       Define source name (if scan is across a known source)\n");
+
+  printf("\n\n");
+  printf("The output is an interactive plot with the following key presses available\n\n");
+  printf("+                 Select next sub-band\n");
+  printf("-                 Select previous sub-band\n");
+  printf("f                 Fit a Gaussian to the scan\n");
+  printf("h                 This help\n");
+  printf("L                 Toggle labels\n");
+  printf("l                 Toggle plotting on logarithmic scale\n");
+  printf("n                 Normalise the scans for each sub-band\n");
+  printf("o                 Offset the scans for each sub-band\n");
+  printf("p                 Enter the RA,DEC of the known source\n");
+  printf("q                 Quit\n");
+  printf("s                 Select only the highlighted band\n");
+  printf("u                 Unzoom\n");
+
+  printf("x                 Toggle x-axis between\n");
+  printf("                   - Spectral dump number \n");
+  printf("                   - Time since observation start\n");
+  printf("                   - Right ascension (degrees) \n");
+  printf("                   - Declination (degrees)\n");
+  printf("                   - Azimuth (degrees)\n");
+  printf("                   - Elevation (degrees)\n");
+  printf("                   - Angle between pointing position and source position\n");
+  printf("                   - Offset in pointing position from source RA\n");
+  printf("                   - Offset in pointing position from source DEC\n");
+  printf("z                 Zoom into specific region\n");
+  
+}
 
 int main(int argc,char *argv[])
 {
@@ -108,6 +147,8 @@ int main(int argc,char *argv[])
     {
      if (strcmp(argv[i],"-f")==0)
        strcpy(fname,argv[++i]);
+     else if (strcmp(argv[i],"-h")==0)
+       {help(); exit(1);}
      else if (strcmp(argv[i],"-src")==0)
        strcpy(srcName,argv[++i]);
      else if (strcasecmp(argv[i],"-divWeights")==0)
@@ -139,6 +180,13 @@ int main(int argc,char *argv[])
       //      04 08 20.37884 -65 45 09.0806
       ra0 = (4.+8/60.0+20.37884/60./60.)*180./12.;
       dec0 = -65.0-45.0/60.-9.0806/60./60.;
+    }
+  else if (strcmp(inFile->beamHeader[ibeam].source,"HYDRA_A")==0)
+    {
+      printf("Setting default position to HYDRA_A\n");
+      //      09h 18m 5.69s. Dec. Position, -12° 5' 44.0"
+      ra0 = (9.+18/60.0+5.69/60./60.)*180./12.;
+      dec0 = -12.0-5.0/60.-44.0/60./60.;
     }
   else if (strcmp(inFile->beamHeader[ibeam].source,"1934_RASCAN")==0)
     {
@@ -244,7 +292,7 @@ int main(int argc,char *argv[])
 	    plotNdump=0;
 
 	    for (sub=0;sub<ndumps;sub++)
-	      {       	
+	      {
 		if (useDump[sub]==1)
 		  {
 
@@ -415,6 +463,8 @@ int main(int argc,char *argv[])
 	if (sbHighlight == -1) sbHighlight = inFile->beam[ibeam].nBand-1;
 	if (select!=-1) {select = sbHighlight; recalc=1;}
       }
+    else if (key=='h')
+      help();
     else if (key=='f')
       {
 	int nfit=4;
