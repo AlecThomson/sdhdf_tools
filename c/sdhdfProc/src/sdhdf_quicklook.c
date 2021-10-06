@@ -53,6 +53,17 @@ void createPolSummedSpectrum(int band,int nPlot,float *px,float *py1,float *py2,
 void loadTransmitters(float *t1,float *t2,int *nTransmitters);
 void setTransmitter(float freq,float bw,char *name,float *t1,float *t2);
 
+void help()
+{
+  printf("sdhdf_quicklook: routine to have a quick look at a spectrum\n");  
+  printf("-g                   Select graphics device\n");
+  printf("-h                   This help");
+  printf("-transmitters        Overplot transmitters\n\n");
+  printf("\n\n");
+  printf("Filenames are given on the command line\n");
+  
+}
+
 int main(int argc,char *argv[])
 {
   int        i,j,k,l,ii,kk;
@@ -159,6 +170,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-transmitters")==0)
 	plotTransmitters=1;
+      else if (strcmp(argv[i],"-h")==0)
+	{help();exit(1);}
       else if (strcmp(argv[i],"-g")==0)
 	strcpy(grDev,argv[++i]);
       else
