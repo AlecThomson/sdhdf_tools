@@ -41,6 +41,37 @@ typedef struct dumpStruct {
 
 void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruct *dumpParams,float specMinx,float specMaxx,float cleanF0,float cleanF1,float *wt);
 
+void help()
+{
+  printf("sdhdf_waterfall: routine to make waterfall plots\n");
+  printf("\n\n");
+  printf("-band <val>  Select sub-band number\n");
+  printf("-crange <f1> <f2> Define the range between f1 and f2 MHz to be clean\n");
+  printf("-frange <f1> <f2> Set frequency range between f1 and f2 MHz\n");
+  printf("-log         Plot on logarithmic scale\n");
+  printf("-ndump <val> Set maximum number of spectral dumps to plot\n");
+  printf("-pol <val>   Polarisation channel to plot\n");
+  printf("\n\n");
+  printf("Filenames are given on the command line\n");
+  printf("Example: sdhdf_waterfall -band 5 uwl*.hdf\n");
+  printf("\n\n");
+  printf("The output is an interactive plot\n");
+  printf("Mouse click:     list file and spectrum number for mouse cursor position\n");
+  printf("a                toggle selecting a spectrum\n");
+  printf("c                toggle plotting colour and grey scale images\n");
+  printf("f                enter frequency range on the terminal\n");
+  printf("h                this help\n");
+  printf("l                toggle plotting on logarithmic scale\n");
+  printf("r                set z-range (colour scale)\n");
+  printf("s                enter a clean frequency range for baseline subtraction\n");
+  printf("q                quit\n");
+  printf("u                un-zoom to original plot\n");
+  printf("x                use mouse to select x-range\n");
+  printf("y                use mouse to select y-range\n");
+
+}
+
+
 int main(int argc,char *argv[])
 {
   int i,j,k,ii,jj,kk,b;
@@ -102,6 +133,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-log")==0)
 	log=1;
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
       else if (strcmp(argv[i],"-pol")==0)
 	sscanf(argv[++i],"%d",&poln);
       else if (strcmp(argv[i],"-ndump")==0)
@@ -467,6 +500,8 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	  
 	  
 	}
+      else if (key=='h')
+	help();
     } while (key != 'q');
       
   cpgend();
