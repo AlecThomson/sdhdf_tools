@@ -10,7 +10,7 @@ import matplotlib as mpl
 from astropy.table import QTable
 from show_sdhdf_definition import show_sdhdf_definition
 
-__version__ = '2.1'
+__version__ = '2.2'
 __author__ = 'Lawrence Toomey'
 
 # increase matplotlib chunk size above default -
@@ -111,7 +111,7 @@ def check_definition(f_pth):
     output = False
 
     try:
-        show_sdhdf_definition(f_pth, output)
+        show_sdhdf_definition(f_pth, sb='all', output=False)
     except Exception as e:
         print('ERROR: File %s does not conform to the SDHDF definition' % f_pth, e)
 
