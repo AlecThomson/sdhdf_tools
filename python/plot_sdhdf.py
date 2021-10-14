@@ -6,7 +6,7 @@ import h5py
 import matplotlib as mpl
 from astropy.table import QTable
 
-__version__ = '2.1'
+__version__ = '2.2'
 __author__ = 'Lawrence Toomey'
 
 # increase matplotlib chunk size above default -
