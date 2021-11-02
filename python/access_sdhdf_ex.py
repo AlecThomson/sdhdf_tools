@@ -4,7 +4,7 @@ from astropy.table import QTable
 import numpy as np
 import argparse
 
-__version__ = '2.1'
+__version__ = '2.2'
 __author__ = 'Lawrence Toomey'
 
 
@@ -23,6 +23,7 @@ def sdhdf_access_meta(f):
 
             print('\nPID attributes: \n%s' % h5['metadata/primary_header'].attrs['PID'])
             print('\nPID data: \n%s' % h5['metadata/primary_header']['PID'])
+            print('\nPID data type: \n%s' % h5['metadata/primary_header']['PID'].dtype)
 
             print('\nN_CHANS attributes: \n%s' % h5['beam_0/metadata/band_params'].attrs['N_CHANS'])
             print('\nN_CHANS data: \n%s' % h5['beam_0/metadata/band_params']['N_CHANS'])

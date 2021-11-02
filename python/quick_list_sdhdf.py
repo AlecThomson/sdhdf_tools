@@ -6,7 +6,7 @@ import os
 from astropy.table import QTable
 from tabulate import tabulate
 
-__version__ = '2.1'
+__version__ = '2.2'
 __author__ = 'Lawrence Toomey'
 
 
