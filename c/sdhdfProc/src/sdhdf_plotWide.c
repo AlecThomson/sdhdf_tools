@@ -55,6 +55,7 @@ void help()
   printf("-4pol                 Plot 4 polarisations (defaults to 2)\n");
   printf("-ch <val>             Set the font size to val\n");
   printf("-dispAz               Display as a function of Azimuth\n");
+  printf("-dispTime             Display a time label on a splitRF plot\n");
   printf("-flag <val1> <val2>   Flag data between val1 and val2 (MHz)\n");
   printf("-g <grDevice>         Set PGPLOT graphics device for plot\n");
   printf("-maxhold              Plot a 'max hold' spectrum\n");
@@ -146,7 +147,9 @@ int main(int argc,char *argv[])
   int sd=-1;
   int s0,s1;
   int dispAz=0;
+  int dispTime=0;
   float azVal;
+  char utc[1024];
   int log=1;
   int setMinMax=0;
   
@@ -206,6 +209,8 @@ int main(int argc,char *argv[])
 	strcpy(grDev,argv[++i]);
       else if (strcmp(argv[i],"-dispAz")==0)
 	dispAz=1;
+      else if (strcmp(argv[i],"-dispTime")==0)
+	dispTime=1;
       else if (strcasecmp(argv[i],"-nolog")==0)
 	log=0;
       else if (strcmp(argv[i],"-sd")==0)
@@ -386,6 +391,7 @@ int main(int argc,char *argv[])
       
       if (sd >= 0)
 	azVal = inFile->beam[0].bandData[0].astro_obsHeader[sd].az;      
+      strcpy(utc,inFile->beam[0].bandData[0].astro_obsHeader[sd].utc);
       printf("Closing\n");
       sdhdf_closeFile(inFile);
       printf("Done close\n");
@@ -615,8 +621,17 @@ int main(int argc,char *argv[])
 	    cpgtext(2500,6.2,label);
 	    cpgsch(1.4);
 	  }
+	if (dispTime==1)
+	  {
+	    char label[128];
+	    cpgsch(1.0);
+	    sprintf(label,"UTC time: %s",utc);
+	    cpgtext(2500,3.5,label);
+	    cpgsch(1.4);
+	  }
+
       }
-    
+  
     if (molecularLines==1)
       {
 	drawMolecularLine(1420.405752,"HI",minx,maxx,miny,maxy);

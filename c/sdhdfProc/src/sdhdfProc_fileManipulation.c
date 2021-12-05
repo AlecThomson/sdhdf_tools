@@ -587,7 +587,13 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
       sprintf(dsetName,"%s/data",groupName);
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
       for (i=0;i<nDataAttributes;i++)
-	sdhdf_writeAttribute(outFile,dsetName,dataAttributes[i].key,dataAttributes[i].value);
+	{
+	  //	  printf("GEORGE: in fileManipulation: writing data attribute\n");
+	  //	  printf("GEORGE: in fileManipulation: %d %d\n",i,nDataAttributes);
+	  //	  printf("GEORGE: in fileManipulation: %s\n",dataAttributes[i].key);
+	  sdhdf_writeAttribute(outFile,dsetName,&dataAttributes[i]); //dataAttributes[i].key,dataAttributes[i].value);
+	  //	  printf("GEORGE: complete writing the attribute\n");
+	}
 
     }
   else if (type==2)
@@ -626,7 +632,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,i
       // Now write attributes
       //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
       for (i=0;i<nFreqAttributes;i++)
-	sdhdf_writeAttribute(outFile,dsetName,freqAttributes[i].key,freqAttributes[i].value);
+	sdhdf_writeAttribute(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
       
       status  = H5Dclose(dset_id);
     }

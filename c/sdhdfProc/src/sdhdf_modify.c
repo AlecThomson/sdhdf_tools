@@ -1100,9 +1100,9 @@ int main(int argc,char *argv[])
 			    }
 			}
 		      // This was moved lower because of the need to read the weights
-		      printf("Releasing band data\n");
+		      //		      printf("Releasing band data\n");
 		      sdhdf_releaseBandData(inFile,b,ii,1); 		      
-		      printf("Creating final data\n");
+		      //		      printf("Creating final data\n");
 		      // Now create final data
 		      // Do polarisation summing as required
 		      if (pol==0)
@@ -1499,10 +1499,11 @@ int main(int argc,char *argv[])
 			    }
 			}
 		      
-		      
+		      //		      printf("Copying attributes\n");
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+		      //		      printf("Have copied %d attributes\n",nDataAttributes);
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
-
+		      //		      printf("Have copied %d frequency attributes\n",nFreqAttributes);
 		    
 		      if (bary==1 || lsr == 1)
 			{

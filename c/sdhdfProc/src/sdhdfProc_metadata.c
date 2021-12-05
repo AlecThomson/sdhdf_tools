@@ -1010,12 +1010,14 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   int rank;
   hsize_t dims[5];
   int ndims;
-  
+
+  //  printf("Up here with dataName = %s, attribute number = %d\n",dataName,num);
   attr_id      = H5Aopen_by_idx(inFile->fileID,dataName, H5_INDEX_NAME, H5_ITER_NATIVE,num,H5P_DEFAULT,H5P_DEFAULT);
   if (attr_id < 0)
     {
       strcpy(attribute->key,"uncertain");
       strcpy(attribute->value,"not defined");
+      attribute->attributeType=0;
       return;
     }
   aspace       = H5Aget_space(attr_id);
@@ -1023,9 +1025,10 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   //  printf("ndims = %d, aspace = %d\n",ndims,aspace);
   if (ndims != 0) // 1 && ndims != 0)
     {
-      printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
+      //      printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
       H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
       strcpy(attribute->value,"NOT SET");
+      attribute->attributeType=0;
       printf("Cannot read attributes with multi dimensions >%s< >%s<\n",attribute->key,inFile->fname);
       // For now not read attributes like DIMENSION_LABEL and DIMENSION_LIST      
     }
@@ -1039,9 +1042,10 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	  //	  printf("Reading H5T_STRING\n");
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
 	  atype_mem = H5Tget_native_type(atype,H5T_DIR_ASCEND);
+	  attribute->attributeType=0;
 	  if (strcmp(attribute->key,"CLASS")==0)
 	    {
-	      //	      printf("Reading scalar\n");
+	      printf("Reading scalar\n");
 	      /*
 	      stid    = H5Tcopy(H5T_C_S1);
 	      status  = H5Tset_size(stid,H5T_VARIABLE);     
@@ -1054,14 +1058,14 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	      strcpy(attribute->value,"FIX ME");
 	    }
 	  else
-	    {
-	      
+	    {	      
 	      //	      printf("Not reading scalar\n");
 	      status = H5Aread(attr_id, atype, &buf);
 	      //	      printf("Copying to  string_out >%s<\n",buf);
 	      strcpy(string_out,buf);
 	      //	      printf("Copying to value\n");
 	      strcpy(attribute->value,string_out);
+	      //	      printf("The key is: %s\n",attribute->key);
 	      //	      printf("Freeing the buffer\n");
 	      free(buf);
 	      
@@ -1070,10 +1074,36 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	  status = H5Tclose(atype_mem);
 
 	}
+      else if (type_class == H5T_FLOAT)
+	{
+	  double fval;
+	  attribute->attributeType=1;
+	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
+	  //	  printf("H5T_FLOAT\n");	  
+	  atype        = H5Aget_type(attr_id);
+	  type_class   = H5Tget_class(atype);
+
+	  status  = H5Aread(attr_id, atype, &fval);	  
+	  attribute->fvalue = fval;
+	  //	  printf("KEY = %s\n",attribute->key);
+	  //	  printf("Loaded float: %f status = %d\n",fval,status);
+	}
+      else if (type_class == H5T_INTEGER)
+	{
+	  printf("HAVE AN INTEGER TYPE ATTRIBUTE. ERROR: DON'T KNOW WHAT TO DO\n");
+	  attribute->attributeType=2;
+	  exit(1);
+	}
       else
-	printf("CANNOT READ ATTRIBUTE\n");
+	{
+	  printf("CANNOT READ ATTRIBUTE\n");
+	  strcpy(attribute->key,"unset");
+	  strcpy(attribute->value,"unset");
+	  attribute->attributeType=1;
+	}
       status = H5Tclose(atype);
     }
+  //  printf("Closing off\n");
   status = H5Sclose(aspace);
   status = H5Aclose(attr_id);
 }
@@ -1231,24 +1261,33 @@ void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_
   *n_out = n_in;
   for (i=0;i<n_in;i++)
     {
+      //      printf("In sdhdf_copyAttributes: %s %s\n",in[i].key,in[i].value);
       strcpy(out[i].key,in[i].key);
-      strcpy(out[i].value,in[i].value);
+      out[i].attributeType = in[i].attributeType;
+      if (in[i].attributeType==0)
+	strcpy(out[i].value,in[i].value);
+      else if (in[i].attributeType==1)
+	out[i].fvalue = in[i].fvalue;
+      else if (in[i].attributeType==2)
+	out[i].ivalue = in[i].ivalue;
     }
 }
 
 
-void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrName,char *result)
+void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attribute) //,char *attrName,char *result)
 {
   hid_t memtype,dataset_id,attr,space,stid;
   herr_t status;
   hsize_t dims[1] = {1}; // Has only 1 string
+  char *result;
 
-  //  printf("In writeAttribute with dataName = >%s<, attrName = >%s< and result = >%s<\n",dataName,attrName,result);
+  result = attribute->value;
+  //  printf("In writeAttribute with dataName = >%s<, attrName = >%s< and result = >%s<\n",dataName,attribute->key,attribute->value);
+  //  printf("AttributeType = %d\n",attribute->attributeType);
   // Python strings are written as variable length strings 
 
 
   dataset_id   = H5Dopen2(outFile->fileID,dataName,H5P_DEFAULT);
-
 
   // This produces a multi dimensional attribute - which is not the same as the python code
   /*
@@ -1264,19 +1303,64 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrNam
   H5Tclose(memtype);
   */
 
-
   // This produces an attribute which is a string
-  stid    = H5Tcopy(H5T_C_S1);
-  status  = H5Tset_size(stid,H5T_VARIABLE);     
-  space = H5Screate(H5S_SCALAR);
-  attr    = H5Acreate(dataset_id,attrName,stid,space,H5P_DEFAULT,H5P_DEFAULT);
-  //  printf("Trying to write >%s<\n",result);
-  status = H5Awrite(attr,stid,&result);
-  //  printf("The status after writing is: %d\n",status);
-  H5Dclose(dataset_id);
-  H5Aclose(attr);
-  H5Tclose(memtype);
+  if (attribute->attributeType==0)
+    {
+      stid    = H5Tcopy(H5T_C_S1);
+      //  status  = H5Tset_size(stid,H5T_VARIABLE);
+      status  = H5Tset_size(stid,strlen(result));     
+      space   = H5Screate(H5S_SCALAR);
+      attr    = H5Acreate(dataset_id,attribute->key,stid,space,H5P_DEFAULT,H5P_DEFAULT);
+      //      printf("writeAttribute: Trying to write >%s<\n",result);
+      status  = H5Awrite(attr,stid,result);
+      //      printf("writeAttribute: The status after writing is: %d\n",status);
+      H5Dclose(dataset_id);
+      H5Tclose(memtype);
+      
+      H5Aclose(attr);
+    }
+  else if (attribute->attributeType==1)
+    {
+      float val = 1.0;
+      int ival= 1;
+      
+      //      stid    = H5Tcopy(H5T_C_S1);
+      //  status  = H5Tset_size(stid,H5T_VARIABLE);
+      //      status  = H5Tset_size(stid,strlen(result));     
+      //      space   = H5Screate(H5S_SCALAR);
 
+      space = H5Screate(H5S_SCALAR);
+
+      //      attr    = H5Acreate(dataset_id,attribute->key,stid,space,H5P_DEFAULT,H5P_DEFAULT);
+      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+
+      //      printf("writeAttribute: Trying to write >%s<\n",result);
+      status  = H5Awrite(attr,H5T_NATIVE_FLOAT,&(attribute->fvalue));
+      //      status  = H5Awrite(attr,stid,result);
+      //      printf("writeAttribute: The status after writing is: %d\n",status);
+
+      H5Dclose(dataset_id);
+      H5Tclose(memtype);
+
+      H5Aclose(attr);
+
+      /*
+      printf("GEORGE: WRITING A FLOATING VALUE INTO %s\n",attribute->key);
+      space   = H5Screate(H5S_SCALAR);
+      printf("GEORGE A %d\n",space);
+      //      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+      //      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+      //      attr    = H5Acreate(dataset_id,attribute->key,H5T_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_INT,space,H5P_DEFAULT,H5P_DEFAULT);
+      printf("GEORGE B %f\n",attribute->fvalue);
+      //      status  = H5Awrite(attr,H5T_NATIVE_FLOAT,&val);
+      //      status  = H5Awrite(attr,H5T_FLOAT,&val);
+      status  = H5Awrite(attr,H5T_NATIVE_INT,&ival);
+      printf("GEORGE C >%d<\n",status);
+      H5Aclose(attr);
+      printf("COMPLETE WRITE WITH STATUS: %s\n",status);
+      */
+    }
 
   //  memtype = H5Tcopy(H5T_C_S1);
   //  status  = H5Tset_size(memtype,MAX_STRLEN);

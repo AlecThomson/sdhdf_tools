@@ -169,13 +169,12 @@ int main(int argc,char *argv[])
 		  nchan = inFile->beam[beam].bandHeader[band].nchan;
 		  if (dataType!=3 && dataType!=4)
 		    sdhdf_loadBandData(inFile,beam,band,1);
-		  printf("Band %d\n",band);
 		  if (dataType==2 || dataType==3)
 		    {
 		      sdhdf_loadBandData(inFile,beam,band,2);
 		      sdhdf_loadBandData(inFile,beam,band,3);
 		    }
-		  printf("Got here\n");
+
 
 		  if (dataType==1) // Astronomy data
 		    {
@@ -294,7 +293,7 @@ int main(int argc,char *argv[])
 			      if (setFreqRange==1 && (freq < freq0 || freq > freq1))
 				display=0;
 			      if (display==1)
-				printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal]);
+				printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
 
 			    }
 			}
