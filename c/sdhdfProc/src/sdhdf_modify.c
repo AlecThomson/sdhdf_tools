@@ -117,7 +117,12 @@ int main(int argc,char *argv[])
   double *in_freq;
   float *out_Tdata,*out_Fdata;
   float *dataWts;
+  int   haveWeights=0;
   
+  unsigned char *dataFlags;
+  int   haveFlags=0;
+  unsigned char flag;
+    
   long out_nchan,out_npol,out_ndump,nsd;
   double av1,av2,av3,av4,avFreq;
   double tav=0;
@@ -778,6 +783,9 @@ int main(int argc,char *argv[])
 		      out_Tdata = (float *)calloc(sizeof(float),nchan*npol*out_ndump);
 		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
 		      dataWts   = (float *)calloc(sizeof(float),out_nchan*out_ndump);
+		      haveWeights = 1;
+		      dataFlags   = (unsigned char *)calloc(sizeof(unsigned char),out_nchan*out_ndump);
+		      haveFlags = 1;
 		      tav=0;
 		   
 		      sdhdf_loadBandData(inFile,b,ii,1);
@@ -845,7 +853,8 @@ int main(int argc,char *argv[])
 				      nsum++;
 				      //				  printf("Updating time averaged to %g\n",tav);
 				      
-				      wt  = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
+				      wt   = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
+				      flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+k];
 				      
 				      if (wt!=0)
 					{
@@ -870,6 +879,7 @@ int main(int argc,char *argv[])
 					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
 					  // Note that we don't have j*out_nchan here as we're time scrunching
 					  dataWts[k] += wt;
+					  dataFlags[k] = flag; // GEORGE FIX ME: THIS NEEDS TO BE SET PROPERLY FOR A TIME SCRUNCH
 					  swt += wt;
 					}
 					  //				      printf("Done\n");
@@ -997,11 +1007,13 @@ int main(int argc,char *argv[])
 				{				  
 				  av1 = av2 = av3 = av4 = avFreq = 0.0;
 				  swt=0;
-				  dataWts[j*out_nchan+kp] = 0; 
+				  dataWts[j*out_nchan+kp]   = 0; 
+				  dataFlags[j*out_nchan+kp] = 0;
 				  for (l=k;l<k+fAv;l++)
 				    {
 				      // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
 				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+				      flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
 				      //				      printf("wt = %g\n",wt);
 				      avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
 				      if (npol==1)
@@ -1022,6 +1034,8 @@ int main(int argc,char *argv[])
 				      //  printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
 				      //  printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
 				      dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+
+				      dataFlags[j*out_nchan+kp] = flag; // GEORGE: FIX ME FOR PROPER FLAG AVERAGING
 				      swt += wt;
 				      //				      printf("Done write\n");
 				    }
@@ -1081,7 +1095,10 @@ int main(int argc,char *argv[])
 				{
 				  // We've already set the weights above ???  FIX ME *** CHECK *****
 				  if (tScrunch!=1)
-				    dataWts[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+j];
+				    {
+				      dataWts[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+j];
+				      dataFlags[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+j];
+				    }
 				  if (npol==1)
 				    out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
 				  else if (npol==2)
@@ -1527,7 +1544,9 @@ int main(int argc,char *argv[])
 		      
 		      printf("Writing out the data weights for band %d\n",ii);
 		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
-		      printf("Complete writing data weights\n");
+		      printf("Writing out data flags for band %d\n",ii);
+		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
+		      printf("Complete writing data weights and flags\n");
 		   
 		    
 
@@ -1550,7 +1569,8 @@ int main(int argc,char *argv[])
 		      free(out_Fdata);
 		      free(in_freq);
 		      free(out_freq);
-		      free(dataWts);
+		      if (haveWeights==1) free(dataWts);
+		      if (haveFlags==1)   free(dataFlags);
 		      // NOW NEED TO UPDATE META-DATA
 		      // Subintegration change
 		      //  band_header
