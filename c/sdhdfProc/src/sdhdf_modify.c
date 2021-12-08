@@ -1548,7 +1548,7 @@ int main(int argc,char *argv[])
 		      printf("Writing out the data weights for band %d\n",ii);
 		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Writing out data flags for band %d\n",ii);
-		      //		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
+		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Complete writing data weights and flags\n");
 		   
 		    
