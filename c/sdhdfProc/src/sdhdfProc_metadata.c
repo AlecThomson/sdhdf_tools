@@ -20,6 +20,8 @@
 #include <math.h>
 #include <string.h> 
 #include "sdhdfProc.h"
+#include <locale.h>
+#include <wchar.h>
 #include <time.h>
 #include <sys/utsname.h>
 
@@ -1013,6 +1015,7 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 
   //  printf("Up here with dataName = %s, attribute number = %d\n",dataName,num);
   attr_id      = H5Aopen_by_idx(inFile->fileID,dataName, H5_INDEX_NAME, H5_ITER_NATIVE,num,H5P_DEFAULT,H5P_DEFAULT);
+  //  printf("aatr_id = %d\n",attr_id);
   if (attr_id < 0)
     {
       strcpy(attribute->key,"uncertain");
@@ -1022,10 +1025,10 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
     }
   aspace       = H5Aget_space(attr_id);
   ndims        = H5Sget_simple_extent_dims(aspace,dims,NULL);
-  //  printf("ndims = %d, aspace = %d\n",ndims,aspace);
+  //  printf("ndims = %d, aspace = %d, dims[0] = %d\n",ndims,aspace,dims[0]);
   if (ndims != 0) // 1 && ndims != 0)
     {
-      //      printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
+      printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
       H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
       strcpy(attribute->value,"NOT SET");
       attribute->attributeType=0;
@@ -1036,16 +1039,29 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
     {
       atype        = H5Aget_type(attr_id);
       type_class   = H5Tget_class(atype);
+
       if (type_class == H5T_STRING)
 	{
 	  char string_out[MAX_STRLEN];
-	  //	  printf("Reading H5T_STRING\n");
+	  /*
+	  printf("Reading H5T_STRING\n");
+	  
+	  if (H5Tget_cset(atype) == H5T_CSET_ASCII)
+	    printf("THIS IS ASCII %d\n",(H5Tget_cset(atype)));
+	  else if (H5Tget_cset(atype) == H5T_CSET_UTF8)
+	    printf("THIS IS IN UTF8\n");
+	  else	    
+	    printf("THIS IS NOT ASCII OR UTF-8 %d\n",(H5Tget_cset(atype)));
+	  */
+	    
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
 	  atype_mem = H5Tget_native_type(atype,H5T_DIR_ASCEND);
+	  //	  printf("KEY = %s\n",attribute->key);
+	  //	  printf("Atype_mem = %d, atype = %d H5T_NATIVE_CHAR = %d\n",atype_mem,atype,H5T_NATIVE_CHAR);
 	  attribute->attributeType=0;
 	  if (strcmp(attribute->key,"CLASS")==0)
 	    {
-	      printf("Reading scalar\n");
+	      //	      printf("Reading scalar CLASS\n");
 	      /*
 	      stid    = H5Tcopy(H5T_C_S1);
 	      status  = H5Tset_size(stid,H5T_VARIABLE);     
@@ -1057,19 +1073,49 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	      */
 	      strcpy(attribute->value,"FIX ME");
 	    }
-	  else
-	    {	      
-	      //	      printf("Not reading scalar\n");
-	      status = H5Aread(attr_id, atype, &buf);
-	      //	      printf("Copying to  string_out >%s<\n",buf);
-	      strcpy(string_out,buf);
-	      //	      printf("Copying to value\n");
+	  else 
+	    {
+
+	      if (H5Tget_cset(atype) == H5T_CSET_UTF8) // UTF-8 STRING
+		{
+		  hid_t memtype = H5Tcopy(H5T_C_S1);
+		  char store_str[MAX_STRLEN];
+		  wchar_t wcstring[MAX_STRLEN];
+		  int nread = 0;
+		  H5A_info_t attribute_info;
+
+
+		  /*
+		  status = H5Aget_info(attr_id,&attribute_info);
+		  printf("GOT ATTRIBUTE INFO WITH STATUS = %d\n",status);
+		  printf("Attribute info size = %d\n",attribute_info.data_size);
+		  status = H5Tset_cset(memtype,H5T_CSET_UTF8);		  
+		  status = H5Tset_size(memtype,H5T_VARIABLE);
+		  
+		  //		  status = H5Tset_size(memtype,attribute_info.data_size);
+		  printf("status here = %d\n",status);
+		  printf("status now = %d\n",status);
+
+
+		  setlocale(LC_ALL, "");
+		  status = H5Aread(attr_id,atype_mem,string_out);
+		  //
+		  //		  status = H5Aread(attr_id,memtype,wcstring);
+		  //		  wcstring[0]=0xC9;
+		  //		  wcstring[1]=0;
+		  //		  nread = wcstombs(store_str,wcstring,MAX_STRLEN);
+		  nread = wcstombs(store_str,(wchar_t *)string_out,MAX_STRLEN);
+		  strcpy(string_out,store_str);
+		  printf("HAVE (status = %d) %d UTF8 AND >%ls< and >%s< %d\n",status,nread,wcstring,store_str,nread);
+		  */
+		  strcpy(string_out,"UTF-8 ATTRIBUTE");
+		}
+	      else // ASCII STRING
+		status = H5Aread(attr_id,atype_mem,string_out);
+
 	      strcpy(attribute->value,string_out);
-	      //	      printf("The key is: %s\n",attribute->key);
-	      //	      printf("Freeing the buffer\n");
-	      free(buf);
 	      
-	      //	      printf("Got to bottom of attributes\n");
+	      //	      printf("LOADED %s\n",string_out);
 	    }
 	  status = H5Tclose(atype_mem);
 
@@ -1080,8 +1126,8 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	  attribute->attributeType=1;
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
 	  //	  printf("H5T_FLOAT\n");	  
-	  atype        = H5Aget_type(attr_id);
-	  type_class   = H5Tget_class(atype);
+	  //	  atype        = H5Aget_type(attr_id);
+	  //	  type_class   = H5Tget_class(atype);
 
 	  status  = H5Aread(attr_id, atype, &fval);	  
 	  attribute->fvalue = fval;

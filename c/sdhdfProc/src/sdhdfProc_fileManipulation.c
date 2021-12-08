@@ -243,8 +243,10 @@ void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float 
   sprintf(dataName,"beam_%d/%s/astronomy_data/frequency",beam,inFile->beam[beam].bandHeader[band].label);      
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq = sdhdf_getNattributes(inFile,dataName);
-  for (j=0;j<inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq;j++)
-    sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j]));
+
+  printf("READING ATTRIBUTES FROM sdhdf_loadFrequency2Array\n");
+    for (j=0;j<inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq;j++)
+      sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j]));
 
   status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
   status = H5Dclose(dataset_id);
@@ -265,7 +267,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
   hid_t dataset_id;
   herr_t status;
   float *allData;
-
+  //  printf("LOADING DATA type = %d\n",type);
   // astro_data
   if (type==1)
     {
@@ -283,20 +285,22 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       //      printf("Number of attributes = %d FREQUENCY SECTION\n",inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq);
       for (j=0;j<inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq;j++)
       	{
-      	  sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j]));
+	  //	  printf("key GEORGE loading: j = %d\n",j);
+	  sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j]));
 	  //	  printf("Loaded %d >%s<\n",j,inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j].value);
       	}
-      //            printf("Done reading freq attributes\n");
+      //      printf("Done reading freq attributes\n");
       sprintf(dataName,"beam_%d/%s/astronomy_data/data",beam,inFile->beam[beam].bandHeader[band].label);      
 
       // Read attributes
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
       //      printf("Reading data attributes\n");
       //      printf("We have %d\n",inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes);
-      
+
+      //      printf("Reading data attributes\n");
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
       	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
-
+	  
 
       //      printf("Done reading data attributes\n");
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
@@ -313,6 +317,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       free(allData);
       status = H5Dclose(dataset_id);
       // Flags
+      //      printf("LOADING FLAGS\n");
       sprintf(dataName,"beam_%d/%s/astronomy_data/flag",beam,inFile->beam[beam].bandHeader[band].label);      
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
@@ -326,6 +331,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  for (i=0;i<nchan*ndump;i++)
 	    inFile->beam[beam].bandData[band].astro_data.flag[i] = 0;
 	}
+      //      printf("COMPLETE LOADING FLAGS\n");
 
       // Data weights
       sprintf(dataName,"beam_%d/%s/astronomy_data/data_weights",beam,inFile->beam[beam].bandHeader[band].label);      

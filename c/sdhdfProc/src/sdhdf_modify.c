@@ -855,7 +855,7 @@ int main(int argc,char *argv[])
 				      
 				      wt   = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
 				      flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+k];
-				      
+
 				      if (wt!=0)
 					{
 					  if (npol==1)
@@ -1141,6 +1141,7 @@ int main(int argc,char *argv[])
 				      out_data[k+out_nchan*j*out_npol+out_nchan]   = out_Fdata[k+out_nchan*j*npol+out_nchan];
 				      out_data[k+out_nchan*j*out_npol+2*out_nchan] = out_Fdata[k+out_nchan*j*npol+2*out_nchan];
 				      out_data[k+out_nchan*j*out_npol+3*out_nchan] = out_Fdata[k+out_nchan*j*npol+3*out_nchan];
+				      //				      printf("out_data = %g\n",out_data[k+out_nchan*j*out_npol]);
 				    }
 				}
 			    }
@@ -1518,6 +1519,8 @@ int main(int argc,char *argv[])
 		      
 		      //		      printf("Copying attributes\n");
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+
+
 		      //		      printf("Have copied %d attributes\n",nDataAttributes);
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 		      //		      printf("Have copied %d frequency attributes\n",nFreqAttributes);
@@ -1536,7 +1539,7 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-		   
+		    		   
 		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      // Write out the obs_params file
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump,1);
@@ -1545,7 +1548,7 @@ int main(int argc,char *argv[])
 		      printf("Writing out the data weights for band %d\n",ii);
 		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Writing out data flags for band %d\n",ii);
-		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
+		      //		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Complete writing data weights and flags\n");
 		   
 		    
@@ -1596,11 +1599,7 @@ int main(int argc,char *argv[])
 	      //	      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","sdhdfProc software to modify a file",args);	     
 	      //	      inFile->nHistory++;
 	      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
-
-	   
-
-	      
-	      sdhdf_copyRemainder(inFile,outFile,0);
+	      sdhdf_copyRemainder(inFile,outFile,0); 
 	      
 	      /*
 		FIX ME
