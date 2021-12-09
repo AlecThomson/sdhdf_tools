@@ -183,6 +183,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   float mx,my;
   int i,j;
   double wts;
+  int flagVal;
   float *aa,*bb,*ab,*abs;
   float minx,maxx,miny,maxy,minz,maxz;
   float ominx,omaxx,ominy,omaxy;
@@ -276,6 +277,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  for (i=0;i<nchan;i++)
 	    {
 	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i]; 
+	      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i]; 
+
 	      if (xplot==1)
 		{
 		  if (fref < 0)
@@ -287,7 +290,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	      else
 		freq[i] = i;
-	      if (wts>0)
+	      if (wts > 0 && flagVal == 0)
 		{
 		  if (divWeights==1)
 		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;		 
@@ -326,7 +329,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		  for (i=0;i<nchan;i++)
 		    {
 		      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
-		      if (wts != 0 || flagIt==0)
+		      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[i];
+		      if ((wts != 0 && flagVal == 0) || flagIt==0)
 			{
 			  if (setMiny==0)
 			    {
