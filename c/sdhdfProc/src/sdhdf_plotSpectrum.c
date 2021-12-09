@@ -439,12 +439,16 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  int drawIt=-1;
 	  for (i=0;i<nchan;i++)
 	    {
-	      if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] != 0 && drawIt==-1)
+	      if ((inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+idump*nchan] != 0 &&
+		   inFile->beam[ibeam].bandData[iband].astro_data.flag[i+idump*nchan] == 0)
+		   && drawIt==-1)
 		{
 		  drawIt=1;
 		  i0=i;
 		}
-	      if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i] == 0 && drawIt==1)
+	      if ((inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+idump*nchan] == 0  ||
+		   inFile->beam[ibeam].bandData[iband].astro_data.flag[i+idump*nchan] == 1)
+		  && drawIt==1)
 		{
 		  cpgsci(1); cpgline(i-1-i0,freq+i0,pol1+i0); cpgsci(1);
 		  if (npol > 1)
