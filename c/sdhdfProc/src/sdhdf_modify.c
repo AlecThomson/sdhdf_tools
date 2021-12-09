@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -833,11 +833,13 @@ int main(int argc,char *argv[])
 			  int jj;
 			  int nsum=0;
 			  double swt=0,wt;
+			  int haveNonZeroFlag=0;
 			  
 			  for (k=0;k<nchan;k++)
 			    {
 			      swt=0;
 			      tav=0;
+			      haveNonZeroFlag=0;
 			      for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
 				{
 				  ignore=0;
@@ -879,12 +881,18 @@ int main(int argc,char *argv[])
 					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
 					  // Note that we don't have j*out_nchan here as we're time scrunching
 					  dataWts[k] += wt;
-					  dataFlags[k] = flag; // GEORGE FIX ME: THIS NEEDS TO BE SET PROPERLY FOR A TIME SCRUNCH
+					  haveNonZeroFlag=1;
+
 					  swt += wt;
 					}
 					  //				      printf("Done\n");
 				    }
 				}
+			      if (haveNonZeroFlag==0)
+				dataFlags[k] = 1;      // If all time dumps are flagged then flag this channel
+			      else
+				dataFlags[j] = 0;      // Otherwise don't flag
+			      
 			      if (npol==1)
 				{if (swt > 0) {out_Tdata[k] /= swt;} else {out_Tdata[k] = 0;}}
 			      else if (npol==2)
@@ -999,7 +1007,8 @@ int main(int argc,char *argv[])
 			{
 			  double wt;
 			  double swt;
-			  printf("In averaging\n");
+			  int haveNonZeroFlag=0;
+
 			  for (j=0;j<out_ndump;j++)
 			    {
 			      kp=0;
@@ -1007,13 +1016,16 @@ int main(int argc,char *argv[])
 				{				  
 				  av1 = av2 = av3 = av4 = avFreq = 0.0;
 				  swt=0;
-				  dataWts[j*out_nchan+kp]   = 0; 
+				  dataWts[j*out_nchan+kp]   = 0;  // FIX ME: SHOULDN'T DO THIS AS ALREADY TIME SCRUNCHED
 				  dataFlags[j*out_nchan+kp] = 0;
+				  haveNonZeroFlag=0;
+				  
 				  for (l=k;l<k+fAv;l++)
 				    {
 				      // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
 				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
 				      flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
+				      if (flag == 0) haveNonZeroFlag=1;
 				      //				      printf("wt = %g\n",wt);
 				      avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
 				      if (npol==1)
@@ -1035,10 +1047,14 @@ int main(int argc,char *argv[])
 				      //  printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
 				      dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
 
-				      dataFlags[j*out_nchan+kp] = flag; // GEORGE: FIX ME FOR PROPER FLAG AVERAGING
+
 				      swt += wt;
 				      //				      printf("Done write\n");
 				    }
+				  if (haveNonZeroFlag==0)
+				    dataFlags[j*out_nchan+kp] = 1;
+				  else
+				    dataFlags[j*out_nchan+kp] = 0;
 				
 				  //				  printf("Updating the sum\n");
 				  if (j==0) out_freq[kp] = avFreq/fAv;
