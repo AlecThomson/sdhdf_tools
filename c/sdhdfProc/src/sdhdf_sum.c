@@ -42,10 +42,11 @@ void help()
   printf("\n");
   printf("Software to sum spectra together\n");
   printf("\n\nCommand line arguments:\n\n");
+  printf("-divN             Divide by the number of summed observations\n");
+  printf("-o <file>         Output filename\n");
   printf("-h                This help\n");
   
-  printf("\nExample:\n\n");
-  printf("TO DO\n");
+
   printf("---------------------\n");
 }
 
