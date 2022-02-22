@@ -40,6 +40,7 @@ void help()
   printf("Command line arguments:\n\n");
   printf("-bandRange <b0> <b1>   Output data in bands between b0 and b1\n");
   printf("-cal                   Output calibration data\n");
+  printf("-cal_tav               Average calibration data in time\n");
   printf("-cal32_ch <ch>         Set the channel to 'ch' when outputting data for the 32-bin cal\n");
   printf("-cal32_tav             Average the 32-binned calibration signal in time before output\n");  
   printf("-dumpRange <s0> <s1>   Output data in specificed sub-integration range\n");
@@ -86,7 +87,7 @@ int main(int argc,char *argv[])
   int cal32_tav=-1;
   int band0=-1,band1=-1;
   double fref=-1;
-
+  int cal_tav=-1;
   
   for (i=1;i<argc;i++)
     {
@@ -102,6 +103,8 @@ int main(int argc,char *argv[])
 	sscanf(argv[++i],"%lf",&fref);
       else if (strcmp(argv[i],"-cal")==0)
 	dataType=3;
+      else if (strcmp(argv[i],"-cal_tav")==0)
+	cal_tav=1;
       else if (strcmp(argv[i],"-cal32")==0)
 	dataType=4;
       else if (strcmp(argv[i],"-cal32_ch")==0)
@@ -281,10 +284,13 @@ int main(int argc,char *argv[])
 			  sd0 = 0;
 			  sd1 = inFile->beam[beam].calBandHeader[band].ndump;
 			}
-		      
-		      for (j=sd0;j<sd1;j++)
+		      if (cal_tav==1)
 			{
-			  //		      printf("Here with %d\n",k);
+			  double cal_on_pol1,cal_off_pol1;
+			  double cal_on_pol2,cal_off_pol2;
+			  double cal_on_pol3,cal_off_pol3;
+			  double cal_on_pol4,cal_off_pol4;
+
 			  for (k=0;k<nchanCal;k++)
 			    {
 			      display=1;
@@ -293,8 +299,55 @@ int main(int argc,char *argv[])
 			      if (setFreqRange==1 && (freq < freq0 || freq > freq1))
 				display=0;
 			      if (display==1)
-				printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
+				{
+				  int nd;
+				  cal_on_pol1=cal_off_pol1=0;
+				  cal_on_pol2=cal_off_pol2=0;
+				  cal_on_pol3=cal_off_pol3=0;
+				  cal_on_pol4=cal_off_pol4=0;
+				  nd=0;
+				  for (j=sd0;j<sd1;j++)
+				    {				      
+				      cal_on_pol1+=inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal];
+				      cal_off_pol1+=inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal];
 
+				      cal_on_pol2+=inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal];
+				      cal_off_pol2+=inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal];
+
+				      cal_on_pol3+=inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal];
+				      cal_off_pol3+=inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal];
+
+				      cal_on_pol4+=inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal];
+				      cal_off_pol4+=inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal];
+				      nd++;
+				    }
+				  cal_on_pol1/=(double)nd;  cal_off_pol1/=(double)nd;
+				  cal_on_pol2/=(double)nd;  cal_off_pol2/=(double)nd;
+				  cal_on_pol3/=(double)nd;  cal_off_pol3/=(double)nd;
+				  cal_on_pol4/=(double)nd;  cal_off_pol4/=(double)nd;
+				  printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,0,freq,
+					 cal_on_pol1,cal_off_pol1,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4,
+					 inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
+				}
+			    }
+
+			}
+		      else
+			{
+			  for (j=sd0;j<sd1;j++)
+			    {
+			      //		      printf("Here with %d\n",k);
+			      for (k=0;k<nchanCal;k++)
+				{
+				  display=1;
+				  //			  printf("Loading freq\n");
+				  freq = inFile->beam[beam].bandData[band].cal_on_data.freq[k];
+				  if (setFreqRange==1 && (freq < freq0 || freq > freq1))
+				    display=0;
+				  if (display==1)
+				    printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
+				  
+				}
 			    }
 			}
 		    }
