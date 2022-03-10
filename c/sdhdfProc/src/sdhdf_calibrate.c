@@ -229,8 +229,8 @@ int main(int argc,char *argv[])
 		{
 		  printf("Processing subband %d\n",j);
 		  sdhdf_loadBandData(inFile,b,j,1);
-		  nchan = inFile->beam[b].bandHeader[j].nchan;
-		  npol  = inFile->beam[b].bandHeader[j].npol;
+		  nchan  = inFile->beam[b].bandHeader[j].nchan;
+		  npol   = inFile->beam[b].bandHeader[j].npol;
 		  ndump  = inFile->beam[b].bandHeader[j].ndump;
 
 		  // Copy observation parameters
@@ -376,16 +376,16 @@ int main(int argc,char *argv[])
 			  //			  exit(1);
 			}
 		    }
-		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[j].label,b,j,
+		  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label,b,j,
 					  out_data,out_freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[j].label,b,j,outObsParams,ndump,1);
+		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[j].label,inFile->beamHeader[b].label,j,outObsParams,ndump,1);
 		  sdhdf_writeDataWeights(outFile,b,j,dataWts,nchan,ndump,inFile->beam[b].bandHeader[j].label);
 		  sdhdf_releaseBandData(inFile,b,j,1); 		      
 		  free(out_freq); free(out_data); free(dataWts);
 		  free(outObsParams);
 
 		}
-	      sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
+	      sdhdf_writeBandHeader(outFile,inBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
 	      free(inBandParams);
 
 	    }

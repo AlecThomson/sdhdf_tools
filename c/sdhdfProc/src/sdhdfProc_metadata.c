@@ -481,6 +481,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
   hsize_t dims[2];
   int nbeam,nband;
   char label[MAX_STRLEN];
+  char beamLabel[MAX_STRLEN];
   
   nbeam = inFile->nBeam;
 
@@ -492,6 +493,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 
   for (i=0;i<nbeam;i++)
     {  
+      strcpy(beamLabel,inFile->beamHeader[i].label);
       nband = inFile->beam[i].nBand;
       if (nband < 1)
 	{
@@ -539,9 +541,9 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 	}
 
       if (type==1)
-	sprintf(label,"beam_%d/metadata/band_params",i);
+	sprintf(label,"%s/metadata/band_params",beamLabel);
       else if (type==2)
-	sprintf(label,"beam_%d/metadata/cal_band_params",i);
+	sprintf(label,"%s/metadata/cal_band_params",beamLabel);
       
       header_id  = H5Dopen2(inFile->fileID,label,H5P_DEFAULT);
       headerT    = H5Dget_type(header_id);
@@ -549,7 +551,8 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
       if (dims[0] != nband)
 	{
-	  printf("ERROR: incorrect number of bands.  In beam header have %d. Dimension of data is %d\n",nband,dims[0]);
+	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,dims[0]);
+	  printf("ndims = %d\n",ndims);
 	  printf("Label = %s\n",label);
 	  printf("File = %s\n",inFile->fname);
 	  exit(1);
@@ -583,7 +586,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 }
 
 
-void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,int ibeam,int outBands,int type)
+void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,char *beamLabel,int outBands,int type)
 {
   hid_t dset_id,datatype_id,group_id;
   herr_t status;
@@ -616,14 +619,14 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
 
   // Do we need to create the groups
 
-  sprintf(groupName,"beam_%d",ibeam);
+  sprintf(groupName,"%s",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
   
-  sprintf(groupName,"beam_%d/metadata",ibeam);
+  sprintf(groupName,"%s/metadata",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
@@ -632,7 +635,7 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
   
   if (type==1)
     {
-      sprintf(name,"beam_%d/metadata/band_params",ibeam);
+      sprintf(name,"%s/metadata/band_params",beamLabel);
       if (sdhdf_checkGroupExists(outFile,name) == 1)
 	dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       else
@@ -640,7 +643,7 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
     }
   else
     {
-      sprintf(name,"beam_%d/metadata/cal_band_params",ibeam);
+      sprintf(name,"%s/metadata/cal_band_params",beamLabel);
       if (sdhdf_checkGroupExists(outFile,name) == 1)
 	dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       else
@@ -683,6 +686,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
   hsize_t dims[2];
   int nbeam,nband,ndump;
   char label[MAX_STRLEN];
+  char beamLabel[MAX_STRLEN];
   
   nbeam = inFile->nBeam;
 
@@ -694,6 +698,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 
   for (i=0;i<nbeam;i++)
     {  
+      strcpy(beamLabel,inFile->beamHeader[i].label);
       nband = inFile->beam[i].nBand;
 
       if (inFile->beam[i].bandAllocatedMemory == 0 || nband < 1)
@@ -744,9 +749,9 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	 
 
 	  if (type==1)
-	    sprintf(label,"beam_%d/%s/metadata/obs_params",i,inFile->beam[i].bandHeader[j].label);
+	    sprintf(label,"%s/%s/metadata/obs_params",beamLabel,inFile->beam[i].bandHeader[j].label);
 	  else if (type==2)
-	    sprintf(label,"beam_%d/%s/metadata/cal_obs_params",i,inFile->beam[i].bandHeader[j].label);
+	    sprintf(label,"%s/%s/metadata/cal_obs_params",beamLabel,inFile->beam[i].bandHeader[j].label);
 
 	  header_id  = H5Dopen2(inFile->fileID,label,H5P_DEFAULT);
 	  headerT    = H5Dget_type(header_id);
@@ -1070,15 +1075,26 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	      else // ASCII STRING
 		{
 		  H5A_info_t attribute_info;
+		  //		  printf("Reading an ASCII string\n");
+		  strcpy(buffer,"");
+
 		  status = H5Aget_info(attr_id,&attribute_info);
 		  status = H5Tset_cset(atype_mem,H5T_CSET_ASCII);		  
-		  status = H5Tset_size(atype_mem,attribute_info.data_size);
-		  
+		  //		  printf("Size = %d\n",attribute_info.data_size);
+		  status = H5Tset_size(atype_mem,attribute_info.data_size);		  
+		  //		  printf("Setting size: status = %d\n",status);
 		  status = H5Aread(attr_id,atype_mem,buffer);
+		  //		  printf("Buffer = %s, status = %d\n",buffer,status);
+		  // FIX ME: somehow it is not reading in the currect length
+		  buffer[attribute_info.data_size]='\0';
+		  
 		  strcpy(attribute->value,buffer);
+
+
 		}
 	      
 	      status = H5Tclose(atype_mem);	      
+	      //	      printf("status at close = %d\n",status);
 	    }
 	  free(buffer);
 	}
@@ -1129,7 +1145,7 @@ void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruc
   
 }
 
-void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type)
+void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLabel,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type)
 {
   hid_t dset_id,datatype_id,group_id;
   herr_t status;
@@ -1172,28 +1188,28 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,in
   dataspace_id = H5Screate_simple(1,dims,NULL);
   // Do we need to create the groups
 
-  sprintf(groupName,"beam_%d",ibeam);
+  sprintf(groupName,"%s",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  sprintf(groupName,"beam_%d/%s",ibeam,bandLabel);
+  sprintf(groupName,"%s/%s",beamLabel,bandLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  sprintf(groupName,"beam_%d/%s/metadata",ibeam,bandLabel);
+  sprintf(groupName,"%s/%s/metadata",beamLabel,bandLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
   if (type==1)
-    sprintf(name,"beam_%d/%s/metadata/obs_params",ibeam,bandLabel);
+    sprintf(name,"%s/%s/metadata/obs_params",beamLabel,bandLabel);
   else if (type==2)
-    sprintf(name,"beam_%d/%s/metadata/cal_obs_params",ibeam,bandLabel);
+    sprintf(name,"%s/%s/metadata/cal_obs_params",beamLabel,bandLabel);
   dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,obsParams);
   status  = H5Dclose(dset_id);

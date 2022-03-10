@@ -43,6 +43,7 @@ void help()
 {
   printf("sdhdf_extractDump\n\n");
   printf("Routine to extract spectral dumps from an sdhdf file\n\n");
+  printf("-b <num>       Beam number\n");
   printf("-d <num>       Spectral dump number to extract (note this can be used multiple times)\n");
   printf("-e <ext>       Output file extension\n");
   printf("-h             This help\n");
@@ -76,7 +77,8 @@ int main(int argc,char *argv[])
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
-
+  int selectBeam=-1;
+  
   long npol,ndump,out_ndump,out_ndump_num;
   float *out_data,*out_freq;
   
@@ -103,6 +105,8 @@ int main(int argc,char *argv[])
 	{help(); exit(1);}
       else if (strcmp(argv[i],"-d")==0)
 	sscanf(argv[++i],"%d",&selectDump[nSelectDumps++]);
+      else if (strcmp(argv[i],"-b")==0)
+	sscanf(argv[++i],"%d",&selectBeam);
       else
 	{
 	  strcpy(fname[nFiles],argv[i]);
@@ -131,73 +135,76 @@ int main(int argc,char *argv[])
 	  printf("Allocated memory\n");
 	  for (b=0;b<inFile->nBeam;b++)
 	    {
-	      printf("Processing beam %d\n",b);
-	      inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
-	      sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
-	      
-	      for (i=0;i<inFile->beam[b].nBand;i++)
+	      if (selectBeam == -1 || b == selectBeam)
 		{
-		  nchan = inFile->beam[b].bandHeader[i].nchan;
-		  npol  = inFile->beam[b].bandHeader[i].npol;
-		  ndump = inFile->beam[b].bandHeader[i].ndump;
-		  printf("Processing subband %d (number of spectral dumps = %d)\n",i,ndump);
-		  out_ndump = nSelectDumps;
-		  outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
-		  for (k=0;k<out_ndump;k++)
-		    sdhdf_copySingleObsParams(inFile,b,i,k,&outObsParams[k]);
-
-
-		  out_data = (float *)malloc(sizeof(float)*nchan*npol*out_ndump);
-		  out_freq = (float *)malloc(sizeof(float)*nchan);
-
-		  sdhdf_loadBandData(inFile,b,i,1);
-		  for (j=0;j<nchan;j++)
-		    out_freq[j] = inFile->beam[b].bandData[i].astro_data.freq[j];
-		  out_ndump_num=0;
-		  for (j=0;j<ndump;j++)
+		  printf("Processing beam %d\n",b);
+		  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
+		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
+		  
+		  for (i=0;i<inFile->beam[b].nBand;i++)
 		    {
-		      copySD=0;
-		      for (jj=0;jj<nSelectDumps;jj++)
+		      nchan = inFile->beam[b].bandHeader[i].nchan;
+		      npol  = inFile->beam[b].bandHeader[i].npol;
+		      ndump = inFile->beam[b].bandHeader[i].ndump;
+		      printf("Processing subband %d (number of spectral dumps = %d)\n",i,ndump);
+		      out_ndump = nSelectDumps;
+		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
+		      for (k=0;k<out_ndump;k++)
+			sdhdf_copySingleObsParams(inFile,b,i,k,&outObsParams[k]);
+		      
+		      
+		      out_data = (float *)malloc(sizeof(float)*nchan*npol*out_ndump);
+		      out_freq = (float *)malloc(sizeof(float)*nchan);
+		      
+		      sdhdf_loadBandData(inFile,b,i,1);
+		      for (j=0;j<nchan;j++)
+			out_freq[j] = inFile->beam[b].bandData[i].astro_data.freq[j];
+		      out_ndump_num=0;
+		      for (j=0;j<ndump;j++)
 			{
-			  if (selectDump[jj]==j)
+			  copySD=0;
+			  for (jj=0;jj<nSelectDumps;jj++)
 			    {
-			      printf("Copying subband %d\n",j);
-			      for (kk=0;kk<nchan;kk++)
+			      if (selectDump[jj]==j)
 				{
-				  if (npol==1)
-				    out_data[kk+out_ndump_num*nchan]         = inFile->beam[b].bandData[i].astro_data.pol1[kk+j*nchan];
-				  else if (npol==2)
+				  printf("Copying subband %d\n",j);
+				  for (kk=0;kk<nchan;kk++)
 				    {
-				      out_data[kk+out_ndump_num*nchan*2]         = inFile->beam[b].bandData[i].astro_data.pol1[kk+j*nchan];
-				      out_data[kk+nchan+out_ndump_num*nchan*2]   = inFile->beam[b].bandData[i].astro_data.pol2[kk+j*nchan];
+				      if (npol==1)
+					out_data[kk+out_ndump_num*nchan]         = inFile->beam[b].bandData[i].astro_data.pol1[kk+j*nchan];
+				      else if (npol==2)
+					{
+					  out_data[kk+out_ndump_num*nchan*2]         = inFile->beam[b].bandData[i].astro_data.pol1[kk+j*nchan];
+					  out_data[kk+nchan+out_ndump_num*nchan*2]   = inFile->beam[b].bandData[i].astro_data.pol2[kk+j*nchan];
+					}
+				      else if (npol==4)
+					{
+					  out_data[kk        +out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol1[kk+j*nchan];
+					  out_data[kk+nchan  +out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol2[kk+j*nchan];
+					  out_data[kk+2*nchan+out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol3[kk+j*nchan];
+					  out_data[kk+3*nchan+out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol4[kk+j*nchan];
+					}
 				    }
-				  else if (npol==4)
-				    {
-				      out_data[kk        +out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol1[kk+j*nchan];
-				      out_data[kk+nchan  +out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol2[kk+j*nchan];
-				      out_data[kk+2*nchan+out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol3[kk+j*nchan];
-				      out_data[kk+3*nchan+out_ndump_num*nchan*4] = inFile->beam[b].bandData[i].astro_data.pol4[kk+j*nchan];
-				    }
+				  out_ndump_num++;
 				}
-			      out_ndump_num++;
 			    }
 			}
-		    }
-		  //		  sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
-		  //		  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
-		  printf("Writing spectral data\n");
-		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-		  printf("Writing obs params\n");
-		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,b,i,outObsParams,out_ndump,1);
-		  printf("Releasing data\n");
-		  sdhdf_releaseBandData(inFile,b,ii,1);		  
+		      //		  sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
+		      //		  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
+		      printf("Writing spectral data\n");
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		      printf("Writing obs params\n");
+		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,inFile->beamHeader[b].label,i,outObsParams,out_ndump,1);
+		      printf("Releasing data\n");
+		      sdhdf_releaseBandData(inFile,b,ii,1);		  
 
-		  free(outObsParams);
-		  inBandParams[i].ndump = out_ndump;
+		      free(outObsParams);
+		      inBandParams[i].ndump = out_ndump;
+		    }
+		  printf("Writing band header\n");
+		  sdhdf_writeBandHeader(outFile,inBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
+		  free(inBandParams);
 		}
-	      printf("Writing band header\n");
-	      sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
-	      free(inBandParams);
 	    }
 	  printf("Freeing\n");
 	    
@@ -206,9 +213,22 @@ int main(int argc,char *argv[])
 
 	  printf("Writing other tables\n");
 	  // Copy other primary tables
+	  if (selectBeam > -1)
+	    {
+	      sdhdf_beamHeaderStruct *outBeamHeader;
+
+	      outBeamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*1);
+	      strcpy(outBeamHeader->label,inFile->beamHeader[selectBeam].label);
+	      strcpy(outBeamHeader->source,inFile->beamHeader[selectBeam].source);
+	      outBeamHeader->nBand = inFile->beamHeader[selectBeam].nBand;
+	      inFile->primary[0].nbeam = 1;
+	      sdhdf_writePrimaryHeader(outFile,inFile->primary);
+	      sdhdf_writeBeamHeader(outFile,outBeamHeader,1);
+	      free(outBeamHeader);
+	    }
 	  sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
 	  printf("Copy remainder\n");
-	  sdhdf_copyRemainder(inFile,outFile,0);
+	  sdhdf_copyRemainder(inFile,outFile,1); // 1 = don't write extra beam information
 	  printf("Closing files\n");
 	  sdhdf_closeFile(inFile);
 	  sdhdf_closeFile(outFile);

@@ -92,6 +92,7 @@ int main(int argc,char *argv[])
   float *datOffs;
   float *datScl;
   double *doubleVals;
+
   short int *shortVals;
   short int n_sval=0;
   int    binVal = 0; 
@@ -116,10 +117,14 @@ int main(int argc,char *argv[])
 
   int pulseOff1,pulseOff2;
   double *baseline1,*baseline2,*baseline3,*baseline4;
+
+  int nBeam;
+
+  nBeam = 13; // FIX ME
   pulseOff1=pulseOff2=-1;
   
   primaryHeader    = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
-  beamHeader       = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct));
+  beamHeader       = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nBeam);
   bandHeader       = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct));
   softwareVersions = (sdhdf_softwareVersionsStruct *)malloc(sizeof(sdhdf_softwareVersionsStruct));
   history          = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct));
@@ -159,9 +164,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-o")==0)
 	strcpy(outname,argv[++i]);
     }
-  
-  
-
+   
   if (fitsType==1) // SDFITS
     {    
       printf("Opening file >%s<\n",fname);
@@ -176,44 +179,88 @@ int main(int argc,char *argv[])
       
       fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
       fits_read_tdim(fptr,colnum,maxdim,&naxis,naxes,&status);
-      
+  
+      fits_report_error(stderr,status);
       fits_get_colnum(fptr,CASEINSEN,"NCHAN",&colnum,&status);
-      npol = naxes[0];
-      nchan = naxes[1];
+      if (status)
+	{
+	  fits_report_error(stderr,status);
+	  status=0;
+	}
+
+      // Note that this potentially could be the other way around
+      // FIX ME -- should check CTYPE1 and CTYPE2
+      //
+      nchan = naxes[0];
+      npol  = naxes[1];
       printf("nchan = %d, npol = %d, status = %d\n",nchan,npol,status);
       
-      infloatVals = (float *)malloc(sizeof(float)*nchan*npol);
-      floatVals = (float *)malloc(sizeof(float)*nchan*npol*ndump);
-      freqVals = (float *)malloc(sizeof(float)*nchan);
-      
-      fits_get_colnum(fptr,CASEINSEN,"FREQ",&colnum,&status);
-      fits_read_col(fptr,TDOUBLE,colnum,1,1,ndump,&n_dval,doubleVals,&initflag,&status);
-      // Note that the frequency should change based on the LSR correction for different sub-ints -- but it doesn't seem to do this
-      freq0 = doubleVals[0];
-      printf("freq0 = %g status= %d\n",freq0,status);
-      
-      fits_get_colnum(fptr,CASEINSEN,"CHAN_BW",&colnum,&status);
-      fits_read_col(fptr,TDOUBLE,colnum,1,1,ndump,&n_dval,doubleVals,&initflag,&status);
-      // Note that the frequency should change based on the LSR correction for different sub-ints -- but it doesn't seem to do this
-      chan_bw = doubleVals[0];
+      infloatVals = (float *)malloc(sizeof(float)*nchan*npol*nBeam);
+      floatVals   = (float *)malloc(sizeof(float)*nchan*npol*ndump*nBeam);
+      freqVals    = (float *)malloc(sizeof(float)*nchan);
 
+      // FIX ME
+      nBeam = 13;
+
+      for (i=0;i<nBeam;i++)
+	{
+	  sprintf(beamHeader[i].label,"beam_%d",i);
+	  beamHeader[i].nBand = 1;
+	  strcpy(beamHeader[i].source,"UNKNOWN");	  
+	}
+
+      fits_get_colnum(fptr,CASEINSEN,"FREQ",&colnum,&status);
+      if (status)
+	{
+	  fits_report_error(stderr,status);
+	  status=0;
+
+	  chan_bw = -62498.7596847554/1e6; // NOTE CHANGING PER DUMP
+	  
+	  freq0 = (1394500000.0/1e6)-513*chan_bw; // Frequency of channel 513
+
+	  
+	  
+	}
+      else
+	{
+
+
+	  fits_read_col(fptr,TDOUBLE,colnum,1,1,ndump,&n_dval,doubleVals,&initflag,&status);
+	  // Note that the frequency should change based on the LSR correction for different sub-ints -- but it doesn't seem to do this
+	  freq0 = doubleVals[0];
+	  printf("freq0 = %g status= %d\n",freq0,status);
+	  fits_get_colnum(fptr,CASEINSEN,"CHAN_BW",&colnum,&status);
+	  fits_read_col(fptr,TDOUBLE,colnum,1,1,ndump,&n_dval,doubleVals,&initflag,&status);
+	  // Note that the frequency should change based on the LSR correction for different sub-ints -- but it doesn't seem to do this
+	  chan_bw = doubleVals[0];
+	}
       printf("Freq0 = %g chan_bw = %g\n",freq0,chan_bw);
       
       fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
 
-      for (i=0;i<nchan;i++)
-	freqVals[i] = freq0+i*chan_bw;
+      for (i=0;i<nchan;i++) freqVals[i] = freq0+i*chan_bw;
 
+      //      for (i=0;i<ndump;i++)
+      // FIX ME
+      ndump/=13;  // (as we have 13 beams)
       for (i=0;i<ndump;i++)
 	{
 	  printf("Loading spectrum dump %d/%d\n",i,ndump-1);
-	  fits_read_col(fptr,TFLOAT,colnum,i+1,1,nchan*npol,&n_fval,infloatVals,&initflag,&status);
-	  // Rearrange ordering
-	  for (j=0;j<npol;j++)
+	  //	  fits_read_col(fptr,TFLOAT,colnum,i+1,1,nchan*npol,&n_fval,infloatVals,&initflag,&status);
+
+	  // FIX ME
+	  for (b=0;b<nBeam;b++)
 	    {
-	      for (k=0;k<nchan;k++)
+	      fits_read_col(fptr,TFLOAT,colnum,i*nBeam+b+1,1,nchan*npol,&n_fval,infloatVals,&initflag,&status);
+	      // Rearrange ordering
+	      for (j=0;j<npol;j++)
 		{
-		  floatVals[i*nchan*npol + j*nchan + k] = infloatVals[k*npol+j];
+		  for (k=0;k<nchan;k++)
+		    floatVals[b*nchan*npol*ndump + i*nchan*npol + j*nchan + k]
+		      = infloatVals[j*nchan + k];
+		  
+		  //floatVals[i*nchan*npol + j*nchan + k] = infloatVals[k*npol+j];
 		}
 	    }
 	}
@@ -490,7 +537,9 @@ int main(int argc,char *argv[])
   sdhdf_initialiseFile(outFile);
 
   // Set up the primary header information
-      
+
+  primaryHeader[0].nbeam = nBeam;
+  
   // Set up the beam information
 
   // Set up the band information
@@ -500,30 +549,34 @@ int main(int argc,char *argv[])
   bandHeader->f1 = freqVals[nchan-1]; 
   bandHeader->nchan = nchan;
   bandHeader->npol = npol;
-  strcpy(bandHeader->pol_type,"AABBCRCI");
+  //  strcpy(bandHeader->pol_type,"AABBCRCI");
+  strcpy(bandHeader->pol_type,"AABB");
   bandHeader->dtime = 100; // FIX
   bandHeader->ndump = ndump;
 
   printf("Writing output file\n");
   sdhdf_openFile(outname,outFile,3);
   sdhdf_writePrimaryHeader(outFile,primaryHeader);
-  sdhdf_writeBeamHeader(outFile,beamHeader,1);
-  sdhdf_writeBandHeader(outFile,bandHeader,0,1,1);
-  sdhdf_writeObsParams(outFile,bandHeader[0].label,0,0,obsParams,ndump,1);
-  sdhdf_writeSpectrumData(outFile,bandHeader->label,0,0,floatVals,freqVals,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-  if (cal==1)
+  sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);
+  for (b=0;b<nBeam;b++)
     {
-      sdhdf_writeBandHeader(outFile,calBandHeader,0,1,2);
-      sdhdf_writeObsParams(outFile,bandHeader[0].label,0,0,obsParams,ndump_cal,2);
-      printf("In here\n");
-      // GEORGE HERE:
-      // ... need to setup and then write the cal metadata
-      // 
-
-      
-      sdhdf_writeSpectrumData(outFile,bandHeader->label,0,0,floatCalValsOn,freqCalVals,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-      sdhdf_writeSpectrumData(outFile,bandHeader->label,0,0,floatCalValsOff,freqCalVals,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-      printf("Completed writing cal\n");      
+      sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[b].label,1,1);
+      sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[b].label,0,obsParams,ndump,1);
+      sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatVals+b*nchan*npol*ndump,freqVals,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      if (cal==1)
+	{
+	  sdhdf_writeBandHeader(outFile,calBandHeader,beamHeader[b].label,1,2);
+	  sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[b].label,0,obsParams,ndump_cal,2);
+	  printf("In here\n");
+	  // GEORGE HERE:
+	  // ... need to setup and then write the cal metadata
+	  // 
+	  
+	  
+	  sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatCalValsOn,freqCalVals,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,0,0,floatCalValsOff,freqCalVals,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  printf("Completed writing cal\n");      
+	}
     }
   sdhdf_writeSoftwareVersions(outFile,softwareVersions);
   sdhdf_writeHistory(outFile,history,1);
@@ -539,12 +592,13 @@ int main(int argc,char *argv[])
       free(calBandHeader);
       free(calObsParams);	    
     }
-if (type==2)
+  if (type==2)
   {
     free(baseline1); free(baseline2); free(baseline3); free(baseline4);
   }
+  if (nBeam > 0)
+    free(beamHeader);
   free(primaryHeader);
-  free(beamHeader);
   free(bandHeader);
   free(obsParams);
   free(softwareVersions);

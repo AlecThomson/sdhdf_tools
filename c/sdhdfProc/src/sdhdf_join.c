@@ -205,15 +205,15 @@ int main(int argc,char *argv[])
 	      if (ii!=nDefineBands-1)
 		sdhdf_closeFile(inFile);
 
-	      sdhdf_writeObsParams(outFile,outBandParams[ii].label,b,ii,singleObsParams,ndump,1);
-	      sdhdf_writeSpectrumData(outFile,outBandParams[ii].label,b,ii,single_out_data,single_out_freq,nchan_v,npol_v,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes); // FIX THE ATTRIBUTES STUFF
+	      sdhdf_writeObsParams(outFile,outBandParams[ii].label,inFile->beamHeader[b].label,ii,singleObsParams,ndump,1);
+	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[ii].label,b,ii,single_out_data,single_out_freq,nchan_v,npol_v,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes); // FIX THE ATTRIBUTES STUFF
 	      free(singleObsParams);
 	      free(single_out_data);
 	      free(single_out_freq);
 
 	    }
-	  sdhdf_writeBandHeader(outFile,outBandParams,b,nDefineBands,1);
-
+	  sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,nDefineBands,1);
+	
 	  // SHOULD DO SOMETHING WITH THE CAL
 	
 	  
@@ -451,14 +451,14 @@ int main(int argc,char *argv[])
 
 	  for (i=0;i<nBand;i++)
 	    {
-	      sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParams[i],outNdump[i],1);
+	      sdhdf_writeObsParams(outFile,outBandParams[i].label,inFile->beamHeader[b].label,i,outObsParams[i],outNdump[i],1);
 	      if (haveCal==1)
-		sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParamsCal[i],outNdumpCal[i],2);
+		sdhdf_writeObsParams(outFile,outBandParams[i].label,inFile->beamHeader[b].label,i,outObsParamsCal[i],outNdumpCal[i],2);
 
 	      // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
 	      //	      printf("Writing data for band %d (%s) ndump = %d, npol = %d, nchan = %d\n",i,outBandParams[i].label,outNdump[i],npol[i],nchan[i]);
 	      if (joinFreq==0)
-		sdhdf_writeSpectrumData(outFile,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	    }
 	  // *********** DON'T FORGET THE CAL *********
 	  

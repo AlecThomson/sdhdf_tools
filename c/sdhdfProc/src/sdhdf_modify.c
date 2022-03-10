@@ -1477,8 +1477,8 @@ int main(int argc,char *argv[])
 				  int deltaI;
 				  double fracDeltaI;
 				  double df;
-				
-				  printf("Re-gridding: out_npol = %d out_nchan = %d out_ndump = %d\n",out_npol,out_nchan,out_ndump);
+			       				
+				  printf("Re-gridding: out_npol = %d out_nchan = %d out_ndump = %d, dump = %d\n",out_npol,out_nchan,out_ndump,j);
 				  memcpy(temp_data,out_data+j*out_nchan*out_npol,sizeof(float)*out_nchan*out_npol);
 				  for (kk=0;kk<out_npol;kk++)
 				    {
@@ -1491,40 +1491,49 @@ int main(int argc,char *argv[])
 				    {
 				      freqNew = out_freq[k]*(1.0-vOverC);
 				      freqOld = out_freq[k];
-				      // Should first check if we're still in topocentric frequencies -- DO THIS ***
-				      df = ((double)(freqOld-freqNew)/(double)(out_freq[1]-out_freq[0])); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
 				      
+				      // Should first check if we're still in topocentric frequencies -- DO THIS ***
+				      // FIX ME: this assumes equally sampled frequency channels
+				      df = ((double)(freqOld-freqNew)/(double)(out_freq[1]-out_freq[0])); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
+				      //				      printf("df = %g\n",df);
 				      if (df > 0)
 					{
-					  deltaI = (int)(df+0.5);
-					  fracDeltaI = deltaI - df;
+					  //					  deltaI = (int)(df+0.5);
+					  deltaI = (int)df;
+					  //					  fracDeltaI = deltaI - df;
+					  fracDeltaI = df - deltaI;
 					}
 				      else
 					{
+					  // FIX ME HERE
 					  deltaI = -(int)(fabs(df)+0.5);
 					  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN
 					}
 				    
-				      //				      printf("Here with %.6f %.6f %g %d %g %d %d\n",freqOld,freqNew,df,deltaI,fracDeltaI,k,out_nchan);
+				      //				      printf("Frequency shift with %.6f %.6f %g %d %g %d %d\n",freqOld,freqNew,df,deltaI,fracDeltaI,k,out_nchan);
 				      //				      deltaI  = 0;
+				      //				      printf("deltaI = %d\n",deltaI);
 				      if (k + deltaI >= 0 && k + deltaI < out_nchan)
 					{
 					  for (kk=0;kk<out_npol;kk++)
 					    {
 					      // ** Do an interpolation here **
 					      iX1 = 0; iX2 = 1;
-					      iY1 = temp_data[kk*out_nchan + k + deltaI];
-					      iY2 = temp_data[kk*out_nchan + k + deltaI + 1]; // SHOULD CHECK IF AT EDGE
+					      iY1 = temp_data[kk*out_nchan + (k + deltaI)];
+					      iY2 = temp_data[kk*out_nchan + (k + deltaI + 1)]; // SHOULD CHECK IF AT EDGE
 					      m   = (iY2-iY1)/(iX2-iX1);
 					      c   = iY1;
 					      iX  = fracDeltaI;
 					      iY  = m*iX+c;
 
-					      // out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
-					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;
-					    
-					      // GEORGE HACK
-					      //					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY1;
+					      // No change
+					      //     out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan+k];
+					      //
+					      // Nearest channel
+					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
+
+					      // Interpolation
+					      //					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;					    
 					    }
 					}
 				    }
@@ -1555,19 +1564,24 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-		    		   
-		      sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		      printf("Writing spectrum data using beam label: %s\n",inFile->beamHeader[b].label);
+
+		      
+		      
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      // Write out the obs_params file
-		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,b,ii,outObsParams,out_ndump,1);
+		      
+		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,outObsParams,out_ndump,1);
 		      free(outObsParams);
+
 		      
 		      printf("Writing out the data weights for band %d\n",ii);
 		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Writing out data flags for band %d\n",ii);
 		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beam[b].bandHeader[ii].label);
 		      printf("Complete writing data weights and flags\n");
-		   
-		    
+		      
+		      
 
 		      // FIX ME
 		      //		      sdhdf_writeFrequencyAttributes(outFile,inFile->bandHeader[ii].label);
@@ -1598,7 +1612,8 @@ int main(int argc,char *argv[])
 		      //  
 		      
 		    }
-		  sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
+		  printf("Outfile band: %s\n",inFile->beamHeader[b].label);
+		  sdhdf_writeBandHeader(outFile,inBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
 		  free(inBandParams);
 
 		  if (nScal > 0)
@@ -1614,6 +1629,8 @@ int main(int argc,char *argv[])
 	      // FIX ME -- NEED TO INCREASE SIZE OF HISTORY ARRAY
 	      //	      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","sdhdfProc software to modify a file",args);	     
 	      //	      inFile->nHistory++;
+
+
 	      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
 	      sdhdf_copyRemainder(inFile,outFile,0); 
 	      
