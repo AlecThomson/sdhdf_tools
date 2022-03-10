@@ -138,6 +138,8 @@ int main(int argc,char *argv[])
 	strcpy(fname[nFiles++],argv[i]);
     }
 
+  //  printf("Starting quickdump\n");
+  
   inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct));
   
   for (i=0;i<nFiles;i++)
@@ -148,7 +150,7 @@ int main(int argc,char *argv[])
       else
 	{
 	  sdhdf_loadMetaData(inFile);
-	  //	  printf("Have loaded %g\n",inFile->beam[0].bandData[0].astro_obsHeader
+	  //	  printf("Have loaded metadata\n");
 	  if (outFile==1)
 	    {
 	      sprintf(outFileName,"%s.%s",inFile->fname,extFileName);
@@ -170,14 +172,16 @@ int main(int argc,char *argv[])
 		{
 		  npol = inFile->beam[beam].bandHeader[band].npol;
 		  nchan = inFile->beam[beam].bandHeader[band].nchan;
+		  //		  printf("Loading the data\n");
 		  if (dataType!=3 && dataType!=4)
 		    sdhdf_loadBandData(inFile,beam,band,1);
+		  //		  printf("Loading calibration data\n");
 		  if (dataType==2 || dataType==3)
 		    {
 		      sdhdf_loadBandData(inFile,beam,band,2);
 		      sdhdf_loadBandData(inFile,beam,band,3);
 		    }
-
+		  //		  printf("Complete loading the data\n");
 
 		  if (dataType==1) // Astronomy data
 		    {

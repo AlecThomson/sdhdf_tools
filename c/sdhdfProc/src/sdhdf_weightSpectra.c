@@ -34,7 +34,7 @@
 
 
 #define MAX_CHANS 262144
-#define MAX_SPECTRA 1024 // Should be NFILES * NDUMP
+#define MAX_SPECTRA 262144 // Should be NFILES * NDUMP
 
 #define VNUM "v0.1"
 
@@ -62,8 +62,12 @@ int main(int argc,char *argv[])
   int inFiles;
   char grDev[128];
   float ra[MAX_SPECTRA],dec[MAX_SPECTRA];
+  int sdump[MAX_SPECTRA];
+  char  **filename;
   float f0[MAX_SPECTRA];
   int nChan[MAX_SPECTRA];
+
+  
   float sum;
   float ra0,dec0;
   float angle;
@@ -101,7 +105,7 @@ int main(int argc,char *argv[])
     }
 
   sdhdf_initialiseFile(inFile);
-
+ 
   inFiles=0;
   for (i=1;i<argc;i++)
     {
@@ -117,6 +121,14 @@ int main(int argc,char *argv[])
 	strcpy(fname[inFiles++],argv[i]);
     }
 
+  printf("Number of files = %d\n",inFiles);
+
+  filename = (char **)malloc(sizeof(char *)*MAX_SPECTRA);
+  for (i=0;i<MAX_SPECTRA;i++)
+    filename[i] = (char *)malloc(sizeof(char)*128);
+
+
+  
   avSpectraX  = (float *)calloc(sizeof(float),MAX_CHANS);
   avSpectraY1 = (float *)calloc(sizeof(float),MAX_CHANS);
   avSpectraY2 = (float *)calloc(sizeof(float),MAX_CHANS);
@@ -151,10 +163,11 @@ int main(int argc,char *argv[])
 
       
       sdhdf_loadBandData(inFile,ibeam,iband,1);
-
       // Process each dump
       for (l=0;l<inFile->beam[ibeam].bandHeader[iband].ndump;l++) 
-	{	      	      	      
+	{
+	  strcpy(filename[nSpec],fname[i]);
+	  sdump[nSpec] = l;
 	  f0[nSpec] = inFile->beam[ibeam].bandHeader[iband].fc;
 
 	  ra[nSpec] = inFile->beam[ibeam].bandData[iband].astro_obsHeader[l].raDeg;
@@ -172,11 +185,17 @@ int main(int argc,char *argv[])
 	    }
 	  nChan[nSpec] = nc;
 
-
 	  nSpec++;
+	  if (nSpec == MAX_SPECTRA)
+	    {
+	      printf("ERROR: need to increase MAX_SPECTRA in sdhdf_weightSpectra.c\n");
+	      exit(1);
+	    }
 	  
 	}
+      printf("Closing file\n");
       sdhdf_closeFile(inFile);
+      printf("Next file\n");
     }
   printf("Data loaded\n");
   
@@ -194,12 +213,11 @@ int main(int argc,char *argv[])
     {	     
       angle = haversine(ra[k],dec[k],ra0,dec0);      
       weight = exp(-(angle*angle)/2.0/sigma/sigma);
-      printf("k = %d, angle = %g, weight = %g\n",k,angle,weight);
+      printf("%s dump = %d k = %d, angle = %g, weight = %g ra/dec = (%g,%g), ra0/dec0 = (%g,%g)\n",filename[k],sdump[k],k,angle,weight,ra[k],dec[k],ra0,dec0);
       if (weight > 0.01)
 	{
 	  //		  printf("Angle = %g, weight = %g\n",angle,weight);
 	  sumWeight+=weight;
-	  printf("nchan = %d\n",nChan[k]);
 	  for (l=0;l<nChan[k];l++)
 	    {
 	      avSpectraX[l]   = highResX[k][l]; // Should check if frequencies change etc. because of Doppler correction * NEEDS FIXING
@@ -239,6 +257,11 @@ int main(int argc,char *argv[])
   free(avSpectraX); free(avSpectraY1); free(avSpectraY2);
   free(plotX); free(plotY1); free(plotY2); free(plotY3);
   free(plotX3);
+
+  for (i=0;i<MAX_SPECTRA;i++)
+    free(filename[i]);
+  free(filename);
+
 }
 
 

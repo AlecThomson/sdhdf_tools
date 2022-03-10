@@ -240,7 +240,8 @@ int main(int argc,char *argv[])
 	    {
 	      if (j==0)
 		{
-		  timeVal[sdump] = calcT(inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].aest,aest0,min);
+		  //		  timeVal[sdump] = calcT(inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].aest,aest0,min);
+		  timeVal[sdump] = calcT(inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].utc,aest0,min);
 		  azVal[sdump] = inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].az;
 		  elVal[sdump] = inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].el;
 		}
@@ -368,8 +369,10 @@ int main(int argc,char *argv[])
     }
 
   // Smooth, plot, label, log and highlight regions
+  printf("PlotType= %d\n",plotType);
   if (plotType==1)
     {
+      printf("sdump = %d\n",sdump);
       cpgbeg(0,"plot.ps/cps",1,1);
       cpgslw(2);
       cpgscf(2);
@@ -379,8 +382,11 @@ int main(int argc,char *argv[])
       cpgsci(2);
       cpgsvp(0.10,0.95,0.53,0.71);
       cpgswin(timeVal[0],timeVal[sdump-1],0,360);
+
+      
       cpgbox("ABC",0,0,"ABCTSN",0,0);
       cpglab("","Az (deg)","");
+
       for (i=50;i<360;i+=50)
 	{
 	  fx[0] = timeVal[0]; fx[1] = timeVal[sdump-1];
@@ -395,6 +401,7 @@ int main(int argc,char *argv[])
       cpgswin(timeVal[0],timeVal[sdump-1],15,90);
       cpgbox("ABC",0,0,"ABCTSN",0,0);
       cpglab("","El (deg)","");
+
       for (i=10;i<90;i+=10)
 	{
 	  fx[0] = timeVal[0]; fx[1] = timeVal[sdump-1];
@@ -438,9 +445,11 @@ int main(int argc,char *argv[])
 	  cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
 	}
       if (min==1)
-	sprintf(xlabel,"Minutes since AEST %s",aest0);
+	sprintf(xlabel,"Minutes since UTC %s",aest0);
+	//	sprintf(xlabel,"Minutes since AEST %s",aest0);
       else
-	sprintf(xlabel,"Seconds since AEST %s",aest0);
+	sprintf(xlabel,"Seconds since UTC %s",aest0);
+	//	sprintf(xlabel,"Seconds since AEST %s",aest0);
       cpglab(xlabel,"Relative signal strength","");
       
       for (j=0;j<nsb;j++)
@@ -497,6 +506,9 @@ int main(int argc,char *argv[])
 	{
 	  drawLabels(labelFile,aest0,miny,maxy,min);
 	}
+      cpgend();
+      exit(1);
+
     }
   else if (plotType==2)
     {
