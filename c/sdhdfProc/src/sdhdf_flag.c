@@ -719,7 +719,7 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
   // Now add the flag table
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
     {
-      sdhdf_writeDataWeights(outFile,ibeam,i,inFile->beam[ibeam].bandData[i].astro_data.dataWeights,inFile->beam[ibeam].bandHeader[i].nchan,inFile->beam[ibeam].bandHeader[i].ndump,inFile->beam[ibeam].bandHeader[i].label);
+      sdhdf_writeDataWeights(outFile,ibeam,i,inFile->beam[ibeam].bandData[i].astro_data.dataWeights,inFile->beam[ibeam].bandHeader[i].nchan,inFile->beam[ibeam].bandHeader[i].ndump,inFile->beamHeader[ibeam].label,inFile->beam[ibeam].bandHeader[i].label);
     }
 
 

@@ -291,6 +291,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  for (i=0;i<nchan;i++)
 	    {
 	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i]; 
+	      //	      printf("WEIGHTS: %d %g\n",i,wts);
 	      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i]; 
 
 	      if (xplot==1)

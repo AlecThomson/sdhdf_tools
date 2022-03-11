@@ -445,9 +445,9 @@ int main(int argc,char *argv[])
 	      sdhdf_closeFile(inFile);
 	    }
 	  sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);		
-	  sdhdf_writeBandHeader(outFile,outBandParams,b,nBand,1);
+	  sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,nBand,1);
 	  if (haveCal==1)
-	    sdhdf_writeBandHeader(outFile,outCalBandParams,b,nBand,2);
+	    sdhdf_writeBandHeader(outFile,outCalBandParams,inFile->beamHeader[b].label,nBand,2);
 
 	  for (i=0;i<nBand;i++)
 	    {

@@ -330,9 +330,9 @@ int main(int argc,char *argv[])
 			}
 		    }
 		  if (writeWeights==1)
-		    sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
+		    sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		  if (writeFlags==1)
-		    sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
+		    sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		  sdhdf_releaseBandData(inFile,b,i,1);
 		  printf("Complete band %d\n",i);
 

@@ -452,6 +452,7 @@ void sdhdf_allocateBandData(sdhdf_spectralDumpsStruct *spec,int nchan,int ndump,
   if (spec->dataWeightsAllocatedMemory == 0)
     {
       int i;
+
       spec->dataWeights = (float *)malloc(sizeof(float)*nchan*ndump); // Initialise to -1
       for (i=0;i<nchan*ndump;i++)
 	spec->dataWeights[i]=-1;
@@ -902,7 +903,7 @@ void sdhdf_copyEntireGroupDifferentLabels(char *bandLabelIn,sdhdf_fileStruct *in
   H5Pclose(lcpl_id);
 }
 
-void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned char *flag,int nchan,int ndump,char *bandLabel)
+void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned char *flag,int nchan,int ndump,char *beamLabel,char *bandLabel)
 {
   char dSetName[MAX_STRLEN];
   char groupName[MAX_STRLEN];
@@ -914,7 +915,7 @@ void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned cha
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);
 
-  sprintf(dSetName,"%s/%s/astronomy_data/flag",outFile->beamHeader[ibeam].label,bandLabel);
+  sprintf(dSetName,"%s/%s/astronomy_data/flag",beamLabel,bandLabel);
   if (sdhdf_checkGroupExists(outFile,dSetName) == 1)
     dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
   else
@@ -925,7 +926,7 @@ void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned cha
   status = H5Sclose(dataspace_id);
 }
 
-void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float *flag,int nchan,int ndump,char *bandLabel)
+void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float *flag,int nchan,int ndump,char *beamLabel,char *bandLabel)
 {
   char dSetName[MAX_STRLEN];
   char groupName[MAX_STRLEN];
@@ -939,14 +940,20 @@ void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float 
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);
 
-  sprintf(dSetName,"%s/%s/astronomy_data/data_weights",outFile->beamHeader[ibeam].label,bandLabel);
+  sprintf(dSetName,"%s/%s/astronomy_data/data_weights",beamLabel,bandLabel);
   printf("Writing to %s\n",dSetName);
   if (sdhdf_checkGroupExists(outFile,dSetName) == 1)
     dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
   else
     dset_id = H5Dopen2(outFile->fileID,dSetName,H5P_DEFAULT);
-  
-  status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);  
+  if (dset_id < 0) // Returns negative number if not successful 
+    {
+      printf("WARNING: CANNOT WRITE DATA_WEIGHTS\n");
+    }
+  else
+    {  
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);  
+    }
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 }
