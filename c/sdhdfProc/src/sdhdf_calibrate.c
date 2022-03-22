@@ -187,11 +187,13 @@ int main(int argc,char *argv[])
 	  sdhdf_formPCM_response(polCal,nPolCalChan);
 
 	  // Load the Scal information
+	  nFluxCalChan=0;
 	  if (tcal==0)
 	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
 	  else
 	    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
-	    
+
+
 	  //	  for (j=0;j<nPolCalChan;j++)
 	  //	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
 	  //		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
