@@ -65,8 +65,11 @@
 //
 
 typedef struct sdhdf_attributes_struct {
-  char key[MAX_STRLEN];
-  char value[MAX_STRLEN];
+  char  key[MAX_STRLEN];
+  char  value[MAX_STRLEN];
+  float fvalue;
+  int   ivalue;
+  int   attributeType; // 0 = string, 1 = float, 2 = int
 } sdhdf_attributes_struct;
 
 

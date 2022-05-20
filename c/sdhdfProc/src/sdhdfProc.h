@@ -199,7 +199,7 @@ void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_la
 int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName);
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out);
-void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrName,char *result);
+void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attr); //char *attrName,char *result);
 
 // Loading data
 void sdhdf_loadFrequencies(sdhdf_fileStruct *inFile,int ibeam,int iband,int type);
@@ -237,14 +237,14 @@ void sdhdf_setMetadataDefaults(sdhdf_primaryHeaderStruct *primaryHeader,sdhdf_be
 void sdhdf_writeHistory(sdhdf_fileStruct *outFile,sdhdf_historyStruct *outParams,int n);
 void sdhdf_writeSoftwareVersions(sdhdf_fileStruct *outFile,sdhdf_softwareVersionsStruct *outParams);
 void sdhdf_writePrimaryHeader(sdhdf_fileStruct *outFile,sdhdf_primaryHeaderStruct *primaryHeader);
-void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,int ibeam,int outBands,int type);
+void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,char *beamLabel,int outBands,int type);
 void sdhdf_writeBeamHeader(sdhdf_fileStruct *outFile,sdhdf_beamHeaderStruct *beamHeader,int nBeams);
 void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,int nsub,int npol,int nchan);
-void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,float *freq,long nchan,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
+void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  float *out,float *freq,long nchan,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
 void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int type);
-void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type);
-void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned char *flag,int nchan,int ndump,char *bandLabel);
-void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float *flag,int nchan,int ndump,char *bandLabel);
+void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLabel,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type);
+void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned char *flag,int nchan,int ndump,char *beamLabel,char *bandLabel);
+void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float *flag,int nchan,int ndump,char *beamLabel,char *bandLabel);
 void sdhdf_writeCalProc(sdhdf_fileStruct *outFile,int ibeam,int iband,char *band_label,char *cal_label,float *vals,int nchan,int npol,int ndumps);
 
 // HDF5 reading functions

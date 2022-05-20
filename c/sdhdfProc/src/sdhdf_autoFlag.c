@@ -152,18 +152,22 @@ int main(int argc,char *argv[])
 	}
       else // Processing file
 	{
-	  printf("ii = %d\n",ii);
+	  //	  printf("ii = %d\n",ii);
 	  strcpy(fname,argv[ii]);
 	  printf("Starting %s\n",fname);  	  
 	  sdhdf_initialiseFile(inFile);
 	  sdhdf_openFile(fname,inFile,1);
 	  sdhdf_loadMetaData(inFile);
 	  sprintf(oname,"%s.%s",inFile->fname,extension);
-	  	  
+
 	  sdhdf_initialiseFile(outFile);
 	  sdhdf_openFile(oname,outFile,3);
 	  sdhdf_copyRemainder(inFile,outFile,0);
-	  
+	  sdhdf_loadMetaData(outFile);
+	  //	  printf("Beam header label = %s\n",inFile->beamHeader[0].label);
+	  //	  printf("Beam header label = %s\n",outFile->beamHeader[0].label);
+	  //	  exit(1);
+
 	  if (flagType==2)
 	    {
 	      printf("Observatory site = %s\n",inFile->primary[0].telescope);
@@ -326,13 +330,18 @@ int main(int argc,char *argv[])
 			}
 		    }
 		  if (writeWeights==1)
-		    sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
+		    sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		  if (writeFlags==1)
-		    sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beam[b].bandHeader[i].label);
+		    sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		  sdhdf_releaseBandData(inFile,b,i,1);
+		  printf("Complete band %d\n",i);
+
 		}
+	      printf("Complete beam %d\n",b);
 	    }
+	  printf("Closing input file\n");
 	  sdhdf_closeFile(inFile);
+	  printf("Closing output file\n");
 	  sdhdf_closeFile(outFile);	  
 	}
     }

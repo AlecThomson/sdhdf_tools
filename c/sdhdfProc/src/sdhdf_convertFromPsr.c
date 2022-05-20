@@ -574,6 +574,7 @@ int main(int argc,char *argv[])
       
   // Set up the beam information
   strcpy(beamHeader->source,srcName);
+  strcpy(beamHeader->label,"beam_0");
   // Set up the band information
   strcpy(bandHeader->label,"band0");
   bandHeader->fc = (freqVals[0]+freqVals[nchan-1])/2.0; 
@@ -592,22 +593,22 @@ int main(int argc,char *argv[])
   sdhdf_openFile(outname,outFile,3);
   sdhdf_writePrimaryHeader(outFile,primaryHeader);
   sdhdf_writeBeamHeader(outFile,beamHeader,1);
-  sdhdf_writeBandHeader(outFile,bandHeader,0,1,1);
-  sdhdf_writeObsParams(outFile,bandHeader[0].label,0,0,obsParams,ndump,1);
-  sdhdf_writeSpectrumData(outFile,bandHeader->label,0,0,floatVals,freqVals,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+  sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[0].label,1,1);
+  sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[0].label,0,obsParams,ndump,1);
+  sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatVals,freqVals,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 
   if (cal==1)
     {
       printf("Pos 4\n");
-      sdhdf_writeBandHeader(outFile,calBandHeader,0,1,2);
-      sdhdf_writeObsParams(outFile,bandHeader[0].label,0,0,obsParams,ndump_cal,2);
+      sdhdf_writeBandHeader(outFile,calBandHeader,beamHeader[0].label,1,2);
+      sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[0].label,0,obsParams,ndump_cal,2);
       // GEORGE HERE:
       // ... need to setup and then write the cal metadata
       // 
 
       
-      sdhdf_writeSpectrumData(outFile,bandHeader->label,0,0,floatCalValsOn,freqCalVals,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-      sdhdf_writeSpectrumData(outFile,bandHeader->label,0,0,floatCalValsOff,freqCalVals,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOn,freqCalVals,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOff,freqCalVals,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
     }
   sdhdf_writeSoftwareVersions(outFile,softwareVersions);
   sdhdf_writeHistory(outFile,history,1);

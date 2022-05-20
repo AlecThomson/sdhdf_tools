@@ -14,6 +14,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_join \
   sdhdf_identify \
   sdhdf_plotNoiseCal \
+  sdhdf_tsys \
   sdhdf_convertFromFITS \
   sdhdf_convertTo \
   sdhdf_convertFromPsr \
@@ -76,6 +77,9 @@ sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \
   $(COMMON_SRCS)
 
 sdhdf_plotNoiseCal_SOURCES = sdhdf_plotNoiseCal.c \
+  $(COMMON_SRCS)
+
+sdhdf_tsys_SOURCES = sdhdf_tsys.c \
   $(COMMON_SRCS)
 
 sdhdf_listLines_SOURCES = sdhdf_listLines.c \

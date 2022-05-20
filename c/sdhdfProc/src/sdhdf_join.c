@@ -95,7 +95,8 @@ int main(int argc,char *argv[])
 
 
   sdhdf_beamHeaderStruct *beamHeader;
-  
+
+  int haveCal;
   long ndump,ndumpCal,out_ndump,out_ndump_num;
   float **out_data,**out_freq;
   float *single_out_data,*single_out_freq;
@@ -204,15 +205,15 @@ int main(int argc,char *argv[])
 	      if (ii!=nDefineBands-1)
 		sdhdf_closeFile(inFile);
 
-	      sdhdf_writeObsParams(outFile,outBandParams[ii].label,b,ii,singleObsParams,ndump,1);
-	      sdhdf_writeSpectrumData(outFile,outBandParams[ii].label,b,ii,single_out_data,single_out_freq,nchan_v,npol_v,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes); // FIX THE ATTRIBUTES STUFF
+	      sdhdf_writeObsParams(outFile,outBandParams[ii].label,inFile->beamHeader[b].label,ii,singleObsParams,ndump,1);
+	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[ii].label,b,ii,single_out_data,single_out_freq,nchan_v,npol_v,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes); // FIX THE ATTRIBUTES STUFF
 	      free(singleObsParams);
 	      free(single_out_data);
 	      free(single_out_freq);
 
 	    }
-	  sdhdf_writeBandHeader(outFile,outBandParams,b,nDefineBands,1);
-
+	  sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,nDefineBands,1);
+	
 	  // SHOULD DO SOMETHING WITH THE CAL
 	
 	  
@@ -237,15 +238,23 @@ int main(int argc,char *argv[])
 	  offsetDump[i]=0;
 	  offsetPos[i]=0;
 	}
-      
+
       // Go through the files once to work out the structure of the output file
       nBand=0;
       bandOffset=0;
       for (i=0;i<nFiles;i++)
 	{
+	  printf("Processing file: %d %s\n",i,fname[i]);
 	  sdhdf_initialiseFile(inFile);                
 	  sdhdf_openFile(fname[i],inFile,1); // Open first file      
 	  sdhdf_loadMetaData(inFile);
+	  if (strcmp(inFile->primary[0].cal_mode,"OFF")==0)
+	    haveCal=0;
+	  else
+	    haveCal=1;
+	    
+    
+	  printf("Loaded metadata\n");
 	  if (i==0)	
 	    {
 	      if (joinFreq==0)
@@ -254,18 +263,17 @@ int main(int argc,char *argv[])
 	    }
 	  if (joinFreq==1)
 	    nBand += inFile->beam[0].nBand;
-	  
 	  for (b=0;b<inFile->beam[0].nBand;b++)	
 	    {
 	      if (joinFreq==1)
 		{
 		  outNdump[b+bandOffset] = inFile->beam[0].bandHeader[b].ndump;
-		  outNdumpCal[b+bandOffset] = inFile->beam[0].calBandHeader[b].ndump;
+		  if (haveCal==1) outNdumpCal[b+bandOffset] = inFile->beam[0].calBandHeader[b].ndump;		  
 		}
 	      else
 		{
 		  outNdump[b] += inFile->beam[0].bandHeader[b].ndump;
-		  outNdumpCal[b] += inFile->beam[0].calBandHeader[b].ndump;
+		  if (haveCal==1) outNdumpCal[b] += inFile->beam[0].calBandHeader[b].ndump;
 		}
 	      if (i==0 && joinFreq==0)
 		{
@@ -279,14 +287,18 @@ int main(int argc,char *argv[])
 		}
 	    }
 	  bandOffset+=inFile->beam[0].nBand;
+	  printf("Closing file\n");
 	  sdhdf_closeFile(inFile);
 	}
-      //  for (b=0;b<inFile->beam[0].nBand;b++)
-      //    printf("outNdum for band %d is %d\n",b,outNdump[b]);
+      //       for (b=0;b<inFile->beam[0].nBand;b++)
+      //	 printf("outNdum for band %d is %d\n",b,outNdump[b]);
       outBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nBand);
-      outCalBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nBand);
+      if (haveCal==1)
+	{
+	  outCalBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nBand);
+	  outObsParamsCal = (sdhdf_obsParamsStruct **)malloc(sizeof(sdhdf_obsParamsStruct *)*nBand);
+	}
       outObsParams = (sdhdf_obsParamsStruct **)malloc(sizeof(sdhdf_obsParamsStruct *)*nBand);
-      outObsParamsCal = (sdhdf_obsParamsStruct **)malloc(sizeof(sdhdf_obsParamsStruct *)*nBand);
       out_data = (float **)malloc(sizeof(float *)*nBand);
       out_freq = (float **)malloc(sizeof(float *)*nBand);
       dataWts  = (float **)malloc(sizeof(float *)*nBand);
@@ -297,7 +309,8 @@ int main(int argc,char *argv[])
       for (i=0;i<nBand;i++)
 	{
 	  outObsParams[i] = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outNdump[i]);
-	  outObsParamsCal[i] = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outNdumpCal[i]);      
+	  if (haveCal==1)
+	    outObsParamsCal[i] = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outNdumpCal[i]);      
 	  out_data[i] = (float *)malloc(sizeof(float)*nchan[i]*npol[i]*outNdump[i]);
 	  out_freq[i] = (float *)malloc(sizeof(float)*nchan[i]);
 	  dataWts[i]  = (float *)malloc(sizeof(float)*nchan[i]*outNdump[i]);
@@ -334,29 +347,33 @@ int main(int argc,char *argv[])
 	      if (ii==0 && joinFreq==0)
 		{	       
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,outBandParams,nBand);
-		  sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,outCalBandParams,nBand);
+		  if (haveCal==1)
+		    sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,outCalBandParams,nBand);
 		  for (i=0;i<nBand;i++)
 		    {
 		      outBandParams[i].ndump = outNdump[i];
-		      outCalBandParams[i].ndump = outNdumpCal[i];
+		      if (haveCal==1) outCalBandParams[i].ndump = outNdumpCal[i];
 		    }
 		      // FIX ME -- MUST UPDATE CAL HERE
 		}
 	      else if (joinFreq==1)
 		{
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,outBandParams+bandOffset,inFile->beam[b].nBand);
-		  sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,outCalBandParams+bandOffset,inFile->beam[b].nBand);
+		  if (haveCal==1)
+		    sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,outCalBandParams+bandOffset,inFile->beam[b].nBand);
 		  for (i=0;i<inFile->beam[b].nBand;i++)
 		    {
 		      outBandParams[i+bandOffset].ndump = outNdump[i];
-		      outCalBandParams[i+bandOffset].ndump = outNdumpCal[i];
+		      if (haveCal==1)
+			outCalBandParams[i+bandOffset].ndump = outNdumpCal[i];
 		    }
 		}
 	      
 	      for (i=0;i<inFile->beam[b].nBand;i++)
 		{
 		  ndump        = inFile->beam[b].bandHeader[i].ndump;
-		  ndumpCal     = inFile->beam[b].calBandHeader[i].ndump;
+		  if (haveCal==1)
+		    ndumpCal     = inFile->beam[b].calBandHeader[i].ndump;
 		  
 		  for (k=0;k<ndump;k++)
 		    {
@@ -372,15 +389,18 @@ int main(int argc,char *argv[])
 			  // offsetPos is wrong here **
 		      //		      dataWts[i][offsetPos[i]+k] = inFile->beam[b].bandData[i].astro_data.dataWeights[k*nchan[i]+];
 		    }
-		  for (k=0;k<ndumpCal;k++)
+		  if (haveCal==1)
 		    {
-		      if (joinFreq==0)
+		      for (k=0;k<ndumpCal;k++)
 			{
-			  sdhdf_copySingleObsParamsCal(inFile,b,i,k,&outObsParamsCal[i][k+offsetDump[i]]);			  
-			}
-		      else
-			{
-			  sdhdf_copySingleObsParamsCal(inFile,b,i,k,&outObsParamsCal[i+bandOffset][k+offsetDump[i]]);
+			  if (joinFreq==0)
+			    {
+			      sdhdf_copySingleObsParamsCal(inFile,b,i,k,&outObsParamsCal[i][k+offsetDump[i]]);			  
+			    }
+			  else
+			    {
+			      sdhdf_copySingleObsParamsCal(inFile,b,i,k,&outObsParamsCal[i+bandOffset][k+offsetDump[i]]);
+			    }
 			}
 		    }
 		  // Directly read the data into an array
@@ -425,18 +445,20 @@ int main(int argc,char *argv[])
 	      sdhdf_closeFile(inFile);
 	    }
 	  sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);		
-	  sdhdf_writeBandHeader(outFile,outBandParams,b,nBand,1);
-	  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nBand,2);
+	  sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,nBand,1);
+	  if (haveCal==1)
+	    sdhdf_writeBandHeader(outFile,outCalBandParams,inFile->beamHeader[b].label,nBand,2);
 
 	  for (i=0;i<nBand;i++)
 	    {
-	      sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParams[i],outNdump[i],1);
-	      sdhdf_writeObsParams(outFile,outBandParams[i].label,b,i,outObsParamsCal[i],outNdumpCal[i],2);
+	      sdhdf_writeObsParams(outFile,outBandParams[i].label,inFile->beamHeader[b].label,i,outObsParams[i],outNdump[i],1);
+	      if (haveCal==1)
+		sdhdf_writeObsParams(outFile,outBandParams[i].label,inFile->beamHeader[b].label,i,outObsParamsCal[i],outNdumpCal[i],2);
 
 	      // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
 	      //	      printf("Writing data for band %d (%s) ndump = %d, npol = %d, nchan = %d\n",i,outBandParams[i].label,outNdump[i],npol[i],nchan[i]);
 	      if (joinFreq==0)
-		sdhdf_writeSpectrumData(outFile,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[i].label,b,i,out_data[i],out_freq[i],nchan[i],npol[i],outNdump[i],0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	    }
 	  // *********** DON'T FORGET THE CAL *********
 	  
@@ -467,17 +489,20 @@ int main(int argc,char *argv[])
 	}
       sdhdf_closeFile(outFile);
       free(outBandParams);
-      free(outCalBandParams);
+      if (haveCal==1)
+	free(outCalBandParams);
       for (i=0;i<nBand;i++)
 	{
 	  free(outObsParams[i]);
-	  free(outObsParamsCal[i]);
+	  if (haveCal==1)
+	    free(outObsParamsCal[i]);
 	  free(out_data[i]);
 	  free(out_freq[i]);
 	  
 	}
       free(outObsParams);
-      free(outObsParamsCal);
+      if (haveCal==1)
+	free(outObsParamsCal);
       free(out_data);
       free(out_freq);
       free(beamHeader);

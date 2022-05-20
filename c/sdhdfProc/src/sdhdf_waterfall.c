@@ -382,8 +382,8 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 		    }
 		  else
 		    {
-		      if (specY2[i] > log10(val)) specY2[i] = (val);
-		      if (specY3[i] < log10(val)) specY3[i] = (val);
+		      if (specY2[i] > (val)) specY2[i] = (val);
+		      if (specY3[i] < (val)) specY3[i] = (val);
 		    }
 		}
 	      specY[i] += val;
@@ -424,9 +424,14 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       
       cpgsvp(0.1,0.95,0.4,0.95);
       cpgswin(specMinx,specMaxx,heatMiny,heatMaxy+0.5);
-      
+
       cpglab("","Spectral dump","");
+      printf("Now making box\n");
+      cpgbox("ABCTS",0,0,"ABCTSN",0,0);
+      printf("Should have done that\n");
+
       cpgctab(heat_l,heat_r,heat_g,heat_b,5,1.0,0.5);
+      printf("Making the waterfall plot with nchan = %d, ndump = %d, minz = %g, maxz = %g\n",nchan,ndump,minz,maxz);
       if (colourScale==1)
 	cpgimag(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
       else if (colourScale==2)
@@ -435,7 +440,6 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	cpggray(heatMap,nchan,ndump,1,nchan,1,ndump,maxz,minz,tr);
       else if (colourScale==4)
 	cpggray(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
-	cpgbox("ABCTS",0,0,"ABCTSN",0,0);
 
       cpgcurs(&mx,&my,&key);
       if (key=='A')

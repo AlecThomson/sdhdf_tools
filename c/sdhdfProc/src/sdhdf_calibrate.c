@@ -187,11 +187,13 @@ int main(int argc,char *argv[])
 	  sdhdf_formPCM_response(polCal,nPolCalChan);
 
 	  // Load the Scal information
+	  nFluxCalChan=0;
 	  if (tcal==0)
 	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
 	  else
 	    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
-	    
+
+
 	  //	  for (j=0;j<nPolCalChan;j++)
 	  //	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
 	  //		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
@@ -229,8 +231,8 @@ int main(int argc,char *argv[])
 		{
 		  printf("Processing subband %d\n",j);
 		  sdhdf_loadBandData(inFile,b,j,1);
-		  nchan = inFile->beam[b].bandHeader[j].nchan;
-		  npol  = inFile->beam[b].bandHeader[j].npol;
+		  nchan  = inFile->beam[b].bandHeader[j].nchan;
+		  npol   = inFile->beam[b].bandHeader[j].npol;
 		  ndump  = inFile->beam[b].bandHeader[j].ndump;
 
 		  // Copy observation parameters
@@ -376,16 +378,16 @@ int main(int argc,char *argv[])
 			  //			  exit(1);
 			}
 		    }
-		  sdhdf_writeSpectrumData(outFile,inFile->beam[b].bandHeader[j].label,b,j,
+		  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label,b,j,
 					  out_data,out_freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[j].label,b,j,outObsParams,ndump,1);
-		  sdhdf_writeDataWeights(outFile,b,j,dataWts,nchan,ndump,inFile->beam[b].bandHeader[j].label);
+		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[j].label,inFile->beamHeader[b].label,j,outObsParams,ndump,1);
+		  sdhdf_writeDataWeights(outFile,b,j,dataWts,nchan,ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label);
 		  sdhdf_releaseBandData(inFile,b,j,1); 		      
 		  free(out_freq); free(out_data); free(dataWts);
 		  free(outObsParams);
 
 		}
-	      sdhdf_writeBandHeader(outFile,inBandParams,b,inFile->beam[b].nBand,1);
+	      sdhdf_writeBandHeader(outFile,inBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
 	      free(inBandParams);
 
 	    }

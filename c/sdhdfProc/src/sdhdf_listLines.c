@@ -40,25 +40,32 @@ int main(int argc,char *argv[])
   int nFreq=0;
   sdhdf_restfrequency_struct *restFrequencies;
   int i;
-  
+
+  f0 = 0;
+  f1 = 4000;
+
   restFrequencies = (sdhdf_restfrequency_struct *)malloc(sizeof(sdhdf_restfrequency_struct)*MAX_REST_FREQUENCIES);
   sdhdf_loadRestFrequencies(restFrequencies,&nFreq);
 
-  if (strcmp(argv[1],"-h")==0)
-    {
-      help();
-      exit(1);
-    }
-  if (argc == 3)
-    {
-      sscanf(argv[1],"%f",&f0);
-      sscanf(argv[2],"%f",&f1);
+  if (argc > 1)
+    {  
+      if (strcmp(argv[1],"-h")==0)
+	{
+	  help();
+	  exit(1);
+	}
+      if (argc == 3)
+	{
+	  sscanf(argv[1],"%f",&f0);
+	  sscanf(argv[2],"%f",&f1);
+	}      
     }
   else
     {
       f0 = 704;
       f1 = 4032;
     }
+
   for (i=0;i<nFreq;i++)
     checkLine(f0,f1,restFrequencies[i].label,restFrequencies[i].f0);
   

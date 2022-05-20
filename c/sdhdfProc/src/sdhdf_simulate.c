@@ -474,16 +474,17 @@ int main(int argc,char *argv[])
 		  data[k*nchan*npol + 3*nchan + ii] = TKgaussDev(&iseed);
 		}
 	    }
-	  sdhdf_writeObsParams(outFile,bandHeader[j].label,i,j,obsParams,ndump,1);			       
+	  sdhdf_writeObsParams(outFile,bandHeader[j].label,beamHeader[i].label,j,obsParams,ndump,1);			       
 	  free(obsParams);
 
 	  // SHOULD SET UP ATTRIBUTES
-	  sdhdf_writeSpectrumData(outFile,bandHeader[j].label,i,j,data,freq,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,freq,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  free(freq);
 	  free(data);
 
 	}
-      sdhdf_writeBandHeader(outFile,bandHeader,i,nband,1);
+      sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[i].label,nband,1);
+    
       free(bandHeader);
 
     }

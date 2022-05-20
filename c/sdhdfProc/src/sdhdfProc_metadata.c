@@ -20,6 +20,8 @@
 #include <math.h>
 #include <string.h> 
 #include "sdhdfProc.h"
+#include <locale.h>
+#include <wchar.h>
 #include <time.h>
 #include <sys/utsname.h>
 
@@ -479,6 +481,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
   hsize_t dims[2];
   int nbeam,nband;
   char label[MAX_STRLEN];
+  char beamLabel[MAX_STRLEN];
   
   nbeam = inFile->nBeam;
 
@@ -490,6 +493,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 
   for (i=0;i<nbeam;i++)
     {  
+      strcpy(beamLabel,inFile->beamHeader[i].label);
       nband = inFile->beam[i].nBand;
       if (nband < 1)
 	{
@@ -537,9 +541,9 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 	}
 
       if (type==1)
-	sprintf(label,"beam_%d/metadata/band_params",i);
+	sprintf(label,"%s/metadata/band_params",beamLabel);
       else if (type==2)
-	sprintf(label,"beam_%d/metadata/cal_band_params",i);
+	sprintf(label,"%s/metadata/cal_band_params",beamLabel);
       
       header_id  = H5Dopen2(inFile->fileID,label,H5P_DEFAULT);
       headerT    = H5Dget_type(header_id);
@@ -547,7 +551,8 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
       if (dims[0] != nband)
 	{
-	  printf("ERROR: incorrect number of bands.  In beam header have %d. Dimension of data is %d\n",nband,dims[0]);
+	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,dims[0]);
+	  printf("ndims = %d\n",ndims);
 	  printf("Label = %s\n",label);
 	  printf("File = %s\n",inFile->fname);
 	  exit(1);
@@ -581,7 +586,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 }
 
 
-void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,int ibeam,int outBands,int type)
+void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,char *beamLabel,int outBands,int type)
 {
   hid_t dset_id,datatype_id,group_id;
   herr_t status;
@@ -614,14 +619,14 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
 
   // Do we need to create the groups
 
-  sprintf(groupName,"beam_%d",ibeam);
+  sprintf(groupName,"%s",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
   
-  sprintf(groupName,"beam_%d/metadata",ibeam);
+  sprintf(groupName,"%s/metadata",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
@@ -630,7 +635,7 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
   
   if (type==1)
     {
-      sprintf(name,"beam_%d/metadata/band_params",ibeam);
+      sprintf(name,"%s/metadata/band_params",beamLabel);
       if (sdhdf_checkGroupExists(outFile,name) == 1)
 	dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       else
@@ -638,7 +643,7 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
     }
   else
     {
-      sprintf(name,"beam_%d/metadata/cal_band_params",ibeam);
+      sprintf(name,"%s/metadata/cal_band_params",beamLabel);
       if (sdhdf_checkGroupExists(outFile,name) == 1)
 	dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       else
@@ -681,6 +686,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
   hsize_t dims[2];
   int nbeam,nband,ndump;
   char label[MAX_STRLEN];
+  char beamLabel[MAX_STRLEN];
   
   nbeam = inFile->nBeam;
 
@@ -692,6 +698,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 
   for (i=0;i<nbeam;i++)
     {  
+      strcpy(beamLabel,inFile->beamHeader[i].label);
       nband = inFile->beam[i].nBand;
 
       if (inFile->beam[i].bandAllocatedMemory == 0 || nband < 1)
@@ -742,9 +749,9 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	 
 
 	  if (type==1)
-	    sprintf(label,"beam_%d/%s/metadata/obs_params",i,inFile->beam[i].bandHeader[j].label);
+	    sprintf(label,"%s/%s/metadata/obs_params",beamLabel,inFile->beam[i].bandHeader[j].label);
 	  else if (type==2)
-	    sprintf(label,"beam_%d/%s/metadata/cal_obs_params",i,inFile->beam[i].bandHeader[j].label);
+	    sprintf(label,"%s/%s/metadata/cal_obs_params",beamLabel,inFile->beam[i].bandHeader[j].label);
 
 	  header_id  = H5Dopen2(inFile->fileID,label,H5P_DEFAULT);
 	  headerT    = H5Dget_type(header_id);
@@ -992,6 +999,7 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
   hid_t dataset_id;
   herr_t status;
   H5O_info_t object_info;
+  
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   status = H5Oget_info(dataset_id,&object_info);
   status = H5Dclose(dataset_id);
@@ -1004,78 +1012,119 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   H5T_class_t type_class;
   hid_t type,stid;
   herr_t status;
-  char *buf;
-  //  char buf[MAX_STRLEN];
-  //  void *buf;
   int rank;
   hsize_t dims[5];
   int ndims;
-  
+
+
+  // Open the attribute based on its number
   attr_id      = H5Aopen_by_idx(inFile->fileID,dataName, H5_INDEX_NAME, H5_ITER_NATIVE,num,H5P_DEFAULT,H5P_DEFAULT);
-  if (attr_id < 0)
+  
+  if (attr_id < 0)  // Unable to open attribute
     {
       strcpy(attribute->key,"uncertain");
       strcpy(attribute->value,"not defined");
+      attribute->attributeType=0;
       return;
     }
+
+  // Find out if this is a multi-dimensional array
   aspace       = H5Aget_space(attr_id);
   ndims        = H5Sget_simple_extent_dims(aspace,dims,NULL);
-  //  printf("ndims = %d, aspace = %d\n",ndims,aspace);
+  //  printf("ndims = %d, aspace = %d, dims[0] = %d\n",ndims,aspace,dims[0]);
   if (ndims != 0) // 1 && ndims != 0)
     {
       printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
       H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
       strcpy(attribute->value,"NOT SET");
+      attribute->attributeType=0;
       printf("Cannot read attributes with multi dimensions >%s< >%s<\n",attribute->key,inFile->fname);
       // For now not read attributes like DIMENSION_LABEL and DIMENSION_LIST      
     }
   else // Here the number of dimensions is zero as storing a scalar
     {
-      atype        = H5Aget_type(attr_id);
+      atype        = H5Aget_type(attr_id); // Retrieves a copy of the datatype for an attribute
       type_class   = H5Tget_class(atype);
-      if (type_class == H5T_STRING)
+
+      if (type_class == H5T_STRING)        // Is the attribute a string
 	{
 	  char string_out[MAX_STRLEN];
-	  //	  printf("Reading H5T_STRING\n");
+	  char *buffer;
+	  buffer = (char *)malloc(sizeof(char)*MAX_STRLEN);
+	    
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
-	  atype_mem = H5Tget_native_type(atype,H5T_DIR_ASCEND);
+	  //	  atype_mem = H5Tget_native_type(atype,H5T_DIR_ASCEND);
+	  	  
+	  attribute->attributeType=0;
 	  if (strcmp(attribute->key,"CLASS")==0)
 	    {
-	      //	      printf("Reading scalar\n");
-	      /*
-	      stid    = H5Tcopy(H5T_C_S1);
-	      status  = H5Tset_size(stid,H5T_VARIABLE);     
-	      space   = H5Screate(H5S_SCALAR);
-	      status  = H5Aread(attr_id, atype, string_out);
-	      strcpy(attribute->value,string_out);
-	      status  = H5Tclose(stid);
-	      status  = H5Sclose(space);
-	      */
+	      //	      printf("Reading scalar CLASS\n");
 	      strcpy(attribute->value,"FIX ME");
 	    }
-	  else
+	  else 
 	    {
-	      
-	      //	      printf("Not reading scalar\n");
-	      status = H5Aread(attr_id, atype, &buf);
-	      //	      printf("Copying to  string_out >%s<\n",buf);
-	      strcpy(string_out,buf);
-	      //	      printf("Copying to value\n");
-	      strcpy(attribute->value,string_out);
-	      //	      printf("Freeing the buffer\n");
-	      free(buf);
-	      
-	      //	      printf("Got to bottom of attributes\n");
-	    }
-	  status = H5Tclose(atype_mem);
+	      atype_mem = H5Tcopy(H5T_C_S1);
+	      if (H5Tget_cset(atype) == H5T_CSET_UTF8) // UTF-8 STRING
+		{
+		  status    = H5Tset_cset(atype_mem,H5T_CSET_UTF8);
+		  status    = H5Tset_size(atype_mem,H5T_VARIABLE);
 
+		  status = H5Aread(attr_id,atype_mem,&buffer);
+		  strcpy(attribute->value,buffer);
+		}
+	      else // ASCII STRING
+		{
+		  H5A_info_t attribute_info;
+		  //		  printf("Reading an ASCII string\n");
+		  strcpy(buffer,"");
+
+		  status = H5Aget_info(attr_id,&attribute_info);
+		  status = H5Tset_cset(atype_mem,H5T_CSET_ASCII);		  
+		  //		  printf("Size = %d\n",attribute_info.data_size);
+		  status = H5Tset_size(atype_mem,attribute_info.data_size);		  
+		  //		  printf("Setting size: status = %d\n",status);
+		  status = H5Aread(attr_id,atype_mem,buffer);
+		  //		  printf("Buffer = %s, status = %d\n",buffer,status);
+		  // FIX ME: somehow it is not reading in the currect length
+		  buffer[attribute_info.data_size]='\0';
+		  
+		  strcpy(attribute->value,buffer);
+
+
+		}
+	      
+	      status = H5Tclose(atype_mem);	      
+	      //	      printf("status at close = %d\n",status);
+	    }
+	  free(buffer);
+	}
+      else if (type_class == H5T_FLOAT)
+	{
+	  double fval;
+	  attribute->attributeType=1;
+	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
+	  status  = H5Aread(attr_id, atype, &fval);	  
+	  attribute->fvalue = fval;
+	}
+      else if (type_class == H5T_INTEGER)
+	{
+	  printf("HAVE AN INTEGER TYPE ATTRIBUTE. ERROR: DON'T KNOW WHAT TO DO\n");
+	  attribute->attributeType=2;
+	  exit(1);
 	}
       else
-	printf("CANNOT READ ATTRIBUTE\n");
+	{
+	  printf("CANNOT READ ATTRIBUTE\n");
+	  strcpy(attribute->key,"unset");
+	  strcpy(attribute->value,"unset");
+	  attribute->attributeType=1;
+	}
       status = H5Tclose(atype);
     }
+  //  printf("Closing off\n");
   status = H5Sclose(aspace);
   status = H5Aclose(attr_id);
+
 }
 
 void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruct *out,int n)
@@ -1096,7 +1145,7 @@ void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruc
   
 }
 
-void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type)
+void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLabel,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type)
 {
   hid_t dset_id,datatype_id,group_id;
   herr_t status;
@@ -1139,28 +1188,28 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,int ibeam,in
   dataspace_id = H5Screate_simple(1,dims,NULL);
   // Do we need to create the groups
 
-  sprintf(groupName,"beam_%d",ibeam);
+  sprintf(groupName,"%s",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  sprintf(groupName,"beam_%d/%s",ibeam,bandLabel);
+  sprintf(groupName,"%s/%s",beamLabel,bandLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  sprintf(groupName,"beam_%d/%s/metadata",ibeam,bandLabel);
+  sprintf(groupName,"%s/%s/metadata",beamLabel,bandLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
   if (type==1)
-    sprintf(name,"beam_%d/%s/metadata/obs_params",ibeam,bandLabel);
+    sprintf(name,"%s/%s/metadata/obs_params",beamLabel,bandLabel);
   else if (type==2)
-    sprintf(name,"beam_%d/%s/metadata/cal_obs_params",ibeam,bandLabel);
+    sprintf(name,"%s/%s/metadata/cal_obs_params",beamLabel,bandLabel);
   dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,obsParams);
   status  = H5Dclose(dset_id);
@@ -1231,24 +1280,33 @@ void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_
   *n_out = n_in;
   for (i=0;i<n_in;i++)
     {
+      //      printf("In sdhdf_copyAttributes: %s %s\n",in[i].key,in[i].value);
       strcpy(out[i].key,in[i].key);
-      strcpy(out[i].value,in[i].value);
+      out[i].attributeType = in[i].attributeType;
+      if (in[i].attributeType==0)
+	strcpy(out[i].value,in[i].value);
+      else if (in[i].attributeType==1)
+	out[i].fvalue = in[i].fvalue;
+      else if (in[i].attributeType==2)
+	out[i].ivalue = in[i].ivalue;
     }
 }
 
 
-void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrName,char *result)
+void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attribute) //,char *attrName,char *result)
 {
   hid_t memtype,dataset_id,attr,space,stid;
   herr_t status;
   hsize_t dims[1] = {1}; // Has only 1 string
+  char *result;
 
-  //  printf("In writeAttribute with dataName = >%s<, attrName = >%s< and result = >%s<\n",dataName,attrName,result);
+  result = attribute->value;
+  //  printf("In writeAttribute with dataName = >%s<, attrName = >%s< and result = >%s<\n",dataName,attribute->key,attribute->value);
+  //  printf("AttributeType = %d\n",attribute->attributeType);
   // Python strings are written as variable length strings 
 
 
   dataset_id   = H5Dopen2(outFile->fileID,dataName,H5P_DEFAULT);
-
 
   // This produces a multi dimensional attribute - which is not the same as the python code
   /*
@@ -1264,19 +1322,64 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,char *attrNam
   H5Tclose(memtype);
   */
 
-
   // This produces an attribute which is a string
-  stid    = H5Tcopy(H5T_C_S1);
-  status  = H5Tset_size(stid,H5T_VARIABLE);     
-  space = H5Screate(H5S_SCALAR);
-  attr    = H5Acreate(dataset_id,attrName,stid,space,H5P_DEFAULT,H5P_DEFAULT);
-  //  printf("Trying to write >%s<\n",result);
-  status = H5Awrite(attr,stid,&result);
-  //  printf("The status after writing is: %d\n",status);
-  H5Dclose(dataset_id);
-  H5Aclose(attr);
-  H5Tclose(memtype);
+  if (attribute->attributeType==0)
+    {
+      stid    = H5Tcopy(H5T_C_S1);
+      //  status  = H5Tset_size(stid,H5T_VARIABLE);
+      status  = H5Tset_size(stid,strlen(result));     
+      space   = H5Screate(H5S_SCALAR);
+      attr    = H5Acreate(dataset_id,attribute->key,stid,space,H5P_DEFAULT,H5P_DEFAULT);
+      //      printf("writeAttribute: Trying to write >%s<\n",result);
+      status  = H5Awrite(attr,stid,result);
+      //      printf("writeAttribute: The status after writing is: %d\n",status);
+      H5Dclose(dataset_id);
+      H5Tclose(memtype);
+      
+      H5Aclose(attr);
+    }
+  else if (attribute->attributeType==1)
+    {
+      float val = 1.0;
+      int ival= 1;
+      
+      //      stid    = H5Tcopy(H5T_C_S1);
+      //  status  = H5Tset_size(stid,H5T_VARIABLE);
+      //      status  = H5Tset_size(stid,strlen(result));     
+      //      space   = H5Screate(H5S_SCALAR);
 
+      space = H5Screate(H5S_SCALAR);
+
+      //      attr    = H5Acreate(dataset_id,attribute->key,stid,space,H5P_DEFAULT,H5P_DEFAULT);
+      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+
+      //      printf("writeAttribute: Trying to write >%s<\n",result);
+      status  = H5Awrite(attr,H5T_NATIVE_FLOAT,&(attribute->fvalue));
+      //      status  = H5Awrite(attr,stid,result);
+      //      printf("writeAttribute: The status after writing is: %d\n",status);
+
+      H5Dclose(dataset_id);
+      H5Tclose(memtype);
+
+      H5Aclose(attr);
+
+      /*
+      printf("GEORGE: WRITING A FLOATING VALUE INTO %s\n",attribute->key);
+      space   = H5Screate(H5S_SCALAR);
+      printf("GEORGE A %d\n",space);
+      //      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+      //      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+      //      attr    = H5Acreate(dataset_id,attribute->key,H5T_FLOAT,space,H5P_DEFAULT,H5P_DEFAULT);
+      attr    = H5Acreate(dataset_id,attribute->key,H5T_NATIVE_INT,space,H5P_DEFAULT,H5P_DEFAULT);
+      printf("GEORGE B %f\n",attribute->fvalue);
+      //      status  = H5Awrite(attr,H5T_NATIVE_FLOAT,&val);
+      //      status  = H5Awrite(attr,H5T_FLOAT,&val);
+      status  = H5Awrite(attr,H5T_NATIVE_INT,&ival);
+      printf("GEORGE C >%d<\n",status);
+      H5Aclose(attr);
+      printf("COMPLETE WRITE WITH STATUS: %s\n",status);
+      */
+    }
 
   //  memtype = H5Tcopy(H5T_C_S1);
   //  status  = H5Tset_size(memtype,MAX_STRLEN);

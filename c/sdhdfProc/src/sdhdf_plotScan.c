@@ -128,6 +128,8 @@ int main(int argc,char *argv[])
   char offsetStr[1024];
   char title[1024];
   int select=-1;
+  int makeImage=0;
+  int plotPts=1;
   double sigma;
   char srcName[128]="NULL";
   
@@ -438,7 +440,8 @@ int main(int argc,char *argv[])
 	cpgsch(1.4);
 	printf("In here %g %g\n",(minx+(maxx-minx)*0.1),maxy-(maxy-miny)*0.1);
 	cpgline(ndumps,fx[select],fy[select]);
-	cpgpt(ndumps,fx[select],fy[select],6);
+	if (plotPts==1)
+	  cpgpt(ndumps,fx[select],fy[select],6);
 	if (xaxis == 7 || xaxis == 8)
 	  {
 	    cpgsci(2);
@@ -449,119 +452,144 @@ int main(int argc,char *argv[])
 	    cpgsls(4); cpgline(2,lineX,lineY); cpgsls(1);
 	  }
       }
-    
-    cpgcurs(&mx,&my,&key);
-    if (key=='+')
-      {
-	sbHighlight++;
-	if (sbHighlight > inFile->beam[ibeam].nBand-1) sbHighlight = 0;
-	if (select!=-1) {select = sbHighlight; recalc=1;}
-      }
-    else if (key=='-')
-      {
-	sbHighlight--;
-	if (sbHighlight == -1) sbHighlight = inFile->beam[ibeam].nBand-1;
-	if (select!=-1) {select = sbHighlight; recalc=1;}
-      }
-    else if (key=='h')
-      help();
-    else if (key=='f')
-      {
-	int nfit=4;
-	double pval[nfit];
-	int npts = plotNdump;
-	double px[npts];
-	double py[npts];
-	lm_status_struct status;
-	lm_control_struct control = lm_control_double;
-	int b;
-	if (select==-1) select=0;
-	printf("Band | Fc (MHz) | Amp | Angular offset | Width | Baseline\n");
 
-	if (fitted==0 && normalise==-1)
+    if (makeImage==1)
+      {
+	cpgend();
+	cpgbeg(0,"/xs",1,1);
+	cpgsch(1.4);
+	cpgscf(2);
+	cpgslw(2);
+	cpgask(0);
+	makeImage=0;
+      }
+    else
+      {
+	cpgcurs(&mx,&my,&key);
+	if (key=='+')
 	  {
+	    sbHighlight++;
+	    if (sbHighlight > inFile->beam[ibeam].nBand-1) sbHighlight = 0;
+	    if (select!=-1) {select = sbHighlight; recalc=1;}
+	  }
+	else if (key=='-')
+	  {
+	    sbHighlight--;
+	    if (sbHighlight == -1) sbHighlight = inFile->beam[ibeam].nBand-1;
+	    if (select!=-1) {select = sbHighlight; recalc=1;}
+	  }
+	else if (key=='h')
+	  help();
+	else if (key=='g')
+	  {
+	    cpgend();
+	    cpgbeg(0,"?",1,1);
+	    cpgsch(1.4);
+	    cpgscf(2);
+	    cpgslw(2);
+	    cpgask(0);
+	    makeImage=1;
+	  }
+	else if (key=='f')
+	  {
+	    int nfit=4;
+	    double pval[nfit];
+	    int npts = plotNdump;
+	    double px[npts];
+	    double py[npts];
+	    lm_status_struct status;
+	    lm_control_struct control = lm_control_double;
+	    int b;
+	    if (select==-1) select=0;
+	    printf("Band | Fc (MHz) | Amp | Angular offset | Width | Baseline\n");
+	    
+	    if (fitted==0 && normalise==-1)
+	      {
+		for (b=0;b<inFile->beam[ibeam].nBand;b++)
+		  {
+		    modelFit[b].baseline = fx[b][0];         // Have a more reasonable baseline if not normalised
+		    modelFit[b].amp = maxy-miny;
+		  }
+	      }
+	    
 	    for (b=0;b<inFile->beam[ibeam].nBand;b++)
 	      {
-		modelFit[b].baseline = fx[b][0];         // Have a more reasonable baseline if not normalised
-		modelFit[b].amp = maxy-miny;
+		for (i=0;i<npts;i++)
+		  {
+		    px[i] = fx[b][i];
+		    py[i] = fy[b][i];
+		  }
+		
+		pval[0] = modelFit[b].amp;
+		pval[1] = modelFit[b].offset;
+		pval[2] = modelFit[b].width;
+		pval[3] = modelFit[b].baseline;
+		
+		lmcurve_fit(nfit,pval,npts,px,py,nonlinearFunc,&control,&status);  
+		printf("%s %.4f %g %g %g %g\n",inFile->beam[ibeam].bandHeader[b].label,inFile->beam[ibeam].bandHeader[b].fc,pval[0],pval[1],pval[2],pval[3]);
+		
+		modelFit[b].amp = pval[0];
+		modelFit[b].offset = pval[1];
+		modelFit[b].width = pval[2];
+		modelFit[b].baseline = pval[3];
 	      }
-	  }
-	
-	for (b=0;b<inFile->beam[ibeam].nBand;b++)
+	    recalc=1;
+	    fitted=1;
+	    
+	  }     
+	else if (key=='x')
 	  {
-	    for (i=0;i<npts;i++)
-	      {
-		px[i] = fx[b][i];
-		py[i] = fy[b][i];
-	      }
-	    
-	    pval[0] = modelFit[b].amp;
-	    pval[1] = modelFit[b].offset;
-	    pval[2] = modelFit[b].width;
-	    pval[3] = modelFit[b].baseline;
-	    
-	    lmcurve_fit(nfit,pval,npts,px,py,nonlinearFunc,&control,&status);  
-	    printf("%s %.4f %g %g %g %g\n",inFile->beam[ibeam].bandHeader[b].label,inFile->beam[ibeam].bandHeader[b].fc,pval[0],pval[1],pval[2],pval[3]);
-
-	    modelFit[b].amp = pval[0];
-	    modelFit[b].offset = pval[1];
-	    modelFit[b].width = pval[2];
-	    modelFit[b].baseline = pval[3];
+	    xaxis++;
+	    if (xaxis==9)
+	      xaxis=0;
+	    recalc=1;
 	  }
-	recalc=1;
-	fitted=1;
-
-      }     
-    else if (key=='x')
-      {
-	xaxis++;
-	if (xaxis==9)
-	  xaxis=0;
-	recalc=1;
-      }
-    else if (key=='z')
-      {
-	float mx2,my2;
-	cpgband(2,0,mx,my,&mx2,&my2,&key);
-	minx = mx;
-	maxx = mx2;
-	miny = my;
-	maxy = my2;
-
-      }
-    else if (key=='u')
-      recalc=1;
-    else if (key=='s')
-      {
-	if (select==-1)
-	  select = sbHighlight;
-	else
-	  select = -1;
-	recalc=1;
-      }
-    else if (key=='p')
-      {
-	printf("Current (ra0,dec0) = (%.2f,%.2f)\n",ra0,dec0);
-	printf("Enter new values:  ");
-	scanf("%lf %lf",&ra0,&dec0);
-	recalc=1;
-      }
-    else if (key=='n')
-      {
-	normalise*=-1;
-	recalc=1;
-      }
-    else if (key=='o')
-      {
-	offset*=-1;
-	recalc=1;
-      }
-    else if (key=='L')
-      label*=-1;
-    else if  (key=='l')
-      {
-	logy*=-1;
-	recalc=1;
+	else if (key=='z')
+	  {
+	    float mx2,my2;
+	    cpgband(2,0,mx,my,&mx2,&my2,&key);
+	    minx = mx;
+	    maxx = mx2;
+	    miny = my;
+	    maxy = my2;
+	    
+	  }
+	else if (key=='u')
+	  recalc=1;
+	else if (key=='s')
+	  {
+	    if (select==-1)
+	      select = sbHighlight;
+	    else
+	      select = -1;
+	    recalc=1;
+	  }
+	else if (key=='P')
+	  plotPts*=-1;
+	else if (key=='p')
+	  {
+	    printf("Current (ra0,dec0) = (%.2f,%.2f)\n",ra0,dec0);
+	    printf("Enter new values:  ");
+	    scanf("%lf %lf",&ra0,&dec0);
+	    recalc=1;
+	  }
+	else if (key=='n')
+	  {
+	    normalise*=-1;
+	    recalc=1;
+	  }
+	else if (key=='o')
+	  {
+	    offset*=-1;
+	    recalc=1;
+	  }
+	else if (key=='L')
+	  label*=-1;
+	else if  (key=='l')
+	  {
+	    logy*=-1;
+	    recalc=1;
+	  }
       }
   } while (key!='q');
     

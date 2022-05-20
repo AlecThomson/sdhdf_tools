@@ -223,7 +223,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
       printf("Setting input measurement of the noise source to (%g,%g,%g,%g)\n",av1,av2,av3,av4);
       for (i=0;i<nPolCalChan;i++)
 	{
-	  printf("Changing %g to %g\n",polCal[i].stokes_noise_measured[0],av1);
+	  //	  printf("Changing %g to %g\n",polCal[i].stokes_noise_measured[0],av1);
 	  polCal[i].stokes_noise_measured[0] = av1;
 	  polCal[i].stokes_noise_measured[1] = av2;
 	  polCal[i].stokes_noise_measured[2] = av3;

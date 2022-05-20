@@ -123,6 +123,12 @@ int main(int argc,char *argv[])
     {       
       if (strcmp(argv[i],"-on")==0)
 	strcpy(fnameOn[0],argv[++i]);	
+      else if (strcmp(argv[i],"-h")==0)
+	{
+	  help();
+	  exit(1);
+	    
+	}
       else if (strcmp(argv[i],"-off")==0)
 	strcpy(fnameOff[0],argv[++i]);	
       else if (strcmp(argv[i],"-sclA")==0)
@@ -315,7 +321,7 @@ int main(int argc,char *argv[])
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
 	      
-	      sdhdf_writeSpectrumData(outFile,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      free(out_data);
 	      free(freq);
 	    }

@@ -42,10 +42,11 @@ void help()
   printf("\n");
   printf("Software to sum spectra together\n");
   printf("\n\nCommand line arguments:\n\n");
+  printf("-divN             Divide by the number of summed observations\n");
+  printf("-o <file>         Output filename\n");
   printf("-h                This help\n");
   
-  printf("\nExample:\n\n");
-  printf("TO DO\n");
+
   printf("---------------------\n");
 }
 
@@ -250,14 +251,14 @@ int main(int argc,char *argv[])
 	  inBandParams[i].ndump=1;
 	  inBandParams[i].dtime = tav;
 	  // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
-	  sdhdf_writeSpectrumData(outFile,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  sdhdf_writeSpectrumData(outFile,file0->beamHeader[b].label,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  // GH: FIX ME
 	  //      sdhdf_writeFrequencyAttributes(outFile,file0->bandHeader[i].label);
 	  //      sdhdf_writeDataAttributes(outFile,file0->bandHeader[i].label);
 
 	  free(out_data);
 	}
-      sdhdf_writeBandHeader(outFile,inBandParams,b,file0->beam[b].nBand,1);
+      sdhdf_writeBandHeader(outFile,inBandParams,file0->beamHeader[b].label,file0->beam[b].nBand,1);
       free(inBandParams);
     }
   sdhdf_writeHistory(outFile,file0->history,file0->nHistory);  
