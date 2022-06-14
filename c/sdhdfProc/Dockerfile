@@ -59,4 +59,3 @@ RUN cd / \
     && cd / \
     && mv sdhdf_tools/c/sdhdfProc/runtime /usr/include/ \
     && rm -rf sdhdf_tools/
-CMD exec "$@"
