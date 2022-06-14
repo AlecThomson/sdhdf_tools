@@ -34,8 +34,8 @@ RUN apt install -y  \
     liblua5.3-dev \
     libpng-dev  \
     libpython3-dev \
-    libxml2-dev \
-    apt autoremove -y
+    libxml2-dev
+RUN apt autoremove -y
 RUN apt clean -y
 RUN echo "Installing calceph"
 RUN cd / \
