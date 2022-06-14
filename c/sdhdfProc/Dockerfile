@@ -59,15 +59,4 @@ RUN cd / \
     && cd / \
     && mv sdhdf_tools/c/sdhdfProc/runtime /usr/include/ \
     && rm -rf sdhdf_tools/
-RUN echo "Installing aoflagger"
-RUN cd / \
-    && git clone https://gitlab.com/aroffringa/aoflagger.git \
-    && cd aoflagger/ \
-    && mkdir build \
-    && cd build/ \
-    && cmake -DPORTABLE=ON ..  \
-    && make -j 8 \
-    && make install \
-    && cd / \
-    && rm -rf aoflagger/
 CMD exec "$@"
