@@ -111,7 +111,8 @@ def show_sdhdf_definition(f, sb, output):
             add_line(defn_csv, "-, -, -")
             add_line(defn_csv, 'SDHDF File Overview,-,-')
             add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
-            defn_list.append([f_name, 'File', h5.attrs['DESCRIPTION']])
+            append_attributes(h5.attrs, defn_list)
+            defn_list.append(['-', '-', '-'])
             add_rows_to_csv(defn_csv, defn_list)
 
             # SDHDF structure overview
