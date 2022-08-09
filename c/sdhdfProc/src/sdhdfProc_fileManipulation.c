@@ -335,6 +335,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  printf("No flags in the SDHDF file. Setting to 0\n");
 	  for (i=0;i<nchan*ndump;i++)
 	    inFile->beam[beam].bandData[band].astro_data.flag[i] = 0;
+	  printf("Completed setting flags\n");
 	}
       //      printf("COMPLETE LOADING FLAGS\n");
 
@@ -359,8 +360,6 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  for (i=0;i<nchan*ndump;i++)
 	    inFile->beam[beam].bandData[band].astro_data.dataWeights[i] = tint*chbw; 
 	}
-      
-
     }
   // calibrator data
   else if (type==2 || type==3)
