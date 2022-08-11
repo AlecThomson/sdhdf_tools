@@ -24,8 +24,6 @@
 *    timing model.
 */
 
-
-
 /* ************************************************************** */
 /* Routines to convert doubles to floats                          */
 /* ************************************************************** */
@@ -37,6 +35,7 @@ void TKconvertFloat2(double *x,double *y,float *ox,float *oy,int n);
 /* ************************************************************** */
 /* Basic statistics                                               */
 /* ************************************************************** */
+float quick_select_float(float arr[], int n);
 
 float  TKfindMin_f(float *x,int n);
 float  TKfindMedian_f(float *val,int count);

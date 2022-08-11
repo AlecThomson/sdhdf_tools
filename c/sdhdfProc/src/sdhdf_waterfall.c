@@ -66,6 +66,7 @@ void help()
   printf("s                enter a clean frequency range for baseline subtraction\n");
   printf("q                quit\n");
   printf("u                un-zoom to original plot\n");
+  printf("w                output the averaged spectrum to disk\n");
   printf("x                use mouse to select x-range\n");
   printf("y                use mouse to select y-range\n");
 
@@ -411,6 +412,9 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       printf("Brightest pixel at (%d,%d) corresponding to frequency %.6f\n",imax,jmax,specX[imax]);
       printf("X range from %g to %g\n",specMinx,specMaxx);
       printf("Y range from %g to %g\n",specMiny,specMaxy);
+      printf("Black line = spectrum averaged in time\n");
+      printf("Red line   = minimum value of spectrum across all time dumps\n");
+      printf("Blue line  = maximum value of spectrum across all time dumps\n");
       cpgeras();
       cpgsvp(0.1,0.95,0.15,0.4);
       cpgswin(specMinx,specMaxx,specMiny,specMaxy);
@@ -426,12 +430,14 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
       cpgswin(specMinx,specMaxx,heatMiny,heatMaxy+0.5);
 
       cpglab("","Spectral dump","");
-      printf("Now making box\n");
+
       cpgbox("ABCTS",0,0,"ABCTSN",0,0);
-      printf("Should have done that\n");
 
       cpgctab(heat_l,heat_r,heat_g,heat_b,5,1.0,0.5);
       printf("Making the waterfall plot with nchan = %d, ndump = %d, minz = %g, maxz = %g\n",nchan,ndump,minz,maxz);
+      printf("WARNING: if the top plot is completely empty, then perhaps you are trying to plot too many frequency channels.\n");
+      printf("         Use sdhdf_modify -fav to average in frequency or use sdhdf_extractBand to select a zoom band if\n");
+      printf("         you wish to keep the full frequency resolution\n");
       if (colourScale==1)
 	cpgimag(heatMap,nchan,ndump,1,nchan,1,ndump,minz,maxz,tr);
       else if (colourScale==2)
@@ -464,6 +470,15 @@ void makePlot(float *signalVal,int nchan,int ndump,float f0,float chbw,dumpStruc
 	{
 	  colourScale++;
 	  if (colourScale==5) colourScale=1;
+	}
+      else if (key=='w')
+	{
+	  FILE *fout;
+	  printf("writing spectrum to waterfall_spectrum.dat");
+	  fout = fopen("waterfall_spectrum.dat","w");
+	  for (i=0;i<nchan;i++)
+	    fprintf(fout,"%d %.6f %g\n",i,specX[i],specY[i]);
+	  fclose(fout);
 	}
       else if (key=='l')
 	log*=-1;

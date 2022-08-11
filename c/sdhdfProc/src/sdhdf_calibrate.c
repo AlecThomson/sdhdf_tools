@@ -345,7 +345,8 @@ int main(int argc,char *argv[])
 			    }
 			  else if (averageCal==0)
 			    fluxScale = fluxCal[ichan].scalAA + fluxCal[ichan].scalBB;
-
+			  //			  printf("flux scale = %g\n",fluxScale);
+			  
 			  if ((normAstro == 1 || normCal==1) &&
 			      ((averageCal==1 && ii == 0) || averageCal == 0))// Currently normalising both
 			    {

@@ -278,9 +278,9 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-
+		    
 		      strcpy(outBandParams[j].pol_type,inBandParams[selectBandID].pol_type);
-		      npol = inBandParams[j].npol;
+		      npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].ndump = inBandParams[selectBandID].ndump; 
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outBandParams[j].ndump);

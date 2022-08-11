@@ -33,6 +33,7 @@
 #include "hdf5.h"
 #include "TKfit.h"
 #include <libgen.h>
+#include "T2toolkit.h"
 
 #define MAX_IGNORE_SDUMP 4096
 
@@ -60,6 +61,7 @@ void help()
   printf("-fav <val>            Average specified number of frequency channels together\n");
   printf("-fchbw <val>          Average to specified channel bandwidth\n");
   printf("-F                    Average in frequency\n");
+  printf("-favMedian            Use (unweighted) median averaging when averaging frequency channels\n");
   printf("-id <val>             Ignore spectral dump val when averaging\n");
   printf("-interp <val>         val = 1 = linear interpolation = 2 = cubic spline\n");
   printf("-lsr                  Convert to local standard of rest reference frame\n");
@@ -138,6 +140,8 @@ int main(int argc,char *argv[])
   int nScale=0;
   double *scalFreq,*scalAA,*scalBB;
   float *cal_p1,*cal_p2,*cal_freq;
+
+  int fAvType=1; // 1 = weighted mean, 2 = unweighted median
 
   double sysGain_freq[4096],sysGain_p1[4096],sysGain_p2[4096],scalAA_val,scalBB_val;
   double lastGood_p1=1e8,lastGood_p2=1e8;
@@ -225,6 +229,8 @@ int main(int argc,char *argv[])
 	{help(); exit(1);}
       else if (strcmp(argv[i],"-ephem")==0)
 	strcpy(ephemName,argv[++i]);
+      else if (strcasecmp(argv[i],"-favMedian")==0)
+	fAvType=2;
       else if (strcmp(argv[i],"-origNchan")==0)
 	sscanf(argv[++i],"%d",&origNchan);
       else if (strcmp(argv[i],"-divideCal")==0)
@@ -1021,94 +1027,172 @@ int main(int argc,char *argv[])
 			  //			  printf("Frequency averaging\n");
 			  for (j=0;j<out_ndump;j++)
 			    {
+			      printf("Frequency averaging dump %d/%d\n",j,out_ndump);
 			      kp=0;
-			      for (k=0;k<nchan;k+=fAv)
-				{				  
-				  av1 = av2 = av3 = av4 = avFreq = 0.0;
-				  swt=0;
-				  dataWts[j*out_nchan+kp]   = 0;  // FIX ME: SHOULDN'T DO THIS AS ALREADY TIME SCRUNCHED
-				  dataFlags[j*out_nchan+kp] = 0;
-				  haveNonZeroFlag=0;
-				  
-				  for (l=k;l<k+fAv;l++)
-				    {
-				      // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
-				      wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
-				      flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
-				      if (flag == 0) haveNonZeroFlag=1;
-				      //				      printf("wt = %g\n",wt);
-				      avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
+			      if (fAvType == 1) // Weighted mean averaging
+				{
+				  for (k=0;k<nchan;k+=fAv)
+				    {				  
+				      av1 = av2 = av3 = av4 = avFreq = 0.0;
+				      swt=0;
+				      dataWts[j*out_nchan+kp]   = 0;  // FIX ME: SHOULDN'T DO THIS AS ALREADY TIME SCRUNCHED
+				      dataFlags[j*out_nchan+kp] = 0;
+				      haveNonZeroFlag=0;
+				      
+				      for (l=k;l<k+fAv;l++)
+					{
+					  // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
+					  wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+					  flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
+					  if (flag == 0) haveNonZeroFlag=1;
+					  //				      printf("wt = %g\n",wt);
+					  avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
+					  if (npol==1)
+					    av1 += wt*out_Tdata[l+j*npol*nchan];
+					  else if (npol==2)
+					    {
+					      av1 += wt*out_Tdata[l+j*npol*nchan];
+					      av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
+					    }
+					  else
+					    {
+					      //					  printf("Got here with %g %g %g\n",wt,out_Tdata[l+j*npol*nchan],av1);				  
+					      av1 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan];
+					      av2 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+1*(unsigned long int)nchan];
+					      av3 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+2*(unsigned long int)nchan];
+					      av4 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+3*(unsigned long int)nchan];
+					    }
+					  //  printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
+					  //  printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
+					  dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+					  
+					  
+					  swt += wt;
+					  //				      printf("Done write\n");
+					}
+				      if (haveNonZeroFlag==0)
+					dataFlags[j*out_nchan+kp] = 1;
+				      else
+					dataFlags[j*out_nchan+kp] = 0;
+				      
+				      //				  printf("Updating the sum\n");
+				      if (j==0) out_freq[kp] = avFreq/fAv;
 				      if (npol==1)
-					av1 += wt*out_Tdata[l+j*npol*nchan];
+					{
+					  if (swt > 0)
+					    out_Fdata[kp+out_nchan*j*npol]               = av1/swt; 
+					  else
+					    out_Fdata[kp+out_nchan*j*npol]               = 0; 
+					}
 				      else if (npol==2)
 					{
-					  av1 += wt*out_Tdata[l+j*npol*nchan];
-					  av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
+					  if (swt > 0)
+					    {
+					      out_Fdata[kp+out_nchan*j*npol]             = av1/swt; 
+					      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; 
+					    }
+					  else
+					    {
+					      out_Fdata[kp+out_nchan*j*npol]             = 0; 
+					      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = 0; 
+					    }
 					}
 				      else
 					{
-					  //					  printf("Got here with %g %g %g\n",wt,out_Tdata[l+j*npol*nchan],av1);				  
-					  av1 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan];
-					  av2 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+1*(unsigned long int)nchan];
-					  av3 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+2*(unsigned long int)nchan];
-					  av4 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+3*(unsigned long int)nchan];
+					  if (swt > 0)
+					    {
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = av1/swt; 
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = av2/swt; 
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = av3/swt; 
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = av4/swt; 
+					    }
+					  else
+					    {
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = 0; 
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = 0; 
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = 0; 
+					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = 0; 
+					    }
 					}
-				      //  printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
-				      //  printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
-				      dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
-
-
-				      swt += wt;
-				      //				      printf("Done write\n");
+				      kp++;
+				      
 				    }
-				  if (haveNonZeroFlag==0)
-				    dataFlags[j*out_nchan+kp] = 1;
-				  else
-				    dataFlags[j*out_nchan+kp] = 0;
-				
-				  //				  printf("Updating the sum\n");
-				  if (j==0) out_freq[kp] = avFreq/fAv;
-				  if (npol==1)
-				    {
-				      if (swt > 0)
-					out_Fdata[kp+out_nchan*j*npol]               = av1/swt; 
-				      else
-					out_Fdata[kp+out_nchan*j*npol]               = 0; 
-				    }
-				  else if (npol==2)
-				    {
-				      if (swt > 0)
-					{
-					  out_Fdata[kp+out_nchan*j*npol]             = av1/swt; 
-					  out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; 
-					}
-				      else
-					{
-					  out_Fdata[kp+out_nchan*j*npol]             = 0; 
-					  out_Fdata[kp+out_nchan*j*npol+out_nchan]   = 0; 
-					}
-				    }
-				  else
-				    {
-				      if (swt > 0)
-					{
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = av1/swt; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = av2/swt; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = av3/swt; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = av4/swt; 
-					}
-				      else
-					{
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = 0; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = 0; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = 0; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = 0; 
-					}
-				    }
-				  kp++;
-				  
 				}
+			      else if ( fAvType == 2) // Median averaging
+				{
+				  float v1[fAv],v2[fAv],v3[fAv],v4[fAv];
+				  float median1,median2,median3,median4;
+				  printf("NOT GETTING WTS CORRECT HERE - FIX ME\n");
+
+				  for (k=0;k<nchan;k+=fAv)
+				    {				  
+				      av1 = av2 = av3 = av4 = avFreq = 0.0;
+				      swt=0;
+				      dataWts[j*out_nchan+kp]   = 1;  // FIX ME: SHOULDN'T DO THIS AS ALREADY TIME SCRUNCHED
+				      dataFlags[j*out_nchan+kp] = 0;
+				      haveNonZeroFlag=0;
+				      
+				      for (l=k;l<k+fAv;l++)
+					{
+					  // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
+					  wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
+					  flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
+					  if (flag == 0) haveNonZeroFlag=1;
+					  //				      printf("wt = %g\n",wt);
+					  avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
+					  if (npol==1)
+					    v1[l-k] = out_Tdata[l+j*npol*nchan];
+					  else if (npol==2)
+					    {
+					      v1[l-k] = out_Tdata[l+j*npol*nchan];
+					      v2[l-k] = out_Tdata[l+j*npol*nchan+nchan];
+					    }
+					  else
+					    { 
+					      v1[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan];
+					      v2[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+1*(unsigned long int)nchan];
+					      v3[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+2*(unsigned long int)nchan];
+					      v4[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+3*(unsigned long int)nchan];
+					    }
+					}
+				      if (npol==1)
+					{
+					  median1 = quick_select_float(v1,fAv);
+					  out_Fdata[kp+out_nchan*j*npol]  = median1;
+					}
+				      else if (npol==2)
+					{
+					  median1 = quick_select_float(v1,fAv);
+					  median2 = quick_select_float(v2,fAv);
+
+					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = median1; 
+					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = median2; 
+					}
+				      else
+					{
+					  //					  median1 = TKfindMedian_f(v1,fAv);
+					  //					  median2 = TKfindMedian_f(v2,fAv);
+					  //					  median3 = TKfindMedian_f(v3,fAv);
+					  //					  median4 = TKfindMedian_f(v4,fAv);
+					  median1 = quick_select_float(v1,fAv);
+					  median2 = quick_select_float(v2,fAv);
+					  median3 = quick_select_float(v3,fAv);
+					  median4 = quick_select_float(v4,fAv);
+
+					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = median1; 
+					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = median2; 
+					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = median3; 
+					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = median4; 
+
+					}
+
+				   
+				      dataFlags[j*out_nchan+kp] = 0;				      
+				      if (j==0) out_freq[kp] = avFreq/fAv;				   
+				      kp++;
+				    }
 			      //			      printf("Processed dump %d\n",j);
+				}
 			    }
 			  //			  printf("Finished frequency averaging\n");
 			}

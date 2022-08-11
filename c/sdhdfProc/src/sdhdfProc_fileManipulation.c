@@ -409,7 +409,7 @@ void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int n
   unsigned long int i,j;
   unsigned long int ii;
   
-  printf("Extracting polarisations\n");
+  //  printf("Extracting polarisations\n");
 
   // SHOULD USE MEMCPY -- FIX ME
   // Note: nchan*ndump*npol can be greater than INT_MAX

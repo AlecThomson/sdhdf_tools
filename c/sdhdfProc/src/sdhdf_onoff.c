@@ -327,6 +327,10 @@ int main(int argc,char *argv[])
 	    }
 	}
       sdhdf_writeHistory(outFile,onFile->history,onFile->nHistory);  
+
+      //
+      // Need to copy time stamps etc. from the ON source data
+      //
       sdhdf_copyRemainder(onFile,outFile,0);
       //  free(inBandParams);
       
