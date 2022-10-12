@@ -55,6 +55,7 @@ int main(int argc,char *argv[])
 {
   int b,i,j,k,ii,kk,beam,band;
   int nFiles=0;
+  char fluxCalFile[1024] = "uwl_220705_132107.fluxcal";
   char fname[MAX_FILES][MAX_STRLEN];
   char runtimeDir[MAX_STRLEN];
   float pol1,pol2,pol3,pol4;
@@ -141,6 +142,8 @@ int main(int argc,char *argv[])
 	{sscanf(argv[++i],"%lf",&tdumpAstro); setTdumpAstro=1;}
       else if (strcmp(argv[i],"-nchanAstro")==0)
 	{sscanf(argv[++i],"%d",&nchanAstro); setNchanAstro=1;}
+      else if (strcmp(argv[i],"-fluxcal")==0)
+	strcpy(fluxCalFile,argv[++i]);
       else if (strcmp(argv[i],"-h")==0)
 	help();
       else
@@ -186,10 +189,14 @@ int main(int argc,char *argv[])
 	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm",averageCal,averageCalValuesF0,averageCalValuesF1); // REMOVE HARDCODE
 	  sdhdf_formPCM_response(polCal,nPolCalChan);
 
+
 	  // Load the Scal information
 	  nFluxCalChan=0;
 	  if (tcal==0)
-	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
+	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
+	  //	    uwl_220705_132107.fluxcal
+	      //	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_210131_042312.fluxcal"); // REMOVE HARDCODE
+	    //	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
 	  else
 	    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
 
