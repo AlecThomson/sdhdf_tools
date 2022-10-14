@@ -133,6 +133,8 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%f",&averageCalValuesF0);
 	  sscanf(argv[++i],"%f",&averageCalValuesF1);
 	}
+      else if (strcasecmp(argv[i],"-averageCalByBand")==0)
+	averageCal=2;
       else if (strcmp(argv[i],"-norm")==0)
 	{
 	  normCal=1;
@@ -183,50 +185,6 @@ int main(int argc,char *argv[])
 
 	  sdhdf_loadMetaData(inFile);
 	  sdhdf_allocateBeamMemory(outFile,inFile->nBeam);
-	  // FIX ME: Should check if the user wants polarisation calibration	
-	  
-	  // Load the information within the PCM file	  
-	  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm",averageCal,averageCalValuesF0,averageCalValuesF1); // REMOVE HARDCODE
-	  sdhdf_formPCM_response(polCal,nPolCalChan);
-
-
-	  // Load the Scal information
-	  nFluxCalChan=0;
-	  if (tcal==0)
-	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
-	  //	    uwl_220705_132107.fluxcal
-	      //	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_210131_042312.fluxcal"); // REMOVE HARDCODE
-	    //	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
-	  else
-	    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
-
-
-	  //	  for (j=0;j<nPolCalChan;j++)
-	  //	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
-	  //		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
-	  //		   polCal[j].constant_gain,polCal[j].constant_diff_gain,polCal[j].constant_diff_phase,
-	  //		   polCal[j].constant_b1,polCal[j].constant_b2,polCal[j].constant_r1,polCal[j].constant_r2);
-
-	  
-	  // Obtain NOISE ON - NOISE OFF
-	  // Should be able to do this from a different file ** FIX ME	  
-
-	  // Request CAL_ON-CAL_OFF for specfic frequency covered by the PCM file
-	  beam=0; // FIX ME
-	  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan,normCal,averageCal,averageCalValuesF0,averageCalValuesF1);
-	  sdhdf_calculate_gain_diffgain_diffphase(polCal,nPolCalChan);
-	  sdhdf_calculate_timedependent_response(polCal,nPolCalChan);
-
-	  /*
-	  for (j=0;j<nPolCalChan;j++)
-	    {
-	      	      printf("%g Have (%g,%g,%g,%g) and (%g,%g,%g,%g) gain = %g diffgain = %g diffphase = %g\n",polCal[j].freq,polCal[j].stokes_noise_measured[0],polCal[j].stokes_noise_measured[1],
-		     polCal[j].stokes_noise_measured[2],polCal[j].stokes_noise_measured[3],
-		     polCal[j].stokes_noise_actual[0],polCal[j].stokes_noise_actual[1],polCal[j].stokes_noise_actual[2],polCal[j].stokes_noise_actual[3],
-		     polCal[j].gain,polCal[j].diff_gain,polCal[j].diff_phase);
-		     
-	    }
-	  */
 	  
 	  // Now process the astronomy data
 	  for (b=0;b<inFile->nBeam;b++)
@@ -255,6 +213,60 @@ int main(int argc,char *argv[])
 		    tdumpAstro = inFile->beam[b].bandHeader[j].dtime;
 		  if (setNchanAstro==0)
 		    nchanAstro = nchan;
+
+		  // Load in the calibration data for this band
+		  	  // FIX ME: Should check if the user wants polarisation calibration	
+
+		  if (averageCal==2)
+		    {
+		      averageCalValuesF0 = inFile->beam[b].bandHeader[j].f0;
+		      averageCalValuesF1 = inFile->beam[b].bandHeader[j].f1;
+		    }
+		  
+		  // Load the information within the PCM file	  
+		  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm",averageCal,averageCalValuesF0,averageCalValuesF1); // REMOVE HARDCODE
+		  sdhdf_formPCM_response(polCal,nPolCalChan);
+		  
+		  
+		  // Load the Scal information
+		  nFluxCalChan=0;
+		  if (tcal==0)
+		    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
+		  //	    uwl_220705_132107.fluxcal
+		  //	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_210131_042312.fluxcal"); // REMOVE HARDCODE
+		  //	    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL","uwl_200816_143924.cf.fluxcal"); // REMOVE HARDCODE
+		  else
+		    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
+		  
+		  
+		  //	  for (j=0;j<nPolCalChan;j++)
+		  //	    printf("%d %g %g %g %g %g %g %g %g %g %g %g\n",
+		  //		   j,polCal[j].freq,polCal[j].noiseSource_QoverI,polCal[j].noiseSource_UoverI,polCal[j].noiseSource_VoverI,
+		  //		   polCal[j].constant_gain,polCal[j].constant_diff_gain,polCal[j].constant_diff_phase,
+		  //		   polCal[j].constant_b1,polCal[j].constant_b2,polCal[j].constant_r1,polCal[j].constant_r2);
+		  
+		  
+		  // Obtain NOISE ON - NOISE OFF
+		  // Should be able to do this from a different file ** FIX ME	  
+		  
+		  // Request CAL_ON-CAL_OFF for specfic frequency covered by the PCM file
+		  beam=0; // FIX ME
+		  sdhdf_set_stokes_noise_measured(inFile,beam,polCal,nPolCalChan,normCal,averageCal,averageCalValuesF0,averageCalValuesF1);
+		  sdhdf_calculate_gain_diffgain_diffphase(polCal,nPolCalChan);
+		  sdhdf_calculate_timedependent_response(polCal,nPolCalChan);
+		  
+		  /*
+		    for (j=0;j<nPolCalChan;j++)
+		    {
+		    printf("%g Have (%g,%g,%g,%g) and (%g,%g,%g,%g) gain = %g diffgain = %g diffphase = %g\n",polCal[j].freq,polCal[j].stokes_noise_measured[0],polCal[j].stokes_noise_measured[1],
+		    polCal[j].stokes_noise_measured[2],polCal[j].stokes_noise_measured[3],
+		    polCal[j].stokes_noise_actual[0],polCal[j].stokes_noise_actual[1],polCal[j].stokes_noise_actual[2],polCal[j].stokes_noise_actual[3],
+		     polCal[j].gain,polCal[j].diff_gain,polCal[j].diff_phase);
+		     
+	    }
+	  */
+
+
 		  
 		  for (k=0;k<inFile->beam[b].bandHeader[j].ndump;k++)
 		    {
@@ -331,11 +343,11 @@ int main(int argc,char *argv[])
 			  //			  printf("%d finalJ = ",ii); sdhdf_display_complex_matrix_2x2(finalJ);
 
 
-			  
+			
 			  // Multiply by Scal
 			  // FIX ME -- NEED TO INTERPLATE -- USE DIFFERENT ICHAN (IN CASE NCHAN IS DIFFERENT WITH FLUXCAL
 			  // printf("%d finalJ ",ii);  sdhdf_display_complex_matrix_2x2(finalJ);
-			  if (averageCal==1 && ii == 0)
+			  if ((averageCal==1 || averageCal==2) && ii == 0)
 			    {
 			      int c,nv=0;
 			      fluxScale=0;
@@ -355,7 +367,7 @@ int main(int argc,char *argv[])
 			  //			  printf("flux scale = %g\n",fluxScale);
 			  
 			  if ((normAstro == 1 || normCal==1) &&
-			      ((averageCal==1 && ii == 0) || averageCal == 0))// Currently normalising both
+			      (((averageCal==1 || averageCal==2) && ii == 0) || averageCal == 0))// Currently normalising both
 			    {
 			      int nbinCal = 32; // WARNING HARDCODED
 			      nchanCal = inFile->beam[b].calBandHeader[j].nchan;
