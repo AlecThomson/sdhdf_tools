@@ -120,6 +120,8 @@ int main(int argc,char *argv[])
   float *out_Tdata,*out_Fdata;
   float *dataWts;
   int   haveWeights=0;
+
+  int nearestChannelInterpolate=0;
   
   unsigned char *dataFlags;
   int   haveFlags=0;
@@ -241,6 +243,8 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%d",&calFitN);
       else if (strcmp(argv[i],"-calBin")==0)
 	sscanf(argv[++i],"%d",&calBin);
+      else if (strcasecmp(argv[i],"-nearestChannelInterpolate")==0)
+	nearestChannelInterpolate=1;
       else if (strcmp(argv[i],"-muellerI")==0)
 	muellerI=1;
       else if (strcasecmp(argv[i],"-cc_phi1")==0)
@@ -1624,10 +1628,13 @@ int main(int argc,char *argv[])
 					      //     out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan+k];
 					      //
 					      // Nearest channel
-					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
-
-					      // Interpolation
-					      //					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;					    
+					      if (nearestChannelInterpolate==1)
+						out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
+					      else
+						{
+						  // Interpolation
+						  out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;
+						}
 					    }
 					}
 				    }
