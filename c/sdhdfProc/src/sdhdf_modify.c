@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020, 2021 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -21,8 +21,6 @@
 // Usage:
 // sdhdf_modify <filename.hdf> -o <outputFile.hdf>
 //
-// Compilation
-// gcc -lm -o sdhdf_modify sdhdf_modify.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
 //
 
 #include <stdio.h>

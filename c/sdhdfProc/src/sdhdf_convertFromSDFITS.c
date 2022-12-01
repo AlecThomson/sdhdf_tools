@@ -1,17 +1,4 @@
-// NEXT:
-// MJD, time and UTC
-// Load in AZIMUTH/ELEVATIO, PARANGLE (also FOXUSAXI, FOCUSTAN, FOCUSROT
-// Load in WINDSPEE, WINDDIRE
-// RA and DEC to strings
-// TCAL?
-// Frequency axes
-
-//
-// Check with FAST data
-//
-// ------------------------------
-
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -27,8 +14,6 @@
  *    You should have received a copy of the GNU General Public License 
  *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
  */
-
-// gcc -lm -o sdhdf_convertFromSDFITS sdhdf_convertFromSDFITS.c sdhdfProc_fileManipulation.c sdhdfProc_metadata.c -I/usr/lib/pgplot5 -I/data/BRAHE_1/hob044/giza/giza-0.9.5/src/ -I/pulsar/psr/software/next/buster/include/ -I/usr/include/hdf5/serial/ -I/data/BRAHE_1/hob044/giza/giza-0.9.5/src/ -L/usr/lib/x86_64-linux-gnu/hdf5/serial/ -lcfitsio -lhdf5
 
 
 #include <stdio.h>

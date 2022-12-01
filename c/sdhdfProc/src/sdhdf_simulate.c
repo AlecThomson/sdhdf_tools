@@ -1,4 +1,4 @@
-//  Copyright (C) 2021 George Hobbs
+//  Copyright (C) 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
