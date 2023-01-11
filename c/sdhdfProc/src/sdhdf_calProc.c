@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -20,8 +20,6 @@
 // Usage:
 // sdhdf_calProc <filename.hdf> <filename2.hdf> ...
 //
-// Compilation
-// gcc -lm -o sdhdf_calProc sdhdf_calProc.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
 //
 
 #include <stdio.h>
@@ -53,7 +51,6 @@ int main(int argc,char *argv[])
   // HARDCODED
   printf("DO NOT USE THIS CODE\n");
   exit(1);
-  //  nTcal = sdhdf_loadTcal(tcalData,"/u/hob044/software/new_c/sdhdfProc/runtime/Tcal_result.12.6.6.dat");
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {

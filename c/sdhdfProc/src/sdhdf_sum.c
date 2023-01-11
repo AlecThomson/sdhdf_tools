@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -20,9 +20,6 @@
 //
 // Usage:
 // sdhdf_sum -o <outfilename> ... list of input filenames ...
-//
-// Compilation
-// gcc -lm -o sdhdf_sum sdhdf_sum.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz 
 //
 
 #include <stdio.h>

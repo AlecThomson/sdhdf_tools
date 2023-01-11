@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020, 2021 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -25,8 +25,6 @@
 #include "fitsio.h"
 
 
-// Compilation
-// gcc -lm -o sdhdf_convertTo sdhdf_convertTo.c -lcfitsio -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph 
 
 #define VNUM "v0.1"
 

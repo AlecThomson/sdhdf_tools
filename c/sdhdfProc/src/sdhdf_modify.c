@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020, 2021 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -21,8 +21,6 @@
 // Usage:
 // sdhdf_modify <filename.hdf> -o <outputFile.hdf>
 //
-// Compilation
-// gcc -lm -o sdhdf_modify sdhdf_modify.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
 //
 
 #include <stdio.h>
@@ -120,6 +118,8 @@ int main(int argc,char *argv[])
   float *out_Tdata,*out_Fdata;
   float *dataWts;
   int   haveWeights=0;
+
+  int nearestChannelInterpolate=0;
   
   unsigned char *dataFlags;
   int   haveFlags=0;
@@ -241,6 +241,8 @@ int main(int argc,char *argv[])
 	  sscanf(argv[++i],"%d",&calFitN);
       else if (strcmp(argv[i],"-calBin")==0)
 	sscanf(argv[++i],"%d",&calBin);
+      else if (strcasecmp(argv[i],"-nearestChannelInterpolate")==0)
+	nearestChannelInterpolate=1;
       else if (strcmp(argv[i],"-muellerI")==0)
 	muellerI=1;
       else if (strcasecmp(argv[i],"-cc_phi1")==0)
@@ -1624,10 +1626,13 @@ int main(int argc,char *argv[])
 					      //     out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan+k];
 					      //
 					      // Nearest channel
-					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
-
-					      // Interpolation
-					      //					      out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;					    
+					      if (nearestChannelInterpolate==1)
+						out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
+					      else
+						{
+						  // Interpolation
+						  out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;
+						}
 					    }
 					}
 				    }

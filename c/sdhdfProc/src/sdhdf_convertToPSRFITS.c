@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -56,7 +56,7 @@ int main(int argc,char *argv[])
   char fname[1024];
   fitsfile *fp_psr,*fp_cal;
   int status=0;
-
+  
   if (argc==1) help();
     // Allocate memory for the input ifle
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
@@ -90,7 +90,6 @@ int main(int argc,char *argv[])
       fits_report_error(stderr,status);
       exit(1);
     }
-
   sprintf(outFname,"!%s.rf(psrheader.fits)",outName);
   fits_create_file(&fp_psr,outFname,&status);
   if (status)
@@ -98,7 +97,7 @@ int main(int argc,char *argv[])
       fits_report_error(stderr,status);
       exit(1);
     }
-
+      
   createPrimaryHeader(fp_cal,fp_psr,inFile);
   createSubintHeader(fp_cal,fp_psr,inFile);
   createDataForCal(fp_cal,inFile,fixFreq);
@@ -129,6 +128,7 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
   char tdim[16];
   double *raSub,*decSub;
   int colnum_datFreq, colnum_datWts,colnum_datScl,colnum_datOffs,colnum_raSub,colnum_decSub;
+  int colnum_posAng,colnum_paraAng;
   int colnum_period; 
   int colnum_tsubint;
   char dataName[1024];
@@ -142,7 +142,8 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
   int nband = inFile->beam[0].nBand;
   double sumFreq,chanbw,f0,f1;
   float cfreq,bw;
-
+  float tfloat;
+  
   double minShort,maxShort;
   double minVal,maxVal,tv;
   double period = 1; // FIX PERIOD
@@ -169,6 +170,8 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
   fits_get_colnum(astro, CASEINSEN, "DEC_SUB", &colnum_decSub, &status);
   fits_get_colnum(astro, CASEINSEN, "DATA", &colnum_data, &status);
   fits_get_colnum(astro, CASEINSEN, "TSUBINT", &colnum_tsubint, &status);
+  fits_get_colnum(astro, CASEINSEN, "POS_ANG", &colnum_posAng, &status);
+  fits_get_colnum(astro, CASEINSEN, "PAR_ANG", &colnum_paraAng, &status);
   fits_get_colnum(astro, CASEINSEN, "PERIOD", &colnum_period, &status);
 
   if (status) {fits_report_error(stderr, status); exit(1);}
@@ -315,9 +318,16 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
 		floatArr[n] = inFile->beam[0].bandData[k].astro_data.freq[j];
 	      else
 		{
-		  double cbw,fs;
-		  cbw = inFile->beam[0].bandData[k].astro_data.freq[1]-inFile->beam[0].bandData[k].astro_data.freq[0];
+		  double cbw,fs,fe;
+
+
+
+
 		  fs  = inFile->beam[0].bandData[k].astro_data.freq[0];
+		  fe  = inFile->beam[0].bandData[k].astro_data.freq[inFile->beam[0].bandHeader[k].nchan-1];
+		  cbw = (fe-fs)/inFile->beam[0].bandHeader[k].nchan;
+
+
 		  floatArr[n] = (fs + 0.5*cbw) + j*cbw;
 		}
 
@@ -341,6 +351,8 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
       fits_write_col(astro,TFLOAT,colnum_datFreq,i+1,1,nchan,floatArr,&status);  
       fits_write_col(astro,TDOUBLE,colnum_raSub,i+1,1,1,&raSub[i],&status);
       fits_write_col(astro,TDOUBLE,colnum_decSub,i+1,1,1,&raSub[i],&status);
+      tfloat = inFile->beam[0].bandData[0].astro_obsHeader[i].paraAngle;
+      fits_write_col(astro,TFLOAT,colnum_paraAng,i+1,1,1,&tfloat,&status);
       fits_write_col(astro,TDOUBLE,colnum_period,i+1,1,1,&period,&status);
       fits_write_col(astro,TDOUBLE,colnum_tsubint,i+1,1,1,&inFile->beam[0].bandHeader[0].dtime,&status);  
       printf("status at bottom = %d, cfreq = %g, bw = %g, chbw = %g\n",status,cfreq,bw,chanbw);
@@ -540,9 +552,10 @@ void createDataForCal(fitsfile *cal,sdhdf_fileStruct *inFile,int fixFreq)
 		floatArr[n] = inFile->beam[0].bandData[k].cal_on_data.freq[j];
 	      else
 		{
-		  double cbw,fs;
-		  cbw = inFile->beam[0].bandData[k].cal_on_data.freq[1]-inFile->beam[0].bandData[k].cal_on_data.freq[0];
+		  double cbw,fs,fe;
 		  fs  = inFile->beam[0].bandData[k].cal_on_data.freq[0];
+		  fe  = inFile->beam[0].bandData[k].cal_on_data.freq[inFile->beam[0].calBandHeader[k].nchan-1];
+		  cbw = (fe-fs)/inFile->beam[0].calBandHeader[k].nchan;
 		  floatArr[n] = (fs + 0.5*cbw) + j*cbw;
 		}
 	      sumFreq += floatArr[n];
