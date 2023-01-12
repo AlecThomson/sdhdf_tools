@@ -1,3 +1,11 @@
+
+// Should have a normalise option
+// Need to deal with wraps when averaging RAs/DECs/times etc.
+// Should be able to do some beam or bin manipulation
+// Should be able to manipulate the noise source
+// History table
+// lsr_regrid, bary_regrid, -regrid
+
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
@@ -33,182 +41,153 @@
 #include <libgen.h>
 #include "T2toolkit.h"
 
-#define MAX_IGNORE_SDUMP 4096
-
-double linearInterpolate(double *freq,double *scaleAA,double in_freq,int kk,int nScale);
-void   getScal(double sysGain_freq,double *scalFreq,double *scalAA,double *scalBB,int nScal,double *scalAA_val,double *scalBB_val);
-void   TKspline_interpolate(int n,double *x,double *y,double yd[][4],double *interpX,
-			  double *interpY,int nInterp);
-void   TKcmonot (int n, double x[], double y[], double yd[][4]);
+#define MAX_COMMANDS 128
 
 
-// SHOULD ALLOCATE THIS PROPERLY **** FIX ME
-double yd1[4096][4];
-double yd2[4096][4];
+// Structure of commands
+// type = 1 = time averaging, param1 = number of dumps to average, param2 = 1 = sum, = 2 = average
+// type = 2 = frequency averaging, param2 = number of channels to average, param2 = 1 = sum, = 2 = average
+// type = 3 = polarisation sum (AA + BB)  if param1 = 1, or average (AA+BB)/2 is param1 = 2
+// type = 4 = convert to bary (param1 = 1) or lsr (param1 = 2) with (param2 = 2) or without (param2 = 1) regridding
+typedef struct commandStruct {
+  int type;
+  float param1;
+  float param2;
+} commandStruct;
+
+// Structure allowing the data to be passed through multiple processing steps
+typedef struct dataStruct {
+  // Data ordering = dump,pol,channel
+  float *data;
+  float *freq; 
+  int nFreqDump;
+  float *wt;
+  unsigned char *flag;
+  int nchan;
+  int npol;
+  int ndump;
+  int memoryAllocated;
+
+  sdhdf_obsParamsStruct  *obsParams;
+} dataStruct;
+
+
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args);
+void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
+void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum);
+void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum);
+void polarisationAverage(dataStruct *in,dataStruct *out,int sum);
+void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
+void allocateMemory(dataStruct *in);
+
+//void timeAverage(float *in_data,int nchan,int npol,int ndump,int ntime,float *out_data,int *out_nchan,int *out_npol,int *out_ndump);
 
 void help()
 {
   printf("sdhdf_modify: routine to process an sdhdf file\n\n");
-  printf("-bary                 Convert to solar system barycentre reference frame\n");
-  printf("-calBin <val>         Select phase bin of noise source\n");
-  printf("-calFitN <val>        1, 2 or 3 (1 =default) for fitting to the ON-OFF cal values\n");
-  printf("-divideAstro <val>    Divide values in the astronomy spectra by specified value\n");        
-  printf("-divideCal <val>      Divide values in the noise source by specified value\n");        
-  printf("-e <ext>              File extension\n");
-  printf("-ephem <name>         Name of solar system ephemeris to use\n");
-  printf("-fav <val>            Average specified number of frequency channels together\n");
-  printf("-fchbw <val>          Average to specified channel bandwidth\n");
-  printf("-F                    Average in frequency\n");
-  printf("-favMedian            Use (unweighted) median averaging when averaging frequency channels\n");
-  printf("-id <val>             Ignore spectral dump val when averaging\n");
-  printf("-interp <val>         val = 1 = linear interpolation = 2 = cubic spline\n");
-  printf("-lsr                  Convert to local standard of rest reference frame\n");
-  printf("-nch <val>            Number of channels requested in output file\n");
-  printf("-origNchan <val>      Original number of channels when file was recorded\n");
-  printf("-p1                   Form one polarisation\n");
-  printf("-p2                   Form two polarisations\n");
-  printf("-p3                   Form 4 polarisation states\n");
-  printf("-para <val>           Set parallactic angle to val (degrees)\n");
-  printf("-psum                 Sum (instead of average) polarisations\n");
-  printf("-regrid               Regrid the frequency axis\n");
-  printf("-S                    Form Stokes parameters\n");
-  printf("-scaleFile <filename> Scale values by specified file\n");
-  printf("-tdump <val>          Define dump time\n");
-  printf("-T                    average in time\n");
-  printf("\n\n");
-  printf("Example: sdhdf_modify -T -e T *.hdf\n");
 
-  
+  printf("\n\n");
+  printf("Example: sdhdf_modify -T -e T *.hdf\n");  
 }
 
 
 int main(int argc,char *argv[])
 {
-  int i,ii,j,k,p,l,kp,b;
-  int nchan,npol;
-  int interp=1; // 1 = linear, 2 = cubic spline
-  char fname[MAX_STRLEN];
-  char bname[MAX_STRLEN];
+  int i;
+  int nCommands=0;
+  int nFiles=0;
+  char fname[MAX_FILES][MAX_STRLEN];
   char oname[MAX_STRLEN];
+  char extension[MAX_STRLEN];
+  commandStruct *commands;
+  char args[MAX_STRLEN]="";
+  
+  strcpy(extension,"modify");
+  
+  commands = (commandStruct *)malloc(sizeof(commandStruct)*MAX_COMMANDS);
+
+  for (i=1;i<argc;i++)
+    {
+      strcat(args,argv[i]);
+      strcat(args," ");
+    }
+  for (i=1;i<argc;i++)
+    {
+      if (strcmp(argv[i],"-Tsum")==0 || strcmp(argv[i],"-T")==0)        // Completely sum in time
+	{commands[nCommands].type=1; commands[nCommands].param2 = 1; commands[nCommands++].param1 = 0;}
+      else if (strcmp(argv[i],"-Tav")==0)    // Completely average in time
+	{commands[nCommands].type=1; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
+      else if (strcmp(argv[i],"-tsum")==0)   // Sum <val> time dumps together
+	{commands[nCommands].type=1; commands[nCommands].param2 = 1; sscanf(argv[++i],"%f",(&commands[nCommands++].param1)); }
+      else if (strcmp(argv[i],"-Fsum")==0 || strcmp(argv[i],"-F")==0)   // Sum all> frequency channels together
+	{commands[nCommands].type=2; commands[nCommands].param2 = 1; commands[nCommands++].param1 = 0;}
+      else if (strcmp(argv[i],"-Fav")==0)
+	{commands[nCommands].type=2; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
+      else if (strcmp(argv[i],"-fsum")==0)   // Sum <val> frequency channels together
+	{commands[nCommands].type=2; commands[nCommands].param2 = 1; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
+      else if (strcmp(argv[i],"-tav")==0)    // Average <val> time dumps together
+	{commands[nCommands].type=1; commands[nCommands].param2 = 2; sscanf(argv[++i],"%f",(&commands[nCommands++].param1)); }
+      else if (strcmp(argv[i],"-fav")==0)   // Average <val> frequency channels together
+	{commands[nCommands].type=2; commands[nCommands].param2 = 2; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
+      else if (strcmp(argv[i],"-p1")==0 || strcmp(argv[i],"-p1_sum")==0)    // Form 1 polarisation (AA+BB)
+	{commands[nCommands].type=3; commands[nCommands++].param1 = 1;}
+      else if (strcmp(argv[i],"-p1_av")==0)    // Form 1 polarisation (AA+BB)/2
+	{commands[nCommands].type=3; commands[nCommands++].param1 = 2;}
+      else if (strcmp(argv[i],"-lsr_noregrid")==0)
+	{commands[nCommands].type=4; commands[nCommands].param1 = 2; commands[nCommands++].param2 = 1;}
+      else if (strcmp(argv[i],"-bary_noregrid")==0)
+	{commands[nCommands].type=4; commands[nCommands].param1 = 1; commands[nCommands++].param2 = 1;}
+      else if (strcmp(argv[i],"-lsr_regrid")==0)
+	{commands[nCommands].type=4; commands[nCommands].param1 = 2; commands[nCommands++].param2 = 2;}
+      else if (strcmp(argv[i],"-bary_regrid")==0)
+	{commands[nCommands].type=4; commands[nCommands].param1 = 1; commands[nCommands++].param2 = 2;}
+      else if (strcmp(argv[i],"-e")==0)
+	{strcpy(extension,argv[++i]);}
+      else
+	strcpy(fname[nFiles++],argv[i]);
+    }
+
+
+  // List the commands
+  printf("Processing: %d files with %d commands\n",nFiles,nCommands);
+
+  for (i=0;i<nFiles;i++)
+    {
+      printf("Processing file: %s\n",fname[i]);
+      sdhdf_formOutputFilename(fname[i],extension,oname);
+      processFile(fname[i],oname,commands,nCommands,args);
+    }
+
+
+  free(commands);
+}
+
+
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args)
+{
+  int ii,i,c,j,k;
+  
   sdhdf_fileStruct *inFile,*outFile;
-  herr_t status;
   sdhdf_bandHeaderStruct *inBandParams;
-  sdhdf_obsParamsStruct  *outObsParams;
+  sdhdf_bandHeaderStruct *outBandParams;
+
 
   sdhdf_attributes_struct dataAttributes[MAX_ATTRIBUTES];
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
-  int polAv=1;
-
-  int nBeam=0;
-  int nBand=0;
-  int tScrunch=0;
-  int fScrunch=0;
-  int pol=0;
-  int stokes=0;
-  int fAv=0;
-  float fchbw=-1;
-  int nchanRequested=-1;
-  int bary=0,lsr=0;
-  int regrid=0;
-  int nh;
-  float *in_data,*out_data,*out_freq;
-  double *in_freq;
-  float *out_Tdata,*out_Fdata;
-  float *dataWts;
-  int   haveWeights=0;
-
-  int nearestChannelInterpolate=0;
-  
-  unsigned char *dataFlags;
-  int   haveFlags=0;
-  unsigned char flag;
-    
-  long out_nchan,out_npol,out_ndump,nsd;
-  double av1,av2,av3,av4,avFreq;
-  double tav=0;
-  char extension[MAX_STRLEN];
-  sdhdf_eopStruct *eop;
-  int nEOP=0;
-  char args[MAX_STRLEN]="";
-  char scaleFile[1024]="NULL";
-  int ignoreSD[MAX_IGNORE_SDUMP];
-  int nIgnoreSD=0;
-  double freq[MAX_CHAN_SCAL],scaleAA[MAX_CHAN_SCAL],scaleBB[MAX_CHAN_SCAL];
-
-  int nScale=0;
-  double *scalFreq,*scalAA,*scalBB;
-  float *cal_p1,*cal_p2,*cal_freq;
-
-  int fAvType=1; // 1 = weighted mean, 2 = unweighted median
-
-  double sysGain_freq[4096],sysGain_p1[4096],sysGain_p2[4096],scalAA_val,scalBB_val;
-  double lastGood_p1=1e8,lastGood_p2=1e8;
-  char   scalFname[1024]="NULL";
-  int    nScal=-1;
-  int    c_nchan;
-  int    nc,nc2;
-  int    nRF1,nRF2,nRF3;
-  int    calBin = 32;  // *** MUST SET PROPERLY **
-
-  double scA_rf1_val,scB_rf1_val;
-  double scA_rf2_val,scB_rf2_val;
-  double scA_rf3_val,scB_rf3_val;
-  double scA_rf1_x[4096],scA_rf1_y[4096];
-  double scB_rf1_x[4096],scB_rf1_y[4096];
-  double scA_rf2_x[4096],scA_rf2_y[4096];
-  double scB_rf2_x[4096],scB_rf2_y[4096];
-  double scA_rf3_x[4096],scA_rf3_y[4096];
-  double scB_rf3_x[4096],scB_rf3_y[4096];
-  double scA_rf1[3],scB_rf1[3]; // Parameters modelling the bands			  
-  double scA_rf2[3],scB_rf2[3];
-  double scA_rf3[3],scB_rf3[3];
-
-  double diffGain2[4096],diffPhase[4096],g_e[4096];
-  double scale1[4096],scale2[4096],scale3[4096],scale4[4096];
-  double useScale1,useScale2,useScale3,useScale4;
-  double t_phase,t_len;
-  double calAA,calBB,calReAB,calImAB;
-  double usePara=0;
-  int    setPara=0;
-  int    tcal=0;
-  
-  double divideCal=1;
-  double divideAstro=1;
-
-  double cc_a=0,cc_b=0,cc_c=0,cc_d=0; // Cross coupling parameters
-  double cc_phi1,cc_phi2;
-  double cc_eps1,cc_eps2;
-  int muellerI = 0;
-  int origNchan = -1;
-  double chbw;
-  float tdumpRequest = -1;
-
-  char ephemName[1024] = "DE436.1950.2050";
 
   
-  cc_eps1=cc_eps2=0;
+  int nBeam,b,ndump;
+  dataStruct *dset;
+  dataStruct *in,*out,*swp;  
   
-  scA_rf1[0]=scA_rf1[1]=scA_rf1[2] = 0.0;
-  scB_rf1[0]=scB_rf1[1]=scB_rf1[2] = 0.0;
-  scA_rf2[0]=scA_rf2[1]=scA_rf2[2] = 0.0;
-  scB_rf2[0]=scB_rf2[1]=scB_rf2[2] = 0.0;
-  scA_rf3[0]=scA_rf3[1]=scA_rf3[2] = 0.0;
-  scB_rf3[0]=scB_rf3[1]=scB_rf3[2] = 0.0;
+  dset = (dataStruct *)malloc(sizeof(dataStruct)*2);
+  dset[0].memoryAllocated = 0;
+  dset[1].memoryAllocated = 0;
+  in  = &dset[0];
+  out = &dset[1]; 
 
-  
-  int calFitN=0;
-  
-  strcpy(oname,"sdhdf_modify_output.hdf");
-  strcpy(extension,"modify");
-  
-  eop = (sdhdf_eopStruct *)malloc(sizeof(sdhdf_eopStruct)*MAX_EOP_LINES);
-  
-  scalFreq = (double *)malloc(sizeof(double)*MAX_CHAN_SCAL);
-  scalAA = (double *)malloc(sizeof(double)*MAX_CHAN_SCAL);
-  scalBB = (double *)malloc(sizeof(double)*MAX_CHAN_SCAL);
-  
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -220,1799 +199,546 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
-   
-  for (i=1;i<argc;i++)
+     
+
+  sdhdf_initialiseFile(inFile);
+  sdhdf_initialiseFile(outFile);
+
+  sdhdf_openFile(fname,inFile,1);
+  sdhdf_openFile(oname,outFile,3);
+  sdhdf_loadMetaData(inFile);
+
+  nBeam = inFile->nBeam;
+  sdhdf_allocateBeamMemory(outFile,nBeam);
+  for (b=0; b<nBeam; b++)
     {
-      if (strcmp(argv[i],"-e")==0)
-	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(extension,argv[++i]);}
-      else if (strcmp(argv[i],"-h")==0)
-	{help(); exit(1);}
-      else if (strcmp(argv[i],"-ephem")==0)
-	strcpy(ephemName,argv[++i]);
-      else if (strcasecmp(argv[i],"-favMedian")==0)
-	fAvType=2;
-      else if (strcmp(argv[i],"-origNchan")==0)
-	sscanf(argv[++i],"%d",&origNchan);
-      else if (strcmp(argv[i],"-divideCal")==0)
-	sscanf(argv[++i],"%lf",&divideCal);
-      else if (strcmp(argv[i],"-divideAstro")==0)
-	sscanf(argv[++i],"%lf",&divideAstro);
-      else if (strcmp(argv[i],"-calFitN")==0) // Currently 1, 2 or 3 (1 = default) for fitting to the ON-OFF cal values
-	  sscanf(argv[++i],"%d",&calFitN);
-      else if (strcmp(argv[i],"-calBin")==0)
-	sscanf(argv[++i],"%d",&calBin);
-      else if (strcasecmp(argv[i],"-nearestChannelInterpolate")==0)
-	nearestChannelInterpolate=1;
-      else if (strcmp(argv[i],"-muellerI")==0)
-	muellerI=1;
-      else if (strcasecmp(argv[i],"-cc_phi1")==0)
-	sscanf(argv[++i],"%lf",&cc_phi1);
-      else if (strcasecmp(argv[i],"-cc_phi2")==0)
-	sscanf(argv[++i],"%lf",&cc_phi2);
-      else if (strcasecmp(argv[i],"-cc_eps1")==0)
-	sscanf(argv[++i],"%lf",&cc_eps1);
-      else if (strcasecmp(argv[i],"-cc_eps2")==0)
-	sscanf(argv[++i],"%lf",&cc_eps2);
-      else if (strcmp(argv[i],"-scal")==0)
-	{strcpy(scalFname,argv[++i]); tcal=0;}
-      else if (strcmp(argv[i],"-tcal")==0)
-	{strcpy(scalFname,argv[++i]); tcal=1;}
-      else if (strcmp(argv[i],"-psum")==0)
-	polAv=0;
-      else if (strcmp(argv[i],"-para")==0)
-	{
-	  setPara=1;
-	  sscanf(argv[++i],"%lf",&usePara);
-	}
-      else if (strcmp(argv[i],"-interp")==0) // 1 = linear, 2 = cubic spline
-	sscanf(argv[++i],"%d",&interp);
-      else if (strcmp(argv[i],"-regrid")==0)
-	regrid=1;
-      else if (strcmp(argv[i],"-T")==0)
-	{sdhdf_add1arg(args,argv[i]); tScrunch=1;}
-      else if (strcmp(argv[i],"-F")==0)
-	{sdhdf_add1arg(args,argv[i]); fScrunch=1;}
-      else if (strcmp(argv[i],"-tdump")==0)
-	{sdhdf_add1arg(args,argv[i]); sscanf(argv[++i],"%f",&tdumpRequest);}
-      else if (strcmp(argv[i],"-scaleFile")==0)
-	{sdhdf_add2arg(args,argv[i],argv[i+1]); strcpy(scaleFile,argv[++i]);}
-      else if (strcmp(argv[i],"-id")==0)
-	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&ignoreSD[nIgnoreSD++]);}
-      else if (strcmp(argv[i],"-p1")==0)
-	{sdhdf_add1arg(args,argv[i]); pol=1;}
-      else if (strcmp(argv[i],"-p2")==0)
-	{sdhdf_add1arg(args,argv[i]); pol=2;}
-      else if (strcmp(argv[i],"-p3")==0)
-	{sdhdf_add1arg(args,argv[i]); pol=3;}
-      else if (strcmp(argv[i],"-S")==0)
-	{sdhdf_add1arg(args,argv[i]); stokes=1;}
-      else if (strcmp(argv[i],"-bary")==0)
-	{
-	  bary=1;
-	  nEOP = sdhdf_loadEOP(eop);
-	  sdhdf_add1arg(args,argv[i]); 
-	}
-      else if (strcmp(argv[i],"-lsr")==0)
-	{
-	  lsr=1;
-	  nEOP = sdhdf_loadEOP(eop);
-	  sdhdf_add1arg(args,argv[i]); 
-	}
-      else if (strcasecmp(argv[i],"-fav")==0)
-	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&fAv);}
-      else if (strcasecmp(argv[i],"-fchbw")==0)
-	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%f",&fchbw);}
-      else if (strcasecmp(argv[i],"-nch")==0)
-	{sdhdf_add2arg(args,argv[i],argv[i+1]); sscanf(argv[++i],"%d",&nchanRequested);}
-      else
-	{
-	  strcpy(fname,argv[i]);
-	  printf("Processing %s\n",fname);
-	  //	  strcpy(bname,basename(fname));
-	  //	  printf("Bname = %s\n",bname);
-	  if (strcmp(scaleFile,"NULL")!=0)
-	    {
-	      FILE *fScale;
-	      nScale=0;
-	      fScale = fopen(scaleFile,"r");
-	      while (!feof(fScale))
-		{
-		  if (fscanf(fScale,"%lf %lf %lf",&freq[nScale],&scaleAA[nScale],&scaleBB[nScale])==3)
-		    {
-		      nScale++;
-		      if (nScale == MAX_CHAN_SCAL+1)
-			{
-			  printf("ERROR: Must increase MAX_CHAN_SCAL\n");
-			  fclose(fScale);
-			  exit(1); // Should exit more gracefully
-			}
-		    }
-		}
-	      fclose(fScale);
-	    }
-	
-	  if (strcmp(scalFname,"NULL")!=0)
-	    {
-	      FILE *fin;
+      printf("Processing beam %d/%d\n",b,nBeam-1);
+      inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);
+      outBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
+      sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
+      sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,outBandParams,inFile->beam[b].nBand);
 
-	      if (strcmp(scalFname,"auto")==0)
-		{
-		  char runtimeDir[1024];
-		  if (getenv("SDHDF_RUNTIME")==0)
-		    {
-		      printf("=======================================================================\n");
-		      printf("Error: sdhdf_modify requires that the SDHDF_RUNTIME directory is set\n");
-		      printf("=======================================================================\n");
-		      exit(1);
-		    }
-		  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
-		  sprintf(scalFname,"%s/observatory/parkes/calibration/scalAverage.dat",runtimeDir); // FIX ME -- TOO MUCH HARDCODED HERE
-		  printf("Using SCAL = %s\n",scalFname);
-		}
-	      
-	      nScal=0;
-	      if ((fin = fopen(scalFname,"r"))==NULL)
-		{
-		  printf("Unable to open file >%s<\n",scalFname);
-		  exit(1); // Should close files before exiting ::: FIX ME
-		}
-	      printf("Loading %s\n",scalFname);
-	      while (!feof(fin))
-		{
-		  if (fscanf(fin,"%lf %lf %lf",&scalFreq[nScal],&scalAA[nScal],&scalBB[nScal])==3)
-		    {
-		      if (tcal==1)
-			{
-			  scalAA[nScal]/=2.0; // THIS IS BECAUSE OF A DIFFERENCE IN HOW TCAL AND SCAL ARE STORED
-			  scalBB[nScal]/=2.0;
-			}
-		      nScal++;
-		      if (nScal == MAX_CHAN_SCAL+1)
-			{
-			  printf("ERROR: Must increase MAX_CHAN_SCAL (currently set to %d)\n",MAX_CHAN_SCAL);
-			  fclose(fin);
-			  exit(1); // Should exit more gracefully
-			}
-
-		    }
-		}
-	      fclose(fin);
-	      printf("Complete loading %s\n",scalFname);
-	    }
+      // Each band is processed independently
+      for (ii=0;ii<inFile->beam[b].nBand;ii++)
+	{
+	  printf(" ... Processing subband %d/%d\n",ii,inFile->beam[b].nBand-1);
+	  in->nchan = inFile->beam[b].bandHeader[ii].nchan;
+	  in->npol  = inFile->beam[b].bandHeader[ii].npol;
+	  in->ndump = inFile->beam[b].bandHeader[ii].ndump;
 	  
+	  // Load in the data
+	  sdhdf_loadBandData(inFile,b,ii,1);
+	  in->nFreqDump = inFile->beam[b].bandData[ii].astro_data.nFreqDumps;
+	  allocateMemory(in);
 
-	  sdhdf_initialiseFile(inFile);
-	  sdhdf_initialiseFile(outFile);
+	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 
-	  sdhdf_openFile(fname,inFile,1);
-	  //	  inFile->fileID  = H5Fopen(fname,H5F_ACC_RDONLY,H5P_DEFAULT);
-	  sprintf(oname,"%s.%s",fname,extension);
-	  printf("Opening file >%s<\n",oname);
-	  sdhdf_openFile(oname,outFile,3);
-	  if (inFile->fileID!=-1) // Did we successfully open the file?
+	  for (i=0;i<in->nFreqDump;i++)
+	    memcpy(in->freq+i*in->nchan,inFile->beam[b].bandData[ii].astro_data.freq+i*in->nchan,sizeof(float)*in->nchan);
+	  for (i=0;i<in->ndump;i++)
+	    sdhdf_copySingleObsParams(inFile,b,ii,i,&in->obsParams[i]); 
+
+	  for (k=0;k<in->nchan;k++)
 	    {
-	      sdhdf_loadMetaData(inFile);
-	      
-	      printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname,inFile->primary[0].utc0,
-		     inFile->primary[0].hdr_defn_version,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->primary[0].telescope,
-		     inFile->primary[0].observer, inFile->primary[0].rcvr,inFile->beam[0].nBand);
-	      
-	      nBeam = inFile->nBeam;
-
-	      sdhdf_allocateBeamMemory(outFile,nBeam);
-
-	      for (b=0; b<nBeam; b++)
+	      for (j=0;j<in->ndump;j++)
 		{
-		  printf("Processing beam %d/%d\n",b,nBeam-1);
-		  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
-		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
-
-		  // Do we need to extract the calibrator information?
-		  if (nScal > 0)
-		    {
-		      int ci,cj,ck;
-		      double onP1,offP1,onP2,offP2;
-		      double onOffP1,onOffP2;
-		      double freq;
-		      int totNchan_cal=0;
-
-		      for (ci=0;ci<inFile->beam[b].nBand;ci++)
-			totNchan_cal+=inFile->beam[b].calBandHeader[ci].nchan;
-		      
-		      
-		      printf("Calibrating\n");
-		      // Could calibrate dump by dump, or average the entire data file
-		      // FOR NOW **** just averaging all the calibration information in the file
-		      cal_p1   = (float *)malloc(sizeof(float)*totNchan_cal);
-		      cal_p2   = (float *)malloc(sizeof(float)*totNchan_cal);
-		      cal_freq = (float *)malloc(sizeof(float)*totNchan_cal);
-		      nc=0;
-
-		      nRF1=nRF2=nRF3=0;
-		      
-		      
-		      for (ci=0;ci<inFile->beam[b].nBand;ci++)
-			{
-			  sdhdf_loadBandData(inFile,b,ci,2);
-			  sdhdf_loadBandData(inFile,b,ci,3);
-		       
-			  c_nchan = inFile->beam[b].calBandHeader[ci].nchan;
-			  // printf("Number of channels = %d, number of dumps = %d\n",c_nchan,inFile->beam[b].calBandHeader[ci].ndump);
-			  for (cj=0;cj<c_nchan;cj++)
-			    {
-			      onP1=offP1=onP2=offP2=onOffP1=onOffP2=0.0;
-		
-			      for (ck=0;ck<inFile->beam[b].calBandHeader[ci].ndump;ck++)
-				{
-				  onP1  += inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan];
-				  offP1 += inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan];
-				  onP2  += inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan];
-				  offP2 += inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan];
-
-				  onOffP1 += (inFile->beam[b].bandData[ci].cal_on_data.pol1[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol1[cj+ck*c_nchan]);		  
-				  onOffP2 += (inFile->beam[b].bandData[ci].cal_on_data.pol2[cj+ck*c_nchan] - inFile->beam[b].bandData[ci].cal_off_data.pol2[cj+ck*c_nchan]);
-				}
-			      //			      printf("cal: %.5f %g %g %g %g\n",inFile->beam[b].bandData[ci].cal_on_data.freq[cj],onP1,offP1,onP2,offP2);
-
-			      // Note: summing, not averaging above ***
-			      //
-			      freq = cal_freq[nc] = inFile->beam[b].bandData[ci].cal_on_data.freq[cj];
-
-			      //			      cal_p1[nc] = (onP1-offP1);  
-			      //			      cal_p2[nc] = (onP2-offP2);
-			      cal_p1[nc] = onOffP1;
-			      cal_p2[nc] = onOffP2;
-			      //			      printf("freq = %g\n",freq);
-
-			      if ((freq > 814 && freq < 818) ||
-				  (freq > 994 && freq < 998) ||
-				  (freq > 1068 && freq < 1073) ||
-				  (freq > 1194 && freq < 1198) ||
-				  (freq > 1295 && freq < 1305))
-				{
-				  if (cal_p1[nc] > 0 && cal_p2[nc] > 0)
-				    {
-				      scA_rf1_x[nRF1] = scB_rf1_x[nRF1] = log10(freq);
-				      scA_rf1_y[nRF1] = log10(cal_p1[nc]);
-				      scB_rf1_y[nRF1] = log10(cal_p2[nc]);
-				      nRF1++;
-				    }
-				  //				  scA_rf1+=cal_p1[nc]; scB_rf1+=cal_p2[nc]; nRF1++;
-				}
-			      if ((freq > 1309 && freq < 1400) ||
-				  (freq > 1444 && freq < 1454) ||
-				  (freq > 1510 && freq < 1525) ||
-				  (freq > 1635 && freq < 1660) ||
-				  (freq > 1770 && freq < 1785) ||
-				  (freq > 1830 && freq < 1840) ||
-				  (freq > 1930 && freq < 1960) ||
-				  (freq > 2020 && freq < 2040) ||
-				  (freq > 2060 && freq < 2070) ||
-				  (freq > 2175 && freq < 2195))
-				{
-				  if (cal_p1[nc] > 0 && cal_p2[nc] > 0)
-				    {
-				      scA_rf2_x[nRF2] = scB_rf2_x[nRF2] = log10(freq);
-				      scA_rf2_y[nRF2] = log10(cal_p1[nc]);
-				      scB_rf2_y[nRF2] = log10(cal_p2[nc]);
-				      nRF2++;
-				    }
-				  
-				  //				  scA_rf2+=cal_p1[nc]; scB_rf2+=cal_p2[nc]; nRF2++;
-				}
-			      if ((freq > 2520 && freq < 2550) ||
-				  (freq > 2654 && freq < 2660) ||
-				  (freq > 2710 && freq < 2730) ||
-				  (freq > 2780 && freq < 2860) ||
-				  (freq > 2900 && freq < 2980) ||
-				  (freq > 3030 && freq < 3060) ||
-				  (freq > 3080 && freq < 3120) ||
-				  (freq > 3180 && freq < 3240) ||
-				  (freq > 3290 && freq < 3320) ||
-				  (freq > 3340 && freq < 3370) ||
-				  (freq > 3415 && freq < 3435) ||
-				  (freq > 3485 && freq < 3495) ||
-				  (freq > 3590 && freq < 3605) ||
-				  (freq > 3680 && freq < 3690) ||
-				  (freq > 3826 && freq < 3829) ||
-				  (freq > 3860 && freq < 3880) ||
-				  (freq > 4010 && freq < 4015))
-				{
-				  if (cal_p1[nc] > 0 && cal_p2[nc] > 0)
-				    {
-				      scA_rf3_x[nRF3] = scB_rf3_x[nRF3] = log10(freq);
-				      scA_rf3_y[nRF3] = log10(cal_p1[nc]);
-				      scB_rf3_y[nRF3] = log10(cal_p2[nc]);
-				      nRF3++;
-				    }
-				  //  scA_rf3+=cal_p1[nc]; scB_rf3+=cal_p2[nc]; nRF3++;
-				}
-			      
-			      nc++;
-			    }
-			}
-
-		      // Fit straight lines to the cal data
-		      if (calFitN>0)
-			{
-
-			  if (nRF1 == 0)
-			    printf("WARNING: Attempting to fit to RF1, but no data\n");
-			  else
-			    {
-			      TKleastSquares_svd_noErr(scA_rf1_x,scA_rf1_y,nRF1,scA_rf1,calFitN,TKfitPoly);
-			      TKleastSquares_svd_noErr(scB_rf1_x,scB_rf1_y,nRF1,scB_rf1,calFitN,TKfitPoly);
-			    }
-
-			  if (nRF2 == 0)
-			    printf("WARNING: Attempting to fit to RF2, but no data\n");
-			  else
-			    {
-			      TKleastSquares_svd_noErr(scA_rf2_x,scA_rf2_y,nRF2,scA_rf2,calFitN,TKfitPoly);
-			      TKleastSquares_svd_noErr(scB_rf2_x,scB_rf2_y,nRF2,scB_rf2,calFitN,TKfitPoly);
-			    }
-			  if (nRF3 == 0)
-			    printf("WARNING: Attempting to fit to RF3, but no data\n");
-			  else
-			    {
-			      TKleastSquares_svd_noErr(scA_rf3_x,scA_rf3_y,nRF3,scA_rf3,calFitN,TKfitPoly);
-			      TKleastSquares_svd_noErr(scB_rf3_x,scB_rf3_y,nRF3,scB_rf3,calFitN,TKfitPoly);
-			    }
-			}
-
-		      {
-			FILE *fout;
-			int i0;
-			fout = fopen("calOutput_rf1.dat","w");
-			for (i0=0;i0<nRF1;i0++)
-			  fprintf(fout,"calOutput: %g %g %g %g %g %g %g %g\n",scA_rf1_x[i0],scA_rf1_y[i0],scB_rf1_x[i0],scB_rf1_y[i0],scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1]);
-			fclose(fout);
-
-			fout = fopen("calOutput_rf2.dat","w");
-			for (i0=0;i0<nRF2;i0++)
-			  fprintf(fout,"calOutput: %.6f %.6f %.6f %.6f %.4f %.4f %.4f %.4f %.4f %.4f\n",scA_rf2_x[i0],scA_rf2_y[i0],scB_rf2_x[i0],scB_rf2_y[i0],scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf2[2],scB_rf2[2]);
-			fclose(fout);
-
-			
-			fout = fopen("calOutput_rf3.dat","w");
-			for (i0=0;i0<nRF3;i0++)
-			  fprintf(fout,"calOutput: %g %g %g %g %g %g %g %g\n",scA_rf3_x[i0],scA_rf3_y[i0],scB_rf3_x[i0],scB_rf3_y[i0],scA_rf3[0],scB_rf3[0],scA_rf3[1],scB_rf3[1]);
-			fclose(fout);
-		      }
-		      
-		    
-		      printf("Loaded cal %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %d %d %d\n",scA_rf1[0],scB_rf1[0],scA_rf1[1],scB_rf1[1],scA_rf1[2],scB_rf1[2],
-			     scA_rf2[0],scB_rf2[0],scA_rf2[1],scB_rf2[1],scA_rf2[2],scB_rf2[2],scA_rf3[0],scB_rf3[0],scA_rf3[1],scA_rf3[2],scB_rf3[2],
-			     scB_rf3[1],nRF1,nRF2,nRF3);
-		      //			  exit(1);
-
-		    }
-
-	       
-		  // Copy the bands
-		  nc2=0;
-		  for (ii=0;ii<inFile->beam[b].nBand;ii++)
-		    {
-		      printf(" ... Processing subband %d/%d\n",ii,inFile->beam[b].nBand-1);
-		      // If "timeScrunch" is set then need to
-		      // Replace the first spectral dump in the file with the scrunched information (note integration times
-		      //  in case one spectral dump is shorter than the other ones??)
-		      // Remove the other spectral dumps
-		      // Update all relevant meta-data
-		      //   ... integration time
-		      //   ... number of spectral dumps
-		      //   ... time of spectral dump
-		      
-		      // I don't want to copy the data column as I cannot resize it.
-		      nchan = inFile->beam[b].bandHeader[ii].nchan;
-		      npol  = inFile->beam[b].bandHeader[ii].npol;
-
-		      // FIX ME
-		      //		      sdhdf_loadFrequencyAttributes(inFile,ii);
-		      //		      sdhdf_loadDataAttributes(inFile,ii);
-		      
-		      //		      strcpy(outFile->frequency_attr.frame,inFile->frequency_attr.frame);
-		      //		      strcpy(outFile->frequency_attr.unit,inFile->frequency_attr.unit);
-		      //		      strcpy(outFile->data_attr.unit,inFile->data_attr.unit);		     		      
-
-
-		      if (nchanRequested > 0) // Define fav
-			{
-			  fAv = (int)(nchan/nchanRequested);
-			  printf("Setting number of channels to average to %d (original number of channels = %d)\n",fAv,nchan);
-			}
-		      
-		      if (fScrunch==1)
-			fAv = nchan;
-		    
-		      if (fchbw > 0)
-			{
-			  double chbw;
-			  sdhdf_loadBandData(inFile,b,ii,1);
-			  printf("B\n");
-			  chbw = fabs(inFile->beam[b].bandData[ii].astro_data.freq[1]-inFile->beam[b].bandData[ii].astro_data.freq[0]); // Assuming time ordered, evenly spaced channels -- FIX ME
-			  fAv = (int)(fabs(fchbw)/chbw);
-			  printf("Frequency averaging by %d channels\n",fAv);
-			}
-		      
-		      if (fAv < 2)
-			out_nchan = nchan;
-		      else
-			out_nchan = (int)(nchan/fAv);
-		      
-		      if (pol == 1)
-			out_npol=1;
-		      else
-			out_npol  = npol;
-
-
-		      if (tdumpRequest > 0)
-			{
-			  float tdump;
-			  tdump = inFile->beam[b].bandHeader[ii].dtime;
-			  printf("tdump = %g request = %g\n",tdump,tdumpRequest);
-			}
-
-
-		      
-		      if (tScrunch==1)
-			out_ndump = 1;
-		      else
-			out_ndump = inFile->beam[b].bandHeader[ii].ndump;
-		    
-
-		      if (nScal > 0)
-			{
-			  int cj,ck;
-			  double onP1,offP1,onP2,offP2,onP3,offP3,onP4,offP4;
-			  double freq;
-			  
-			  printf("Calibrating\n");
-			  // Could calibrate dump by dump, or average the entire data file
-			  // FOR NOW **** just averaging all the calibration information in the file
-			  sdhdf_loadBandData(inFile,b,ii,2);
-			  sdhdf_loadBandData(inFile,b,ii,3);
-			  
-			  c_nchan = inFile->beam[b].calBandHeader[ii].nchan;
-			  printf("Number of channels = %d\n",c_nchan);
-			  for (cj=0;cj<c_nchan;cj++)
-			    {
-			      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0.0;
-			      //			      printf("ndump = %d\n",inFile->beam[b].calBandHeader[ii].ndump);
-			      for (ck=0;ck<inFile->beam[b].calBandHeader[ii].ndump;ck++)
-				{
-				  onP1  += inFile->beam[b].bandData[ii].cal_on_data.pol1[cj+ck*c_nchan];
-				  offP1 += inFile->beam[b].bandData[ii].cal_off_data.pol1[cj+ck*c_nchan];
-				  onP2  += inFile->beam[b].bandData[ii].cal_on_data.pol2[cj+ck*c_nchan];
-				  offP2 += inFile->beam[b].bandData[ii].cal_off_data.pol2[cj+ck*c_nchan];
- 				  onP3  += inFile->beam[b].bandData[ii].cal_on_data.pol3[cj+ck*c_nchan];
-				  offP3 += inFile->beam[b].bandData[ii].cal_off_data.pol3[cj+ck*c_nchan];
-				  onP4  += inFile->beam[b].bandData[ii].cal_on_data.pol4[cj+ck*c_nchan];
-				  offP4 += inFile->beam[b].bandData[ii].cal_off_data.pol4[cj+ck*c_nchan];
-				}
-			      
-			      onP1 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      offP1 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      onP2 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      offP2 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      onP3 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      offP3 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      onP4 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      offP4 /= (inFile->beam[b].calBandHeader[ii].ndump*divideCal);
-			      
-			      // Note: summing, not averaging above ***
-			      //
-			      calAA   = onP1-offP1;
-			      calBB   = onP2-offP2;
-			      calReAB = onP3-offP3;
-			      calImAB = onP4-offP4;
-
-			      sysGain_freq[cj] = inFile->beam[b].bandData[ii].cal_on_data.freq[cj];
-			      diffGain2[cj]    = (calAA-calBB)/(calAA+calBB);
-			      diffPhase[cj]    = atan2(calImAB,calReAB);
-			      scale1[cj] = calAA;
-			      scale2[cj] = calBB;
-			      scale3[cj] = calReAB;
-			      scale4[cj] = calImAB;
-			      
-			      getScal(sysGain_freq[cj],scalFreq,scalAA,scalBB,nScal,&scalAA_val,&scalBB_val);
-			      //  g_e[cj] = (calAA+calBB)/(scalAA_val+scalBB_val);
-
-			      // Note should use -tcal isntead of -scal if using TCAL measurements
-			      g_e[cj] = (1.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
-			      //			      g_e[cj] = (8.0)/(scalAA_val+scalBB_val); // Check THIS VERY CAREFULLY -- NOW IN cals/Jy
-			      //			      printf("WARNING SCALING BY A FACTOR OF 8 -- CHECK THIS *****\n");
-			      
-			      //			      printf("g_e = %g\n",g_e[cj]);
-			      if (ii==5)
-				printf("Processing freq = %.6f %g %g %g\n",sysGain_freq[cj],diffGain2[cj],diffPhase[cj]*180/M_PI,g_e[cj]);
-
-			      if (calFitN>0)
-				{
-				  scA_rf1_val = pow(10,scA_rf1[0] + scA_rf1[1]*log10(sysGain_freq[cj]) + scA_rf1[2]*pow(log10(sysGain_freq[cj]),2));
-				  scB_rf1_val = pow(10,scB_rf1[0] + scB_rf1[1]*log10(sysGain_freq[cj]) + scB_rf1[2]*pow(log10(sysGain_freq[cj]),2));
-				  scA_rf2_val = pow(10,scA_rf2[0] + scA_rf2[1]*log10(sysGain_freq[cj]) + scA_rf2[2]*pow(log10(sysGain_freq[cj]),2));
-				  scB_rf2_val = pow(10,scB_rf2[0] + scB_rf2[1]*log10(sysGain_freq[cj]) + scB_rf2[2]*pow(log10(sysGain_freq[cj]),2));
-				  scA_rf3_val = pow(10,scA_rf3[0] + scA_rf3[1]*log10(sysGain_freq[cj]) + scA_rf3[2]*pow(log10(sysGain_freq[cj]),2));
-				  scB_rf3_val = pow(10,scB_rf3[0] + scB_rf3[1]*log10(sysGain_freq[cj]) + scB_rf3[2]*pow(log10(sysGain_freq[cj]),2));
-
-				  //				  printf("[%d] Comparison %.6g %.6g %.6g %.6g %.6g %.6g\n",calFitN,sysGain_freq[cj],onP1-offP1,cal_p1[nc2],scA_rf1_val,scA_rf2_val,scA_rf3_val);
-				  							      
-				  if (sysGain_freq[cj] < 1344) // HARDCODE TO PARKES
-				    {
-				      sysGain_p1[cj] = scA_rf1_val/scalAA_val;
-				      sysGain_p2[cj] = scB_rf1_val/scalBB_val;
-				    }
-				  else if (sysGain_freq[cj] < 2368) // HARDCODE TO PARKES
-				    {
-				      sysGain_p1[cj] = scA_rf2_val/scalAA_val;
-				      sysGain_p2[cj] = scB_rf2_val/scalBB_val;
-				    }
-				  else if (sysGain_freq[cj] <= 4032) // HARDCODE TO PARKES
-				    {
-				      sysGain_p1[cj] = scA_rf3_val/scalAA_val;
-				      sysGain_p2[cj] = scB_rf3_val/scalBB_val;
-				    }				  
-				}
-			      else
-				{
-				  sysGain_p1[cj] = cal_p1[nc2]/scalAA_val;
-				  sysGain_p2[cj] = cal_p2[nc2]/scalBB_val;				  
-				}
-			  
-			      nc2++;
-
-			      /*
-			      printf("Gain: %.6f %g %g %g %g %g %g %g %g %g %g [ %g %g ]\n",
-				     sysGain_freq[cj],sysGain_p1[cj],sysGain_p2[cj],scalAA_val,scalBB_val,
-				     scA_rf1_val,scB_rf1_val, scA_rf2_val,scB_rf2_val,scA_rf3_val,scB_rf3_val,
-				     scA_rf1[0],scA_rf1[1]);
-			      */
-			    }
-			}
-		    		    
-		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
-		      if (tScrunch==1)
-			sdhdf_copySingleObsParams(inFile,b,ii,0,&outObsParams[0]);
-		      else
-			{
-			  int kk;
-			  for (kk=0;kk<out_ndump;kk++)
-			    sdhdf_copySingleObsParams(inFile,b,ii,kk,&outObsParams[kk]);
-			}
-		      nsd = inFile->beam[b].bandHeader[ii].ndump;
-		      if (!(in_data = (float *)malloc(sizeof(float)*nchan*npol*inFile->beam[b].bandHeader[ii].ndump)))
-			{
-			  printf("ERROR: Unable to allocate memory for in_data: %d\n",nchan*npol*nsd);
-			  exit(1);
-			}
-		      in_freq   = (double *)malloc(sizeof(double)*nchan);
-		      out_freq  = (float *)malloc(sizeof(float)*out_nchan);
-		      out_data  = (float *)calloc(sizeof(float),out_nchan*out_npol*out_ndump);
-		      out_Tdata = (float *)calloc(sizeof(float),nchan*npol*out_ndump);
-		      out_Fdata = (float *)calloc(sizeof(float),out_nchan*npol*out_ndump);
-		      dataWts   = (float *)calloc(sizeof(float),out_nchan*out_ndump);
-		      haveWeights = 1;
-		      dataFlags   = (unsigned char *)calloc(sizeof(unsigned char),out_nchan*out_ndump);
-		      haveFlags = 1;
-		      tav=0;
-		      sdhdf_loadBandData(inFile,b,ii,1);
-		      for (j=0;j<nchan;j++)
-			{
-			  in_freq[j] = inFile->beam[b].bandData[ii].astro_data.freq[j];
-			  if (fAv < 2)
-			    out_freq[j] = in_freq[j];
-			}
-		      if (strcmp(scaleFile,"NULL")!=0)
-			{
-			  float sclAA,sclBB;
-			  int kk,k0;
-			  //			  printf("Applying scaling\n");
-			  // Apply the scaling
-			  for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
-			    {
-			      k0=0;
-			      for (k=0;k<nchan;k++)
-				{
-				  sclAA = sclBB = 0.0;
-				  for (kk=k0;kk<nScale;kk++)
-				    {
-				      if (in_freq[k] <= freq[kk])
-					{
-					  sclAA = 1./linearInterpolate(freq,scaleAA,in_freq[k],kk,nScale);
-					  sclBB = 1./linearInterpolate(freq,scaleBB,in_freq[k],kk,nScale);
-					  if (k==0) k0=kk;
-					  break;
-					}				     
-				    }
-				  //				  printf("WARNING: ASSUMING CAL HAS 128 CHANNELS/SUBBAND\n");
-				  //				  sclAA *= (nchan/128);
-				  //				  sclBB *= (nchan/128);
-				  inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]*=sclAA;
-				  inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]*=sclBB;
-				}
-			    }
-			  //			  printf("Fixed the scaling\n");
-			}
-		      // Time averaging
-		      if (tScrunch==1)
-			{
-			  int ignore=0;
-			  int jj;
-			  int nsum=0;
-			  double swt=0,wt;
-			  int haveNonZeroFlag=0;
-			  
-			  for (k=0;k<nchan;k++)
-			    {
-			      swt=0;
-			      tav=0;
-			      haveNonZeroFlag=0;
-			      for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
-				{
-				  ignore=0;
-				  
-				  for (jj=0;jj<nIgnoreSD;jj++)
-				    {
-				      if (ignoreSD[jj] == j)
-					{ignore=1; break;}
-				    }
-				  if (ignore==0)
-				    {
-				      tav += inFile->beam[b].bandHeader[ii].dtime;
-				      nsum++;
-				      //				  printf("Updating time averaged to %g\n",tav);
-				      
-				      wt   = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k];
-				      flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+k];
-
-				      if (wt!=0)
-					{
-					  if (npol==1)
-					    out_Tdata[k] += wt*inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
-					  else if (npol==2)
-					    {
-					      out_Tdata[k]         += wt*inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+nchan]   += wt*inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
-					    }
-					  else
-					    {
-					      out_Tdata[k]         += wt*inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+nchan]   += wt*inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+2*nchan] += wt*inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; // /(float)nsd;
-					      out_Tdata[k+3*nchan] += wt*inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; // /(float)nsd;  
-					    }
-					  
-					  
-					  //				      printf("Updating dataWts %d %d %g\n",j,k,inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+k]);
-					  // Update the data weights
-					  // GEORGE: SHOULD CHECK IF THE ORIGINAL FILE DIDN'T HAVE WEIGHTS ***
-					  // Note that we don't have j*out_nchan here as we're time scrunching
-					  dataWts[k] += wt;
-					  haveNonZeroFlag=1;
-
-					  swt += wt;
-					}
-					  //				      printf("Done\n");
-				    }
-				}
-			      if (haveNonZeroFlag==0)
-				dataFlags[k] = 1;      // If all time dumps are flagged then flag this channel
-			      else
-				dataFlags[j] = 0;      // Otherwise don't flag
-			      
-			      if (npol==1)
-				{if (swt > 0) {out_Tdata[k] /= swt;} else {out_Tdata[k] = 0;}}
-			      else if (npol==2)
-				{
-				  if (swt > 0)
-				    {
-				      out_Tdata[k]         /= swt;
-				      out_Tdata[k+nchan]   /= swt;
-				    }
-				  else
-				    {
-				      out_Tdata[k]         = 0;
-				      out_Tdata[k+nchan]   = 0;				      
-				    }
-				}
-			      else
-				{
-				  if (swt > 0)
-				    {
-				      out_Tdata[k]         /= swt;
-				      out_Tdata[k+nchan]   /= swt;
-				      out_Tdata[k+2*nchan] /= swt;
-				      out_Tdata[k+3*nchan] /= swt;
-				    }
-				  else
-				    {
-				      out_Tdata[k]         = 0;
-				      out_Tdata[k+nchan]   = 0;
-				      out_Tdata[k+2*nchan] = 0;
-				      out_Tdata[k+3*nchan] = 0;
-				    }
-				}
-			      
-			      //			      printf("data_wts = %g\n",dataWts[k]);
-			    }
-
-
-			
-			  
-			  // Scale the output
-			  // GEORGE **** THIS SHOULD BE EARLIER AS YOU MAY NOT CHOOSE TO TIME SCRUNCH *****
-			  if (nScal > 0 && stokes==0)
-			    {
-			      double gainVal1,gainVal2;
-			      double *interpY1,*interpY2;
-			      
-			      if (interp==2) // Cubic spline
-				{
-				  interpY1 = (double *)malloc(sizeof(double)*nchan);
-				  interpY2 = (double *)malloc(sizeof(double)*nchan);
-				  printf("Setting up cubic spline\n");
-				  TKcmonot(c_nchan,sysGain_freq,sysGain_p1,yd1);
-				  TKcmonot(c_nchan,sysGain_freq,sysGain_p2,yd2);
-				  TKspline_interpolate(c_nchan,sysGain_freq,sysGain_p1,yd1,in_freq,interpY1,nchan);
-				  TKspline_interpolate(c_nchan,sysGain_freq,sysGain_p2,yd2,in_freq,interpY2,nchan);
-				  printf("Complete setting up cubic spline\n");
-				}
-			      for (k=0;k<nchan;k++)
-				{
-				  //
-				  // Note that this is using the getScal interpolation routine, but is getting sysGain instead
-				  //
-				  if (interp==1)
-				    getScal(in_freq[k],sysGain_freq,sysGain_p1,sysGain_p2,c_nchan,&gainVal1,&gainVal2);
-				  else if (interp==2)
-				    {
-				      gainVal1 = interpY1[k];
-				      gainVal2 = interpY2[k];
-				    }
-				  //				  printf("Scale factors: %.6f %g %g\n",in_freq[k],gainVal1,gainVal2);
-				  // Only scaling 2 polarisations *** <<<
-				  
-				  if (gainVal1 <= 0) gainVal1=1e9; // SHOULD SET MORE SENSIBLY ****
-				  if (gainVal2 <= 0) gainVal2=1e9; // SHOULD SET MORE SENSIBLY ****
-				  
-				  out_Tdata[k]       *= nchan/c_nchan/gainVal1/calBin; ///nsum; // Note scaling by number of spectral dumps as each one now should be in Jy
-				  out_Tdata[k+nchan] *= nchan/c_nchan/gainVal2/calBin; ///nsum;				  
-				}
-			      if (interp==2)
-				{
-				  free(interpY1);
-				  free(interpY2);
-				}
-			    }
-			}
-		      else
-			{
-			  for (j=0;j<inFile->beam[b].bandHeader[ii].ndump;j++)
-			    {
-			      //			      printf("ii = %d dump = %d nchan = %d ndump = %d\n",ii,j,nchan,inFile->beam[b].bandHeader[ii].ndump);
-			      for (k=0;k<nchan;k++)
-				{
-				  //				  printf("Setting k = %d, j = %d\n",k,j);
-				  if (npol==1)
-				    out_Tdata[k+j*nchan*npol] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; // /(float)nsd;
-				  else if (npol==2)
-				    {
-				      out_Tdata[k+j*nchan*npol]         = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
-				      out_Tdata[k+j*nchan*npol+nchan]   = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; ///(float)nsd;
-				    }
-				  else if (npol==4)
-				    {
-				      unsigned long i0 = (unsigned long int)k+(unsigned long int)j*(unsigned long int)nchan*(unsigned long int)npol+3*(unsigned long int)nchan;
-				      if (i0 < 0 || i0 > nchan*npol*out_ndump)
-					{
-					  printf("ERROR: this should not happen\n");
-					  exit(1);
-					}
-					out_Tdata[(unsigned long int)k+(unsigned long int)j*(unsigned long int)nchan*(unsigned long int)npol]
-					= inFile->beam[b].bandData[ii].astro_data.pol1[k+j*nchan]; ///(float)nsd;
-				      out_Tdata[(unsigned long int)k+(unsigned long int)j*(unsigned long int)nchan*(unsigned long int)npol+(unsigned long int)nchan]   = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*nchan]; ///(float)nsd;
-				      out_Tdata[(unsigned long int)k+(unsigned long int)j*(unsigned long int)nchan*(unsigned long int)npol+2*(unsigned long int)nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*nchan]; ///(float)nsd;
-				      out_Tdata[(unsigned long int)k+(unsigned long int)j*(unsigned long int)nchan*(unsigned long int)npol+3*(unsigned long int)nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*nchan]; ///(float)nsd; 
-				    }
-				}	
-			      //			      printf("Done dump\n");
-			    }
-			}
-
-		      // Frequency averaging (note: weighted mean)
-		      if (fAv >= 2)
-			{
-			  double wt;
-			  double swt;
-			  int haveNonZeroFlag=0;
-			  //			  printf("Frequency averaging\n");
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      printf("Frequency averaging dump %d/%d\n",j,out_ndump);
-			      kp=0;
-			      if (fAvType == 1) // Weighted mean averaging
-				{
-				  for (k=0;k<nchan;k+=fAv)
-				    {				  
-				      av1 = av2 = av3 = av4 = avFreq = 0.0;
-				      swt=0;
-				      dataWts[j*out_nchan+kp]   = 0;  // FIX ME: SHOULDN'T DO THIS AS ALREADY TIME SCRUNCHED
-				      dataFlags[j*out_nchan+kp] = 0;
-				      haveNonZeroFlag=0;
-				      
-				      for (l=k;l<k+fAv;l++)
-					{
-					  // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
-					  wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
-					  flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
-					  if (flag == 0) haveNonZeroFlag=1;
-					  //				      printf("wt = %g\n",wt);
-					  avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
-					  if (npol==1)
-					    av1 += wt*out_Tdata[l+j*npol*nchan];
-					  else if (npol==2)
-					    {
-					      av1 += wt*out_Tdata[l+j*npol*nchan];
-					      av2 += wt*out_Tdata[l+j*npol*nchan+nchan];
-					    }
-					  else
-					    {
-					      //					  printf("Got here with %g %g %g\n",wt,out_Tdata[l+j*npol*nchan],av1);				  
-					      av1 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan];
-					      av2 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+1*(unsigned long int)nchan];
-					      av3 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+2*(unsigned long int)nchan];
-					      av4 += wt*out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+3*(unsigned long int)nchan];
-					    }
-					  //  printf("Writing to %d %d nchan = %d l = %d k = %d\n",j,kp,nchan,l,k);
-					  //  printf("Input weight = %g\n",inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l]);
-					  dataWts[j*out_nchan+kp] += wt; //inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
-					  
-					  
-					  swt += wt;
-					  //				      printf("Done write\n");
-					}
-				      if (haveNonZeroFlag==0)
-					dataFlags[j*out_nchan+kp] = 1;
-				      else
-					dataFlags[j*out_nchan+kp] = 0;
-				      
-				      //				  printf("Updating the sum\n");
-				      if (j==0) out_freq[kp] = avFreq/fAv;
-				      if (npol==1)
-					{
-					  if (swt > 0)
-					    out_Fdata[kp+out_nchan*j*npol]               = av1/swt; 
-					  else
-					    out_Fdata[kp+out_nchan*j*npol]               = 0; 
-					}
-				      else if (npol==2)
-					{
-					  if (swt > 0)
-					    {
-					      out_Fdata[kp+out_nchan*j*npol]             = av1/swt; 
-					      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = av2/swt; 
-					    }
-					  else
-					    {
-					      out_Fdata[kp+out_nchan*j*npol]             = 0; 
-					      out_Fdata[kp+out_nchan*j*npol+out_nchan]   = 0; 
-					    }
-					}
-				      else
-					{
-					  if (swt > 0)
-					    {
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = av1/swt; 
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = av2/swt; 
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = av3/swt; 
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = av4/swt; 
-					    }
-					  else
-					    {
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = 0; 
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = 0; 
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = 0; 
-					      out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = 0; 
-					    }
-					}
-				      kp++;
-				      
-				    }
-				}
-			      else if ( fAvType == 2) // Median averaging
-				{
-				  float v1[fAv],v2[fAv],v3[fAv],v4[fAv];
-				  float median1,median2,median3,median4;
-				  printf("NOT GETTING WTS CORRECT HERE - FIX ME\n");
-
-				  for (k=0;k<nchan;k+=fAv)
-				    {				  
-				      av1 = av2 = av3 = av4 = avFreq = 0.0;
-				      swt=0;
-				      dataWts[j*out_nchan+kp]   = 1;  // FIX ME: SHOULDN'T DO THIS AS ALREADY TIME SCRUNCHED
-				      dataFlags[j*out_nchan+kp] = 0;
-				      haveNonZeroFlag=0;
-				      
-				      for (l=k;l<k+fAv;l++)
-					{
-					  // This needs fixing -- because dataWeights not set for the output ndump if time scrunched
-					  wt = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+l];
-					  flag = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+l];
-					  if (flag == 0) haveNonZeroFlag=1;
-					  //				      printf("wt = %g\n",wt);
-					  avFreq += in_freq[l]; // Should be a weighted sum  *** FIX ME
-					  if (npol==1)
-					    v1[l-k] = out_Tdata[l+j*npol*nchan];
-					  else if (npol==2)
-					    {
-					      v1[l-k] = out_Tdata[l+j*npol*nchan];
-					      v2[l-k] = out_Tdata[l+j*npol*nchan+nchan];
-					    }
-					  else
-					    { 
-					      v1[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan];
-					      v2[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+1*(unsigned long int)nchan];
-					      v3[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+2*(unsigned long int)nchan];
-					      v4[l-k] = out_Tdata[(unsigned long int)l+(unsigned long int)j*(unsigned long int)npol*(unsigned long int)nchan+3*(unsigned long int)nchan];
-					    }
-					}
-				      if (npol==1)
-					{
-					  median1 = quick_select_float(v1,fAv);
-					  out_Fdata[kp+out_nchan*j*npol]  = median1;
-					}
-				      else if (npol==2)
-					{
-					  median1 = quick_select_float(v1,fAv);
-					  median2 = quick_select_float(v2,fAv);
-
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = median1; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = median2; 
-					}
-				      else
-					{
-					  //					  median1 = TKfindMedian_f(v1,fAv);
-					  //					  median2 = TKfindMedian_f(v2,fAv);
-					  //					  median3 = TKfindMedian_f(v3,fAv);
-					  //					  median4 = TKfindMedian_f(v4,fAv);
-					  median1 = quick_select_float(v1,fAv);
-					  median2 = quick_select_float(v2,fAv);
-					  median3 = quick_select_float(v3,fAv);
-					  median4 = quick_select_float(v4,fAv);
-
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol]             = median1; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+(unsigned long int)out_nchan]   = median2; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+2*(unsigned long int)out_nchan] = median3; 
-					  out_Fdata[(unsigned long int)kp+(unsigned long int)out_nchan*(unsigned long int)j*(unsigned long int)npol+3*(unsigned long int)out_nchan] = median4; 
-
-					}
-
-				   
-				      dataFlags[j*out_nchan+kp] = 0;				      
-				      if (j==0) out_freq[kp] = avFreq/fAv;				   
-				      kp++;
-				    }
-			      //			      printf("Processed dump %d\n",j);
-				}
-			    }
-			  //			  printf("Finished frequency averaging\n");
-			}
-		      else
-			{
-			  // Should use memcpy
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      for (k=0;k<out_nchan;k++)
-				{
-				  // We've already set the weights above ???  FIX ME *** CHECK *****
-				  if (tScrunch!=1)
-				    {
-				      dataWts[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[j*nchan+j];
-				      dataFlags[j*out_nchan+k] = inFile->beam[b].bandData[ii].astro_data.flag[j*nchan+j];
-				    }
-				  if (npol==1)
-				    out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
-				  else if (npol==2)
-				    {
-				      out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];  // *4 NEED FIXING
-				      out_Fdata[k+out_nchan*j*4+out_nchan]   = out_Tdata[k+out_nchan*j*4+out_nchan];
-				    }
-				  else if (npol==4)
-				    {
-				      out_Fdata[k+out_nchan*j*4]             = out_Tdata[k+out_nchan*j*4];
-				      out_Fdata[k+out_nchan*j*4+out_nchan]   = out_Tdata[k+out_nchan*j*4+out_nchan];
-				      out_Fdata[k+out_nchan*j*4+2*out_nchan] = out_Tdata[k+out_nchan*j*4+2*out_nchan];
-				      out_Fdata[k+out_nchan*j*4+3*out_nchan] = out_Tdata[k+out_nchan*j*4+3*out_nchan];
-				    }
-				}
-			    }
-			}
-		      // This was moved lower because of the need to read the weights
-		      //		      printf("Releasing band data\n");
-		      sdhdf_releaseBandData(inFile,b,ii,1); 		      
-		      //		      printf("Creating final data\n");
-		      // Now create final data
-		      // Do polarisation summing as required
-		      if (pol==0)
-			{
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      for (k=0;k<out_nchan;k++)
-				{
-				  if (npol==1)
-				    out_data[k+out_nchan*j*out_npol]               = out_Fdata[k+out_nchan*j*npol];
-				  else if (npol==2)
-				    {
-				      out_data[k+out_nchan*j*out_npol]             = out_Fdata[k+out_nchan*j*npol];
-				      out_data[k+out_nchan*j*out_npol+out_nchan]   = out_Fdata[k+out_nchan*j*npol+out_nchan];
-				    }
-				  else if (npol==4) // Remember npol = input npol 
-				    {
-				      out_data[k+out_nchan*j*out_npol]             = out_Fdata[k+out_nchan*j*npol];
-				      out_data[k+out_nchan*j*out_npol+out_nchan]   = out_Fdata[k+out_nchan*j*npol+out_nchan];
-				      out_data[k+out_nchan*j*out_npol+2*out_nchan] = out_Fdata[k+out_nchan*j*npol+2*out_nchan];
-				      out_data[k+out_nchan*j*out_npol+3*out_nchan] = out_Fdata[k+out_nchan*j*npol+3*out_nchan];
-				      //				      printf("out_data = %g\n",out_data[k+out_nchan*j*out_npol]);
-				    }
-				}
-			    }
-			}
-		      else if (pol==1) 
-			{
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      for (k=0;k<out_nchan;k++)
-				{
-				  if (polAv==1)
-				    out_data[k+out_nchan*j] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j*4+out_nchan])/2.;
-				  else
-				    out_data[k+out_nchan*j] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j*4+out_nchan]); 
-				}
-			      // out_data[k+out_nchan*j*4] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j+4+out_nchan])/2.;
-			    }
-			}
-		      else if (pol==2)
-			{
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      for (k=0;k<out_nchan;k++)
-				{
-				  out_data[k+out_nchan*j*4]             = out_Fdata[k+out_nchan*j*4];
-				  out_data[k+out_nchan*j*4+out_nchan]   = out_Fdata[k+out_nchan*j*4+out_nchan];
-				}
-			    }
-			}
-		      else if (pol==3)
-			{
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      for (k=0;k<out_nchan;k++)
-				out_data[k+out_nchan*j*4] = (out_Fdata[k+out_nchan*j*4]+out_Fdata[k+out_nchan*j+4+out_nchan]);
-			    }
-			}
-		      // Conversion to Stokes
-		   
-		      if (stokes==1)
-			{
-			  float p1,p2,p3,p4;
-			  double t_p3,t_p4;
-			  float mI,mQ,mU,mV;
-			  float aI,aQ,aU,aV;
-			  
-			  double phi,dgain2;
-			  float marray[4][4],mueller[4][4],mueller_inv[4][4];
-			  float mastro[4][4];
-			  float mcc[4][4];
-			  float mpa[4][4];
-			  float mfeed[4][4];
-			  float mhand[4][4];
-			  float tmatrix[4][4];
-			  double paraAng;
-			  //			  double feedGamma=-90*M_PI/180;
-			  double feedGamma=0;      //-90*M_PI/180;
-			  double ge;
-			  double temp;
-
-			  int sI,sJ;
-			  float stokesM[4],stokesA[4];
-			  
-			  printf("Stokes In here with %d\n",out_ndump);
-			  printf("WARNING: cal bin set to: %d\n",calBin);
-
-			  // Check for Nchannel changes because of an extraction
-
-
-			  if (origNchan == -1)
-			    {
-			      chbw = in_freq[1]-in_freq[0];
-			      if (fabs(128.0 / chbw - nchan) > 1e-3) // hardcoding band width and 1e-3 values here ****
-				{
-				  printf("WARNING: The number of channels seems to have changed since the original file produced\n");
-				  printf("Setting nchan to %d\n",(int)(128/chbw+0.5));
-				  origNchan = (int)(128/chbw+0.5);				    
-				}
-				
-			    }
-			  
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      
-			      for (k=0;k<out_nchan;k++)
-				{
-				  // FD_HAND = -1;
-				  // Q1: WHAT SHOULD THIS BE
-				  /*
-				  
-				  p2 = out_data[k+out_nchan*j*4];   
-				  p1 = out_data[k+out_nchan*j*4+out_nchan];				  
-				  p3 = out_data[k+out_nchan*j*4+2*out_nchan];
-				  p4 = out_data[k+out_nchan*j*4+3*out_nchan];
-				  */
-
-				
-				  p1 = out_data[k+out_nchan*j*4];   
-				  p2 = out_data[k+out_nchan*j*4+out_nchan];
-				  p3 = out_data[k+out_nchan*j*4+2*out_nchan];
-				  p4 = out_data[k+out_nchan*j*4+3*out_nchan];
-
-				  p1 /= divideAstro;
-				  p2 /= divideAstro;
-				  p3 /= divideAstro;
-				  p4 /= divideAstro;
-				  
-				  //				  sdhdf_convertStokes(p1,p2,p3,p4,&out_data[k],&out_data[k+out_nchan],&out_data[k+2*out_nchan],&out_data[k+3*out_nchan]);
-
-				  // Pre-stabilise the system				  
-				  getScal(in_freq[k],sysGain_freq,scale1,scale2,c_nchan,&useScale1,&useScale2);
-				  getScal(in_freq[k],sysGain_freq,scale3,scale4,c_nchan,&useScale3,&useScale4);
-				  p1/=useScale1;
-				  p2/=useScale2;
-
-				  t_phase = atan2(useScale4,useScale3);
-				  t_len = sqrt(pow(useScale3,2) + pow(useScale4,2));
-				  t_p3 = p3;
-				  t_p4 = p4;
-				  p3 = (t_p3*cos(t_phase) + t_p4*sin(t_phase))/t_len;
-				  p4 = (t_p4*cos(t_phase) - t_p3*sin(t_phase))/t_len;
-				  //				  printf("Scaling: %g %g %g %g %g %g %g %g %g\n",sysGain_freq[cj],scale1[cj],scale2[cj],scale3[cj],scale4[cj],t_phase,t_len,calReAB,calImAB);
-
-				  
-
-				  //				  printf("Converting Stokes %g %g %g %g %g %g %g %g\n",p1,p2,p3,p4,useScale1,useScale2,useScale3,useScale4);
-				  sdhdf_convertStokes(p1,p2,p3,p4,&mI,&mQ,&mU,&mV);
-
-				  
-				  stokesM[0] = mI; ///mI /8/25.;  // REMOVE THE /8 *******
-				  stokesM[1] = mQ; // /8/25.;
-				  stokesM[2] = mU; // /8/25.;
-				  stokesM[3] = mV; // /8/25.; 
-
-
-				  
-				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
-				    {
-				      printf("Stokes in: (mI,mQ,mU,mV) = (%g,%g,%g,%g)\n",stokesM[0],stokesM[1],stokesM[2],stokesM[3]);
-				    }
-				  
-				  //				  getScal(in_freq[k],sysGain_freq,diffGain2,diffPhase,c_nchan,&dgain2,&phi);
-
-				  // Just need g_e
-				  getScal(in_freq[k],sysGain_freq,g_e,diffPhase,c_nchan,&ge,&phi); // Note interpolating two together and so need to pass phi again - FIX THIS
-				  // ge = 1; // FIX THIS
-				  // printf("diffGain: %.6f %g %g %g\n",in_freq[k],dgain2,phi,ge);
-
-				  //
-				  // ge/=(double)calBin;
-
-				  // Should set the outFile, or search the correct place in the inFile???? **** FIX
-				  if (j==0 && k==0)
-				    printf("WARNING: using Parallactic angle: %g\n",inFile->beam[b].bandData[ii].astro_obsHeader[0].paraAngle);
-				  paraAng = inFile->beam[b].bandData[ii].astro_obsHeader[0].paraAngle*M_PI/180.;
-
-				  if (setPara==1)
-				    {
-				      printf("Using command line parallactic angle %g degrees\n",usePara);
-				      paraAng = usePara*M_PI/180.0;
-				    }
-
-
-				  // Now apply the receiver Mueller matrix
-				  
-				  //				  sdhdf_setGain2Phase(marray,dgain2,phi);
-
-				  //				  if (in_freq[k] > 3200 && in_freq[k] < 3201)
-				  //				    {
-				  //				      printf("amplifiers: %g (%g %g)\n",in_freq[k],dgain2*2,phi);
-				  //				      displayMatrix_4x4(marray);
-				  //				    }
-				  sdhdf_setIdentity_4x4(marray);
-				  // Parallactic angle
-				  sdhdf_setParallacticAngle(mpa,paraAng);
-				  sdhdf_setParallacticAngle(mastro,M_PI/4.);
-
-				  //				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
-				  //				    {
-				  //				      printf("msky: %g (%g)\n",in_freq[k],paraAng);
-				  //				      displayMatrix_4x4(mpa);
-				  //				    }
-				
-				  sdhdf_setIdentity_4x4(mhand);
-				  sdhdf_setIdentity_4x4(mcc);
-				  sdhdf_setIdentity_4x4(mfeed);
-				  //				  mhand[1][1] = -1;  // FD_HAND = -1
-				  //				  mhand[3][3] = -1;
-				  
-				  // Feed
-				  //				  sdhdf_setFeed(mfeed,+45*M_PI/180.0);
-
-				  // Cross coupling
-				  //				  sdhdf_setIdentity_4x4(mcc);
-
-				  // CHECK THESE
-
-				  /*
-				  cc_a = cc_eps1*cos(cc_phi1) + cc_eps2*cos(cc_phi2);
-				  cc_b = cc_eps1*sin(cc_phi1) + cc_eps2*sin(cc_phi2);
-				  cc_c = cc_eps1*cos(cc_phi1) - cc_eps2*cos(cc_phi2);
-				  cc_d = cc_eps1*sin(cc_phi1) - cc_eps2*sin(cc_phi2);
-
-				  mcc[2][0] = cc_a;
-				  mcc[3][0] = cc_b;
-				  mcc[2][1] = cc_c;
-				  mcc[3][1] = cc_d;
-
-				  mcc[0][2] = cc_a;
-				  mcc[1][2] = -cc_c;
-				  mcc[0][3] = cc_b;
-				  mcc[1][3] = -cc_d;
-
-				  
-				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
-				    {
-				      printf("mfeed: %g \n",in_freq[k]);
-				      displayMatrix_4x4(mfeed);
-				    }
-				  */
-
-				  
-				  sdhdf_copy_mat4(marray,mueller);
-				  sdhdf_mult4x4_replace(mueller,mcc);
-				  sdhdf_mult4x4_replace(mueller,mfeed);
-				  sdhdf_mult4x4_replace(mueller,mhand);
-				  sdhdf_mult4x4_replace(mueller,mpa);
-				  sdhdf_mult4x4_replace(mueller,mastro);
-				  
-
-				  if (muellerI == 1) // Do not do any calibration
-				    sdhdf_setIdentity_4x4(mueller);
-				  
-				  sdhdf_inv4x4(mueller,mueller_inv);
-				  
-				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
-				    {
-				      printf("Mueller:\n");
-				      displayMatrix_4x4(mueller);
-				      printf("Mueller^-1:\n");
-				      displayMatrix_4x4(mueller_inv);
-				    }
-
-				  sdhdf_multMat_vec_replace(mueller_inv,stokesM);
-				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
-				    {
-				      printf("\n\nStokes after inversion\n");
-				      sdhdf_display_vec4(stokesM);
-				    }
-				  
-				  aI = stokesM[0];
-				  aQ = stokesM[1];
-				  aU = stokesM[2];
-				  aV = stokesM[3];
-				  
-				  if (in_freq[k] > 1400 && in_freq[k] < 1401)
-				    {
-				      printf("(aI,aQ,aU,aV) = (%g,%g,%g,%g)\n",aI,aQ,aU,aV);
-				    }
-
-
-				  //				  *= nchan/c_nchan/gainVal2/calBin; ///nsum;				  
-
-				  /*
-				  out_data[k]             = aI/ge;
-				  out_data[k+out_nchan]   = aQ/ge;
-				  out_data[k+2*out_nchan] = aU/ge;
-				  out_data[k+3*out_nchan] = aV/ge;
-				  */
-				  //				  printf("nchan, c_nchan = %d %d\n",nchan,c_nchan);
-				  // 262144, 128
-				  //				  out_Tdata[k+nchan] *= nchan/c_nchan/gainVal2/calBin; ///nsum;				  
-
-
-				  //  
-				  // GEORGE: SHOULD GET THE SCALING VIA CHANNEL BANDWIDTHS IN THE ASTRO AND CAL CHANNEL
-				  //
-				  if (origNchan > -1)
-				    {
-				      //	      printf("Using the original Nchan %d instead of %d\n",origNchan,nchan);
-				      out_data[k]             = aI/ge/calBin*origNchan/c_nchan;
-				      out_data[k+out_nchan]   = aQ/ge/calBin*origNchan/c_nchan;
-				      out_data[k+2*out_nchan] = aU/ge/calBin*origNchan/c_nchan;
-				      out_data[k+3*out_nchan] = aV/ge/calBin*origNchan/c_nchan;
-				    }
-				  else
-				    {				      
-				      out_data[k]             = aI/ge/calBin*nchan/c_nchan;
-				      out_data[k+out_nchan]   = aQ/ge/calBin*nchan/c_nchan;
-				      out_data[k+2*out_nchan] = aU/ge/calBin*nchan/c_nchan;
-				      out_data[k+3*out_nchan] = aV/ge/calBin*nchan/c_nchan;
-				    }
-				}
-			    }
-			}
-		    
-		      // update frequencies if required
-		      if (bary==1 || lsr==1)
-			{
-			  double vOverC;
-			  double iX1,iY1,iX2,iY2,m,c;
-			  double iX,iY;
-			  for (j=0;j<out_ndump;j++)
-			    {
-			      vOverC=sdhdf_calcVoverC(inFile,b,ii,j,eop,nEOP,lsr,ephemName);
-			      if (regrid==0)
-				{
-				  printf("Changing frequency axis => not regridding. V/c = %g. Out_nchan = %d\n",vOverC,out_nchan);				  
-				  for (k=0;k<out_nchan;k++)
-				    out_freq[k]*=(1.0-vOverC);
-				}
-			      else
-				{
-				  float * temp_data = (float *)calloc(sizeof(float),out_nchan*out_npol);
-				  double freqNew,freqOld;
-				  int kk;
-				  int deltaI;
-				  double fracDeltaI;
-				  double df;
-			       				
-				  printf("Re-gridding: out_npol = %d out_nchan = %d out_ndump = %d, dump = %d\n",out_npol,out_nchan,out_ndump,j);
-				  memcpy(temp_data,out_data+j*out_nchan*out_npol,sizeof(float)*out_nchan*out_npol);
-				  for (kk=0;kk<out_npol;kk++)
-				    {
-				      for (k=0;k<out_nchan;k++)
-					out_data[j*out_nchan*out_npol + kk*out_nchan + k] = 0.0;
-				    }
-			       
-				  // Should do a proper gridding or a memcpy here
-				  for (k=0;k<out_nchan;k++)
-				    {
-				      freqNew = out_freq[k]*(1.0-vOverC);
-				      freqOld = out_freq[k];
-				      
-				      // Should first check if we're still in topocentric frequencies -- DO THIS ***
-				      // FIX ME: this assumes equally sampled frequency channels
-				      df = ((double)(freqOld-freqNew)/(double)(out_freq[1]-out_freq[0])); // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
-				      //				      printf("df = %g\n",df);
-				      if (df > 0)
-					{
-					  //					  deltaI = (int)(df+0.5);
-					  deltaI = (int)df;
-					  //					  fracDeltaI = deltaI - df;
-					  fracDeltaI = df - deltaI;
-					}
-				      else
-					{
-					  // FIX ME HERE
-					  deltaI = -(int)(fabs(df)+0.5);
-					  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN
-					}
-				    
-				      //				      printf("Frequency shift with %.6f %.6f %g %d %g %d %d\n",freqOld,freqNew,df,deltaI,fracDeltaI,k,out_nchan);
-				      //				      deltaI  = 0;
-				      //				      printf("deltaI = %d\n",deltaI);
-				      if (k + deltaI >= 0 && k + deltaI < out_nchan)
-					{
-					  for (kk=0;kk<out_npol;kk++)
-					    {
-					      // ** Do an interpolation here **
-					      iX1 = 0; iX2 = 1;
-					      iY1 = temp_data[kk*out_nchan + (k + deltaI)];
-					      iY2 = temp_data[kk*out_nchan + (k + deltaI + 1)]; // SHOULD CHECK IF AT EDGE
-					      m   = (iY2-iY1)/(iX2-iX1);
-					      c   = iY1;
-					      iX  = fracDeltaI;
-					      iY  = m*iX+c;
-
-					      // No change
-					      //     out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan+k];
-					      //
-					      // Nearest channel
-					      if (nearestChannelInterpolate==1)
-						out_data[j*out_nchan*out_npol + kk*out_nchan + k] = temp_data[kk*out_nchan + k + deltaI];
-					      else
-						{
-						  // Interpolation
-						  out_data[j*out_nchan*out_npol + kk*out_nchan + k] = iY;
-						}
-					    }
-					}
-				    }
-				  free(temp_data);
-				}
-			    }
-			}
-		      
-		      //		      printf("Copying attributes\n");
-		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
-
-
-		      //		      printf("Have copied %d attributes\n",nDataAttributes);
-		      sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
-		      //		      printf("Have copied %d frequency attributes\n",nFreqAttributes);
-		    
-		      if (bary==1 || lsr == 1)
-			{
-			  int it;
-			  for (it=0;it<nFreqAttributes;it++)
-			    {
-			      if (strcmp(freqAttributes[it].key,"FRAME")==0)
-				{
-				  if (bary==1)
-				    strcpy(freqAttributes[it].value,"barycentric");
-				  else if (lsr==1)
-				    strcpy(freqAttributes[it].value,"LSR");				    
-				}
-			    }
-			}
-		      printf("Writing spectrum data using beam label: %s\n",inFile->beamHeader[b].label);
-
-		      
-		      
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out_data,out_freq,out_nchan,out_npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-		      // Write out the obs_params file
-		      
-		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,outObsParams,out_ndump,1);
-		      free(outObsParams);
-
-		      
-		      printf("Writing out the data weights for band %d\n",ii);
-		      sdhdf_writeDataWeights(outFile,b,ii,dataWts,out_nchan,out_ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label);
-		      printf("Writing out data flags for band %d\n",ii);
-		      sdhdf_writeFlags(outFile,b,ii,dataFlags,out_nchan,out_ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label);
-		      printf("Complete writing data weights and flags\n");
-		    
-		      
-
-		      // FIX ME
-		      //		      sdhdf_writeFrequencyAttributes(outFile,inFile->bandHeader[ii].label);
-		      //		      sdhdf_writeDataAttributes(outFile,inFile->bandHeader[ii].label);
-		      
-		      
-		      inBandParams[ii].nchan  = out_nchan;
-		      inBandParams[ii].npol   = out_npol;
-		      inBandParams[ii].f0     = out_freq[0];
-		      inBandParams[ii].f1     = out_freq[out_nchan-1];
-		      inBandParams[ii].ndump  = out_ndump;
-		      if (tScrunch==1)
-			inBandParams[ii].dtime = tav;
-		      
-		      free(in_data);
-		      free(out_data);
-		      free(out_Tdata);
-		      free(out_Fdata);
-		      free(in_freq);
-		      free(out_freq);
-		      if (haveWeights==1) free(dataWts);
-		      if (haveFlags==1)   free(dataFlags);
-		      // NOW NEED TO UPDATE META-DATA
-		      // Subintegration change
-		      //  band_header
-		      //  obs_params
-		      // Polarisation change
-		      //  
-		      
-		    }
-		  printf("Outfile band: %s\n",inFile->beamHeader[b].label);
-		  sdhdf_writeBandHeader(outFile,inBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
-		  free(inBandParams);
-
-		  if (nScal > 0)
-		    {
-		      free(cal_p1);
-		      free(cal_p2);
-		      free(cal_freq);
-		    }
-
+		  // SHOULD CHECK NUMBER OF POLS -- FIX ME
+		  // SHOULD HAVE A WAY TO FGET THE DATA DIRECTLY IN THE CORRECT FORMAT AS IT IS STORED IN THAT FORMAT ANYWAY
+		  in->data[j*in->nchan*in->npol + k] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*in->nchan];
+		  in->data[j*in->nchan*in->npol + k + in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*in->nchan];
+		  in->data[j*in->nchan*in->npol + k + 2*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*in->nchan];
+		  in->data[j*in->nchan*in->npol + k + 3*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*in->nchan];
+		  in->wt[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[k+j*in->nchan];
+		  in->flag[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.flag[k+j*in->nchan];
 		}
-	      // Copy other primary tables
-	      
-	      // FIX ME -- NEED TO INCREASE SIZE OF HISTORY ARRAY
-	      //	      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","sdhdfProc software to modify a file",args);	     
-	      //	      inFile->nHistory++;
+	    }
+	  for (c=0;c<nCommands;c++)
+	    {
+	      processCommand(in,out,&commands[c],freqAttributes,nFreqAttributes);
+	      if (c!=nCommands-1)
+		{ swp = in; in = out; out = swp;} 
+	    }      
+	  // Sort out the observation parameters
+	  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
+				  out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  // Write out the obs_params file
+	  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,1);
+	  sdhdf_writeDataWeights(outFile,b,ii,out->wt,out->nchan,out->ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label);
+	  sdhdf_writeFlags(outFile,b,ii,out->flag,out->nchan,out->ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label);
+	  	  
+	  // Setup the band parameters
+	  outBandParams[ii].nchan = out->nchan;
+	  outBandParams[ii].npol  = out->npol;
+	  // FIX ME: NOT PICKING DUMP HERE in FREQ[0]
+	  outBandParams[ii].f0    = out->freq[0];
+ 	  outBandParams[ii].f1    = out->freq[out->nchan-1];
+	  outBandParams[ii].ndump = out->ndump;
+	  outBandParams[ii].dtime = out->obsParams[0].dtime;
+	}
+      sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
+      free(inBandParams);
+      free(outBandParams);
+    }
+  // Clean up
+  free(in->data);
+  free(out->data);
+  sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_modify","INSPECTA software to modify a file",args);
+  inFile->nHistory++;
+  sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
+  sdhdf_copyRemainder(inFile,outFile,0); 
+  
+  
+
+  sdhdf_closeFile(inFile);
+  sdhdf_closeFile(outFile);
+
+  free(inFile); free(outFile);
+  free(dset);
+}
+
+void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
+{
+  printf("Processing command: %d\n",command->type);
+  if (command->type==1)
+    timeAverage(in,out,command->param1,command->param2);
+  else if (command->type==2)
+    frequencyAverage(in,out,command->param1,command->param2);
+  else if (command->type==3)
+    polarisationAverage(in,out,command->param1);
+  else if (command->type==4)
+    changeFrequencyAxis(in,out,command->param1,command->param2,freqAttributes,nFreqAttributes);
+}
+
+void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
+{
+  int i,j,k,kk,p;
+  int include;
+  int avDump,ndump;
+  double av;
+  float wt,wtVal;
+  unsigned char flag;
+  int nsum;
+  double s_flag_wt;
+  int flagVal;
+  double dtime;
+  double raDeg,decDeg,mjd,timeElapsed;
+  double raOffset,decOffset,gl,gb,az,ze,el,az_drive_rate,ze_drive_rate,hourAngle,paraAngle,windDir,windSpd;
+  char tempStr[1024];
+  double turn;
+  double turn_utc,turn_local;
+  double turn_utc_av,turn_local_av;
+  
+  if (ndumpAv == 0)
+    {ndump = 1; avDump = in->ndump;}
+  else
+    {ndump = (int)((double)in->ndump/(double)ndumpAv); avDump = ndumpAv;}
 
 
-	      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
-	      sdhdf_copyRemainder(inFile,outFile,0); 
+  out->nchan      = in->nchan;
+  out->npol       =  in->npol;
+  out->ndump      = ndump;
+  out->nFreqDump  = ndump;
+  printf("Averaging: %d dumps together giving %d dumps out of %d original dumps\n",avDump,ndump,in->ndump);
+
+  allocateMemory(out);
+  //  printf("A %d %d %d %d\n",out->nchan,out->npol,out->ndump,out->nchan*out->npol*out->ndump);
+  //  printf("npol here = %d\n",out->npol);
+
+  memcpy(out->freq,in->freq,sizeof(float)*out->nchan*out->nFreqDump);
+  for (p=0;p<out->npol;p++)
+    {
+      for (j=0;j<out->nchan;j++)
+	{
+	  for (k=0;k<out->ndump;k++)
+	    {
+	      av=0;
+	      wt=0;
+	      flag = 1;
+	      nsum=0;
+	      s_flag_wt = 0;
+	      if (p==0 && j==0)
+		{
+		  dtime = raDeg = decDeg = mjd = timeElapsed = 0;
+		  raOffset = decOffset = gl = gb = az = ze = el = az_drive_rate = 0;
+		  ze_drive_rate = hourAngle = paraAngle = windDir = windSpd = 0;
+		  turn_utc_av = turn_local_av = 0;
+		}
+
+	      for (kk=0;kk<avDump;kk++)
+		{
+		  wtVal     = in->wt[((k*avDump)+kk)*in->nchan + j];
+		  flagVal   = 1-in->flag[((k*avDump)+kk)*in->nchan + j];
+		  av        += wtVal*flagVal*in->data[((k*avDump)+kk)*in->nchan*in->npol + p*in->nchan +j];		      
+		  s_flag_wt += wtVal*flagVal;
+		  if (p==0 && j==0)
+		    {
+		      dtime     += in->obsParams[(k*avDump)+kk].dtime;
+		      raDeg     += in->obsParams[(k*avDump)+kk].raDeg;
+		      decDeg    += in->obsParams[(k*avDump)+kk].decDeg;
+		      mjd       += in->obsParams[(k*avDump)+kk].mjd;
+		      timeElapsed += in->obsParams[(k*avDump)+kk].timeElapsed; 
+		      raOffset += in->obsParams[(k*avDump)+kk].raOffset;
+		      decOffset += in->obsParams[(k*avDump)+kk].decOffset;
+		      gl += in->obsParams[(k*avDump)+kk].gl;
+		      gb += in->obsParams[(k*avDump)+kk].gb;
+		      az += in->obsParams[(k*avDump)+kk].az;
+		      ze += in->obsParams[(k*avDump)+kk].ze;
+		      el += in->obsParams[(k*avDump)+kk].el;
+		      turn_utc_av += hms_turn(in->obsParams[(k*avDump)+kk].utc);
+		      turn_local_av += hms_turn(in->obsParams[(k*avDump)+kk].local_time);
+		      az_drive_rate += in->obsParams[(k*avDump)+kk].az_drive_rate;
+		      ze_drive_rate += in->obsParams[(k*avDump)+kk].ze_drive_rate;
+		      hourAngle += in->obsParams[(k*avDump)+kk].hourAngle;
+		      paraAngle += in->obsParams[(k*avDump)+kk].paraAngle;
+		      windDir += in->obsParams[(k*avDump)+kk].windDir;
+		      windSpd  += in->obsParams[(k*avDump)+kk].windSpd;
+		    }
+		  
+		}
+
+	      out->wt[k*out->nchan + j] =   s_flag_wt; 
+	      if (s_flag_wt > 0)
+		out->flag[k*out->nchan + j] = 0;
+	      else
+		out->flag[k*out->nchan + j] = 1;
 	      
-	      /*
-		FIX ME
-		sdhdf_copyEntireGroup("obs_config",inFile,outFile);	      	      
-		sdhdf_copyEntireGroup("cal_band_header",inFile,outFile);
-		sdhdf_copyEntireGroup("cal_obs_params",inFile,outFile);
-	      */
-	      // SHOULD BE UPDATING THE HEADER INFORMATION
-	      
-	      
-	      // FIX ME
-	      /*
-		sdhdf_writeSpectralDumpHeader(outFile,inFile->spectralDumpHeader,out_ndump);
-		sdhdf_copyEntireGroup("primary_header",inFile,outFile);
-		sdhdf_copyEntireGroup("software_versions",inFile,outFile);
-	      */
-	      sdhdf_closeFile(inFile);
-	      sdhdf_closeFile(outFile);
-	      printf("Finished file %s %s\n",fname,oname);
+	      if (sum==1)
+		out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+	      else
+		{
+		  if (s_flag_wt > 0)
+		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+		  else
+		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		}
+
+	      if (p==0 && j==0)
+		{
+		  // Determine the observation parameter output
+		  strcpy(out->obsParams[k].timedb,"UNSET"); // FIX ME
+		  strcpy(out->obsParams[k].ut_date,"UNSET"); // FIX ME
+		  
+		  // SHOULD FIX WRAPS HERE --- FIX ME
+		  out->obsParams[k].raDeg = raDeg/avDump; // SHOULD BE WEIGHTED ** FIX ME
+		  out->obsParams[k].decDeg = decDeg/avDump; // SHOULD BE WEIGHTED ** FIX ME
+		  turn_hms(turn_utc_av/avDump,out->obsParams[k].utc);
+		  turn_hms(turn_local_av/avDump,out->obsParams[k].local_time);
+		  
+		  
+		  turn_hms(out->obsParams[k].raDeg/360.,out->obsParams[k].raStr);
+		  turn_dms(out->obsParams[k].decDeg/360.,out->obsParams[k].decStr);
+		  
+		  
+		  out->obsParams[k].timeElapsed = timeElapsed/avDump; // SHOULD BE WEIGHTED *** FIX ME
+		  out->obsParams[k].dtime = dtime; // Note this is just a summation (not an average)
+		  out->obsParams[k].mjd = mjd/avDump; // SHOULD BE WEIGHTED *** FIX ME
+		  		  
+		  out->obsParams[k].raOffset = raOffset/avDump;
+		  out->obsParams[k].decOffset = decOffset/avDump;
+		  out->obsParams[k].gl = gl/avDump;
+		  out->obsParams[k].gb = gb/avDump;
+		  out->obsParams[k].az = az/avDump;
+		  out->obsParams[k].ze = ze/avDump;
+		  out->obsParams[k].el = el/avDump;
+		  out->obsParams[k].az_drive_rate = az_drive_rate/avDump;
+		  out->obsParams[k].ze_drive_rate = ze_drive_rate/avDump;
+		  out->obsParams[k].hourAngle = hourAngle/avDump;
+		  out->obsParams[k].paraAngle = paraAngle/avDump;
+		  out->obsParams[k].windDir = windDir/avDump;
+		  out->obsParams[k].windSpd = windSpd/avDump;
+		}
 	    }
 	}
     }
-  free(scalFreq); free(scalAA); free(scalBB);
-  free(inFile);
-  free(outFile);
-  free(eop);
-  
 }
 
-
-double linearInterpolate(double *freq, double *scaleAA,double in_freq,int kk,int nScale)
+void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum)
 {
-  double y1,y2;
-  double x1,x2;
-  double m,c;
-  if (kk==0)
-    {
-      y1 = scaleAA[kk];
-      y2 = scaleAA[kk+1];
-      x1 = freq[kk];
-      x2 = freq[kk+1];
-    }
-  else 
-    {
-      y1 = scaleAA[kk-1];
-      y2 = scaleAA[kk];
-      x1 = freq[kk-1];
-      x2 = freq[kk];
-    }
-  m = (y2-y1)/(x2-x1);
-  c = y1-m*x1;
-  return m*in_freq+c;
-}
-
-
-void getScal(double sysGain_freq,double *scalFreq,double *scalAA,double *scalBB,int nScal,double *scalAA_val,double *scalBB_val)
-{
-  int i;
-  double m,c,y1,y2,x1,x2;
-  int set=0;
-  *scalAA_val = *scalBB_val = 0.0;
+  int i,j,k,kk,p;
+  int include;
+  int avFreq,nfreq;
+  double av,avFreqVal,avFreqNoWt;
+  float wt,wtVal;
+  unsigned char flag;
+  int nsum;
+  double s_flag_wt;
+  int flagVal;
   
-  for (i=0;i<nScal-1;i++)
+  if (nfreqAv == 0)
+    {nfreq = 1; avFreq = in->nchan;}
+  else
+    {nfreq = (int)((double)in->nchan/(double)nfreqAv); avFreq = nfreqAv;}
+
+
+  out->nchan = nfreq;
+  out->npol =  in->npol;
+  out->ndump = in->ndump;
+  out->nFreqDump = in->nFreqDump;
+  
+  printf("Averaging: %d frequency channels together giving %d frequency channels out of %d original channels\n",avFreq,nfreq,in->nchan);
+
+  allocateMemory(out);
+  memcpy(out->obsParams,in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump); 
+  //  printf("A %d %d %d %d\n",out->nchan,out->npol,out->ndump,out->nchan*out->npol*out->ndump);
+  //  printf("npol here = %d\n",out->npol);
+
+  //  memcpy(out->freq,in->freq,sizeof(float)*out->nchan);
+  // FIX THE FREQUENCY CHANNELS -- FIX ME
+  for (p=0;p<out->npol;p++)
     {
-      if (sysGain_freq <= scalFreq[i])
+      for (k=0;k<out->ndump;k++)
 	{
-	  if (i!=0)
+	  for (j=0;j<out->nchan;j++)
 	    {
-	      x1 = scalFreq[i-1]; x2 = scalFreq[i]; y1 = scalAA[i-1]; y2 = scalAA[i];
-	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
-	      *scalAA_val = m*sysGain_freq+c; // Should do an interpolation
+	      s_flag_wt=0;
+	      nsum=0;
+	      av=0;
+	      avFreqVal=avFreqNoWt = 0;
 	      
-	      x1 = scalFreq[i-1]; x2 = scalFreq[i]; y1 = scalBB[i-1]; y2 = scalBB[i];
-	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
-	      *scalBB_val = m*sysGain_freq+c;
-	    }
-	  else
-	    {
-	      x1 = scalFreq[i+1]; x2 = scalFreq[i]; y1 = scalAA[i+1]; y2 = scalAA[i];
-	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
-	      *scalAA_val = m*sysGain_freq+c; // Should do an interpolation
+	      wt=0;
+	      flag = 1;
+	      for (kk=0;kk<avFreq;kk++)
+		{
+		  wtVal     = in->wt[(k*in->nchan) + (j*avFreq)+kk];
+		  flagVal   = 1-in->flag[(k*in->nchan) + (j*avFreq)+kk];
+		  avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk+k*in->nchan];
+		  avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+		  
+		  av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+		  s_flag_wt+= wtVal*flagVal;
+		}
+
+	      out->wt[k*out->nchan + j] =   s_flag_wt; 
+	      if (s_flag_wt > 0)
+		out->flag[k*out->nchan + j] = 0;
+	      else
+		out->flag[k*out->nchan + j] = 1;
 	      
-	      x1 = scalFreq[i+1]; x2 = scalFreq[i]; y1 = scalBB[i+1]; y2 = scalBB[i];
-	      m = (y2-y1)/(x2-x1); c = y1-m*x1;
-	      *scalBB_val = m*sysGain_freq+c;
-	    }
-	  set=1;
-	      
-	  break;
-	}
-    }
-  if (set==0)
-    {
-      x1 = scalFreq[nScal-2]; x2 = scalFreq[nScal-1]; y1 = scalAA[nScal-2]; y2 = scalAA[nScal-1];
-      m = (y2-y1)/(x2-x1); c = y1-m*x1;
-      *scalAA_val = m*sysGain_freq+c; // Should do an interpolation
-      
-      x1 = scalFreq[nScal-2]; x2 = scalFreq[nScal-1]; y1 = scalBB[nScal-2]; y2 = scalBB[nScal-1];
-      m = (y2-y1)/(x2-x1); c = y1-m*x1;
-      *scalBB_val = m*sysGain_freq+c;
-    }
-}
+	      if (sum==1)
+		out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+	      else
+		{
+		  if (s_flag_wt > 0)
+		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+		  else
+		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		}
 
-/* ************************************************************** *
- * Spline routines                                                *
- * ************************************************************** */
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
-
-
-void TKcmonot (int n, double x[], double y[], double yd[][4])
-/*****************************************************************************
-compute cubic interpolation coefficients via the Fritsch-Carlson method,
-which preserves monotonicity
-******************************************************************************
-Input:
-n		number of samples
-x  		array[n] of monotonically increasing or decreasing abscissae
-y		array[n] of ordinates
-
-Output:
-yd		array[n][4] of cubic interpolation coefficients (see notes)
-******************************************************************************
-Notes:
-The computed cubic spline coefficients are as follows:
-yd[i][0] = y(x[i])    (the value of y at x = x[i])
-yd[i][1] = y'(x[i])   (the 1st derivative of y at x = x[i])
-yd[i][2] = y''(x[i])  (the 2nd derivative of y at x = x[i])
-yd[i][3] = y'''(x[i]) (the 3rd derivative of y at x = x[i])
-
-To evaluate y(x) for x between x[i] and x[i+1] and h = x-x[i],
-use the computed coefficients as follows:
-y(x) = yd[i][0]+h*(yd[i][1]+h*(yd[i][2]/2.0+h*yd[i][3]/6.0))
-
-The Fritsch-Carlson method yields continuous 1st derivatives, but 2nd
-and 3rd derivatives are discontinuous.  The method will yield a
-monotonic interpolant for monotonic data.  1st derivatives are set
-to zero wherever first divided differences change sign.
-
-For more information, see Fritsch, F. N., and Carlson, R. E., 1980,
-Monotone piecewise cubic interpolation:  SIAM J. Numer. Anal., v. 17,
-n. 2, p. 238-246.
-
-Also, see the book by Kahaner, D., Moler, C., and Nash, S., 1989,
-Numerical Methods and Software, Prentice Hall.  This function was
-derived from SUBROUTINE PCHEZ contained on the diskette that comes
-with the book.
-******************************************************************************
-Author:  Dave Hale, Colorado School of Mines, 09/30/89
-Modified:  Dave Hale, Colorado School of Mines, 02/28/91
-	changed to work for n=1.
-Modified:  Dave Hale, Colorado School of Mines, 08/04/91
-	fixed bug in computation of left end derivative
-*****************************************************************************/
-{
-  int i;
-  double h1,h2,del1,del2,dmin,dmax,hsum,hsum3,w1,w2,drat1,drat2,divdf3;
-  
-  /* copy ordinates into output array */
-  for (i=0; i<n; i++)
-    yd[i][0] = y[i];
-  
-  /* if n=1, then use constant interpolation */
-  if (n==1) {
-    yd[0][1] = 0.0;
-    yd[0][2] = 0.0;
-    yd[0][3] = 0.0;
-    return;
-    
-    /* else, if n=2, then use linear interpolation */
-  } else if (n==2) {
-    yd[0][1] = yd[1][1] = (y[1]-y[0])/(x[1]-x[0]);
-    yd[0][2] = yd[1][2] = 0.0;
-    yd[0][3] = yd[1][3] = 0.0;
-    return;
-  }
-  
-  /* set left end derivative via shape-preserving 3-point formula */
-  h1 = x[1]-x[0];
-  h2 = x[2]-x[1];
-  hsum = h1+h2;
-  del1 = (y[1]-y[0])/h1;
-  del2 = (y[2]-y[1])/h2;
-  w1 = (h1+hsum)/hsum;
-  w2 = -h1/hsum;
-  yd[0][1] = w1*del1+w2*del2;
-  if (yd[0][1]*del1<=0.0)
-    yd[0][1] = 0.0;
-  else if (del1*del2<0.0) {
-    dmax = 3.0*del1;
-    if (ABS(yd[0][1])>ABS(dmax)) yd[0][1] = dmax;
-  }
-  
-  /* loop over interior points */
-  for (i=1; i<n-1; i++) {
-    
-    /* compute intervals and slopes */
-    h1 = x[i]-x[i-1];
-    h2 = x[i+1]-x[i];
-    hsum = h1+h2;
-    del1 = (y[i]-y[i-1])/h1;
-    del2 = (y[i+1]-y[i])/h2;
-    
-    /* if not strictly monotonic, zero derivative */
-    if (del1*del2<=0.0) {
-      yd[i][1] = 0.0;
-      
-      /*
-       * else, if strictly monotonic, use Butland's formula:
-       *      3*(h1+h2)*del1*del2
-       * -------------------------------
-       * ((2*h1+h2)*del1+(h1+2*h2)*del2)
-       * computed as follows to avoid roundoff error
-       */
-    } else {
-      hsum3 = hsum+hsum+hsum;
-      w1 = (hsum+h1)/hsum3;
-      w2 = (hsum+h2)/hsum3;
-      dmin = MIN(ABS(del1),ABS(del2));
-      dmax = MAX(ABS(del1),ABS(del2));
-      drat1 = del1/dmax;
-      drat2 = del2/dmax;
-      yd[i][1] = dmin/(w1*drat1+w2*drat2);
-    }
-  }
-  
-  /* set right end derivative via shape-preserving 3-point formula */
-  w1 = -h2/hsum;
-  w2 = (h2+hsum)/hsum;
-  yd[n-1][1] = w1*del1+w2*del2;
-  if (yd[n-1][1]*del2<=0.0)
-    yd[n-1][1] = 0.0;
-  else if (del1*del2<0.0) {
-    dmax = 3.0*del2;
-    if (ABS(yd[n-1][1])>ABS(dmax)) yd[n-1][1] = dmax;
-  }
-  
-  /* compute 2nd and 3rd derivatives of cubic polynomials */
-  for (i=0; i<n-1; i++) {
-    h2 = x[i+1]-x[i];
-    del2 = (y[i+1]-y[i])/h2;
-    divdf3 = yd[i][1]+yd[i+1][1]-2.0*del2;
-    yd[i][2] = 2.0*(del2-yd[i][1]-divdf3)/h2;
-    yd[i][3] = (divdf3/h2)*(6.0/h2);
-  }
-  yd[n-1][2] = yd[n-2][2]+(x[n-1]-x[n-2])*yd[n-2][3];
-  yd[n-1][3] = yd[n-2][3];
-}
-
-// Interpolate the spline fit on to a given set of x-values
-void TKspline_interpolate(int n,double *x,double *y,double yd[][4],double *interpX,
-			  double *interpY,int nInterp)
-{
-  double h;
-  int jpos;
-  int i,j;
-
-  //To evaluate y(x) for x between x[i] and x[i+1] and h = x-x[i],
-  //use the computed coefficients as follows:
-  //y(x) = yd[i][0]+h*(yd[i][1]+h*(yd[i][2]/2.0+h*yd[i][3]/6.0))
-  
-  // Assume the data are sorted so x[i] < x[i+1]
-  for (i=0;i<nInterp;i++)
-    {
-      jpos=-1;
-      for (j=0;j<n-1;j++)
-	{
-	  if (interpX[i]>=x[j] && interpX[i]<x[j+1])
-	    {
-	      jpos=j;
-	      break;
+	      // FIX ME **
+	      // NOTE: Not doing weighted average as need to set for a single spectral dump
+	      if (p==0)
+		out->freq[j+k*out->nchan] = avFreqNoWt/avFreq; // 		  // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCU ARRAY
+	      //	      else
+		//		{
+		  //		  printf("WARNING: channel %d (%g) has a weighting of zero\n",j,avFreqNoWt/avFreq);
+		//		  out->freq[j] = avFreqNoWt/avFreq;
+		//		}
 	    }
 	}
-      if (jpos!=-1)
+    }
+}
+
+void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
+{
+  int i,j,k,kk,p;
+  int include;
+  int avFreq,nfreq;
+  double av,avFreqVal,avFreqNoWt;
+  float wt,wtVal;
+  unsigned char flag;
+  int nsum;
+  double s_flag_wt;
+  int flagVal;
+  double origFreq,newFreq;
+  double iX1,iY1,iX2,iY2,m,c;
+  double iX,iY;
+  sdhdf_eopStruct *eop;
+  int nEOP=0;
+  double *mjdVals,*raDeg,*decDeg;
+  double *vOverC;
+  char ephemName[1024] = "DE436.1950.2050";
+    
+  // Load in Earth observation parameters
+  eop = (sdhdf_eopStruct *)malloc(sizeof(sdhdf_eopStruct)*MAX_EOP_LINES);
+  nEOP = sdhdf_loadEOP(eop);
+
+  out->nchan = in->nchan;
+  out->npol =  in->npol;
+  out->ndump = in->ndump;
+  out->nFreqDump = in->nFreqDump;
+  mjdVals = (double *)malloc(sizeof(double)*out->ndump);
+  raDeg = (double *)malloc(sizeof(double)*out->ndump);
+  decDeg = (double *)malloc(sizeof(double)*out->ndump);
+  vOverC = (double *)malloc(sizeof(double)*out->ndump);
+
+  allocateMemory(out);
+
+  // Should just memcopy all the data across
+  memcpy(out->data,in->data,sizeof(float)*out->nchan*out->npol*out->ndump);
+  memcpy(out->wt,in->wt,sizeof(float)*out->nchan*out->ndump);
+  memcpy(out->flag,in->flag,sizeof(unsigned char)*out->nchan*out->ndump);
+  if (out->nFreqDump != out->ndump)
+    {
+      printf("ERROR in sdhdf_modify: cannot form lsr/bary corrections if nFreqDump != ndump\n");
+      exit(1);
+    }
+  for (i=0;i<out->ndump;i++)
+    {
+      mjdVals[i] = in->obsParams[i].mjd;
+      raDeg[i] = in->obsParams[i].raDeg;
+      decDeg[i] = in->obsParams[i].decDeg;
+  }
+  memcpy(out->obsParams,in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump); 
+  
+  sdhdf_calcVoverC(mjdVals,raDeg,decDeg,out->ndump,vOverC,(char *)"Parkes",ephemName,eop,nEOP,bary_lsr);
+  
+  for (i=0;i<out->ndump;i++)
+    {
+      if (regrid == 1) // (note 2 = regrid, 1 = don't regrid)
 	{
-	  h = interpX[i]-x[jpos];
-	  interpY[i] = yd[jpos][0]+h*(yd[jpos][1]+h*(yd[jpos][2]/2.0+h*yd[jpos][3]/6.0));
+	  for (j=0;j<out->nchan;j++)
+	    {
+	      newFreq = in->freq[i*out->nchan+j]*(1.0-vOverC[i]);
+	      out->freq[i*out->nchan+j] = (float)newFreq;
+	    }
 	}
       else
-	interpY[i] = 0.0;
-    }
+	{
+	  double newFreq,oldFreq;
+	  int kk;
+	  int deltaI;
+	  double fracDeltaI;
+	  double df;
+	  double chanbw;
 
+	  chanbw = in->freq[i*in->nchan+1] - in->freq[i*in->nchan];
+	  
+	  for (j=0;j<out->nchan;j++)
+	    {	      
+	      newFreq = in->freq[i*out->nchan+j]*(1.0-vOverC[i]);
+	      oldFreq = in->freq[i*out->nchan+j];
+	      out->freq[i*out->nchan+j] = oldFreq;
+	      // Should first check if we're still in topocentric frequencies -- DO THIS ***  FIX ME
+	      // FIX ME: this assumes equally sampled frequency channels
+	      df = (double)(oldFreq-newFreq)/(double)chanbw; // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
+	      if (df > 0)
+		{
+		  deltaI = (int)df;
+		  fracDeltaI = df-deltaI;
+		}
+	      else
+		{
+		  // CHECK THIS -- FIX ME
+		  deltaI = -(int)(fabs(df)+0.5);
+		  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN		  
+		}
+	      if (j + deltaI >= 0 && j+deltaI < in->nchan)
+		{
+		  for (kk=0;kk<in->npol;kk++)
+		    {
+		      iX1 = 0; iX2 = 1;
+		      iY1 = in->data[i*in->nchan*in->npol + kk*in->nchan + (j + deltaI)];
+		      iY2 = in->data[i*in->nchan*in->npol + kk*in->nchan + (j + deltaI + 1)]; // SHOULD CHECK IF AT EDGE ** FIX ME
+		      m   = (iY2-iY1)/(iX2-iX1);
+		      c   = iY1;
+		      iX  = fracDeltaI;
+		      iY  = m*iX+c;
+		      out->data[i*out->nchan*out->npol + kk*out->nchan + j] = iY;
+		    }
+		}
+	    }
+	}
+    }
+  // Fix up the attributes
+  for (i=0;i<nFreqAttributes;i++)
+    {
+      if (strcmp(freqAttributes[i].key,"FRAME")==0)
+	{
+	  if (bary_lsr==1)
+	    strcpy(freqAttributes[i].value,"barycentric");
+	  else if (bary_lsr==2)
+	    strcpy(freqAttributes[i].value,"LSR");				    
+	}
+
+    }
+  free(eop);
+  free(mjdVals);
+  free(vOverC);
+  free(raDeg);
+  free(decDeg);
+}
+
+
+void allocateMemory(dataStruct *in)
+{
+  int k;
+  if (in->memoryAllocated == 0)  // SHOULD CHECK NPOL HERE
+    {
+      if (!(in->data = (float *)malloc(sizeof(float)*in->nchan*in->ndump*in->npol)))
+	{
+	  printf("ERROR: Unable to allocate memory in sdhdf_modify\n");
+	  exit(1);
+	}
+
+      in->freq = (float *)malloc(sizeof(float)*in->nchan*in->nFreqDump);
+      in->wt   = (float *)malloc(sizeof(float)*in->nchan*in->ndump);
+      in->flag = (unsigned char *)malloc(sizeof(unsigned char)*in->nchan*in->ndump);
+      in->obsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*in->ndump);      
+      in->memoryAllocated = 1;
+    }
+  else
+    {
+      in->data = (float *)realloc(in->data,sizeof(float)*in->nchan*in->ndump*in->npol);
+      in->freq = (float *)realloc(in->freq,sizeof(float)*in->nchan*in->nFreqDump);
+      //      in->freq = (float *)realloc(in->freq,sizeof(float)*in->nchan);
+      in->wt = (float *)realloc(in->wt,sizeof(float)*in->nchan*in->ndump);
+      in->flag = (unsigned char *)realloc(in->flag,sizeof(unsigned char)*in->nchan*in->ndump);
+      in->obsParams = (sdhdf_obsParamsStruct *)realloc(in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump);      
+    }
+}
+
+void polarisationAverage(dataStruct *in,dataStruct *out,int sum)
+{
+  int i,j,k,kk,p;
+  int include;
+  int avDump,ndump;
+  double av;
+  float wt,wtVal;
+  unsigned char flag;
+  int nsum;
+  double s_flag_wt;
+  int flagVal;
+
+  out->ndump = in->ndump;
+  out->nchan = in->nchan;
+  out->npol =  1;
+  out->nFreqDump = in->nFreqDump;
+  
+  allocateMemory(out);
+  
+  memcpy(out->obsParams,in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump); 
+  memcpy(out->freq,in->freq,sizeof(float)*out->nchan*out->nFreqDump);
+  for (j=0;j<out->nchan;j++)
+    {
+      for (k=0;k<out->ndump;k++)
+	{
+	  for (p=0;p<out->npol;p++)
+	    {	      
+	      av=0;
+	      wt=0;
+	      flag = 1;
+	      nsum=0;
+	      s_flag_wt = 0;
+
+	      av = in->data[k*in->nchan*in->npol +j] + in->data[k*in->nchan*in->npol + in->nchan +j];
+	      if (sum==2) av/=2.0; // Average
+	      
+	      out->wt[k*out->nchan + j] =   in->wt[k*out->nchan+j]; 
+	      out->flag[k*out->nchan + j] =   in->flag[k*out->nchan+j]; 
+	      out->data[k*out->nchan + j] = av;
+	      
+	    }
+	}
+    }
 }

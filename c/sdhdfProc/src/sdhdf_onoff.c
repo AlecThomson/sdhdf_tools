@@ -228,8 +228,8 @@ int main(int argc,char *argv[])
 		 strcpy(outFile->frequency_attr.unit,onFile->frequency_attr.unit);
 		 strcpy(outFile->data_attr.unit,onFile->data_attr.unit);
 	      */
-	      for (k=0;k<nchan;k++)
-		freq[k] = onFile->beam[b].bandData[i].astro_data.freq[k];
+	      for (k=0;k<nchan;k++)		
+		freq[k] = onFile->beam[b].bandData[i].astro_data.freq[k];  // FIX ME: DUMP FOR FREQ AXIS
 	      for (k=0;k<nchan;k++)
 		{
 		  // 0 here should be the spectral dump number
@@ -318,8 +318,9 @@ int main(int argc,char *argv[])
 
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
-	      
-	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+	      // FIX ME: Only sending 1 frequency channel through
+	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,1,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      free(out_data);
 	      free(freq);
 	    }

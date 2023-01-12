@@ -283,6 +283,7 @@ int main(int argc,char *argv[])
 		    {
 		      for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 			{
+			  // FIX ME: using [0] for frequency dump
 			  px[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
 			  pflag[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.dataWeights[k];
 			}
@@ -293,6 +294,7 @@ int main(int argc,char *argv[])
 		{
 		  for (k=0;k<inFile->beam[ibeam].bandHeader[sb].nchan;k++)
 		    {
+		      // FIX ME: using [0] for frequency dump
 		      px[writepos+k] = inFile->beam[ibeam].bandData[sb].astro_data.freq[k];
 		      pflag[writepos+k] = inFile->beam[ibeam].bandData[sb].astro_data.dataWeights[k];
 		    }
@@ -334,6 +336,7 @@ int main(int argc,char *argv[])
 			}
 		    }
 		}
+	      // FIX ME: using [0] for frequency dump
 	      wF0 = inFile->beam[ibeam].bandData[sb].astro_data.freq[0];
 	      wF1 = inFile->beam[ibeam].bandData[sb].astro_data.freq[inFile->beam[ibeam].bandHeader[sb].nchan-1];
 	      

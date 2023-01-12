@@ -129,7 +129,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	{
 	  sdhdf_loadBandData(inFile,ibeam,iband,2);
 	  sdhdf_loadBandData(inFile,ibeam,iband,3);
-	  f0   = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[0];
+	  f0   = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[0];   // FIX ME FOR DUMP FREQ
 	  chbw = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[1]-f0;
 	  ichan = (int)(((freq - f0)/(double)chbw)+0.5);  // FIX ME -- DOUBLE CHECK THIS AND INTERPOLATE IF NEEDED
 	  aa_on = bb_on = rab_on = iab_on = 0.0;

@@ -92,7 +92,6 @@ int main(int argc,char *argv[])
   int   np;
   int sdump=0;
   int sdump0=0;
-  char aest0[MAX_STRLEN]="00:00:00";
 
   dumpStruct *dumpParams;
   double freq;
@@ -187,6 +186,7 @@ int main(int argc,char *argv[])
 	    }
 	  wt = (float *)malloc(sizeof(float)*nchan*setNdump);
 	  dumpParams = (dumpStruct *)malloc(sizeof(dumpStruct)*setNdump);
+	  // FIX ME: using [0] for frequency dump
 	  f0 = inFile->beam[ibeam].bandData[iband].astro_data.freq[0];
 	  f1 = inFile->beam[ibeam].bandData[iband].astro_data.freq[1];
 	  chbw = f1-f0;

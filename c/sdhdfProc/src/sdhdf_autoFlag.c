@@ -1,3 +1,9 @@
+// From file *** MUST IMPLEMENT
+// Shouldn't copy weights/flags if not requested
+// Band edge RFI
+// Fix issue about loading all band data
+//
+
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
@@ -33,58 +39,53 @@
 
 #define MAX_RFI 512
 
+void flagDataPoint(sdhdf_fileStruct *inFile,int b,int i,int j,int s);
+void flagPersistentRFI(sdhdf_fileStruct *inFile,sdhdf_rfi *rfi,int nRFI,int b,int i);
+void flagTransientRFI(sdhdf_fileStruct *inFile,sdhdf_transient_rfi *transient_rfi,int nTransientRFI,int b,int i);
+void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i);
 
 void help()
 {
-  printf("sdhdf_autoFlag:   code to carry out automatic flagging of a data file\n");
-  printf("Note 1: sdhdf_flag is used for manual flagging\n");
-  printf("Note 2: here we use the term 'flagging', but it is the weights table in the SDHDF file that is set to zero\n");
-  printf("\n\n");
-  printf("-e <extension>            Set the output file extension\n");
-  printf("-from <filename.hdf>      Input file that has flagging information that should be copied to other files\n");
-  printf("-edge <value>             Percent of the sub-band boundaries that should be flagged\n");
-  printf("-noflags                  Do not write out a flag table\n");
-  printf("-noweights                Do not write out a weights table\n");
-  printf("-persistent               Remove persistent RFI specific to the observatory\n");
-  printf("-transient                Remove transient RFI specific to the observatory\n");
-  printf("\n");
-  printf("Example: sdhdf_autoFlag -from manualZap.hdf uwl*.hdf\n");
-	 
-
+  printf("sdhdf_autoFlag:   code to carry out automatic flagging of a data file\n");	 
   exit(1);
 }
 
 
 int main(int argc,char *argv[])
 {
-  int i,j,ii,b,k,s;
-  char fname[MAX_STRLEN];
-  char fromFileName[MAX_STRLEN];
-  char extension[MAX_STRLEN]="autoFlag";
   sdhdf_fileStruct *inFile,*fromFile;
-  int iband=0,nchan,idump,nband;
-  int ndump=0,totSize,chanPos;
-  //  spectralDumpStruct spectrum;
-  int npol=4;
-  int setnband=-1;
-  int flagType=-1;
-  sdhdf_rfi rfi[MAX_RFI];
-  sdhdf_transient_rfi transient_rfi[MAX_RFI];
+  int i,j,ii,b,k,s;
+  int nFiles=0;
+  char fname[MAX_FILES][MAX_STRLEN];
+  char extension[MAX_STRLEN]="autoFlag";
+
   int nTransientRFI=0;
-  int nRFI;
-  float bandEdge=0;
-  int fromFlag=0;
-  int bandEdgeFlag=0;
-  int persistentFlag=0;
-  int transientFlag=0;
-  // Should check if already .flag extension
-  //
+  int nRFI=0;
+  int setWt = 0;
+  int nManualRFI = 0;
+  
   char oname[MAX_STRLEN];
   sdhdf_fileStruct *outFile;
+  int nband;
+  
+  int fromFlag = 0; // = 1 => copy flag table from another file
+  int bandEdgeFlag = 0;
+  int persistentFlag = 0;
+  int transientFlag = 0;
 
-  int writeWeights = 1;
-  int writeFlags = 1;
-
+  double freq;
+  int flagIt;
+  int haveFlag;
+  int copyType;
+  
+  float bandEdge=0;
+  sdhdf_rfi rfi[MAX_RFI];
+  sdhdf_rfi manual_rfi[MAX_RFI];
+  sdhdf_transient_rfi transient_rfi[MAX_RFI];
+  char args[MAX_STRLEN]="";
+  int autoFlagDump=0;
+  float autoFlagDump_sigma=3;
+  
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -95,263 +96,265 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
-
-  if (!(fromFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
+  for (i=1;i<argc;i++)
     {
-      printf("ERROR: unable to allocate sufficient memory for >fromFile<\n");
-      exit(1);
+      strcat(args,argv[i]);
+      strcat(args," ");
     }
 
-  // Two types of flagging.  Type 1 is copying a flag table
-  // from one file to another.  Type 2 is running an algorithm to choose what to flag  
-  flagType=0;
   for (i=1;i<argc;i++)
     {      
-      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}
-      else if (strcmp(argv[i],"-e")==0) strcpy(extension,argv[++i]);
-      else if (strcasecmp(argv[i],"-noflags")==0) writeFlags=0;
-      else if (strcasecmp(argv[i],"-noweights")==0) writeWeights=0;
+      //      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}
+      if (strcmp(argv[i],"-e")==0) strcpy(extension,argv[++i]);
       else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge); bandEdgeFlag=1;}
-      else if (strcmp(argv[i],"-persistent")==0) {persistentFlag=1; flagType=2;}
-      else if (strcmp(argv[i],"-transient")==0) {transientFlag=1; flagType=2;}
+      else if (strcmp(argv[i],"-persistent")==0) {persistentFlag=1;}
+      else if (strcmp(argv[i],"-transient")==0) {transientFlag=1;}
+      else if (strcasecmp(argv[i],"-autoFlagDump")==0) {autoFlagDump=1; sscanf(argv[++i],"%f",&autoFlagDump_sigma);}
       else if (strcmp(argv[i],"-h")==0) help();
-    }
-
-  if (fromFlag==0 && bandEdgeFlag==0 && persistentFlag==0 && transientFlag==0)
-    {
-      printf("ERROR: You need to use either the -from, -edge, -transient or -persistent command line options\n");
-      exit(1);
+      else if (strcasecmp(argv[i],"-flag")==0)
+	{
+	  manual_rfi[nManualRFI].type=1;
+	  sscanf(argv[++i],"%lf",&(manual_rfi[nManualRFI].f0));
+	  sscanf(argv[++i],"%lf",&(manual_rfi[nManualRFI].f1));
+	  nManualRFI++;
+	}
+      else
+	strcpy(fname[nFiles++],argv[i]);
     }
   
-
-  if (flagType==1)
+  for (ii=0;ii<nFiles;ii++)
     {
-      sdhdf_initialiseFile(fromFile);
-      sdhdf_openFile(fromFileName,fromFile,1);
-      sdhdf_loadMetaData(fromFile);
-      printf("Loading the bands\n");
-      for (b=0;b<fromFile->nBeam;b++)
-	{
-	  // This is a waste as don't need to load in all the data: FIX ME
-	  for (i=0;i<fromFile->beam[b].nBand;i++)
-	    sdhdf_loadBandData(fromFile,b,i,1);
-	}
-    }
-  //
+      printf("Processing: %s\n",fname[ii]);
+      sdhdf_initialiseFile(inFile);
+      sdhdf_openFile(fname[ii],inFile,1);
+      sdhdf_loadMetaData(inFile);
+      sdhdf_formOutputFilename(inFile->fname,extension,oname);
+      printf(" .... output filename: %s\n",oname);
 
-  for (ii=1;ii<argc;ii++)
-    {
-      if (strcmp(argv[ii],"-from")==0 || strcmp(argv[ii],"-edge")==0 || strcmp(argv[ii],"-e")==0)
-	ii++;
-      else if (strcmp(argv[ii],"-persistent")==0 || strcmp(argv[ii],"-transient")==0 	  || strcasecmp(argv[ii],"-noweights")==0 || strcasecmp(argv[ii],"-noflags")==0)
-	{
-	  // Do nothing
-	}
-      else // Processing file
-	{
-	  //	  printf("ii = %d\n",ii);
-	  strcpy(fname,argv[ii]);
-	  printf("Starting %s\n",fname);  	  
-	  sdhdf_initialiseFile(inFile);
-	  sdhdf_openFile(fname,inFile,1);
-	  sdhdf_loadMetaData(inFile);
-	  sprintf(oname,"%s.%s",inFile->fname,extension);
+      // Copy the input file to the output file
+      sdhdf_initialiseFile(outFile);
+      sdhdf_openFile(oname,outFile,3);
 
-	  sdhdf_initialiseFile(outFile);
-	  sdhdf_openFile(oname,outFile,3);
-	  sdhdf_copyRemainder(inFile,outFile,0);
-	  sdhdf_loadMetaData(outFile);
-	  //	  printf("Beam header label = %s\n",inFile->beamHeader[0].label);
-	  //	  printf("Beam header label = %s\n",outFile->beamHeader[0].label);
-	  //	  exit(1);
+      sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_autoFlag","INSPECTA software to add flags automatically",args);
+      inFile->nHistory++;
+      sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
+      
+      sdhdf_copyRemainder(inFile,outFile,0);      
+      sdhdf_loadMetaData(outFile);
 
-	  if (flagType==2)
+      // Load the trnasient and persistent RFI
+      if (transientFlag==1)
+	sdhdf_loadTransientRFI(transient_rfi,&nTransientRFI,MAX_RFI,inFile->primary[0].telescope);
+      if (persistentFlag==1)
+	sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,inFile->primary[0].telescope);
+
+      printf("Have loaded %d persistent RFI signals\n",nRFI);
+      printf("            %d transient RFI signals\n",nTransientRFI);
+      printf("            %d manually entered RFI signals\n",nManualRFI);
+      // Now apply the flag tables
+      for (b=0;b<inFile->nBeam;b++)
+	{
+	  haveFlag=0;
+	  nband = inFile->beam[b].nBand;
+	  for (i=0;i<nband;i++)
 	    {
-	      printf("Observatory site = %s\n",inFile->primary[0].telescope);
-	      if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
-		printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
-	      if (transientFlag==1)
-		sdhdf_loadTransientRFI(transient_rfi,&nTransientRFI,MAX_RFI,"parkes");
-	      if (persistentFlag==1)
-		sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
+	      // A waste as don't need always need to load in the data: FIX ME
+	      // NOT APPLYING TO ALL SPECTRAL DUMPS **** FIX ME
+	      sdhdf_loadBandData(inFile,b,i,1);
 
-	      if (bandEdge > 0)
-		{
-		  double freq0,freq1,chbw;
-		  printf("In band edge\n");
-		  nband = inFile->beam[0].nBand; // FIX ME - USING BEAM 0
-		  printf("nband = %d\n",nband);
-		  for (i=0;i<nband;i++)
-		    {
-		      // FIX ME -- THIS IS CRAZY TO LOAD IN THE DATA EACH TIME JUST TO SET THE FLAGS **** FIX ME *****
-		      
-		      sdhdf_loadBandData(inFile,0,i,1); // FIX ME - USING BEAM 0
-		  
-		      printf("Setting RFI %d\n",nRFI);
-		      freq0 = inFile->beam[0].bandData[i].astro_data.freq[0];
-		      freq1 = inFile->beam[0].bandData[i].astro_data.freq[inFile->beam[0].bandHeader[i].nchan-1];
-		      chbw = inFile->beam[0].bandData[i].astro_data.freq[1]-inFile->beam[0].bandData[i].astro_data.freq[0];
-		      printf("Got %g %g\n",freq0,freq1);
-		      rfi[nRFI].type=1;  rfi[nRFI].f0 = freq0-chbw/2.; rfi[nRFI].f1 = freq0+(freq1-freq0)*bandEdge/100.+chbw/2.; nRFI++;
-		      rfi[nRFI].type=1;  rfi[nRFI].f0 = freq1 -chbw/2.-(freq1-freq0)*bandEdge/100.; rfi[nRFI].f1 = freq1+chbw/2.; nRFI++;
-		      printf("Adding RFI at %g %g\n",freq0,freq0+(freq1-freq0)*bandEdge/100.);
-		      sdhdf_releaseBandData(inFile,0,i,1);
-		      printf("Complete data release\n");
-		    }
-		}
-	      printf("Have loaded %d RFI signals\n",nRFI);
+	      // Apply the persistent RFI
+	      if (persistentFlag == 1)
+		flagPersistentRFI(inFile,rfi,nRFI,b,i);
+	      if (transientFlag == 1)
+		flagTransientRFI(inFile,transient_rfi,nTransientRFI,b,i);
+	      if (nManualRFI > 0)
+		flagPersistentRFI(inFile,manual_rfi,nManualRFI,b,i);
+	      if (autoFlagDump == 1)
+		flagAutoDump(inFile,autoFlagDump_sigma,b,i);
+
+	      sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
+	      sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
+	      sdhdf_releaseBandData(inFile,b,i,1);
+	      printf("Complete band %d\n",i);
+	      
+
 	    }
-	  for (b=0;b<inFile->nBeam;b++)
-	    {
-	      nband = inFile->beam[b].nBand;
-	      for (i=0;i<nband;i++)
-		{
-		  // A waste as don't need to load in the data: FIX ME
-		  // NOT APPLYING TO ALL SPECTRAL DUMPS **** FIX ME
-		  sdhdf_loadBandData(inFile,b,i,1);
-		  if (flagType==1)
-		    {
- 		      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-			{
-			  inFile->beam[b].bandData[i].astro_data.dataWeights[j] =
-			    fromFile->beam[b].bandData[i].astro_data.dataWeights[j];
-			  if (inFile->beam[b].bandData[i].astro_data.dataWeights[j] > 0)
-			    inFile->beam[b].bandData[i].astro_data.flag[j]=0;
-			  else
-			    inFile->beam[b].bandData[i].astro_data.flag[j]=1;
-			}
-
-		    }
-		  else if (flagType==2)
-		    {
-		      double freq;
-		      int flagIt;
-		      int haveFlag=0;
-		      if (persistentFlag==1)
-			{
-			  // ii, b, i (band)
-			  for (k=0;k<nRFI;k++)
-			    {
-			      // Is this RFI within the band?
-			      if ((rfi[k].f0 > inFile->beam[b].bandHeader[i].f0 && rfi[k].f0 < inFile->beam[b].bandHeader[i].f1)
-				  || (rfi[k].f1 > inFile->beam[b].bandHeader[i].f0 && rfi[k].f1 < inFile->beam[b].bandHeader[i].f1))
-				{
-				  // Now zap from each sub-band
-				  printf("Processing persistent RFI: %s (%g to %g)\n",rfi[k].description,rfi[k].f0,rfi[k].f1);
-				  haveFlag=0;
-				  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
-				    {
-				      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-					{
-					  freq = inFile->beam[b].bandData[i].astro_data.freq[j];
-					  if (freq > rfi[k].f0 && freq < rfi[k].f1)
-					    {
-					      inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
-					      inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan]=1;
-					      haveFlag=1;
-					    }
-					}				      
-				    }
-				  if (haveFlag==1)
-				    printf(" ... have flagged this RFI\n");
-				}
-			    }
-			}
-
-		      if (transientFlag==1)
-			{
-			  double v1,v2,v3;
-			  int n1,n2;
-			  int flagIt=0;
-			  double sumPol=0;
-			  // ii, b, i (band)
-			  for (k=0;k<nTransientRFI;k++)
-			    {
-			      // Is this RFI within the band?
-			      if ((transient_rfi[k].f0 > inFile->beam[b].bandHeader[i].f0 && transient_rfi[k].f0 < inFile->beam[b].bandHeader[i].f1)
-				  || (transient_rfi[k].f1 > inFile->beam[b].bandHeader[i].f0 && transient_rfi[k].f1 < inFile->beam[b].bandHeader[i].f1))
-				{
-				  // Now zap from each sub-band
-				  printf("Checking transient RFI: %s comparing %g -> %g with %g -> %g\n",transient_rfi[k].description,
-					 transient_rfi[k].f0,transient_rfi[k].f1,transient_rfi[k].f2,transient_rfi[k].f3);
-				  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
-				    {
-				      v1 = v2 = v3 = 0;
-				      
-				      n1=n2=0;
-				      flagIt=0;
-				      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-					{
-					  freq = inFile->beam[b].bandData[i].astro_data.freq[j];
-					  if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
-					    {
-					      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
-							+ inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
-					      if (v1 < sumPol) v1 = sumPol;
-					      n1 ++;
-					    }
-					  if (freq > transient_rfi[k].f2 && freq < transient_rfi[k].f3)
-					    {
-					      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
-							+ inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
-					      v2 +=  sumPol;
-					      n2 ++;
-					    }
-					}
-				      v2/=(double)n2; // SHOULD CHECK n2 > 0 --- FIX ME
-
-
-				      if (v1 > transient_rfi[k].threshold*v2)
-					{
-					  flagIt=1;
-					  printf("Flagging dump %d, comparing %g and %g (%d %d)\n",s,v1,v2,n1,n2);
-					}
-				      else
-					printf("**Not** flagging dump %d, comparing %g and %g (%d %d)\n",s,v1,v2,n1,n2);
-				      if (flagIt==1) // Do the flagging if necessary
-					{
-
-					  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
-					    {					      
-					      freq = inFile->beam[b].bandData[i].astro_data.freq[j];
-					      if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
-						{
-						  inFile->beam[b].bandData[i].astro_data.dataWeights[j+s*inFile->beam[b].bandHeader[i].nchan] = 0;
-						  inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan] = 1;					  
-						}
-					    }					  
-					}
-				    }
-				}
-			    }
-			}
-		    }
-		  if (writeWeights==1)
-		    sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
-		  if (writeFlags==1)
-		    sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
-		  sdhdf_releaseBandData(inFile,b,i,1);
-		  printf("Complete band %d\n",i);
-
-		}
-	      printf("Complete beam %d\n",b);
-	    }
-	  printf("Closing input file\n");
-	  sdhdf_closeFile(inFile);
-	  printf("Closing output file\n");
-	  sdhdf_closeFile(outFile);	  
+	  printf("Complete beam %d\n",b);
 	}
+      printf("Closing input file\n");
+      sdhdf_closeFile(inFile);
+      printf("Closing output file\n");
+      sdhdf_closeFile(outFile);	  
+      
     }
+
   free(inFile);
   free(outFile);
-    
-  if (flagType==1)
-    {
-      sdhdf_closeFile(fromFile);     
-      free(fromFile);
-    }
+
+  // FREE THE FROM FILE -- FIX ME!
   
 }
 
+void flagDataPoint(sdhdf_fileStruct *inFile,int b,int i,int j,int s)
+{
+  inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan]=1;
+}
+
+void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i)
+{
+  int s,j,k;
+  float x,x2;
+  float v,v2;
+  float val;
+  float mean,sdev;
+  float meanDump,sdevDump;
+  float meanVals[inFile->beam[b].bandHeader[i].ndump];
+  int nc=0;
+  
+  // Calculate the mean and variance
+  v=v2=0;
+  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
+    {
+      x=x2=0;
+      nc=0;
+      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+	{
+	  if (inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan] == 0)
+	    {
+	      val = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
+		     + inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
+	      
+	      x += val;
+	      x2 += pow(val,2);
+	      nc++;
+	    }
+	}
+      if (nc > 0)
+	{
+	  mean = x/(float)nc;
+	  meanVals[s] = mean;
+	  sdev = sqrt(x2/(float)nc - pow(mean,2));
+	}
+      v += mean;
+      v2 += pow(mean,2);
+    }
+  meanDump = v/(float)inFile->beam[b].bandHeader[i].ndump;
+  sdevDump = sqrt(v2/(float)inFile->beam[b].bandHeader[i].ndump - pow(meanDump,2));
+  printf("Mean/sdev = %g/%g\n",meanDump,sdevDump);
+
+  // Now determine what (if anything to flag)
+  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
+    { 
+      if (meanVals[s] > meanDump + autoFlagDump_sigma*sdevDump)
+	{
+	  printf("Flagging spectral dump %d in band %d because of noise level (deviates by %f sigma)\n",s,i,(meanVals[s]-meanDump)/sdevDump);
+	  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+	    inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan] = 1;
+	}
+    }
+}
 
 
+void flagPersistentRFI(sdhdf_fileStruct *inFile,sdhdf_rfi *rfi,int nRFI,int b,int i)
+{
+  int k,s,j;
+  double freq;
+  int haveFlag;
+  
+  for (k=0;k<nRFI;k++)
+    {
+      // Is this RFI within the band?
+      if ((rfi[k].f0 > inFile->beam[b].bandHeader[i].f0 && rfi[k].f0 < inFile->beam[b].bandHeader[i].f1)
+	  || (rfi[k].f1 > inFile->beam[b].bandHeader[i].f0 && rfi[k].f1 < inFile->beam[b].bandHeader[i].f1))
+	{
+	  // Now zap from each sub-band
+	  printf("Processing persistent RFI: %s (%g to %g)\n",rfi[k].description,rfi[k].f0,rfi[k].f1);
+	  haveFlag=0;
+	  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
+	    {
+	      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+		{
+		  freq = inFile->beam[b].bandData[i].astro_data.freq[s*inFile->beam[b].bandHeader[i].nchan+j];
+		  if (freq > rfi[k].f0 && freq < rfi[k].f1)
+		    {
+		      flagDataPoint(inFile,b,i,j,s);
+		      haveFlag=1;
+		    }
+		}				      
+	    }
+	  if (haveFlag==1)
+	    printf(" ... have flagged this RFI\n");
+	  
+	}
+    }
+}
+
+void flagTransientRFI(sdhdf_fileStruct *inFile,sdhdf_transient_rfi *transient_rfi,int nTransientRFI,int b,int i)
+{
+  int j,k,s;
+  double v1,v2,v3;
+  int n1,n2;
+  int flagIt=0;
+  double freq;
+  double sumPol=0;
+  // ii, b, i (band)
+  for (k=0;k<nTransientRFI;k++)
+    {
+      // Is this RFI within the band?
+      if ((transient_rfi[k].f0 > inFile->beam[b].bandHeader[i].f0 && transient_rfi[k].f0 < inFile->beam[b].bandHeader[i].f1)
+	  || (transient_rfi[k].f1 > inFile->beam[b].bandHeader[i].f0 && transient_rfi[k].f1 < inFile->beam[b].bandHeader[i].f1))
+	{
+	  // Now zap from each sub-band
+	  printf("Checking transient RFI: %s comparing %g -> %g with %g -> %g\n",transient_rfi[k].description,
+		 transient_rfi[k].f0,transient_rfi[k].f1,transient_rfi[k].f2,transient_rfi[k].f3);
+	  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
+	    {
+	      v1 = v2 = v3 = 0;
+	      
+	      n1=n2=0;
+	      flagIt=0;
+	      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+		{
+		  freq = inFile->beam[b].bandData[i].astro_data.freq[s*inFile->beam[b].bandHeader[i].nchan+j];
+		  if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
+		    {
+		      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
+				+ inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
+		      if (v1 < sumPol) v1 = sumPol;
+		      n1 ++;
+		    }
+		  if (freq > transient_rfi[k].f2 && freq < transient_rfi[k].f3)
+		    {
+		      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
+				+ inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
+		      v2 +=  sumPol;
+		      n2 ++;
+		    }
+		}
+	      v2/=(double)n2; // SHOULD CHECK n2 > 0 --- FIX ME
+	      
+	      
+	      if (v1 > transient_rfi[k].threshold*v2)
+		{
+		  flagIt=1;
+		  printf("Flagging dump %d, comparing %g and %g (%d %d)\n",s,v1,v2,n1,n2);
+		}
+	      else
+		printf("**Not** flagging dump %d, comparing %g and %g (%d %d)\n",s,v1,v2,n1,n2);
+	      if (flagIt==1) // Do the flagging if necessary
+		{
+		
+		  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
+		    {
+		      // FIX ME: using [0] for frequency dump
+		      freq = inFile->beam[b].bandData[i].astro_data.freq[s*inFile->beam[b].bandHeader[i].nchan+j];
+		      if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
+			{
+			  flagDataPoint(inFile,b,i,j,s);
+			}
+		    }					  
+		}
+	    }
+	}
+    }
+}

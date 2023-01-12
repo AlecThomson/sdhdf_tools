@@ -248,7 +248,8 @@ int main(int argc,char *argv[])
 	  inBandParams[i].ndump=1;
 	  inBandParams[i].dtime = tav;
 	  // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
-	  sdhdf_writeSpectrumData(outFile,file0->beamHeader[b].label,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+	  sdhdf_writeSpectrumData(outFile,file0->beamHeader[b].label,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,file0->beam[b].bandData[i].astro_data.nFreqDumps,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  // GH: FIX ME
 	  //      sdhdf_writeFrequencyAttributes(outFile,file0->bandHeader[i].label);
 	  //      sdhdf_writeDataAttributes(outFile,file0->bandHeader[i].label);

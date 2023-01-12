@@ -409,7 +409,7 @@ int main(int argc,char *argv[])
 	      obsParams[k].mjd = params->dump[k].mjd;
 	      strcpy(obsParams[k].utc,"unknown");
 	      strcpy(obsParams[k].ut_date,"unknown");
-	      strcpy(obsParams[k].aest,"aest_unknown");
+	      strcpy(obsParams[k].local_time,"unknown");
 	      strcpy(obsParams[k].raStr,"unknown");
 	      strcpy(obsParams[k].decStr,"unknown");
 	      obsParams[k].raOffset = 0;
@@ -485,7 +485,8 @@ int main(int argc,char *argv[])
 	  free(obsParams);
 
 	  // SHOULD SET UP ATTRIBUTES
-	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,freq,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  // FIX ME: Sending only one frequency channel through
+	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,&freq,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  free(freq);
 	  free(data);
 
