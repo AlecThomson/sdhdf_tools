@@ -315,7 +315,7 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
 	  for (j=0;j<inFile->beam[0].bandHeader[k].nchan;j++)
 	    {
 	      if (fixFreq==0)
-		floatArr[n] = inFile->beam[0].bandData[k].astro_data.freq[j];
+		floatArr[n] = inFile->beam[0].bandData[k].astro_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP 
 	      else
 		{
 		  double cbw,fs,fe;
@@ -323,8 +323,8 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
 
 
 
-		  fs  = inFile->beam[0].bandData[k].astro_data.freq[0];
-		  fe  = inFile->beam[0].bandData[k].astro_data.freq[inFile->beam[0].bandHeader[k].nchan-1];
+		  fs  = inFile->beam[0].bandData[k].astro_data.freq[0];  // FIX ME -- FREQ AXIS FOR DUMP
+		  fe  = inFile->beam[0].bandData[k].astro_data.freq[inFile->beam[0].bandHeader[k].nchan-1];  // FIX ME -- FREQ AXIS FOR DUMP
 		  cbw = (fe-fs)/inFile->beam[0].bandHeader[k].nchan;
 
 
@@ -549,12 +549,12 @@ void createDataForCal(fitsfile *cal,sdhdf_fileStruct *inFile,int fixFreq)
 	  for (j=0;j<inFile->beam[0].calBandHeader[k].nchan;j++)
 	    {
 	      if (fixFreq==0)
-		floatArr[n] = inFile->beam[0].bandData[k].cal_on_data.freq[j];
+		floatArr[n] = inFile->beam[0].bandData[k].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
 	      else
 		{
 		  double cbw,fs,fe;
-		  fs  = inFile->beam[0].bandData[k].cal_on_data.freq[0];
-		  fe  = inFile->beam[0].bandData[k].cal_on_data.freq[inFile->beam[0].calBandHeader[k].nchan-1];
+		  fs  = inFile->beam[0].bandData[k].cal_on_data.freq[0];  // FIX ME -- FREQ AXIS FOR DUMP
+		  fe  = inFile->beam[0].bandData[k].cal_on_data.freq[inFile->beam[0].calBandHeader[k].nchan-1];  // FIX ME -- FREQ AXIS FOR DUMP
 		  cbw = (fe-fs)/inFile->beam[0].calBandHeader[k].nchan;
 		  floatArr[n] = (fs + 0.5*cbw) + j*cbw;
 		}

@@ -198,7 +198,7 @@ int main(int argc,char *argv[])
 			    {
 			      display=1;
 			      //			  printf("Loading freq\n");
-			      freq = inFile->beam[beam].bandData[band].astro_data.freq[j];
+			      freq = inFile->beam[beam].bandData[band].astro_data.freq[j];// FIX ME: DUMP FOR FREQ AXIS
 			      //			      printf("Loading pol1 %g\n",freq);
 			      pol1 = inFile->beam[beam].bandData[band].astro_data.pol1[j+k*nchan];
 
@@ -264,7 +264,8 @@ int main(int argc,char *argv[])
 			{
 			  //		      printf("Here with %d\n",k);
 			  for (j=0;j<inFile->beam[beam].calBandHeader[band].nchan;j++)
-			    {			      
+			    {
+			      // FIX ME: DUMP FOR FREQ AXIS
 			      if (outFile==1)
 				fprintf(fout,"%s %d %d %d %d %.6f %g %g\n",inFile->fname,beam,band,k,j,inFile->beam[beam].bandData[band].cal_on_data.freq[j],
 					tsys[k*2*inFile->beam[beam].calBandHeader[band].nchan + j],
@@ -299,6 +300,7 @@ int main(int argc,char *argv[])
 			    {
 			      display=1;
 			      //			  printf("Loading freq\n");
+			      // FIX ME: DUMP FOR FREQ AXIS
 			      freq = inFile->beam[beam].bandData[band].cal_on_data.freq[k];
 			      if (setFreqRange==1 && (freq < freq0 || freq > freq1))
 				display=0;
@@ -345,6 +347,7 @@ int main(int argc,char *argv[])
 				{
 				  display=1;
 				  //			  printf("Loading freq\n");
+				  // FIX ME: DUMP FOR FREQ AXIS
 				  freq = inFile->beam[beam].bandData[band].cal_on_data.freq[k];
 				  if (setFreqRange==1 && (freq < freq0 || freq > freq1))
 				    display=0;

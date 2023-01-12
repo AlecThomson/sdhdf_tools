@@ -32,7 +32,7 @@
 void saveFile(sdhdf_fileStruct *inFile);
 void drawVline(float t0, float t1,char *str);
 int loadBands(char *bandFile,float *sbF0,float *sbF1,int *col,int *style,char **bandHeader);
-float calcT(char *aest,char *aest0,int min);
+float calcT(char *local,char *local0,int min);
 void drawLabels(char *labelFile,char *t0,float miny,float maxy,int min);
 void sort2d(int n,float *a,float *b);
 
@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
   int   np;
   int sdump=0;
   int sdump0=0;
-  char aest0[MAX_STRLEN]="00:00:00";
+  char local0[MAX_STRLEN]="00:00:00";
   
   double freq;
   float *timeVal;
@@ -157,7 +157,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-log")==0)
 	log=1;
       else if (strcmp(argv[i],"-t0")==0)
-	strcpy(aest0,argv[++i]);
+	strcpy(local0,argv[++i]);
       else if (strcmp(argv[i],"-plotAz")==0)
 	plotType=2;
       else if (strcmp(argv[i],"-l")==0)
@@ -241,7 +241,7 @@ int main(int argc,char *argv[])
 	      if (j==0)
 		{
 		  //		  timeVal[sdump] = calcT(inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].aest,aest0,min);
-		  timeVal[sdump] = calcT(inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].utc,aest0,min);
+		  timeVal[sdump] = calcT(inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].utc,local0,min);
 		  azVal[sdump] = inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].az;
 		  elVal[sdump] = inFile->beam[ibeam].bandData[0].astro_obsHeader[jj].el;
 		}
@@ -268,6 +268,7 @@ int main(int argc,char *argv[])
 			  nchan = inFile->beam[ibeam].bandHeader[k].nchan;
 			  for (ii=0;ii<nchan;ii++)
 			    {
+			      // FIX ME: using [0] for frequency dump
 			      freq = inFile->beam[ibeam].bandData[k].astro_data.freq[ii];
 			      if (freq >= sbF0[j] && freq <= sbF1[j])
 				{
@@ -445,10 +446,10 @@ int main(int argc,char *argv[])
 	  cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
 	}
       if (min==1)
-	sprintf(xlabel,"Minutes since UTC %s",aest0);
+	sprintf(xlabel,"Minutes since UTC %s",local0);
 	//	sprintf(xlabel,"Minutes since AEST %s",aest0);
       else
-	sprintf(xlabel,"Seconds since UTC %s",aest0);
+	sprintf(xlabel,"Seconds since UTC %s",local0);
 	//	sprintf(xlabel,"Seconds since AEST %s",aest0);
       cpglab(xlabel,"Relative signal strength","");
       
@@ -504,7 +505,7 @@ int main(int argc,char *argv[])
 	}
       if (strcmp(labelFile,"NULL")!=0)
 	{
-	  drawLabels(labelFile,aest0,miny,maxy,min);
+	  drawLabels(labelFile,local0,miny,maxy,min);
 	}
       cpgend();
       exit(1);
@@ -800,12 +801,12 @@ int loadBands(char *bandFile,float *sbF0,float *sbF1,int *col,int *style,char **
   return nsb;
 }
 
-float calcT(char *aest,char *aest0,int min)
+float calcT(char *local,char *local0,int min)
 {
   float hr0,min0,sec0,t0;
   float hr1,min1,sec1,t1;
-  sscanf(aest0,"%f:%f:%f",&hr0,&min0,&sec0);
-  sscanf(aest,"%f:%f:%f",&hr1,&min1,&sec1);
+  sscanf(local0,"%f:%f:%f",&hr0,&min0,&sec0);
+  sscanf(local,"%f:%f:%f",&hr1,&min1,&sec1);
 
   t0 = hr0*60*60+min0*60+sec0;
   t1 = hr1*60*60+min1*60+sec1;

@@ -165,7 +165,9 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile);
 void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type);
 void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type);
 void sdhdf_loadBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int type,float *arr);
-void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float *arr);
+void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float *arr,int *nFreqDump);
+int sdhdf_loadWeights2Array(sdhdf_fileStruct *inFile,int beam,int band,float *arr);
+int sdhdf_loadFlags2Array(sdhdf_fileStruct *inFile,int beam,int band,unsigned char *arr);
 void sdhdf_allocateBandData(sdhdf_spectralDumpsStruct *spec,int nchan,int ndump,int npol);
 void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int ndump,int npol);
 
@@ -175,6 +177,9 @@ void sdhdf_add2arg(char *args,char *add1,char *add2);
 
 
 // Loading metadata information
+void sdhdf_formOutputFilename(char *inFile,char *extension,char *oname);
+void sdhdf_fixUnderscore(char *input,char *output);
+int sdhdf_getTelescopeDirName(char *tel,char *dir);
 void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile);  // Include loading attributes
@@ -196,6 +201,8 @@ void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,i
 void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_label,float *vals);
 
 // Attributes
+void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile0,int beam,int band,sdhdf_attributes_struct *dataAttributes,int *nDataAttributes,
+				  sdhdf_attributes_struct *freqAttributes,int *nFreqAttributes);
 int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName);
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out);
@@ -240,7 +247,7 @@ void sdhdf_writePrimaryHeader(sdhdf_fileStruct *outFile,sdhdf_primaryHeaderStruc
 void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *outBandParams,char *beamLabel,int outBands,int type);
 void sdhdf_writeBeamHeader(sdhdf_fileStruct *outFile,sdhdf_beamHeaderStruct *beamHeader,int nBeams);
 void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,int nsub,int npol,int nchan);
-void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  float *out,float *freq,long nchan,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
+void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  float *out,float *freq,int nFreqDump,long nchan,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
 void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int type);
 void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLabel,int iband,sdhdf_obsParamsStruct *obsParams,int ndump,int type);
 void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned char *flag,int nchan,int ndump,char *beamLabel,char *bandLabel);
@@ -257,7 +264,8 @@ void sdhdf_loadHeaderDouble(hid_t header_id,char *parameter,double *outDouble);
 
 // Ephemerides
 long   sdhdf_loadEOP(sdhdf_eopStruct *eop);
-double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName);
+void sdhdf_calcVoverC(double *mjd,double *raDeg,double *decDeg,int nvals,double *vOverC,char *tel,char *ephemName,sdhdf_eopStruct *eop,int nEOP,int bary_lsr);
+//double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName);
 void sdhdf_obsCoord_IAU2000B(double observatory_trs[3],
 			     double zenith_trs[3],
 			     long double tt_mjd, long double utc_mjd,
@@ -269,6 +277,13 @@ void sdhdf_ITRF_to_GRS80(double x,double y,double z,double *long_grs80,double *l
 
 // Mathematics
 //int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
+
+double dms_turn(char *line);
+double hms_turn(char *line);
+int    turn_hms(double turn, char *hms);
+int    turn_dms(double turn, char *dms);
+double turn_deg(double turn);
+
 int sdhdf_complex_matrix_2x2_inverse(double complex a[2][2],double complex inv[2][2]);
 void sdhdf_complex_matrix_2x2_dagger(double complex R[2][2],double complex Rdag[2][2]);
 void sdhdf_display_complex_matrix_2x2(double complex J[2][2]);

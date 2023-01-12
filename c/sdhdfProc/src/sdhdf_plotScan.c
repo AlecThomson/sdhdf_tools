@@ -44,7 +44,7 @@ void help()
   printf("sdhdf_plotScan: plot a scanning observation\n");
   printf("\n\n");
   printf("Command line arguments:\n");
-  printf("-divWeights       Divide spectra by weights\n");
+  printf("-noWeights        Do not Use weights\n");
   printf("-f <file>         Input file name\n");
   printf("-freqRange <f0> <f1> Define frequency range for plot (in MHz)\n");
   printf("-h                This help\n");
@@ -109,7 +109,7 @@ int main(int argc,char *argv[])
   modelFitStruct modelFit[MAX_BANDS];
   float maxFlux=0,minFlux=1e99;
   int nFile=0;
-  int useWeights=0;
+  int useWeights=1;
   float wSum;
   int sbHighlight=-1;
   int okay;
@@ -128,9 +128,11 @@ int main(int argc,char *argv[])
   int select=-1;
   int makeImage=0;
   int plotPts=1;
+  int flagVal;
+  float wtVal;
   double sigma;
   char srcName[128]="NULL";
-  
+  char sourceFix[1024];
   double ra0 = 0;
   double dec0 = 0;
   
@@ -151,8 +153,8 @@ int main(int argc,char *argv[])
        {help(); exit(1);}
      else if (strcmp(argv[i],"-src")==0)
        strcpy(srcName,argv[++i]);
-     else if (strcasecmp(argv[i],"-divWeights")==0)
-       useWeights=1;
+     else if (strcasecmp(argv[i],"-noWeights")==0)
+       useWeights=0;
      else if (strcmp(argv[i],"-freqRange")==0)
        {
 	 sscanf(argv[++i],"%f",&f0);
@@ -236,20 +238,21 @@ int main(int argc,char *argv[])
 	      //	      printf("Loading weights %d %d %d\n",i,sub,j,
 	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+sub*inFile->beam[ibeam].bandHeader[i].nchan] != 0)
 		{
+		  flagVal = (1-inFile->beam[ibeam].bandData[i].astro_data.flag[j+sub*inFile->beam[ibeam].bandHeader[i].nchan]);
+		  if (useWeights==0)
+		    wtVal=1;
+		  else
+		    wtVal   = inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+sub*inFile->beam[ibeam].bandHeader[i].nchan];
+		    
+		  // FIX ME: using [0] for frequency dump
 		  if ((f0 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= f0) &&
 		      (f1 < 0 || inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= f1))
 		    {
-		      onAA = inFile->beam[ibeam].bandData[i].astro_data.pol1[j+sub*nchan]; 
-		      onBB = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+sub*nchan]; 
+		      onAA = wtVal*flagVal*inFile->beam[ibeam].bandData[i].astro_data.pol1[j+sub*nchan]; 
+		      onBB = wtVal*flagVal*inFile->beam[ibeam].bandData[i].astro_data.pol2[j+sub*nchan]; 
 		      fluxAA[i][sub] += onAA;
 		      fluxBB[i][sub] += onBB;
-		      if (useWeights==1)
-			{
-			  wSum += inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+sub*inFile->beam[ibeam].bandHeader[i].nchan];
-			  printf("%d %d wSum = %g\n",j,sub,wSum);
-			}
-		      else
-			wSum+=1;
+		      wSum += flagVal*wtVal;
 		    }
 		}
 	    }
@@ -387,7 +390,28 @@ int main(int argc,char *argv[])
       }
 
     cpgenv(minx,maxx,miny,maxy,0,0);
-    sprintf(title,"%s",inFile->beamHeader[ibeam].source);
+    {
+      // FIX ME: Should use a function for this
+      char *tok;
+      char tstr[1024];
+      int pos=0;
+      // Source name
+      pos=0;
+      strcpy(tstr,inFile->beamHeader[ibeam].source);
+      tok = strtok(tstr,"_");
+      strcpy(sourceFix,"");
+      while (tok!=NULL)
+	{
+	  if (pos>0)
+	    strcat(sourceFix,"\\_");
+	  strcat(sourceFix,tok);	      
+	  tok = strtok(NULL,"_");
+	  pos=1;
+	}
+      
+    }
+    
+    sprintf(title,"%s",sourceFix);
     if (xaxis==0)
       cpglab("Spectral dump number","Signal strength (arbitrary)",title);
     else if (xaxis==1)

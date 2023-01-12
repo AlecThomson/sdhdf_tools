@@ -155,6 +155,7 @@ int main(int argc,char *argv[])
 	{
 	  for (j=0;j<nchan;j++)
 	    {
+	      // FIX ME: using [0] for frequency dump
 	      model[i].freq[j]         = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
 	      model[i].model[k*nchan*npol+j] = model[i].originalData[k*nchan*npol+j] = inFile->beam[ibeam].bandData[i].astro_data.pol1[j+k*nchan];
 	      model[i].model[k*nchan*npol+nchan + j] = model[i].originalData[k*nchan*npol+nchan+j] = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+k*nchan];

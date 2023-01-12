@@ -108,6 +108,7 @@ int main(int argc,char *argv[])
 		      for (k=0;k<inFile->beam[b].calBandHeader[i].nchan;k++)
 			{
 
+			  // FIX ME: using [0] for frequency dump
 			  sdhdf_get_tcal(tcalData,nTcal,inFile->beam[b].bandData[i].cal_on_data.freq[k],&tcalA,&tcalB);
 
 			  on1   = inFile->beam[b].bandData[i].cal_on_data.pol1[k+j*inFile->beam[b].calBandHeader[i].nchan];

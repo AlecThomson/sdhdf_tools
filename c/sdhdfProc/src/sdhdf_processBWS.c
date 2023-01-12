@@ -143,6 +143,7 @@ int main(int argc,char *argv[])
 	  {	      	      	      
 	    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	      {
+		// FIX ME: using [0] for frequency dump
 		highResX[k] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
 		val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[l*inFile->beam[ibeam].bandHeader[j].nchan+k];
 		val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[l*inFile->beam[ibeam].bandHeader[j].nchan+k];

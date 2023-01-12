@@ -108,6 +108,7 @@ int main(int argc,char *argv[])
   double tdumpCal=-1;
   int nchanAstro=-1;
   int setNchanAstro=0;
+  int nchanFreq;
   
   char extension[1024];
   char oname[1024];
@@ -179,7 +180,7 @@ int main(int argc,char *argv[])
 	printf("Warning: unable to open file >%s<. Skipping\n",fname[i]);
       else
 	{
-	  sprintf(oname,"%s.%s",fname[i],extension);
+	  sdhdf_formOutputFilename(fname[i],extension,oname);
 	  printf("Opening file >%s<\n",oname);
 	  sdhdf_openFile(oname,outFile,3);
 
@@ -199,13 +200,18 @@ int main(int argc,char *argv[])
 		  nchan  = inFile->beam[b].bandHeader[j].nchan;
 		  npol   = inFile->beam[b].bandHeader[j].npol;
 		  ndump  = inFile->beam[b].bandHeader[j].ndump;
+		  nchanFreq = inFile->beam[b].bandData[j].astro_data.nFreqDumps;
 
+		  sdhdf_copyAttributes(inFile->beam[b].bandData[j].astro_obsHeaderAttr,inFile->beam[b].bandData[j].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+		  sdhdf_copyAttributes(inFile->beam[b].bandData[j].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[j].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+		  
+		  
 		  // Copy observation parameters
 		  outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 		  for (kk=0;kk<ndump;kk++)
 		    sdhdf_copySingleObsParams(inFile,b,j,kk,&outObsParams[kk]);
 		  
-		  out_freq  = (float *)malloc(sizeof(float)*nchan);
+		  out_freq  = (float *)malloc(sizeof(float)*nchan*nchanFreq);
 		  out_data  = (float *)calloc(sizeof(float),nchan*npol*ndump);
 		  dataWts   = (float *)calloc(sizeof(float),nchan*ndump);
 
@@ -274,11 +280,9 @@ int main(int argc,char *argv[])
 		      //		      printf("Processing: %d %d %d\n",b,j,k);
 		      for (ii=0;ii<nchan;ii++)
 			{
-			  freq = inFile->beam[b].bandData[j].astro_data.freq[ii];
-			  if (k==0)
-			    {
-			      out_freq[ii] = freq;  // NOTE: Assuming that the frequency is constant in all bands - not true if Doppler corrected -- FIX ME
-			    }
+			  freq = inFile->beam[b].bandData[j].astro_data.freq[k*nchan+ii];  // FIX ME -- FREQ AXIS FOR DUMP
+			
+			  out_freq[k*nchan+ii] = freq;  // NOTE: Assuming that the frequency is constant in all bands - not true if Doppler corrected -- FIX ME
 			  dataWts[ii+k*nchan]  = inFile->beam[b].bandData[j].astro_data.dataWeights[k*nchan+ii];
 
 			  // FIX ME: SHOULD ACCOUNT FOR WEIGHTING
@@ -398,8 +402,18 @@ int main(int argc,char *argv[])
 			  //			  exit(1);
 			}
 		    }
+		
+		  // Fix up the attributes
+		  // FIX ME: Need to check if actually in Kelvins
+		  for (ii=0;ii<nDataAttributes;ii++)
+		    {
+		      if (strcmp(dataAttributes[ii].key,"UNIT")==0)
+			  strcpy(dataAttributes[ii].value,"Jy");
+		      
+		    }
+		  
 		  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label,b,j,
-					  out_data,out_freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+					  out_data,out_freq,ndump,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[j].label,inFile->beamHeader[b].label,j,outObsParams,ndump,1);
 		  sdhdf_writeDataWeights(outFile,b,j,dataWts,nchan,ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label);
 		  sdhdf_releaseBandData(inFile,b,j,1); 		      

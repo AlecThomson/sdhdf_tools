@@ -67,10 +67,15 @@ long sdhdf_loadEOP(sdhdf_eopStruct *eop)
   return n;
 }
 
-double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName)
+//double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName)
+
+// Load in an array of MJDs for a given observatory and return an array of vOverC values
+//double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_eopStruct *eop,int nEOP,int lsr,char *ephemName)
+// bary_lsr = 0 (or 1) = bary, = 2 = lsr
+void sdhdf_calcVoverC(double *mjd,double *raDeg,double *decDeg,int nvals,double *vOverC,char *tel,char *ephemName,sdhdf_eopStruct *eop,int nEOP,int bary_lsr)
 {
   t_calcephbin *eph;
-  int i,j,k;
+  int i,j,k,ii;
   long double jd;
   double jd0,jd1;
   double earth_ssb[6],vobs[3],pos[3];
@@ -85,7 +90,14 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
 
   char runtimeDir[1024];
   char fname[1024];
-
+  FILE *fin;
+  char fname1[1024];
+  char fname2[1024];
+  char loadLine[1024];
+  char observatoryDir[1024]="NULL";
+  char label[1024];
+  char entry[1024];
+	
 
   if (getenv("SDHDF_RUNTIME")==0)
     {
@@ -103,132 +115,126 @@ double sdhdf_calcVoverC(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,s
     //    printf("Successfully opened ephemeris\n");
   } else {
     printf("Error: unable to open ephemeris\n");
-    return 0;
+    exit(1);
   }
 
-  jd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd+2400000.5;
-  jd0 = (double)((int)jd);
-  jd1 = (double)(jd-(int)jd);
-  
-  calceph_compute_unit(eph,jd0,jd1,3,12,CALCEPH_UNIT_KM|CALCEPH_UNIT_SEC,earth_ssb);
-  for (i=0;i<6;i++)
-    earth_ssb[i]*=1000.0; // Convert to m and m/s
-  for (i=0;i<3;i++)
-    vobs[i] = earth_ssb[i+3];
-  
-  //  printf("%g %g %g %g %g %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,earth_ssb[0],earth_ssb[1],earth_ssb[2],earth_ssb[3],earth_ssb[4],earth_ssb[5]);
-  calceph_close(eph);
-
-
-  // Get site velocity
-  {
-    FILE *fin;
-    char fname1[1024];
-    char fname2[1024];
-    char loadLine[1024];
-    char observatoryDir[1024]="NULL";
-    char label[1024];
-    char entry[1024];
-    // Obtain the coordinates of the observatory
-    sprintf(fname1,"%s/observatory/observatories.list",runtimeDir);
-    fin = fopen(fname1,"r");
-    while (!feof(fin))
-      {
-	if (fgets(loadLine,1024,fin)!=NULL)
-	  {
-	    if (loadLine[0]!='#')
-	      {
-		if (strstr(loadLine,inFile->primary[0].telescope)!=NULL)
-		  {
-		    sscanf(loadLine,"%s",observatoryDir);
-		    break;
-		  }
-	      }
-	  }	
-      }
-    fclose(fin);
-    if (strcmp(observatoryDir,"NULL")==0)
-      {
-	printf("ERROR: in sdhdfProc_ephemeris.c - unable to find observatory %s in %s\n",inFile->primary[0].telescope,fname1);
-	exit(1);
-      }
-    sprintf(fname2,"%s/observatory/%s/observatory.properties",runtimeDir,observatoryDir);
-    fin = fopen(fname2,"r");
-    while (!feof(fin))
-      {
-	if (fgets(loadLine,1024,fin)!=NULL)
-	  {
-	    if (loadLine[0]!='#')
-	      {
-		sscanf(loadLine,"%s %s",label,entry);
-		if (strcasecmp(label,"antenna_x")==0) sscanf(entry,"%lf",&trs[0]);
-		if (strcasecmp(label,"antenna_y")==0) sscanf(entry,"%lf",&trs[1]);
-		if (strcasecmp(label,"antenna_z")==0) sscanf(entry,"%lf",&trs[2]);
-	      }
-	  }
-      }
-    fclose(fin);
-  printf("Loaded trs = %g %g %g\n",trs[0],trs[1],trs[2]);
-
-  }
-  sdhdf_ITRF_to_GRS80(trs[0],trs[1],trs[2],&long_grs80,&lat_grs80,&height_grs80);
-    
-  zenith[0] = height_grs80 * cos(long_grs80) * cos(lat_grs80);
-  zenith[1] = height_grs80 * sin(long_grs80) * cos(lat_grs80);
-  zenith[2] = height_grs80 * sin(lat_grs80);
-
-  //  printf("Inputs to IAU2000B: %g %g %g %g\n",trs[0],trs[1],trs[2],(double)inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd);
-  
-  sdhdf_obsCoord_IAU2000B(trs, zenith,
-			  inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,
-			  inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,
-			  observatory_earth, zenith, siteVel,eop,nEOP);
-
-  //  printf("Observatory_Earth = %g %g %g\n",observatory_earth[0],observatory_earth[1],observatory_earth[2]);
-  //  printf("Site velocity = %g %g %g\n",siteVel[0],siteVel[1],siteVel[2]);
-  
-  for (i=0;i<3;i++)
-    vobs[i] += siteVel[i];
-
-  // Convert to the local standard of rest
-
-  // From Carl Heiles' code:
-  // THE STANDARD LSR IS DEFINED AS FOLLOWS: THE SUN MOVES AT 20.0 KM/S
-  // TOWARD RA=18.0H, DEC=30.0 DEG IN 1900 EPOCH COORDS
-  // using PRECESS, this works out to ra=18.063955 dec=30.004661 in 2000 coords.
-  if (lsr==1)
+  for (ii=0;ii<nvals;ii++)
     {
-      vlsr_ra = 2*M_PI*18./24.;
-      vlsr_dec = 30*M_PI/180.0;
-      vobs[0] += 20e3*cos(vlsr_dec)*cos(vlsr_ra);
-      vobs[1] += 20e3*cos(vlsr_dec)*sin(vlsr_ra);
-      vobs[2] += 20e3*sin(vlsr_dec);
+      jd = mjd[ii]+2400000.5;
+      jd0 = (double)((int)jd);
+      jd1 = (double)(jd-(int)jd);
+      calceph_compute_unit(eph,jd0,jd1,3,12,CALCEPH_UNIT_KM|CALCEPH_UNIT_SEC,earth_ssb);
+      for (i=0;i<6;i++)
+	earth_ssb[i]*=1000.0; // Convert to m and m/s
+      for (i=0;i<3;i++)
+	vobs[i] = earth_ssb[i+3];
+      
+      //      printf("%g %g %g %g %g %g %g\n",mjd[ii],earth_ssb[0],earth_ssb[1],earth_ssb[2],earth_ssb[3],earth_ssb[4],earth_ssb[5]);
+      
+      
+      // Get site velocity
+      // Obtain the coordinates of the observatory
+      if (ii==0)
+	{
+	  sprintf(fname1,"%s/observatory/observatories.list",runtimeDir);
+	  fin = fopen(fname1,"r");
+	  while (!feof(fin))
+	    {
+	      if (fgets(loadLine,1024,fin)!=NULL)
+		{
+		  if (loadLine[0]!='#')
+		    {
+		      if (strstr(loadLine,tel)!=NULL)
+			{
+			  sscanf(loadLine,"%s",observatoryDir);
+			  break;
+			}
+		    }
+		}	
+	    }
+	  fclose(fin);
+	  if (strcmp(observatoryDir,"NULL")==0)
+	    {
+	      printf("ERROR: in sdhdfProc_ephemeris.c - unable to find observatory %s in %s\n",tel,fname1);
+	      exit(1);
+	    }
+	  sprintf(fname2,"%s/observatory/%s/observatory.properties",runtimeDir,observatoryDir);
+	  fin = fopen(fname2,"r");
+	  while (!feof(fin))
+	    {
+	      if (fgets(loadLine,1024,fin)!=NULL)
+		{
+		  if (loadLine[0]!='#')
+		    {
+		      sscanf(loadLine,"%s %s",label,entry);
+		      if (strcasecmp(label,"antenna_x")==0) sscanf(entry,"%lf",&trs[0]);
+		      if (strcasecmp(label,"antenna_y")==0) sscanf(entry,"%lf",&trs[1]);
+		      if (strcasecmp(label,"antenna_z")==0) sscanf(entry,"%lf",&trs[2]);
+		    }
+		}
+	    }
+	  fclose(fin);
+	  //	printf("Loaded trs = %g %g %g\n",trs[0],trs[1],trs[2]);
+	  sdhdf_ITRF_to_GRS80(trs[0],trs[1],trs[2],&long_grs80,&lat_grs80,&height_grs80);
+	  
+	  zenith[0] = height_grs80 * cos(long_grs80) * cos(lat_grs80);
+	  zenith[1] = height_grs80 * sin(long_grs80) * cos(lat_grs80);
+	  zenith[2] = height_grs80 * sin(lat_grs80);
+	  
+	}
+      
+      
+      //  printf("Inputs to IAU2000B: %g %g %g %g\n",trs[0],trs[1],trs[2],(double)inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd);
+      
+      sdhdf_obsCoord_IAU2000B(trs, zenith,mjd[ii],mjd[ii],
+			      observatory_earth, zenith, siteVel,eop,nEOP);
+      
+      //  printf("Observatory_Earth = %g %g %g\n",observatory_earth[0],observatory_earth[1],observatory_earth[2]);
+      //  printf("Site velocity = %g %g %g\n",siteVel[0],siteVel[1],siteVel[2]);
+      
+      for (i=0;i<3;i++)
+	vobs[i] += siteVel[i];
+      // Convert to the local standard of rest
+      
+      // From Carl Heiles' code:
+      // THE STANDARD LSR IS DEFINED AS FOLLOWS: THE SUN MOVES AT 20.0 KM/S
+      // TOWARD RA=18.0H, DEC=30.0 DEG IN 1900 EPOCH COORDS
+      // using PRECESS, this works out to ra=18.063955 dec=30.004661 in 2000 coords.
+      if (bary_lsr==2)
+	{
+	  vlsr_ra = 2*M_PI*18./24.;
+	  vlsr_dec = 30*M_PI/180.0;
+	  vobs[0] += 20e3*cos(vlsr_dec)*cos(vlsr_ra);
+	  vobs[1] += 20e3*cos(vlsr_dec)*sin(vlsr_ra);
+	  vobs[2] += 20e3*sin(vlsr_dec);
+	}
+      
+      // Calculate Doppler shift
+      // (ignoring Einstein delay)
+      
+      alpha = raDeg[ii]*M_PI/180.;
+      delta = decDeg[ii]*M_PI/180.;
+      
+      //      printf("Source position = %g %g\n",alpha,delta);
+      ca = cos(alpha);
+      sa = sin(alpha);
+      cd = cos(delta);
+      sd = sin(delta);
+      
+      pos[0] = ca*cd;
+      pos[1] = sa*cd;
+      pos[2] = sd;
+      
+      pospos = sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
+      for (k=0;k<3;k++)
+	pos[k] /= pospos;
+      
+      vOverC[ii] = sdhdf_dotproduct(pos,vobs)/SPEED_LIGHT;
     }
-  
-  // Calculate Doppler shift
-  // (ignoring Einstein delay)
-
-  alpha = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raDeg*M_PI/180.;
-  delta = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decDeg*M_PI/180.;
-  
-  //  printf("Source position = %g %g\n",alpha,delta);
-  ca = cos(alpha);
-  sa = sin(alpha);
-  cd = cos(delta);
-  sd = sin(delta);
-
-  pos[0] = ca*cd;
-  pos[1] = sa*cd;
-  pos[2] = sd;
-  
-  pospos = sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
-  for (k=0;k<3;k++)
-    pos[k] /= pospos;
-
-  voverc = sdhdf_dotproduct(pos,vobs)/SPEED_LIGHT;
+  calceph_close(eph);
+      
   //  printf("voverc inputs: %g %g %g | %g %g %g\n",pos[0],pos[1],pos[2],vobs[0],vobs[1],vobs[2]);
   //  printf("mjd = %g %g\n",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd,voverc);
-  return voverc;
 }
 
 void sdhdf_obsCoord_IAU2000B(double *observatory_trs,

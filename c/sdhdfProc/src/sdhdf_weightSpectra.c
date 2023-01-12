@@ -175,6 +175,7 @@ int main(int argc,char *argv[])
 	  nc=0;
 	  for (k=0;k<inFile->beam[ibeam].bandHeader[iband].nchan;k++)
 	    {
+	      // FIX ME: using [0] for frequency dump
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.freq[k] > fLow && inFile->beam[ibeam].bandData[iband].astro_data.freq[k] <= fHigh)
 		{
 		  highResX[nSpec][nc]  = inFile->beam[ibeam].bandData[iband].astro_data.freq[k];

@@ -407,7 +407,7 @@ int main(int argc,char *argv[])
 	  sec = timeVals[i*nbeam+b] - hr*60*60. - min*60;
 	  sprintf(obsParams[i].utc,"%02d:%02d:%02d",hr,min,(int)sec);
 	  strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
-	  strcpy(obsParams[i].aest,"UNKNOWN"); // FIX  --- AND NOT AEST -- HAVE LOCAL TIME
+	  strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX 
 	  
 	  turn_hms(raVals[i*nbeam+b]/360.,raStr); // FIX: This assumes the specific structure of beams in the RA list
 	  turn_dms(decVals[i*nbeam+b]/360.,decStr);	  

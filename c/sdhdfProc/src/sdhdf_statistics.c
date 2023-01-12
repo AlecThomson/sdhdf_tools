@@ -165,6 +165,7 @@ int main(int argc,char *argv[])
 	    nc=0;
 	    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	      {
+		// FIX ME: using [0] for frequency dump
 		freq = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
 
 		if (freq > freq0 && freq < freq1)

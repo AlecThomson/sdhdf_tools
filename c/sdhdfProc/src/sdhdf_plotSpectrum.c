@@ -187,10 +187,14 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   int   divWeights=-1;
   int t=0;
   int setLog=-1;
+  char fnameFix[1024];
+  char blabelFix[1024];
+  char sourceFix[1024];
   char title[1024];
   char ylabel[1024];
   char xlabel[1024];
   char legend[1024];
+  int underscoreFix=1;
   int plot=1;
   int molecularLines=0;
   int recombLines=-1;
@@ -202,6 +206,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   int reload=1;
   int flagIt=2;
   int nFreq;
+  int allDataFlagged=1;
   
   sdhdf_restfrequency_struct *restFrequencies;
   restFrequencies = (sdhdf_restfrequency_struct *)malloc(sizeof(sdhdf_restfrequency_struct)*MAX_REST_FREQUENCIES);
@@ -249,9 +254,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      // SHOULD ONLY LOAD IF NOT LOADED YET
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.pol1AllocatedMemory == 0)
 		{
-		  printf("Loading band data\n");
 		  sdhdf_loadBandData(inFile,ibeam,iband,1);
-		  printf("Complete loading band\n");
 		  if (strcmp(yUnit,"not set")==0)
 		    {
 		      int kk;
@@ -284,31 +287,31 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	      reload=0;
 	    }
-
+	  allDataFlagged=1;
 	  for (i=0;i<nchan;i++)
 	    {
-	      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i]; 
+	      wts     = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i]; 
 	      //	      printf("WEIGHTS: %d %g\n",i,wts);
 	      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i]; 
 
 	      if (xplot==1)
 		{
 		  if (fref < 0)
-		      freq[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
+		    freq[i] = inFile->beam[ibeam].bandData[iband].astro_data.freq[idump*nchan+i];
 		  else
-		    {
-		      freq[i] = (1.0-inFile->beam[ibeam].bandData[iband].astro_data.freq[i]/(fref))*SPEED_LIGHT/1000.; // km/s
-		    }
+		    freq[i] = (1.0-inFile->beam[ibeam].bandData[iband].astro_data.freq[idump*nchan+i]/(fref))*SPEED_LIGHT/1000.; // km/s
 		}
 	      else
 		freq[i] = i;
 	      if (wts > 0 && flagVal == 0)
 		{
+		  //		  printf("Not flagged in channel %d\n",i);
+		  allDataFlagged=0;
 		  if (divWeights==1)
 		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;		 
 		  else
 		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
-		  //	      printf("Loaded %f %f\n",freq[i],pol1[i]);
+		  //printf("Loaded %f %f\n",freq[i],pol1[i]);
 		  if (divWeights==1)
 		    {
 		      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan]/wts;
@@ -340,8 +343,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		  
 		  for (i=0;i<nchan;i++)
 		    {
-		      wts = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i];
-		      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[i];
+		      //		      printf("IN HERE %g\n",pol1[i]);
+
+		      wts     = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i];
+		      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i];
 		      if ((wts != 0 && flagVal == 0) || flagIt==0)
 			{
 			  if (setMiny==0)
@@ -364,6 +369,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    }
 		  ominy = miny; omaxy = maxy;
 		}
+	   
 	      if (t==0)
 		{
 		  if (xplot==1)
@@ -392,6 +398,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    }
 		  else // Convert frequency to channel
 		    {
+		      // FIX ME: using [0] for frequency dump
 		      f0 = inFile->beam[ibeam].bandData[iband].astro_data.freq[0];
 		      f1 = inFile->beam[ibeam].bandData[iband].astro_data.freq[1];
 		      minx = (int)((sminx-f0)/(f1-f0)+0.5);
@@ -404,17 +411,36 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      
 	    }
 	}
-
       
-      if (setLog==-1)
-	cpgenv(minx,maxx,miny,maxy,0,0);
+      if (minx == maxx || miny == maxy)
+	{
+	  cpgenv(0,1,0,1,0,0);
+	  cpgtext(0.3,0.45,"No data to plot");
+	}
       else
-	cpgenv(minx,maxx,miny,maxy,0,20);
-      sprintf(ylabel,"Signal strength (%s)",yUnit);
+	{
+	  if (setLog==-1)
+	    cpgenv(minx,maxx,miny,maxy,0,0);
+	  else
+	    cpgenv(minx,maxx,miny,maxy,0,20);
+	  sprintf(ylabel,"Signal strength (%s)",yUnit);
+	}
+      if (underscoreFix==1) // SHOULD HAVE A FUNCTION TO DO THIS
+	{
+	  sdhdf_fixUnderscore(inFile->fname,fnameFix);
+	  sdhdf_fixUnderscore(inFile->beam[ibeam].bandHeader[iband].label,blabelFix);
+	  sdhdf_fixUnderscore(inFile->beamHeader[ibeam].source,sourceFix);
+	}
+      else
+	{
+	  strcpy(fnameFix,inFile->fname);
+	  strcpy(blabelFix,inFile->beam[ibeam].bandHeader[iband].label);
+	  strcpy(sourceFix,inFile->beamHeader[ibeam].source);
+	}
       if (inFile->beam[ibeam].bandHeader[iband].ndump==1)       
-	sprintf(title,"%s, %s",inFile->fname,inFile->beam[ibeam].bandHeader[iband].label);
+	sprintf(title,"%s, %s",fnameFix,blabelFix);
       else
-	sprintf(title,"%s, %s, spectral dump %d",inFile->fname,inFile->beam[ibeam].bandHeader[iband].label,idump);
+	sprintf(title,"%s, %s, spectral dump %d",fnameFix,blabelFix,idump);
       if (fref < 0)
 	{
 	  sprintf(xlabel,"%s frequency (%s)",freqFrame,freqUnit);
@@ -426,9 +452,9 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
       cpglab(xlabel,ylabel,title);
 	  
       cpgsch(0.9);
-      sprintf(legend,"Source: %s",inFile->beamHeader[ibeam].source);
+      sprintf(legend,"Source: %s",sourceFix);
       cpgtext(minx+0.05*(maxx-minx),maxy-0.05*(maxy-miny),legend);
-      sprintf(legend,"Tobs: %.2f sec",inFile->beam[ibeam].bandHeader[iband].dtime);
+      sprintf(legend,"Tobs: %.2f sec",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].dtime);
       cpgtext(minx+0.05*(maxx-minx),maxy-0.1*(maxy-miny),legend);
       sprintf(legend,"RA:  %s",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raStr);
       cpgtext(minx+0.05*(maxx-minx),maxy-0.15*(maxy-miny),legend);
