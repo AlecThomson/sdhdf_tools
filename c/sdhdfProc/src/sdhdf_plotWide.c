@@ -125,7 +125,7 @@ int main(int argc,char *argv[])
   char key;
   char grDev[128]="/xs";
   char title[128]="";
-  char ylabel[128]="Signal strength";
+  char ylabel[128]="Signal strength (arbitrary)";
   int splitRF=0;
   int waterfall=0;
   int wNchan=0;
