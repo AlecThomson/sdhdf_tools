@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -120,7 +120,7 @@ int main(int argc,char *argv[])
 
 
 	      for (k=0;k<nchan;k++)
-		freq[k] = onFile->beam[b].bandData[i].cal_on_data.freq[k];
+		freq[k] = onFile->beam[b].bandData[i].cal_on_data.freq[k];  // FIX ME -- FREQ AXIS FOR DUMP
 
 	      av_calOn_srcOn_AA = (float *)calloc(sizeof(float),nchan);
 	      av_calOn_srcOn_BB = (float *)calloc(sizeof(float),nchan);

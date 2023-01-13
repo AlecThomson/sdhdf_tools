@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -27,6 +27,57 @@
 
 void sdhdf_loadConfig(sdhdf_fileStruct *inFile);
 
+// Sort out the filename when adding on an extension
+// If ending of filename = hdf then remove that, add the extension and then add .hdf at the end
+// If ending of filename = hdf5 then remove that, add the extension and then add .hdf5 at the end
+// Otherwise just append to the end
+void sdhdf_formOutputFilename(char *inFile,char *extension,char *oname)
+{
+  if (strcmp(inFile+strlen(inFile)-4,".hdf")==0)
+    {
+      char tmp[1024];
+      strcpy(tmp,inFile);
+      tmp[strlen(tmp)-4]='\0';
+      sprintf(oname,"%s.%s.hdf",tmp,extension);
+    }
+  else if (strcmp(inFile+strlen(inFile)-5,".hdf5")==0)
+    {
+      char tmp[1024];
+      strcpy(tmp,inFile);
+      tmp[strlen(tmp)-5]='\0';
+      sprintf(oname,"%s.%s.hdf",tmp,extension);
+    }
+  else if (strcmp(inFile+strlen(inFile)-6,".sdhdf")==0)
+    {
+      char tmp[1024];
+      strcpy(tmp,inFile);
+      tmp[strlen(tmp)-6]='\0';
+      sprintf(oname,"%s.%s.hdf",tmp,extension);
+    }
+  else
+    sprintf(oname,"%s.%s",inFile,extension);
+}
+
+
+// Fix underscores for GIZA
+void sdhdf_fixUnderscore(char *input,char *output)
+{
+  char *tok;
+  char tstr[1024];
+  int pos=0;
+  strcpy(tstr,input);
+  tok = strtok(tstr,"_");
+  strcpy(output,"");
+  while (tok!=NULL)
+    {
+      if (pos>0)
+	strcat(output,"\\_");
+      strcat(output,tok);	      
+      tok = strtok(NULL,"_");
+      pos=1;
+    } 
+}
+
 //
 // Load all available metadata from the SDHDF file
 //
@@ -37,6 +88,19 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
   sdhdf_loadBeamHeader(inFile);
   sdhdf_loadBandHeader(inFile,1);
   sdhdf_loadObsHeader(inFile,1);
+  if (inFile->beam[0].bandData[0].astro_obsHeader[0].dtime == -1) // Check if dump time not in the observation parameters
+    {
+      int i,j,b;
+      for (b=0;b<inFile->nBeam;b++)
+	{
+	  for (i=0;i<inFile->beam[b].nBand;i++)
+	    {
+	      for (j=0;j<inFile->beam[b].bandHeader[i].ndump;j++)
+		inFile->beam[b].bandData[i].astro_obsHeader[j].dtime = inFile->beam[b].bandHeader[i].dtime;
+	    }
+	}
+    }
+
   if (strcmp(inFile->primary[0].cal_mode,"ON")==0)
     {
       sdhdf_loadBandHeader(inFile,2);
@@ -105,58 +169,65 @@ void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile)
   int ndims;
   hsize_t dims[2];
 
-  header_id  = H5Dopen2(inFile->fileID,"metadata/primary_header",H5P_DEFAULT);
-  headerT    = H5Dget_type(header_id);
-  space      = H5Dget_space(header_id);
-  ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-
-  if (inFile->primaryAllocatedMemory == 0)
+  if (sdhdf_checkGroupExists(inFile,"metadata/primary_header") == 1)
     {
-      inFile->primary = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct)*dims[0]);
-      inFile->nPrimary = dims[0];
-      inFile->primaryAllocatedMemory = 1;
-      if (inFile->nPrimary != 1)
+      printf("WARNING: We do not have metadata/primary_header in the data file\n");
+    }
+  else
+    {
+      header_id  = H5Dopen2(inFile->fileID,"metadata/primary_header",H5P_DEFAULT);
+      headerT    = H5Dget_type(header_id);
+      space      = H5Dget_space(header_id);
+      ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+      
+      if (inFile->primaryAllocatedMemory == 0)
 	{
-	  printf("ERROR: UNEXPECTED SIZE IN PRIMARY HEADER\n");
-	  exit(1);
+	  inFile->primary = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct)*dims[0]);
+	  inFile->nPrimary = dims[0];
+	  inFile->primaryAllocatedMemory = 1;
+	  if (inFile->nPrimary != 1)
+	    {
+	      printf("ERROR: UNEXPECTED SIZE IN PRIMARY HEADER\n");
+	      exit(1);
+	    }
 	}
+      
+      val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_primaryHeaderStruct));
+      stid    = H5Tcopy(H5T_C_S1);
+      status  = H5Tset_size(stid,20); // Should set to value defined in sdhdf_v1.9.h
+      
+      H5Tinsert(val_tid,"DATE",HOFFSET(sdhdf_primaryHeaderStruct,date),stid);
+      H5Tinsert(val_tid,"HDR_DEFN",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn),stid);
+      H5Tinsert(val_tid,"HDR_DEFN_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn_version),stid);
+      H5Tinsert(val_tid,"FILE_FORMAT",HOFFSET(sdhdf_primaryHeaderStruct,file_format),stid);
+      H5Tinsert(val_tid,"FILE_FORMAT_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,file_format_version),stid);
+      H5Tinsert(val_tid,"SCHED_BLOCK_ID",HOFFSET(sdhdf_primaryHeaderStruct,sched_block_id),H5T_NATIVE_INT);
+      H5Tinsert(val_tid,"CAL_MODE",HOFFSET(sdhdf_primaryHeaderStruct,cal_mode),stid);
+      H5Tinsert(val_tid,"INSTRUMENT",HOFFSET(sdhdf_primaryHeaderStruct,instrument),stid);
+      H5Tinsert(val_tid,"OBSERVER",HOFFSET(sdhdf_primaryHeaderStruct,observer),stid);
+      H5Tinsert(val_tid,"PID",HOFFSET(sdhdf_primaryHeaderStruct,pid),stid);
+      H5Tinsert(val_tid,"RECEIVER",HOFFSET(sdhdf_primaryHeaderStruct,rcvr),stid);
+      
+      status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+      H5Tinsert(val_tid,"TELESCOPE",HOFFSET(sdhdf_primaryHeaderStruct,telescope),stid);
+      H5Tinsert(val_tid,"UTC_START",HOFFSET(sdhdf_primaryHeaderStruct,utc0),stid);
+      
+      H5Tinsert(val_tid,"N_BEAMS",HOFFSET(sdhdf_primaryHeaderStruct,nbeam),H5T_NATIVE_INT);
+      
+      status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->primary);
+      inFile->nBeam    = inFile->primary[0].nbeam;
+      
+      // Load attributes
+      for (i=0;i<inFile->nPrimary;i++)
+	{
+	  inFile->nPrimaryAttributes = sdhdf_getNattributes(inFile,"metadata/primary_header");
+	  for (j=0;j<inFile->nPrimaryAttributes;j++)
+	    sdhdf_readAttributeFromNum(inFile,"metadata/primary_header",j,&(inFile->primaryAttr[j]));
+	}
+      status = H5Tclose(val_tid);
+      status = H5Tclose(stid);
+      status = H5Dclose(header_id);
     }
-
-  val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_primaryHeaderStruct));
-  stid    = H5Tcopy(H5T_C_S1);
-  status  = H5Tset_size(stid,20); // Should set to value defined in sdhdf_v1.9.h
-
-  H5Tinsert(val_tid,"DATE",HOFFSET(sdhdf_primaryHeaderStruct,date),stid);
-  H5Tinsert(val_tid,"HDR_DEFN",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn),stid);
-  H5Tinsert(val_tid,"HDR_DEFN_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,hdr_defn_version),stid);
-  H5Tinsert(val_tid,"FILE_FORMAT",HOFFSET(sdhdf_primaryHeaderStruct,file_format),stid);
-  H5Tinsert(val_tid,"FILE_FORMAT_VERSION",HOFFSET(sdhdf_primaryHeaderStruct,file_format_version),stid);
-  H5Tinsert(val_tid,"SCHED_BLOCK_ID",HOFFSET(sdhdf_primaryHeaderStruct,sched_block_id),H5T_NATIVE_INT);
-  H5Tinsert(val_tid,"CAL_MODE",HOFFSET(sdhdf_primaryHeaderStruct,cal_mode),stid);
-  H5Tinsert(val_tid,"INSTRUMENT",HOFFSET(sdhdf_primaryHeaderStruct,instrument),stid);
-  H5Tinsert(val_tid,"OBSERVER",HOFFSET(sdhdf_primaryHeaderStruct,observer),stid);
-  H5Tinsert(val_tid,"PID",HOFFSET(sdhdf_primaryHeaderStruct,pid),stid);
-  H5Tinsert(val_tid,"RECEIVER",HOFFSET(sdhdf_primaryHeaderStruct,rcvr),stid);
-
-  status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
-  H5Tinsert(val_tid,"TELESCOPE",HOFFSET(sdhdf_primaryHeaderStruct,telescope),stid);
-  H5Tinsert(val_tid,"UTC_START",HOFFSET(sdhdf_primaryHeaderStruct,utc0),stid);
-
-  H5Tinsert(val_tid,"N_BEAMS",HOFFSET(sdhdf_primaryHeaderStruct,nbeam),H5T_NATIVE_INT);
-
-  status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->primary);
-  inFile->nBeam    = inFile->primary[0].nbeam;
-
-  // Load attributes
-  for (i=0;i<inFile->nPrimary;i++)
-    {
-      inFile->nPrimaryAttributes = sdhdf_getNattributes(inFile,"metadata/primary_header");
-      for (j=0;j<inFile->nPrimaryAttributes;j++)
-	sdhdf_readAttributeFromNum(inFile,"metadata/primary_header",j,&(inFile->primaryAttr[j]));
-    }
-  status = H5Tclose(val_tid);
-  status = H5Tclose(stid);
-  status = H5Dclose(header_id);
 }
 
 
@@ -774,11 +845,12 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	      status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
 	      
 	      H5Tinsert(val_tid,"ELAPSED_TIME",HOFFSET(sdhdf_obsParamsStruct,timeElapsed),H5T_NATIVE_DOUBLE);
+	      H5Tinsert(val_tid,"DUMP_TIME",HOFFSET(sdhdf_obsParamsStruct,dtime),H5T_NATIVE_DOUBLE);
 	      H5Tinsert(val_tid,"TIME_DB",HOFFSET(sdhdf_obsParamsStruct,timedb),stid);
 	      H5Tinsert(val_tid,"MJD",HOFFSET(sdhdf_obsParamsStruct,mjd),H5T_NATIVE_DOUBLE);
 	      H5Tinsert(val_tid,"UTC",HOFFSET(sdhdf_obsParamsStruct,utc),stid);
 	      H5Tinsert(val_tid,"UT_DATE",HOFFSET(sdhdf_obsParamsStruct,ut_date),stid);
-	      H5Tinsert(val_tid,"AEST",HOFFSET(sdhdf_obsParamsStruct,aest),stid);
+	      H5Tinsert(val_tid,"LOCAL_TIME",HOFFSET(sdhdf_obsParamsStruct,local_time),stid);
 	      H5Tinsert(val_tid,"RA_STR",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
 	      H5Tinsert(val_tid,"DEC_STR",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
 	      H5Tinsert(val_tid,"RA_DEG",HOFFSET(sdhdf_obsParamsStruct,raDeg),H5T_NATIVE_DOUBLE);
@@ -836,11 +908,12 @@ void sdhdf_initialise_bandHeader(sdhdf_bandHeaderStruct *header)
 void sdhdf_initialise_obsHeader(sdhdf_obsParamsStruct *obs)
 {
   obs->timeElapsed=-1;
+  obs->dtime = -1;
   strcpy(obs->timedb,"unset");
   obs->mjd = -1;
   strcpy(obs->utc,"unset");
   strcpy(obs->ut_date,"unset");
-  strcpy(obs->aest,"unset");
+  strcpy(obs->local_time,"unset");
   strcpy(obs->raStr,"unset");
   strcpy(obs->decStr,"unset");
   obs->raDeg = -1;
@@ -912,7 +985,12 @@ void sdhdf_loadHistory(sdhdf_fileStruct *inFile)
 
   if (inFile->historyAllocatedMemory == 0)
     {
-      inFile->history = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct)*dims[0]);
+      inFile->history = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct)*MAX_HISTORY);
+      if (dims[0] > MAX_HISTORY)
+	{
+	  printf("ERROR: need to increase MAX_HISTORY\n");
+	  exit(1);
+	}
       inFile->nHistory = dims[0]; 
       inFile->historyAllocatedMemory = 1;
     }
@@ -1034,11 +1112,33 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   //  printf("ndims = %d, aspace = %d, dims[0] = %d\n",ndims,aspace,dims[0]);
   if (ndims != 0) // 1 && ndims != 0)
     {
-      printf("ndims > 0.  ndims = %d (%s)\n",ndims,dataName);
+      hid_t dataspace_id;
+      hsize_t storeSize;
+      char *buf;
+      //      printf("A\n");
+
       H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
       strcpy(attribute->value,"NOT SET");
       attribute->attributeType=0;
-      printf("Cannot read attributes with multi dimensions >%s< >%s<\n",attribute->key,inFile->fname);
+      //      printf("Cannot read attributes with multi dimensions >%s< >%s<\n",attribute->key,inFile->fname);
+
+      /*
+            buf = (char *)malloc(sizeof(char)*MAX_STRLEN);
+      printf("ndims > 0.  ndims = %d (%s), dims[0] = %d\n",ndims,dataName,dims[0]);
+
+      dataspace_id = H5Screate_simple(1,dims,NULL);
+      printf("dataspace\n");
+      storeSize = H5Aget_storage_size(attr_id);
+      printf("Storage size - %d\n",storeSize);
+      atype        = H5Aget_type(attr_id); // Retrieves a copy of the datatype for an attribute
+      atype_mem = H5Tcopy(H5T_C_S1);
+      H5Tset_size (atype_mem, H5T_VARIABLE);
+      H5Aread(attr_id,atype_mem,&buf);
+      printf("LOADED >%s<\n",buf);
+
+      status = H5Sclose(dataspace_id);
+      free(buf);
+      */
       // For now not read attributes like DIMENSION_LABEL and DIMENSION_LIST      
     }
   else // Here the number of dimensions is zero as storing a scalar
@@ -1160,13 +1260,14 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLa
   datatype_id = H5Tcreate (H5T_COMPOUND, sizeof(sdhdf_obsParamsStruct));
   stid = H5Tcopy(H5T_C_S1);
   status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
-
+ 
   H5Tinsert(datatype_id,"ELAPSED_TIME",HOFFSET(sdhdf_obsParamsStruct,timeElapsed),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"DUMP_TIME",HOFFSET(sdhdf_obsParamsStruct,dtime),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"TIME_DB",HOFFSET(sdhdf_obsParamsStruct,timedb),stid);
   H5Tinsert(datatype_id,"MJD",HOFFSET(sdhdf_obsParamsStruct,mjd),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"UTC",HOFFSET(sdhdf_obsParamsStruct,utc),stid);
   H5Tinsert(datatype_id,"UT_DATE",HOFFSET(sdhdf_obsParamsStruct,ut_date),stid);
-  H5Tinsert(datatype_id,"AEST",HOFFSET(sdhdf_obsParamsStruct,aest),stid);
+  H5Tinsert(datatype_id,"LOCAL_TIME",HOFFSET(sdhdf_obsParamsStruct,local_time),stid);
   H5Tinsert(datatype_id,"RA_STR",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
   H5Tinsert(datatype_id,"DEC_STR",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
   H5Tinsert(datatype_id,"RA_DEG",HOFFSET(sdhdf_obsParamsStruct,raDeg),H5T_NATIVE_DOUBLE);
@@ -1223,11 +1324,12 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLa
 void sdhdf_copySingleObsParams(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam)
 {
   obsParam->timeElapsed = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].timeElapsed;
+  obsParam->dtime = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].dtime;
   strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].timedb);
   obsParam->mjd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd;
   strcpy(obsParam->utc,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].utc);
   strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].ut_date);
-  strcpy(obsParam->aest,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].aest);
+  strcpy(obsParam->local_time,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].local_time);
   strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raStr);
   strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decStr);
   obsParam->raDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raDeg;
@@ -1250,11 +1352,12 @@ void sdhdf_copySingleObsParams(sdhdf_fileStruct *inFile,int ibeam,int iband,int 
 void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam)
 {
   obsParam->timeElapsed = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timeElapsed;
+  obsParam->dtime = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].dtime;
   strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timedb);
   obsParam->mjd = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].mjd;
   strcpy(obsParam->utc,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].utc);
   strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ut_date);
-  strcpy(obsParam->aest,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].aest);
+  strcpy(obsParam->local_time,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].local_time);
   strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raStr);
   strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decStr);
   obsParam->raDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raDeg;
@@ -1407,8 +1510,10 @@ void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel)
   char fname[MAX_STRLEN];
   char runtimeDir[MAX_STRLEN];
   char str[4096];
+  char dirName[1024];
 
   *nRFI = 0;
+  sdhdf_getTelescopeDirName(tel,dirName);
   
   if (getenv("SDHDF_RUNTIME")==0)
     {
@@ -1419,7 +1524,7 @@ void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel)
     }
   strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
   
-  sprintf(fname,"%s/observatory/%s/rfi/persistentRFI.dat",runtimeDir,tel);
+  sprintf(fname,"%s/observatory/%s/rfi/persistentRFI.dat",runtimeDir,dirName);
   if (!(fin = fopen(fname,"r")))
     {
       printf("ERROR: unable to open filename >%s<\n",fname);
@@ -1450,9 +1555,12 @@ void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *
   char fname[MAX_STRLEN];
   char runtimeDir[MAX_STRLEN];
   char str[4096];
-
-  *nRFI = 0;
+  char dirName[1024];
   
+  *nRFI = 0;
+
+
+  sdhdf_getTelescopeDirName(tel,dirName);
   if (getenv("SDHDF_RUNTIME")==0)
     {
       printf("=======================================================================\n");
@@ -1462,7 +1570,7 @@ void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *
     }
   strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
   
-  sprintf(fname,"%s/observatory/%s/rfi/transientRFI.dat",runtimeDir,tel);
+  sprintf(fname,"%s/observatory/%s/rfi/transientRFI.dat",runtimeDir,dirName);
   if (!(fin = fopen(fname,"r")))
     {
       printf("ERROR: unable to open filename >%s<\n",fname);
@@ -1485,4 +1593,46 @@ void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *
 	}
     }
   fclose(fin);
+}
+
+// Obtain the directory name corresponding to a telescope name
+int sdhdf_getTelescopeDirName(char *tel,char *dir)
+{
+  char fname1[1024],fname2[1024];
+  char loadLine[1024], observatoryDir[1024]="NULL";
+  FILE *fin;
+  char runtimeDir[1024];
+  
+  if (getenv("SDHDF_RUNTIME")==0)
+    {
+      printf("[sdhdf_getTelescopeDirName] ERROR: SDHDF_RUNTIME is not set\n");      
+      exit(1);
+    }
+  strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  sprintf(fname1,"%s/observatory/observatories.list",runtimeDir);
+  fin = fopen(fname1,"r");
+  while (!feof(fin))
+    {
+      if (fgets(loadLine,1024,fin)!=NULL)
+	{
+	  if (loadLine[0]!='#')
+	    {
+	      if (strstr(loadLine,tel)!=NULL)
+		{
+		  sscanf(loadLine,"%s",observatoryDir);
+		  break;
+		}
+	    }
+	}	
+    }
+  fclose(fin);
+  if (strcmp(observatoryDir,"NULL")==0)
+    {
+      printf("ERROR: in sdhdfProc_metadata.c - unable to find observatory %s in %s\n",tel,fname1);
+      exit(1);
+    }
+  strcpy(dir,observatoryDir);
+
+  return 0;
+  
 }

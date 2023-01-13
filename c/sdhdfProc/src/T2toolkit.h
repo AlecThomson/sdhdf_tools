@@ -1,4 +1,4 @@
-//  Copyright (C) 2006,2007,2008,2009, George Hobbs, Russell Edwards
+//  Copyright (C) 2006,2007,2008,2009,2010,2011 George Hobbs, Russell Edwards
 
 /*
 *    This file is part of TEMPO2. 
@@ -24,8 +24,6 @@
 *    timing model.
 */
 
-
-
 /* ************************************************************** */
 /* Routines to convert doubles to floats                          */
 /* ************************************************************** */
@@ -37,6 +35,7 @@ void TKconvertFloat2(double *x,double *y,float *ox,float *oy,int n);
 /* ************************************************************** */
 /* Basic statistics                                               */
 /* ************************************************************** */
+float quick_select_float(float arr[], int n);
 
 float  TKfindMin_f(float *x,int n);
 float  TKfindMedian_f(float *val,int count);

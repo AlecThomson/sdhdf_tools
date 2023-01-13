@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -363,7 +363,7 @@ int main(int argc,char *argv[])
 	      calObsParams[i].mjd = 56000; // FIX
 	      strcpy(calObsParams[i].utc,"UNKNOWN"); // FIX
 	      strcpy(calObsParams[i].ut_date,"UNKNOWN"); // FIX
-	      strcpy(calObsParams[i].aest,"UNKNOWN"); // FIX  --- AND NOT AEST -- HAVE LOCAL TIME
+	      strcpy(calObsParams[i].local_time,"UNKNOWN"); // FIX  
 	      strcpy(calObsParams[i].raStr,"UNKNOWN");
 	      strcpy(calObsParams[i].decStr,"UNKNOWN");
 	      calObsParams[i].raDeg = 0;
@@ -542,7 +542,7 @@ int main(int argc,char *argv[])
       obsParams[i].mjd = mjd;
       strcpy(obsParams[i].utc,"UNKNOWN"); // FIX
       strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
-      strcpy(obsParams[i].aest,"UNKNOWN"); // FIX  --- AND NOT AEST -- HAVE LOCAL TIME
+      strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX 
       strcpy(obsParams[i].raStr,"UNKNOWN");
       strcpy(obsParams[i].decStr,"UNKNOWN");
       obsParams[i].raDeg = 0;
@@ -595,7 +595,8 @@ int main(int argc,char *argv[])
   sdhdf_writeBeamHeader(outFile,beamHeader,1);
   sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[0].label,1,1);
   sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[0].label,0,obsParams,ndump,1);
-  sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatVals,freqVals,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+  // FIX ME: Only sending 1 frequency channel through
+  sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatVals,&freqVals,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 
   if (cal==1)
     {
@@ -606,9 +607,9 @@ int main(int argc,char *argv[])
       // ... need to setup and then write the cal metadata
       // 
 
-      
-      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOn,freqCalVals,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOff,freqCalVals,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      // FIX ME: Only sending 1 frequency channel through
+      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOn,&freqCalVals,1,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOff,&freqCalVals,1,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
     }
   sdhdf_writeSoftwareVersions(outFile,softwareVersions);
   sdhdf_writeHistory(outFile,history,1);

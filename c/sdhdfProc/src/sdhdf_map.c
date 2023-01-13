@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -199,6 +199,7 @@ int main(int argc,char *argv[])
 		nc=0;
 		for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 		  {
+		    // FIX ME: using [0] for frequency dump
 		    f0 = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
 		    // Note: not flagged (YET) on a per-dump basis
 		    //		if (f0 > 1419 && f0 < 1422)

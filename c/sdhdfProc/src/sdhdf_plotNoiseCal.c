@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -164,7 +164,7 @@ int main(int argc,char *argv[])
 	      nchan = inFile->beam[beam].calBandHeader[i].nchan;
 	      for (j=0;j<nchan;j++)
 		{
-		  freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+		  freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
 		  onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
 		  offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
 		  onP2  = inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
@@ -200,7 +200,7 @@ int main(int argc,char *argv[])
 	  nchan = inFile->beam[beam].calBandHeader[i].nchan;
 	  for (j=0;j<nchan;j++)
 	    {
-	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
 	      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0;
 	      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
 		{	  		  
@@ -237,7 +237,7 @@ int main(int argc,char *argv[])
 	      nchan = inFile->beam[beam].calBandHeader[i].nchan;
 	      for (j=0;j<nchan;j++)
 		{
-		  freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+		  freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
 		  onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
 		  offP1 = inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
 		  onP2  = inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
@@ -269,7 +269,7 @@ int main(int argc,char *argv[])
 	  nchan = inFile->beam[beam].calBandHeader[i].nchan;
 	  for (j=0;j<nchan;j++)
 	    {
-	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
 	      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0;
 	      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
 		{	  		  
@@ -340,7 +340,7 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
 	nchan = inFile->beam[beam].calBandHeader[i].nchan;
 	for (j=0;j<nchan;j++)
 	  {
-	    fx[np] = inFile->beam[beam].bandData[i].cal_on_data.freq[j];
+	    fx[np] = inFile->beam[beam].bandData[i].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
 	    if (av==0)
 	      {
 		onP1  = inFile->beam[beam].bandData[i].cal_on_data.pol1[j+idump*nchan];

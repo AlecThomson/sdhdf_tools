@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -21,8 +21,6 @@
 // Usage:
 // sdhdf_extract -f <filename.hdf> -o <outputFile.hdf>
 //
-// Compilation
-// gcc -lm -o sdhdf_extract sdhdf_extract.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
 //
 
 #include <stdio.h>
@@ -158,7 +156,7 @@ int main(int argc,char *argv[])
 		      
 		      sdhdf_loadBandData(inFile,b,i,1);
 		      for (j=0;j<nchan;j++)
-			out_freq[j] = inFile->beam[b].bandData[i].astro_data.freq[j];
+			out_freq[j] = inFile->beam[b].bandData[i].astro_data.freq[j]; // FIX ME: DUMP FOR FREQ AXIS
 		      out_ndump_num=0;
 		      for (j=0;j<ndump;j++)
 			{
@@ -192,7 +190,8 @@ int main(int argc,char *argv[])
 		      //		  sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
 		      //		  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
 		      printf("Writing spectral data\n");
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		      // FIX ME: Only sending 1 frequency channel through
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,1,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      printf("Writing obs params\n");
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,inFile->beamHeader[b].label,i,outObsParams,out_ndump,1);
 		      printf("Releasing data\n");

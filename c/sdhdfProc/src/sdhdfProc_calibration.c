@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -129,7 +129,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	{
 	  sdhdf_loadBandData(inFile,ibeam,iband,2);
 	  sdhdf_loadBandData(inFile,ibeam,iband,3);
-	  f0   = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[0];
+	  f0   = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[0];   // FIX ME FOR DUMP FREQ
 	  chbw = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[1]-f0;
 	  ichan = (int)(((freq - f0)/(double)chbw)+0.5);  // FIX ME -- DOUBLE CHECK THIS AND INTERPOLATE IF NEEDED
 	  aa_on = bb_on = rab_on = iab_on = 0.0;
@@ -201,7 +201,7 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
       //      printf("%d At this point\n",i);
     }
   // If requested should change to an averaged value
-  if (av==1)
+  if (av==1 || av==2)
     {
       double av1=0,av2=0,av3=0,av4=0;
       int n=0;
@@ -572,7 +572,7 @@ void sdhdf_loadPCM(sdhdf_calibration *polCal,int *nPolCalChan,char *observatory,
 
 
   // Do we require any averaging?
-    if (av==1)
+    if (av==1 || av==2)
     {
       double av1,av2,av3,av4,av5,av6,av7,av8,av9,av10;
       int n=0;

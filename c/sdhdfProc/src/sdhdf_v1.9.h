@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -26,6 +26,7 @@
 
 #define MAX_STRLEN 512
 #define MAX_ATTRIBUTES 64
+#define MAX_HISTORY 64
 
 // Structure is as follows:
 //
@@ -90,7 +91,8 @@ typedef struct sdhdf_spectralDumpsStruct {
   int    pol3AllocatedMemory;      // 0 = no, otherwise 1
   int    pol4AllocatedMemory;      // 0 = no, otherwise 1
   
-  float  *freq;                // Frequency
+  float  *freq;                // Frequency (frequency axis per spectral dump)
+  int    nFreqDumps;           // Number of frequency dumps 
   float  *dataWeights;         // Weight information for channels and spectral dumps
   unsigned char *flag;                // Flagging information only for channels
   
@@ -144,7 +146,7 @@ typedef struct sdhdf_historyStruct {
   char date[20];
   char proc_name[64];
   char proc_descr[64];
-  char proc_args[64];
+  char proc_args[1024];
   char proc_host[64];
 } sdhdf_historyStruct;
 
@@ -260,11 +262,12 @@ typedef struct sdhdf_backendConfigStruct {
 // OBS_PARAMS group
 typedef struct sdhdf_obsParamsStruct {
   double timeElapsed;
+  double dtime;
   char timedb[64];
   double mjd;
   char utc[64];
   char ut_date[64];
-  char aest[64];
+  char local_time[64];
   char raStr[64];
   char decStr[64];
   double raDeg;

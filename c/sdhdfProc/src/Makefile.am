@@ -17,6 +17,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_tsys \
   sdhdf_convertFromFITS \
   sdhdf_convertTo \
+  sdhdf_convertToPSRFITS \
   sdhdf_convertFromPsr \
   sdhdf_listLines
 
@@ -71,6 +72,9 @@ sdhdf_convertFromFITS_SOURCES = sdhdf_convertFromFITS.c \
   $(COMMON_SRCS)
 
 sdhdf_convertTo_SOURCES = sdhdf_convertTo.c \
+  $(COMMON_SRCS)
+
+sdhdf_convertToPSRFITS_SOURCES = sdhdf_convertToPSRFITS.c \
   $(COMMON_SRCS)
 
 sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \

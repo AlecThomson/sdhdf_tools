@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -141,7 +141,7 @@ int main(int argc,char *argv[])
 	  count=0;
 	  for (k=0;k<nchan;k++) // Should set properly
 	    {
-	      freq = inFile->beam[ibeam].bandData[j].cal_on_data.freq[k];
+	      freq = inFile->beam[ibeam].bandData[j].cal_on_data.freq[k];  // FIX ME -- FREQ AXIS FOR DUMP
 	      if (freq > f0[j] && freq <= f1[j])
 		{
 		  pyA[j][npts[j]]+=avTsys_AA[k];

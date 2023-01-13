@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -21,8 +21,6 @@
 // Usage:
 // sdhdf_cal
 //
-// Compilation
-// gcc -lm -o sdhdf_flag sdhdf_flag.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -lcpgplot -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c 
 //
 
 #include <stdio.h>
@@ -143,17 +141,6 @@ int main(int argc,char *argv[])
       tint  = inFile->beam[ibeam].bandHeader[i].dtime;
       chbw  = 1e6*fabs(inFile->beam[ibeam].bandHeader[i].f0-inFile->beam[ibeam].bandHeader[i].f1)/(double)inFile->beam[ibeam].bandHeader[i].nchan;
       sdhdf_loadBandData(inFile,ibeam,i,1);
-
-
-      // Sort out the dataWeights info if first time used -- will be set to -1
-      for (j=0;j<ndump;j++)
-	{
-	  for (k=0;k<nchan;k++)
-	    {
-	      if (inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] == -1) // Has not been set
-		inFile->beam[ibeam].bandData[i].astro_data.dataWeights[k+nchan*j] = tint*chbw;
-	    }
-	}
     }
   printf("Complete loading the data\n");
   printf("Preparing the plot\n");
@@ -236,6 +223,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
 	for (i=0;i<nchan;i++)
 	  {
+	    // FIX ME: using [0] for frequency dump
 	    px[i]  = inFile->beam[ibeam].bandData[iband].astro_data.freq[i];
 	    py1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
 	    py2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
@@ -257,7 +245,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  {
 	    if (recalc!=3)
 	      {
-		if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] != 0)
+		if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] != 1)
 		  {
 		    if (px[i] > minx && px[i] < maxx)
 		      {
@@ -270,13 +258,13 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      }
 	      
 	    
-	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] == 0) // No region set
+	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] == 1) // No region set
 	      {
 		//		printf("Flagging region\n");
 		regionType=2;
 		pf1[nFlagRegion] = px[i];
 	      }	     
-	    else if (regionType==2 && inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] != 0) 
+	    else if (regionType==2 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] == 1) 
 	      {
 		regionType=1;
 		pf2[nFlagRegion++] = px[i];
@@ -306,12 +294,12 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	int drawIt=-1;
 	for (i=0;i<nchan;i++)
 	  {
-	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] != 0 && drawIt==-1)
+	    if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] != 1 && drawIt==-1)
 	      {
 		drawIt=1;
 		i0=i;
 	      }
-	    if (inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[i+nchan*idump] == 0 && drawIt==1)
+	    if (inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] == 1 && drawIt==1)
 	      {
 		cpgsci(1); cpgline(i-1-i0,px+i0,py1+i0); cpgsci(1);
 		cpgsci(2); cpgline(i-1-i0,px+i0,py2+i0); cpgsci(1);
@@ -325,7 +313,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	    cpgsci(2); cpgline(i-1-i0,px+i0,py2+i0); cpgsci(1);
 	  }
       }
-    
+
     cpgsfs(3);
     cpgsci(5);
     for (i=0;i<nFlagRegion;i++)
@@ -360,17 +348,18 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      {
 		for (zz=0;zz<=26;zz++)
 		  {
+		    // FIX ME: using [0] for frequency dump
 		    if (inFile->beam[ibeam].bandData[ii].astro_data.freq[jj] >= 704-6.4+zz*128.0 &&
 			inFile->beam[ibeam].bandData[ii].astro_data.freq[jj] < 704+6.4+zz*128.0)
 		      {
 			if (zapAllDumps==1)
 			  {
 			    for (k=0;k<ndump;k++)
-			      inFile->beam[ibeam].bandData[ii].astro_data.dataWeights[jj+k*inFile->beam[ibeam].bandHeader[ii].nchan] = 0;
+			      inFile->beam[ibeam].bandData[ii].astro_data.flag[jj+k*inFile->beam[ibeam].bandHeader[ii].nchan] = 1;
 			  }
 			else
 			  {
-			    inFile->beam[ibeam].bandData[ii].astro_data.dataWeights[jj+idump*inFile->beam[ibeam].bandHeader[ii].nchan] = 0;
+			    inFile->beam[ibeam].bandData[ii].astro_data.flag[jj+idump*inFile->beam[ibeam].bandHeader[ii].nchan] = 1;
 			  }
 		      }
 		  }
@@ -414,7 +403,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	  {
 	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
-	      inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;			      
+	      inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;      
 	  }
 	idump++;
 	if (idump >= ndump)
@@ -431,8 +420,9 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  {
 	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
 	      { 
+		// FIX ME: using [0] for frequency dump
 		if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= minx && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= maxx)
-		  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;			      
+		  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;      
 	      }
 	  }
 	idump++;
@@ -512,16 +502,17 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	    for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	      {
 		for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
-		  { 
+		  {
+		    // FIX ME: using [0] for frequency dump
 		    if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= lowX && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= highX)
 		      {
 			if (zapAllDumps==1)
 			  {
 			    for (k=0;k<ndump;k++)
-			      inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
+			      inFile->beam[ibeam].bandData[i].astro_data.flag[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 			  }
 			else
-			  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;			      
+			  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;  
 		      }
 		  }
 	      }
@@ -544,6 +535,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      {
 		for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
 		  { 
+		    // FIX ME: using [0] for frequency dump
 		    if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= lowX && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= highX)
 		      {
 			chbw = 1e6*fabs(inFile->beam[ibeam].bandHeader[i].f0-inFile->beam[ibeam].bandHeader[i].f1)/(double)inFile->beam[ibeam].bandHeader[iband].nchan;
@@ -551,11 +543,11 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 			  {
 			    for (k=0;k<ndump;k++)
 			      {				
-				inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime*chbw;
+				inFile->beam[ibeam].bandData[i].astro_data.flag[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
 			      }
 			  }
 			else
-			  inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] =  inFile->beam[ibeam].bandHeader[i].dtime*chbw;
+			  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
 		      }
 		  }
 	      }
@@ -585,8 +577,10 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  {
 	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
 	      {
+		// FIX ME: using [0] for frequency dump
 		if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= minx && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= maxx)
 		  {
+		    // FIX ME: using [0] for frequency dump
 		    plotX[nPlot] = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
 		    if (selectPol == 1) {plotY[nPlot] = inFile->beam[ibeam].bandData[i].astro_data.pol1[j+idump*nchan];}
 		    else if (selectPol == 2) {plotY[nPlot] = inFile->beam[ibeam].bandData[i].astro_data.pol2[j+idump*nchan];}
@@ -606,12 +600,12 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	    int drawIt=-1;
 	    for (i=0;i<nPlot;i++)
 	      {
-		if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]] != 0 && drawIt==-1)
+		if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]] != 1 && drawIt==-1)
 		  {
 		    drawIt=1;
 		    i0=i;
 		  }
-		if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]] == 0 && drawIt==1)
+		if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]] == 1 && drawIt==1)
 		  {
 		    cpgsci(1); cpgline(i-1-i0,plotX+i0,plotY+i0); cpgsci(1);
 		    drawIt=-1;
@@ -635,10 +629,10 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 		      if (zapAllDumps==1)
 			{
 			  for (k=0;k<ndump;k++)
-			    inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]+k*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 0;
+			    inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]+k*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 1;
 			}
 		      else
-			inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 0;			      
+			inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 1;   
 		    }
 		}
 	    }
@@ -654,7 +648,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      new_miny = 1e30; new_maxy = -1e-30;
 	      for (i=0;i<nPlot;i++)
 		{
-		  if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.dataWeights[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] != 0)
+		  if (inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] != 1)
 		    {
 		      if (new_miny > plotY[i]) new_miny = plotY[i];
 		      if (new_maxy < plotY[i]) new_maxy = plotY[i];
@@ -702,7 +696,7 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
 
   // Should check if already .flag extension
   //
-  sprintf(oname,"%s.flag",inFile->fname);
+  sdhdf_formOutputFilename(inFile->fname,"flag",oname);
   printf("Saving to %s, please wait ... \n",oname);
 
   
@@ -719,7 +713,7 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
   // Now add the flag table
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
     {
-      sdhdf_writeDataWeights(outFile,ibeam,i,inFile->beam[ibeam].bandData[i].astro_data.dataWeights,inFile->beam[ibeam].bandHeader[i].nchan,inFile->beam[ibeam].bandHeader[i].ndump,inFile->beamHeader[ibeam].label,inFile->beam[ibeam].bandHeader[i].label);
+      sdhdf_writeFlags(outFile,ibeam,i,inFile->beam[ibeam].bandData[i].astro_data.flag,inFile->beam[ibeam].bandHeader[i].nchan,inFile->beam[ibeam].bandHeader[i].ndump,inFile->beamHeader[ibeam].label,inFile->beam[ibeam].bandHeader[i].label);
     }
 
 
@@ -951,6 +945,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 	  pwr_clean[j]=0;
 	  for (i=0;i<nchan;i++)
 	    {
+	      // FIX ME: using [0] for frequency dump
 	      if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > cleanF0 && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < cleanF1)
 		{
 		  s1 += inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan];
@@ -990,6 +985,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 	  for (i=0;i<nchan;i++)
 	    {
 	      // Could significantly speed this up by simply recording the start and end channels
+		      // FIX ME: using [0] for frequency dump
 	      if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > f0[k] && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < f1[k])
 		{
 		  if (inFile->beam[ibeam].bandData[bandNum].astro_data.pol1[i+j*nchan] > peak1)
@@ -1025,8 +1021,9 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 	      //	      printf("REMOVE Check %d %d %g %g %g %g sigma = %g %g, peak sigma = %g %g\n",j,k,meanT1,meanT2,sdevT1,sdevT2,sigma1,sigma2,psigma1,psigma2);
 	      for (i=0;i<nchan;i++)
 		{
+		  // FIX ME: using [0] for frequency dump
 		  if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > f0[k] && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < f1[k])
-		    inFile->beam[ibeam].bandData[bandNum].astro_data.dataWeights[i+nchan*j] = 0;
+		    inFile->beam[ibeam].bandData[bandNum].astro_data.flag[i+nchan*j] = 1;
 		}  
 	    }
 	}
@@ -1116,6 +1113,7 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
   	  nchan = inFile->beam[ibeam].bandHeader[i].nchan; 
 	  for (j=0;j<nchan;j++)
 	    {
+	      // FIX ME: using [0] for frequency dump
 	      f = inFile->beam[ibeam].bandData[i].astro_data.freq[j];
 	      zap=0;
 	      for (k=0;k<nT;k++)
@@ -1129,11 +1127,11 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
 	      if (zap==1)
 		{
 		  if (zapAll==0)
-		    inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j]=0;
+		    inFile->beam[ibeam].bandData[i].astro_data.flag[j]=1;
 		  else
 		    {
 		      for (k=0;k<inFile->beam[ibeam].bandHeader[i].ndump;k++)
-			inFile->beam[ibeam].bandData[i].astro_data.dataWeights[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
+			inFile->beam[ibeam].bandData[i].astro_data.flag[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 		    }
 		  
 	    }

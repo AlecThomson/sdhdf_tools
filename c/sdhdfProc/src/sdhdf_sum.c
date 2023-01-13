@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -20,9 +20,6 @@
 //
 // Usage:
 // sdhdf_sum -o <outfilename> ... list of input filenames ...
-//
-// Compilation
-// gcc -lm -o sdhdf_sum sdhdf_sum.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz 
 //
 
 #include <stdio.h>
@@ -251,7 +248,8 @@ int main(int argc,char *argv[])
 	  inBandParams[i].ndump=1;
 	  inBandParams[i].dtime = tav;
 	  // NOTE THAT THE ATTRIBUTES ARE INCORRECT HERE -- SEE COMMENT ABOVE ABOUT ONLY TAKING THE LAST ONE ***** FIX ME
-	  sdhdf_writeSpectrumData(outFile,file0->beamHeader[b].label,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+	  sdhdf_writeSpectrumData(outFile,file0->beamHeader[b].label,file0->beam[b].bandHeader[i].label,b,i,out_data,file0->beam[b].bandData[i].astro_data.freq,file0->beam[b].bandData[i].astro_data.nFreqDumps,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  // GH: FIX ME
 	  //      sdhdf_writeFrequencyAttributes(outFile,file0->bandHeader[i].label);
 	  //      sdhdf_writeDataAttributes(outFile,file0->bandHeader[i].label);

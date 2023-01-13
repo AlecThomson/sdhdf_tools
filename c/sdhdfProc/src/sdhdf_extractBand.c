@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -20,9 +20,6 @@
 //
 // Usage:
 // sdhdf_extract -f <filename.hdf> -o <outputFile.hdf>
-//
-// Compilation
-// gcc -lm -o sdhdf_extract sdhdf_extract.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
 //
 
 #include <stdio.h>
@@ -123,8 +120,7 @@ int main(int argc,char *argv[])
     {
       sdhdf_initialiseFile(inFile);
       sdhdf_initialiseFile(outFile);
-      
-      sprintf(oname,"%s.%s",fname[ii],ext);
+      sdhdf_formOutputFilename(fname[ii],ext,oname);
       
       if (zoomBand>0)
 	nSelectBands=zoomBand;
@@ -270,7 +266,7 @@ int main(int argc,char *argv[])
 			  sdhdf_loadBandData(inFile,b,k,1);
 			  for (l=0;l<inFile->beam[b].bandHeader[k].nchan;l++)
 			    {
-			      if (inFile->beam[b].bandData[k].astro_data.freq[l] >= fSelect0[j] &&
+			      if (inFile->beam[b].bandData[k].astro_data.freq[l] >= fSelect0[j] && // FIX ME :: FREQ FOR CORRECT DUMP
 				  inFile->beam[b].bandData[k].astro_data.freq[l] <= fSelect1[j])
 				{
 				  if (selectBandID == -1) {selectBandID=k;}
@@ -278,9 +274,9 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-
+		    
 		      strcpy(outBandParams[j].pol_type,inBandParams[selectBandID].pol_type);
-		      npol = inBandParams[j].npol;
+		      npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].ndump = inBandParams[selectBandID].ndump; 
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outBandParams[j].ndump);
@@ -317,6 +313,7 @@ int main(int argc,char *argv[])
 			    {
 			      for (l=0;l<inFile->beam[b].bandHeader[k].nchan;l++)
 				{
+				  // FIX ME: FREQ FOR CORRECT DUMP
 				  if (inFile->beam[b].bandData[k].astro_data.freq[l] >= fSelect0[j] && inFile->beam[b].bandData[k].astro_data.freq[l] <= fSelect1[j])
 				    {   
 				      if (npol==4)
@@ -335,6 +332,7 @@ int main(int argc,char *argv[])
 					outVals[nd*totNchan+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
 					
 					  //				      printf("Seting freq\n");
+				      // FIX ME: FREQ FOR CORRECT DUMP
 				      if (nd==0) freqVals[nchan] = inFile->beam[b].bandData[k].astro_data.freq[l];
 				      nchan++;
 				    }
@@ -348,7 +346,9 @@ int main(int argc,char *argv[])
 		    
 		      printf("Output nchan = %d (%d), npol = %d\n",nchan,totNchan,npol);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[j].label,b,j,outVals,freqVals,totNchan,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+		      // FIX ME: Only sending 1 frequency channel through
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[j].label,b,j,outVals,freqVals,1,totNchan,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      sdhdf_writeObsParams(outFile,outBandParams[j].label,inFile->beamHeader[b].label,j,outObsParams,outBandParams[j].ndump,1);
 		    
 		      sprintf(groupName1,"beam_%d/%s/metadata/cal_obs_params",b,inFile->beam[b].bandHeader[selectBandID].label);

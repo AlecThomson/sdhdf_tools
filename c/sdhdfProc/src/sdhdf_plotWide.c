@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -21,9 +21,6 @@
 // Usage:
 // sdhdf_plotSpectrum -f <filename>
 //
-// Compilation
-// gcc -lm -o sdhdf_plotWide sdhdf_plotWide.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz -lcpgplot -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
-
 //
 
 #include <stdio.h>
@@ -286,6 +283,7 @@ int main(int argc,char *argv[])
 		    {
 		      for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 			{
+			  // FIX ME: using [0] for frequency dump
 			  px[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
 			  pflag[writepos+k] = inFile->beam[ibeam].bandData[j].astro_data.dataWeights[k];
 			}
@@ -296,6 +294,7 @@ int main(int argc,char *argv[])
 		{
 		  for (k=0;k<inFile->beam[ibeam].bandHeader[sb].nchan;k++)
 		    {
+		      // FIX ME: using [0] for frequency dump
 		      px[writepos+k] = inFile->beam[ibeam].bandData[sb].astro_data.freq[k];
 		      pflag[writepos+k] = inFile->beam[ibeam].bandData[sb].astro_data.dataWeights[k];
 		    }
@@ -337,6 +336,7 @@ int main(int argc,char *argv[])
 			}
 		    }
 		}
+	      // FIX ME: using [0] for frequency dump
 	      wF0 = inFile->beam[ibeam].bandData[sb].astro_data.freq[0];
 	      wF1 = inFile->beam[ibeam].bandData[sb].astro_data.freq[inFile->beam[ibeam].bandHeader[sb].nchan-1];
 	      

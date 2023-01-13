@@ -1,4 +1,4 @@
-//  Copyright (C) 2021 George Hobbs
+//  Copyright (C) 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -282,14 +282,21 @@ int main(int argc,char *argv[])
   tsky_kelvin = (float *)malloc(sizeof(float)*nTsky);
 
   nTsky = 0;
-  fin = fopen("haslam408_ds_Remazeilles2014.allSky.dat","r");
-  while (!feof(fin))
+  if (!(fin = fopen("haslam408_ds_Remazeilles2014.allSky.dat","r")))
     {
-      if (fscanf(fin,"%f %f %f",&tsky_gl[nTsky],&tsky_gb[nTsky],&tsky_kelvin[nTsky])==3)
-	nTsky++;
+      printf("Unable to open haslam408_ds_Remazeilles2014.allSky.dat for the sky temperature model\n");      
     }
-  fclose(fin);
-  printf("Loaded Tsky model\n");
+  else
+    {
+      while (!feof(fin))
+	{
+	  if (fscanf(fin,"%f %f %f",&tsky_gl[nTsky],&tsky_gb[nTsky],&tsky_kelvin[nTsky])==3)
+	    nTsky++;
+	}
+      fclose(fin);
+      printf("Loaded Tsky model\n");
+
+    }
 
   // Calculate times and positions
   dt=0;
@@ -402,7 +409,7 @@ int main(int argc,char *argv[])
 	      obsParams[k].mjd = params->dump[k].mjd;
 	      strcpy(obsParams[k].utc,"unknown");
 	      strcpy(obsParams[k].ut_date,"unknown");
-	      strcpy(obsParams[k].aest,"aest_unknown");
+	      strcpy(obsParams[k].local_time,"unknown");
 	      strcpy(obsParams[k].raStr,"unknown");
 	      strcpy(obsParams[k].decStr,"unknown");
 	      obsParams[k].raOffset = 0;
@@ -478,7 +485,8 @@ int main(int argc,char *argv[])
 	  free(obsParams);
 
 	  // SHOULD SET UP ATTRIBUTES
-	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,freq,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  // FIX ME: Sending only one frequency channel through
+	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,&freq,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  free(freq);
 	  free(data);
 

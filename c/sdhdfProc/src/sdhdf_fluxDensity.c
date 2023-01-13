@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -87,7 +87,7 @@ int main(int argc,char *argv[])
 
 	  for (k=0;k<nchan;k++)
 	    {
-	      freq = inFile->beam[b].bandData[i].astro_data.freq[k];
+	      freq = inFile->beam[b].bandData[i].astro_data.freq[k]; // FIX ME -- FREQ AXIS FOR DUMP
 	      pred = pow(10,-30.7667+26.4908*log10(freq) - 7.0977*pow(log10(freq),2) + 0.605334*pow(log10(freq),3));
 	      sc1  =  inFile->beam[b].bandData[i].astro_data.pol1[k]/pred;
 	      if (npol==2 || npol==4)

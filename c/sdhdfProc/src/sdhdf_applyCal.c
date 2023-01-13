@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -116,6 +116,7 @@ int main(int argc,char *argv[])
 
 		      // Now process the astronomy data
 		      sdhdf_loadBandData(inFile,b,ii,1);
+		      // FIX ME: using [0] for frequency dump
 		      af0 = inFile->beam[b].bandData[ii].astro_data.freq[0];
 		      af1 = inFile->beam[b].bandData[ii].astro_data.freq[inFile->beam[b].bandHeader[ii].nchan-1];
 
@@ -125,6 +126,7 @@ int main(int argc,char *argv[])
 		      for (k=0;k<inFile->beam[b].calBandHeader[ii].nchan;k++)
 			{
 
+			  // FIX ME: using [0] for frequency dump
 			  fval = inFile->beam[b].bandData[ii].cal_on_data.freq[k];
 			  //			  i0 = (int)(inFile->beam[b].bandHeader[ii].nchan*(fval-af0)/(af1-af0));
 			  //			  i1 = (int)(inFile->beam[b].bandHeader[ii].nchan*(fval+cbw-af0)/(af1-af0));
@@ -158,18 +160,21 @@ int main(int argc,char *argv[])
 			      outData[j+nchanAst*npolAst*0]              = inFile->beam[b].bandData[ii].astro_data.pol1[j]/scaleAA; // 0 -> DUMP (FIX ME)
 			      outData[j+nchanAst*npolAst*0 + nchanAst*1] = inFile->beam[b].bandData[ii].astro_data.pol2[j]/scaleBB; // 0 -> DUMP (FIX ME)
 			    }
+			  // FIX ME: using [0] for frequency dump
 			  printf("avcal: %.4f %g %g %g %g %g %g %d %d %g %g %g\n",inFile->beam[b].bandData[ii].cal_on_data.freq[k],avTsys_AA[k],avTsys_BB[k],sumAA,sumBB,scaleAA,scaleBB,i0,i1,af0,af1,cbw);
 
 			}
 		      
 		      for (k=0;k<inFile->beam[b].bandHeader[ii].nchan;k++)
 			{
+			  // FIX ME: using [0] for frequency dump
 			  printf("data: %.4f %g %g %g %g\n",inFile->beam[b].bandData[ii].astro_data.freq[k],
 				 inFile->beam[b].bandData[ii].astro_data.pol1[k],
 				 inFile->beam[b].bandData[ii].astro_data.pol2[k],
 				 outData[k+inFile->beam[b].bandHeader[ii].nchan*0],outData[k+inFile->beam[b].bandHeader[ii].nchan*0+inFile->beam[b].bandHeader[ii].nchan*1]);
-			}		      
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,outData,inFile->beam[b].bandData[ii].astro_data.freq,inFile->beam[b].bandHeader[ii].nchan,inFile->beam[b].bandHeader[ii].npol,inFile->beam[b].bandHeader[ii].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+			}
+
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,outData,inFile->beam[b].bandData[ii].astro_data.freq,inFile->beam[b].bandData[ii].astro_data.nFreqDumps,inFile->beam[b].bandHeader[ii].nchan,inFile->beam[b].bandHeader[ii].npol,inFile->beam[b].bandHeader[ii].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		    
 		      free(tsys);
 		      free(avTsys_AA);

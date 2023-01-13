@@ -1,4 +1,4 @@
-//  Copyright (C) 2019, 2020 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
  *    This file is part of sdhdfProc. 
@@ -21,8 +21,6 @@
 // Usage:
 // sdhdf_onoff -on <filename> -off <filename>
 //
-// Compilation
-// gcc -lm -o sdhdf_onoff sdhdf_onoff.c sdhdfProc.c -I../hdf5-1.10.4/src/ ../hdf5-1.10.4/src/.libs/libhdf5.a -ldl -lz  -L/pulsar/psr/software/stable/stretch/lib/ -I//pulsar/psr/software/stable/stretch/include -lcalceph -Isofa/20190722/c/src/ -Lsofa/20190722/c/src -lsofa_c
 //
 
 #include <stdio.h>
@@ -230,8 +228,8 @@ int main(int argc,char *argv[])
 		 strcpy(outFile->frequency_attr.unit,onFile->frequency_attr.unit);
 		 strcpy(outFile->data_attr.unit,onFile->data_attr.unit);
 	      */
-	      for (k=0;k<nchan;k++)
-		freq[k] = onFile->beam[b].bandData[i].astro_data.freq[k];
+	      for (k=0;k<nchan;k++)		
+		freq[k] = onFile->beam[b].bandData[i].astro_data.freq[k];  // FIX ME: DUMP FOR FREQ AXIS
 	      for (k=0;k<nchan;k++)
 		{
 		  // 0 here should be the spectral dump number
@@ -320,13 +318,18 @@ int main(int argc,char *argv[])
 
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
-	      
-	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+	      // FIX ME: Only sending 1 frequency channel through
+	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,1,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      free(out_data);
 	      free(freq);
 	    }
 	}
       sdhdf_writeHistory(outFile,onFile->history,onFile->nHistory);  
+
+      //
+      // Need to copy time stamps etc. from the ON source data
+      //
       sdhdf_copyRemainder(onFile,outFile,0);
       //  free(inBandParams);
       
