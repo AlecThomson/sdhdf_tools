@@ -15,6 +15,7 @@ build:
       # Install dependencies with 'docs' dependency group
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups=
       - pwd
+      - ls -la
       - poetry --project-file ./python/pyproject.toml install --with dev
 
 sphinx:
