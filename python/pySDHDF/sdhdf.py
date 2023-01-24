@@ -26,7 +26,22 @@ def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
 
 @dataclass
 class MetaData:
-    """An SDHDF metadata object"""
+    """An SDHDF metadata object
+
+    Args:
+        filename (Path): Path to the SDHDF file
+
+    Attributes:
+        beam_params (DataFrame): The beam parameters as a pandas DataFrame
+        history (DataFrame): The history as a pandas DataFrame
+        primary_header (DataFrame): The primary header as a pandas DataFrame
+        backend_config (DataFrame): The backend configuration as a pandas DataFrame
+        cal_backend_config (DataFrame): The calibration backend configuration as a pandas DataFrame
+
+    Methods:
+        print_metadata: Quickly list the metadata
+
+    """
 
     filename: Path
 
