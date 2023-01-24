@@ -2,30 +2,29 @@
 # -*- coding: utf-8 -*-
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union
 from pathlib import Path
-from astropy.table import Table
+from typing import List, Optional, Tuple, Union
 
 import h5py
-from xarray import DataArray, Dataset, Variable
-import numpy as np
-from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from astropy.table import Table
+from xarray import DataArray, Variable
+
 
 def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Decode a pandas dataframe to a string
-    """
+    """Decode a pandas dataframe to a string"""
     str_df = df.select_dtypes([np.object])
     str_df = str_df.stack().str.decode("utf-8").unstack()
     for col in str_df:
         df[col] = str_df[col]
     return df
 
+
 @dataclass
 class MetaData:
-    """An SDHDF metadata object
-    """
+    """An SDHDF metadata object"""
 
     filename: Path
 
@@ -36,18 +35,54 @@ class MetaData:
             self.history = pd.DataFrame(np.array(meta["history"]))
             self.primary_header = pd.DataFrame(np.array(meta["primary_header"]))
 
-            for df in (self.beam_params, self.history, self.primary_header):
+            config = f["config"]
+            self.backend_config = pd.DataFrame(np.array(config["backend_config"]))
+            try:
+                self.cal_backend_config = pd.DataFrame(
+                    np.array(config["cal_backend_config"])
+                )
+            except KeyError:
+                self.cal_backend_config = pd.DataFrame(np.array([]))
+
+            for df in (
+                self.beam_params,
+                self.history,
+                self.primary_header,
+                self.backend_config,
+            ):
                 df = _decode_df(df)
+
+    def quick_list(self, format: str = "grid") -> None:
+        """Quickly list the metadata"""
+        for label, df in zip(
+            (
+                "Beam Parameters",
+                "History",
+                "Primary Header",
+                "Backend Configuration",
+                "Calibration Backend Configuration",
+            ),
+            (
+                self.beam_params,
+                self.history,
+                self.primary_header,
+                self.backend_config,
+                self.cal_backend_config,
+            ),
+        ):
+            print(f"{label}:")
+            print(df.T.to_markdown(tablefmt=format, headers=[]))
 
 
 @dataclass
 class SubBand:
-    """An SDHDF sub-band data object
-    """
+    """An SDHDF sub-band data object"""
+
     label: str
     filename: Path
     beam_label: str
     in_memory: bool = False
+
     def __post_init__(self):
         with h5py.File(self.filename, "r") as h5:
             sb_data = f"{self.beam_label}/{self.label}/astronomy_data/data"
@@ -80,7 +115,9 @@ class SubBand:
                 flag = np.array(flag)
             names = meta.columns
             coords = {name: ("time", meta[name]) for name in names}
-            coords["frequency"] = Variable(dims="frequency", data=freq, attrs={"units": freq.attrs["UNIT"]})
+            coords["frequency"] = Variable(
+                dims="frequency", data=freq, attrs={"units": freq.attrs["UNIT"]}
+            )
             dims = h5[sb_data].attrs["DIMENSION_LABELS"]
 
             # Need to isel beam 0 here - it will always be dimension 0
@@ -105,9 +142,9 @@ class SubBand:
 
     def plot_waterfall(
         self,
-        polarization: int=0,
-        bin: int=0,
-        flag: bool=False,
+        polarization: int = 0,
+        bin: int = 0,
+        flag: bool = False,
         **plot_kwargs,
     ):
         """Waterfall plot of the data
@@ -125,13 +162,12 @@ class SubBand:
         ax = plt.gca()
         return ax
 
-
     def plot_spectrum(
         self,
         time,
-        polarization: int=0,
-        bin: int=0,
-        flag: bool=False,
+        polarization: int = 0,
+        bin: int = 0,
+        flag: bool = False,
         **plot_kwargs,
     ):
         sub_data = self.data.isel(time=time, polarization=polarization, bin=bin)
@@ -142,10 +178,11 @@ class SubBand:
         ax = plt.gca()
         return ax
 
+
 @dataclass
 class Beam:
-    """An SDHDF beam data object
-    """
+    """An SDHDF beam data object"""
+
     label: str
     filename: Path
     in_memory: bool = False
@@ -159,7 +196,8 @@ class Beam:
                     filename=self.filename,
                     beam_label=self.label,
                     in_memory=self.in_memory,
-                ) for sb in sb_avail["LABEL"]
+                )
+                for sb in sb_avail["LABEL"]
             ]
             for sb in self.subbands:
                 self.__dict__[sb.label] = sb
@@ -167,9 +205,9 @@ class Beam:
     def plot_waterfall(
         self,
         subband: Union[int, str],
-        polarization: int=0,
+        polarization: int = 0,
         bin=0,
-        flag: bool=False,
+        flag: bool = False,
         **plot_kwargs,
     ):
         if isinstance(subband, int):
@@ -189,9 +227,9 @@ class Beam:
         self,
         subband: Union[int, str],
         time: int = 0,
-        polarization: int=0,
+        polarization: int = 0,
         bin=0,
-        flag: bool=False,
+        flag: bool = False,
         **plot_kwargs,
     ):
         if isinstance(subband, int):
@@ -208,13 +246,12 @@ class Beam:
         )
         return ax
 
-
     def plot_wide(
         self,
         time: int = 0,
-        polarization: int=0,
+        polarization: int = 0,
         bin=0,
-        flag: bool=False,
+        flag: bool = False,
         **plot_kwargs,
     ):
         fig, ax = plt.subplots()
@@ -231,10 +268,10 @@ class Beam:
         ax.legend()
         return ax
 
+
 @dataclass
 class SDHDF:
-    """An SDHDF data object
-    """
+    """An SDHDF data object"""
 
     filename: Path
     in_memory: bool = False
@@ -248,20 +285,22 @@ class SDHDF:
                     label=key,
                     filename=self.filename,
                     in_memory=self.in_memory,
-                ) for key in keys if "beam_" in key
+                )
+                for key in keys
+                if "beam_" in key
             ]
             for beam in self.beams:
                 self.__dict__[beam.label] = beam
 
     def plot_waterfall(
-            self,
-            beam: Union[int, str],
-            subband: Union[int, str],
-            polarization: int=0,
-            bin=0,
-            flag: bool=False,
-            **plot_kwargs,
-        ):
+        self,
+        beam: Union[int, str],
+        subband: Union[int, str],
+        polarization: int = 0,
+        bin=0,
+        flag: bool = False,
+        **plot_kwargs,
+    ):
         """Waterfall plot of the data
 
         Args:
@@ -289,9 +328,9 @@ class SDHDF:
         beam: Union[int, str],
         subband: Union[int, str],
         time: int = 0,
-        polarization: int=0,
+        polarization: int = 0,
         bin=0,
-        flag: bool=False,
+        flag: bool = False,
         **plot_kwargs,
     ):
         if isinstance(beam, int):
@@ -313,9 +352,9 @@ class SDHDF:
         self,
         beam: Union[int, str],
         time: int = 0,
-        polarization: int=0,
+        polarization: int = 0,
         bin=0,
-        flag: bool=False,
+        flag: bool = False,
         **plot_kwargs,
     ):
         if isinstance(beam, int):
@@ -331,3 +370,6 @@ class SDHDF:
             **plot_kwargs,
         )
         return ax
+
+    def quick_list(self, format: str = "grid"):
+        self.metadata.quick_list(format=format)
