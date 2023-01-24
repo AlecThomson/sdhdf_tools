@@ -164,3 +164,4 @@ cython_debug/
 #.idea/
 
 python/docs/_build/
+python/pySDHDF/scratch.ipynb
