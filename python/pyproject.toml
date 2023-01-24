@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "sdhdf-tools"
+name = "pySDHDF"
 version = "0.1.0"
 description = "A collection of tools for interrogating Single Dish Hierarchical Data Format (SDHDF) files"
 authors = ["Lawrence Toomey, George Hobbs, Alec Thomson"]
