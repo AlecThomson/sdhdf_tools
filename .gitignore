@@ -165,3 +165,8 @@ cython_debug/
 
 python/docs/_build/
 python/pySDHDF/scratch.ipynb
+python/docs/examples/demo.rst
+python/docs/examples/output_3_0.png
+python/docs/examples/output_3_1.png
+python/docs/examples/output_4_0.png
+python/docs/examples/output_5_0.png
