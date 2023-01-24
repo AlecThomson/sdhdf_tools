@@ -14,6 +14,24 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import nbconvert
+import nbformat
+
+# Read the demo notebook and write it to RST
+demo_notebook = nbformat.read('examples/demo.ipynb', as_version=4)
+rst_exporter = nbconvert.RSTExporter()
+# rst_exporter.template_file = 'rst'
+demo_rst, resources = rst_exporter.from_notebook_node(demo_notebook)
+
+# Write the RST to a file
+with open('examples/demo.rst', 'w') as f:
+    f.write(demo_rst)
+
+# Write the resources to a file
+for key, val in resources["outputs"].items():
+    with open(f"examples/{key}", "wb") as f:
+        f.write(val)
+
 
 # -- Project information -----------------------------------------------------
 
@@ -32,7 +50,6 @@ release = '0.1.0'
 # ones.
 extensions = [
     'autoapi.extension', 'sphinx_mdinclude', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon',
-    'nbsphinx'
 ]
 
 autoapi_dirs = ['../pySDHDF']
