@@ -14,7 +14,7 @@ build:
     post_install:
       # Install dependencies with 'docs' dependency group
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups=
-      - cd python && poetry install --with dev && cd ..
+      - poetry --project-file python/pyproject.toml install --with dev
 
 sphinx:
   configuration: python/docs/conf.py
