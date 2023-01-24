@@ -13,8 +13,8 @@ build:
       - poetry config virtualenvs.create false
     post_install:
       # Install dependencies with 'docs' dependency group
-      # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
-      - poetry install ./python --with dev
+      # https://python-poetry.org/docs/managing-dependencies/#dependency-groups=
+      - cd python && poetry install --with dev && cd ..
 
 sphinx:
   configuration: python/docs/conf.py
