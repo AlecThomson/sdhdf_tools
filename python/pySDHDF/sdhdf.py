@@ -54,7 +54,7 @@ class MetaData:
             ):
                 df = _decode_df(df)
 
-    def quick_list(self, format: str = "grid") -> None:
+    def print_metadata(self, format: str = "grid") -> None:
         """Quickly list the metadata"""
         for label, df in zip(
             (
@@ -78,7 +78,24 @@ class MetaData:
 
 @dataclass
 class SubBand:
-    """An SDHDF sub-band data object"""
+    """An SDHDF sub-band data object
+
+    Args:
+        label (str): Sub-band label
+        filename (Path): Path to the SDHDF file
+        beam_label (str): Beam label
+        in_memory (bool, optional): Load the data into memory. Defaults to False.
+
+    Attributes:
+        data (DataArray): The sub-band data as an xarray DataArray
+        flag (DataArray): The sub-band flag as an xarray DataArray
+        meta (DataFrame): The sub-band metadata as a pandas DataFrame
+
+    Methods:
+        plot_waterfall: Plot the sub-band data as a waterfall plot
+        plot_spectrum: Plot a single spectrum from the sub-band data
+
+    """
 
     label: str
     filename: Path
@@ -183,7 +200,22 @@ class SubBand:
 
 @dataclass
 class Beam:
-    """An SDHDF beam data object"""
+    """An SDHDF beam data object
+
+    Args:
+        label (str): The beam label
+        filename (Path): The SDHDF file
+        in_memory (bool, optional): Load data into memory. Defaults to False.
+
+    Attributes:
+        subbands (List[SubBand]): A list of subbands
+
+    Methods:
+        plot_waterfall: Plot a waterfall plot of the data
+        plot_spectrum: Plot a spectrum of the data
+        plot_wide: Plot spectra from all subbands
+
+    """
 
     label: str
     filename: Path
@@ -273,7 +305,24 @@ class Beam:
 
 @dataclass
 class SDHDF:
-    """An SDHDF data object"""
+    """An SDHDF data object
+
+    Args:
+        filename (Path): Path to the SDHDF file
+        in_memory (bool, optional): Load data into memory. Defaults to False.
+
+    Attributes:
+        metadata (MetaData): Observation metadata
+        beams (List[Beam]): List of beams
+
+    Methods:
+        plot_waterfall: Waterfall plot of the data
+        plot_spectrum: Spectrum plot of the data
+        plot_wide: Plot spectra from all subbands
+        print_metadata: List the metadata in the file
+        write: Write the data to a new file
+
+    """
 
     filename: Path
     in_memory: bool = False
@@ -373,8 +422,8 @@ class SDHDF:
         )
         return ax
 
-    def quick_list(self, format: str = "grid"):
-        self.metadata.quick_list(format=format)
+    def print_metadata(self, format: str = "grid"):
+        self.metadata.print_metadata(format=format)
 
     def write(self, filename: Path):
         """Write the SDHDF object to a file.
