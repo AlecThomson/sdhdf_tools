@@ -4,10 +4,16 @@ version = "0.1.0"
 description = "A collection of tools for interrogating Single Dish Hierarchical Data Format (SDHDF) files"
 authors = ["Lawrence Toomey, George Hobbs, Alec Thomson"]
 readme = "README.md"
-packages = [{include = "sdhdf_tools"}]
+packages = [{include = "pysdhdf", from="src"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+numpy = "^1.21"
+astropy = "^5"
+h5py = "^3.7"
+pandas = "^1.4"
+xarray = "^2022"
+matplotlib = "^3.5"
 
 
 [build-system]
