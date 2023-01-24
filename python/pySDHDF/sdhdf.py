@@ -375,3 +375,11 @@ class SDHDF:
 
     def quick_list(self, format: str = "grid"):
         self.metadata.quick_list(format=format)
+
+    def write(self, filename: Path):
+        """Write the SDHDF object to a file.
+
+        Args:
+            filename (Path): Filename to write to.
+        """
+        raise NotImplementedError
