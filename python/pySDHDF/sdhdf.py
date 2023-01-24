@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Core SDHDF module
+"""
 
 from dataclasses import dataclass
 from pathlib import Path

@@ -15,6 +15,13 @@ pandas = "^1.4"
 xarray = "^2022"
 matplotlib = "^3.5"
 
+[tool.poetry.dev-dependencies]
+black = "^22"
+isort = "^5.10"
+sphinx = "^4.2"
+sphinx_mdinclude = "^0.5"
+sphinx_rtd_theme = "^1.1"
+
 
 [build-system]
 requires = ["poetry-core"]
