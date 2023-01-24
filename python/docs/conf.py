@@ -31,7 +31,8 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'autoapi.extension', 'sphinx_mdinclude', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon'
+    'autoapi.extension', 'sphinx_mdinclude', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon',
+    'nbsphinx'
 ]
 
 autoapi_dirs = ['../pySDHDF']
