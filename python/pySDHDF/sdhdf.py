@@ -5,6 +5,8 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import pkg_resources
+import inspect
 from typing import List, Optional, Tuple, Union
 
 import h5py
@@ -12,7 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from astropy.table import Table
-from xarray import DataArray, Variable
+from tqdm.auto import tqdm
+from pySDHDF import flagging, history
+from xarray import DataArray, Variable, Dataset
 
 
 def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -170,9 +174,13 @@ class SubBand:
                 name=f"{self.label}_flag",
             ).isel(beam=0)
 
-            self.data = data_xr
-            self.flag = flag_xr
-            self.metadata = meta
+            self.dataset = Dataset(
+                {
+                    "data": data_xr,
+                    "flag": flag_xr,
+                    "metadata": (("time", "meta"), meta),
+                }
+            )
 
     def plot_waterfall(
         self,
@@ -188,11 +196,10 @@ class SubBand:
             bin (int, optional): Bin to select. Defaults to 0.
             flag (bool, optional): Blank flagged data. Defaults to False.
         """
-        sub_data = self.data.isel(polarization=polarization, bin=bin)
+        sub_data = self.dataset.isel(polarization=polarization, bin=bin)
         if flag:
-            sub_flag = self.flag.isel(polarization=polarization, bin=bin)
-            sub_data = sub_data.fillna(0).where(sub_flag == 0)
-        sub_data.plot(**plot_kwargs)
+            sub_data = sub_data.where(sub_data.flag == 0)
+        sub_data.data.plot(**plot_kwargs)
         ax = plt.gca()
         return ax
 
@@ -204,14 +211,12 @@ class SubBand:
         flag: bool = False,
         **plot_kwargs,
     ):
-        sub_data = self.data.isel(time=time, polarization=polarization, bin=bin)
+        sub_data = self.dataset.isel(time=time, polarization=polarization, bin=bin)
         if flag:
-            sub_flag = self.flag.isel(time=time, polarization=polarization, bin=bin)
-            sub_data = sub_data.fillna(0).where(sub_flag == 0)
-        sub_data.plot(**plot_kwargs)
+            sub_data = sub_data.where(sub_data.flag == 0)
+        sub_data.data.plot(**plot_kwargs)
         ax = plt.gca()
         return ax
-
 
 @dataclass
 class Beam:
@@ -439,6 +444,26 @@ class SDHDF:
 
     def print_metadata(self, format: str = "grid"):
         self.metadata.print_metadata(format=format)
+
+
+    def flag_persistent_rfi(self):
+        """Flag persistent RFI in all subbands."""
+        telescope = self.metadata.primary_header["TELESCOPE"].values[0]
+        rfi = flagging.get_persistent_rfi(telescope=telescope)
+        for i, x in tqdm(rfi.iterrows(), desc="Flagging persistent RFI", total=len(rfi)):
+            for beam in self.beams:
+                for sb in beam.subbands:
+                    sb.dataset.flag.loc[
+                        dict(
+                            frequency=slice(
+                                x["freq0 MHz"], x["freq1 MHz"]
+                            )
+                        )
+                    ] = 1
+        row = history.generate_history_row()
+        self.metadata.history = pd.concat([self.metadata.history, row])
+
+
 
     def write(self, filename: Path):
         """Write the SDHDF object to a file.
