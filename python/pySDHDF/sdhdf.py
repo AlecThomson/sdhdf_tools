@@ -9,6 +9,7 @@ from pathlib import Path
 import pkg_resources
 import inspect
 from typing import List, Optional, Tuple, Union
+import warnings
 
 from dask.distributed import Client, get_client, get_task_stream, progress
 from dask.diagnostics import ProgressBar
@@ -131,18 +132,36 @@ class SubBand:
     client: Union[Client, None] = None
 
     def __post_init__(self):
+        # Get the astronomy data
+        self.astronomy_dataset = self._get_data()
+        # Now get the calibrator data
+        self.calibrator_dataset = self._get_cal()
+        # TODO: Get the calibrator data
+
+    def _get_cal(self):
+        return
+
+    def _get_data(self):
+        """Get the astronomy sub-band data"""
+        astro_def = self.definition["subband"]["astronomy"]
+        sb_path = f"{self.beam_label}/{self.label}"
+
         with h5py.File(self.filename, "r") as h5:
-            sb_data = f"{self.beam_label}/{self.label}/astronomy_data/data"
-            sb_freq = f"{self.beam_label}/{self.label}/astronomy_data/frequency"
-            sb_para = f"{self.beam_label}/{self.label}/metadata/obs_params"
-            has_flags = (
-                "flag" in h5[f"{self.beam_label}/{self.label}/astronomy_data"].keys()
-            )
-            data = h5[sb_data]
+            data_path = f"{sb_path}/{astro_def['data']}"
+            freq_path = f"{sb_path}/{astro_def['frequency']}"
+            meta_path = f"{sb_path}/{astro_def['metadata']}"
+
+            data = h5[data_path]
+            freqs = h5[freq_path]
+            meta = pd.DataFrame(h5[meta_path][:])
+
+            # Get the flags (if they exists)
+            has_flags = "flags" in astro_def.keys()
             if has_flags:
-                flag = h5[f"{self.beam_label}/{self.label}/astronomy_data/flag"]
+                flag_path = f"{sb_path}/{astro_def['flags']}"
+                flags = h5[flag_path][:]
                 # Ensure flag has same shape as data
-                flag_reshape = flag[:].copy()
+                flag_reshape = flags[:].copy()
                 for i, s in enumerate(data.shape):
                     if i > len(flag_reshape.shape) - 1:
                         flag_reshape = np.expand_dims(flag_reshape, axis=-1)
@@ -151,21 +170,30 @@ class SubBand:
                             continue
                         else:
                             flag_reshape = np.expand_dims(flag_reshape, axis=i)
-                flag = flag_reshape
+                flags = flag_reshape
             else:
-                flag = np.zeros_like(data)
-            freq = h5[sb_freq]
-            meta = _decode_df(pd.DataFrame(h5[sb_para][:]))
+                warnings.warn(
+                    f"""
+                    No flags found for sub-band '{self.label}' in file '{self.filename}'!
+                    SDHDF version is {self.definition['version']}.
+                    Flags will be set to all zeros.
+                    """
+                )
+                flags = np.zeros_like(data)
+
+            # Load into memory if requested
             if self.in_memory:
                 data = np.array(data)
-                freq = np.array(freq)
-                flag = np.array(flag)
+                freqs = np.array(freqs)
+                flags = np.array(flags)
+
+            # Process into xarray
             names = meta.columns
             coords = {name: ("time", meta[name]) for name in names}
             coords["frequency"] = Variable(
-                dims="frequency", data=freq, attrs={"units": freq.attrs["UNIT"]}
+                dims="frequency", data=freqs, attrs={"units": freqs.attrs["UNIT"]}
             )
-            dims = h5[sb_data].attrs["DIMENSION_LABELS"]
+            dims = h5[data_path].attrs["DIMENSION_LABELS"]
 
             # Need to isel beam 0 here - it will always be dimension 0
             data_xr = DataArray(
@@ -177,19 +205,20 @@ class SubBand:
             data_xr.attrs["units"] = data_xr.UNIT
 
             flag_xr = DataArray(
-                flag,
+                flags,
                 dims=dims,
                 coords=coords,
                 name=f"{self.label}_flag",
             ).isel(beam=0)
 
-            self.dataset = Dataset(
+            astronomy_dataset = Dataset(
                 {
                     "data": data_xr,
                     "flag": flag_xr,
                     "metadata": (("time", "meta"), meta),
                 }
             )
+            return astronomy_dataset
 
     def plot_waterfall(
         self,
@@ -205,7 +234,7 @@ class SubBand:
             bin (int, optional): Bin to select. Defaults to 0.
             flag (bool, optional): Blank flagged data. Defaults to False.
         """
-        sub_data = self.dataset.isel(polarization=polarization, bin=bin)
+        sub_data = self.astronomy_dataset.isel(polarization=polarization, bin=bin)
         if flag:
             sub_data = sub_data.where(sub_data.flag == 0)
         sub_data.data.plot(**plot_kwargs)
@@ -220,7 +249,7 @@ class SubBand:
         flag: bool = False,
         **plot_kwargs,
     ):
-        sub_data = self.dataset.isel(time=time, polarization=polarization, bin=bin)
+        sub_data = self.astronomy_dataset.isel(time=time, polarization=polarization, bin=bin)
         if flag:
             sub_data = sub_data.where(sub_data.flag == 0)
         sub_data.data.plot(**plot_kwargs)
@@ -230,29 +259,25 @@ class SubBand:
     def autoflag(self, sigma=3, n_windows=100):
         """Automatic flagging using rolling sigma clipping"""
         client = self.client
-        ts = get_task_stream() if client is not None else nullcontext()
-        with ts:
-            data_xr_flg = self.dataset.data.where(
-                ~self.dataset.flag.astype(bool)
-            )
-            # Set chunks for parallel processing
-            chunks = {d:1 for d in data_xr_flg.dims}
-            chunks["frequency"] = len(self.dataset.data.frequency)
-            data_xr_flg = data_xr_flg.chunk(chunks)
-            mask = xr.apply_ufunc(
-                flagging.box_filter,
-                data_xr_flg,
-                input_core_dims=[["frequency"]],
-                output_core_dims=[["frequency"]],
-                kwargs={"sigma": sigma, "n_windows": n_windows},
-                dask="parallelized",
-                vectorize=True,
-                output_dtypes=(bool),
-            )
-            future = mask.astype(int).persist()
-            progress(future)
-            self.dataset["flag"] = future.compute()
-            hist = history.generate_history_row()
+        data_xr_flg = self.astronomy_dataset.data.where(
+            ~self.astronomy_dataset.flag.astype(bool)
+        )
+        # Set chunks for parallel processing
+        chunks = {d:1 for d in data_xr_flg.dims}
+        chunks["frequency"] = len(self.astronomy_dataset.data.frequency)
+        data_xr_flg = data_xr_flg.chunk(chunks)
+        mask = xr.apply_ufunc(
+            flagging.box_filter,
+            data_xr_flg,
+            input_core_dims=[["frequency"]],
+            output_core_dims=[["frequency"]],
+            kwargs={"sigma": sigma, "n_windows": n_windows},
+            dask="parallelized",
+            vectorize=True,
+            output_dtypes=(bool),
+        )
+        self.astronomy_dataset["flag"] = mask.astype(int).compute()
+        hist = history.generate_history_row()
         return hist
 
 @dataclass
@@ -515,7 +540,7 @@ class SDHDF:
         for i, x in tqdm(rfi.iterrows(), desc="Flagging persistent RFI", total=len(rfi)):
             for beam in self.beams:
                 for sb in beam.subbands:
-                    sb.dataset.flag.loc[
+                    sb.astronomy_dataset.flag.loc[
                         dict(
                             frequency=slice(
                                 x["freq0 MHz"], x["freq1 MHz"]
@@ -525,8 +550,9 @@ class SDHDF:
         row = history.generate_history_row()
         self.metadata.history = pd.concat([self.metadata.history, row])
 
-    def autoflag(self, sigma=3, n_windows=100,):
+    def auto_flag_rfi(self, sigma=3, n_windows=100,):
         """Automatic flagging using rolling sigma clipping"""
+        self.flag_persistent_rfi()
         histss = []
         for beam in tqdm(self.beams, desc="Flagging beams"):
             hists = beam.autoflag(sigma=sigma, n_windows=n_windows)
