@@ -3,20 +3,25 @@
 """Core SDHDF module
 """
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 import pkg_resources
 import inspect
 from typing import List, Optional, Tuple, Union
 
+from dask.distributed import Client, get_client, get_task_stream, progress
+from dask.diagnostics import ProgressBar
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import json
 from astropy.table import Table
 from tqdm.auto import tqdm
 from pySDHDF import flagging, history
 from xarray import DataArray, Variable, Dataset
+import xarray as xr
 
 
 def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -27,6 +32,23 @@ def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = str_df[col]
     return df
 
+def _get_sdhdf_version(filename: Path) -> str:
+    """Get the SDHDF version of a file
+
+    Args:
+        filename (Path): Path to the SDHDF file
+
+    Returns:
+        str: SDHDF version
+    """
+    with h5py.File(filename, "r") as f:
+        # Need to hardcode this path for now
+        # Assuming it always exists
+        try:
+            version = f["metadata/primary_header"]["HDR_DEFN_VERSION"][0].decode()
+        except KeyError:
+            raise KeyError(f"SDHDF version not found in file '{filename}'")
+    return version
 
 @dataclass
 class MetaData:
@@ -50,47 +72,30 @@ class MetaData:
     filename: Path
 
     def __post_init__(self):
+        version = _get_sdhdf_version(self.filename)
+        defintion_file = pkg_resources.resource_filename(
+            "pySDHDF", f"definitions/sdhdf_def_v{version}.json"
+        )
+        with open(defintion_file, "r") as f:
+            self.definition = json.load(f)
         with h5py.File(self.filename, "r") as f:
-            meta = f["metadata"]
-            self.beam_params = pd.DataFrame(np.array(meta["beam_params"]))
-            self.history = pd.DataFrame(np.array(meta["history"]))
-            self.primary_header = pd.DataFrame(np.array(meta["primary_header"]))
-
-            config = f["config"]
-            self.backend_config = pd.DataFrame(np.array(config["backend_config"]))
-            try:
-                self.cal_backend_config = pd.DataFrame(
-                    np.array(config["cal_backend_config"])
-                )
-            except KeyError:
-                self.cal_backend_config = pd.DataFrame(np.array([]))
-
-            for df in (
-                self.beam_params,
-                self.history,
-                self.primary_header,
-                self.backend_config,
-            ):
-                df = _decode_df(df)
+            # Get the metadata and configs
+            for name in ("metadata", "config"):
+                for key, val in self.definition[name].items():
+                    df = _decode_df(pd.DataFrame(f[name][val][:]))
+                    self.__dict__[key] = df
 
     def print_metadata(self, format: str = "grid") -> None:
-        """Quickly list the metadata"""
-        for label, df in zip(
-            (
-                "Beam Parameters",
-                "History",
-                "Primary Header",
-                "Backend Configuration",
-                "Calibration Backend Configuration",
-            ),
-            (
-                self.beam_params,
-                self.history,
-                self.primary_header,
-                self.backend_config,
-                self.cal_backend_config,
-            ),
-        ):
+        """Print the metadata to the terminal"""
+        for label in self.definition["metadata"].keys():
+            df = self.__dict__[label]
+            print(f"{label}:")
+            print(df.T.to_markdown(tablefmt=format, headers=[]))
+
+    def print_config(self, format: str = "grid") -> None:
+        """Print the configuration to the terminal"""
+        for label in self.definition["config"].keys():
+            df = self.__dict__[label]
             print(f"{label}:")
             print(df.T.to_markdown(tablefmt=format, headers=[]))
 
@@ -102,8 +107,10 @@ class SubBand:
     Args:
         label (str): Sub-band label
         filename (Path): Path to the SDHDF file
+        definition (dict): SDHDF definition
         beam_label (str): Beam label
         in_memory (bool, optional): Load the data into memory. Defaults to False.
+        client (Client, optional): Dask client. Defaults to None.
 
     Attributes:
         data (DataArray): The sub-band data as an xarray DataArray
@@ -118,8 +125,10 @@ class SubBand:
 
     label: str
     filename: Path
+    definition: dict
     beam_label: str
     in_memory: bool = False
+    client: Union[Client, None] = None
 
     def __post_init__(self):
         with h5py.File(self.filename, "r") as h5:
@@ -218,6 +227,34 @@ class SubBand:
         ax = plt.gca()
         return ax
 
+    def autoflag(self, sigma=3, n_windows=100):
+        """Automatic flagging using rolling sigma clipping"""
+        client = self.client
+        ts = get_task_stream() if client is not None else nullcontext()
+        with ts:
+            data_xr_flg = self.dataset.data.where(
+                ~self.dataset.flag.astype(bool)
+            )
+            # Set chunks for parallel processing
+            chunks = {d:1 for d in data_xr_flg.dims}
+            chunks["frequency"] = len(self.dataset.data.frequency)
+            data_xr_flg = data_xr_flg.chunk(chunks)
+            mask = xr.apply_ufunc(
+                flagging.box_filter,
+                data_xr_flg,
+                input_core_dims=[["frequency"]],
+                output_core_dims=[["frequency"]],
+                kwargs={"sigma": sigma, "n_windows": n_windows},
+                dask="parallelized",
+                vectorize=True,
+                output_dtypes=(bool),
+            )
+            future = mask.astype(int).persist()
+            progress(future)
+            self.dataset["flag"] = future.compute()
+            hist = history.generate_history_row()
+        return hist
+
 @dataclass
 class Beam:
     """An SDHDF beam data object
@@ -225,7 +262,9 @@ class Beam:
     Args:
         label (str): The beam label
         filename (Path): The SDHDF file
+        definition (dict): The SDHDF definition
         in_memory (bool, optional): Load data into memory. Defaults to False.
+        client (Client, optional): Dask client. Defaults to None.
 
     Attributes:
         subbands (List[SubBand]): A list of subbands
@@ -239,7 +278,9 @@ class Beam:
 
     label: str
     filename: Path
+    definition: dict
     in_memory: bool = False
+    client: Union[Client, None] = None
 
     def __post_init__(self):
         with h5py.File(self.filename, "r") as f:
@@ -248,8 +289,10 @@ class Beam:
                 SubBand(
                     label=sb,
                     filename=self.filename,
+                    definition=self.definition,
                     beam_label=self.label,
                     in_memory=self.in_memory,
+                    client=self.client,
                 )
                 for sb in sb_avail["LABEL"]
             ]
@@ -322,6 +365,13 @@ class Beam:
         ax.legend()
         return ax
 
+    def autoflag(self, sigma=3, n_windows=100):
+        """Automatic flagging using rolling sigma clipping"""
+        hists = []
+        for sb in tqdm(self.subbands, desc="Flagging subbands"):
+            hist = sb.autoflag(sigma=sigma, n_windows=n_windows,)
+            hists.append(hist)
+        return hists
 
 @dataclass
 class SDHDF:
@@ -330,6 +380,7 @@ class SDHDF:
     Args:
         filename (Path): Path to the SDHDF file
         in_memory (bool, optional): Load data into memory. Defaults to False.
+        parallel (bool, optional): Use dask for parallel processing. Defaults to False.
 
     Attributes:
         metadata (MetaData): Observation metadata
@@ -346,9 +397,14 @@ class SDHDF:
 
     filename: Path
     in_memory: bool = False
+    parallel: bool = False
 
     def __post_init__(self):
+        self.client = Client() if self.parallel else None
+        if self.parallel:
+            print(f"Dask dashboard at: {self.client.dashboard_link}")
         self.metadata = MetaData(self.filename)
+        self.definition = self.metadata.definition
         with h5py.File(self.filename, "r") as f:
             keys = list(f.keys())
             self.beams = [
@@ -356,12 +412,15 @@ class SDHDF:
                     label=key,
                     filename=self.filename,
                     in_memory=self.in_memory,
+                    definition=self.definition,
+                    client=self.client,
                 )
                 for key in keys
                 if "beam_" in key
             ]
             for beam in self.beams:
                 self.__dict__[beam.label] = beam
+
 
     def plot_waterfall(
         self,
@@ -445,6 +504,9 @@ class SDHDF:
     def print_metadata(self, format: str = "grid"):
         self.metadata.print_metadata(format=format)
 
+    def print_config(self):
+        self.metadata.print_config()
+
 
     def flag_persistent_rfi(self):
         """Flag persistent RFI in all subbands."""
@@ -463,7 +525,14 @@ class SDHDF:
         row = history.generate_history_row()
         self.metadata.history = pd.concat([self.metadata.history, row])
 
+    def autoflag(self, sigma=3, n_windows=100,):
+        """Automatic flagging using rolling sigma clipping"""
+        histss = []
+        for beam in tqdm(self.beams, desc="Flagging beams"):
+            hists = beam.autoflag(sigma=sigma, n_windows=n_windows)
+            histss.extend(hists)
 
+        self.metadata.history = pd.concat([self.metadata.history]+ histss)
 
     def write(self, filename: Path):
         """Write the SDHDF object to a file.
