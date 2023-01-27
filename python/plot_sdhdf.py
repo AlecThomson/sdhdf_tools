@@ -84,7 +84,7 @@ def get_channel_range(freq_arr, c_freq, z_width):
     return int(z_min), int(z_max)
 
 
-def plot_sdhdf(f):
+def plot_sdhdf(f, sp, wf):
     """
     Plot the spectra (uncalibrated flux vs frequency),
     and waterfall (time vs frequency) for each polarisation product,
@@ -92,6 +92,8 @@ def plot_sdhdf(f):
     and zoom if specified by the user (Default is no zoom)
 
     :param string f: Name of SDHDF file to read
+    :param bool sp: Plot spectra [True|False]
+    :param bool wf: Plot waterfall [True|False]
     :return None
     """
     h5 = h5py.File(f, 'r')
@@ -127,8 +129,18 @@ def plot_sdhdf(f):
     sb_label = 'band_SB' + sb
 
     if sb_label in sb_avail['LABEL']:
+        # set paths to data
+        sb_data = beam_label + '/' + sb_label + '/astronomy_data/data'
+        sb_freq = beam_label + '/' + sb_label + '/astronomy_data/frequency'
         print('----------------------------------------------------')
         print('Processing sub-band: %r' % sb)
+        #print(h5[sb_freq[:][0]])
+        sb_min = h5[sb_freq][0]
+        sb_max = h5[sb_freq][-1]
+        #print(sb_min, sb_max)
+        #exit()
+        print('Freq min: %s Freq max: %s' % (str(sb_min), str(sb_max)))
+        #exit()
         zoom = input('Zoom? (y/n)  ')
         if zoom == "y":
             zoom_centre = input('Enter zoom band centre frequency (integer MHz)  ')
@@ -138,8 +150,10 @@ def plot_sdhdf(f):
 
             for row in range(0, len(sb_avail)):
                 if sb_avail['LABEL'][row] == sb_label:
-                    sb_min = sb_avail[row]['LOW_FREQ']
-                    sb_max = sb_avail[row]['HIGH_FREQ']
+                    #sb_min = sb_avail[row]['LOW_FREQ']
+                    #sb_max = sb_avail[row]['HIGH_FREQ']
+                    sb_min = h5[sb_freq][0]
+                    sb_max = h5[sb_freq][-1]
 
             # check that the user values are within the specified sub-band
             if z_window_lo >= sb_min and z_window_hi <= sb_max:
@@ -152,8 +166,12 @@ def plot_sdhdf(f):
     else:
         raise ValueError('ERROR: sub-band %s does not exist in data file' % sb)
 
-    sb_data = beam_label + '/' + sb_label + '/astronomy_data/data'
-    sb_freq = beam_label + '/' + sb_label + '/astronomy_data/frequency'
+    #sb_data = beam_label + '/' + sb_label + '/astronomy_data/data'
+    #sb_freq = beam_label + '/' + sb_label + '/astronomy_data/frequency'
+
+    #print(h5[sb_freq][0])
+    #exit()
+
     if hdr_ver >= 2.1:
         n_pol = h5[sb_data].shape[1]
     else:
@@ -243,10 +261,13 @@ def plot_sdhdf(f):
 
     plt.suptitle('Mean Flux - Sub-band %r' % sb, fontsize=14)
     plt.subplots_adjust(top=0.9)
-    plt.show(block=False)
+    if wf is True:
+        plt.show(block=False)
+    else:
+        plt.show()
 
     # plot waterfall data (time/frequency)
-    if len(op['MJD']) > 1:
+    if wf is True:
         plt.figure(figsize=(10, 8))
         plt.title('Waterfall - Sub-band %r' % sb, fontsize=14)
         if zoom is True:
@@ -256,13 +277,23 @@ def plot_sdhdf(f):
             else:
                 av = np.mean(h5[sb_data], axis=4)
                 av_arr = av[:, 0, 0, z_min:z_max]
-            plt.imshow(av_arr,
-                       aspect='auto',
-                       extent=(z_window_lo,
-                               z_window_hi,
-                               op['MJD'][0],
-                               op['MJD'][-1]),
-                       interpolation='nearest')
+
+            if len(op['MJD']) > 1:
+                plt.imshow(av_arr,
+                           aspect='auto',
+                           extent=(z_window_lo,
+                                   z_window_hi,
+                                   op['MJD'][0],
+                                   op['MJD'][-1]),
+                           interpolation='nearest')
+            else:
+                plt.imshow(av_arr,
+                           aspect='auto',
+                           extent=(z_window_lo,
+                                   z_window_hi,
+                                   0, len(av_arr)),
+                           interpolation='nearest')
+
         else:
             if hdr_ver >= 2.1:
                 av = np.mean(h5[sb_data], axis=3)
@@ -270,13 +301,22 @@ def plot_sdhdf(f):
             else:
                 av = np.mean(h5[sb_data], axis=4)
                 av_arr = av[:, 0, 0, :]
-            plt.imshow(av_arr,
-                       aspect='auto',
-                       extent=(h5[sb_freq][0],
-                               h5[sb_freq][-1],
-                               op['MJD'][0],
-                               op['MJD'][-1]),
-                       interpolation='nearest')
+
+            if len(op['MJD']) > 1:
+                plt.imshow(av_arr,
+                           aspect='auto',
+                           extent=(h5[sb_freq][0],
+                                   h5[sb_freq][-1],
+                                   op['MJD'][0],
+                                   op['MJD'][-1]),
+                           interpolation='nearest')
+            else:
+                plt.imshow(av_arr,
+                           aspect='auto',
+                           extent=(h5[sb_freq][0],
+                                   h5[sb_freq][-1],
+                                   0, len(av_arr)),
+                           interpolation='nearest')
 
         plt.xlabel('Frequency [MHz]')
         plt.ylabel('Time [MJD]')
@@ -291,6 +331,10 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--filename', help='Path to SDHDF file to read',
                     required=True)
+    ap.add_argument('--plot_spectra', help='Plot spectra (flux vs. frequency)',
+                    required=True, default=True)
+    ap.add_argument('--plot_waterfall', help='Plot waterfall (time vs. frequency)',
+                    required=True, default=True)
     args = ap.parse_args()
 
-    plot_sdhdf(args.filename)
+    plot_sdhdf(args.filename, bool(args.plot_spectra), bool(args.plot_waterfall))

@@ -125,7 +125,7 @@ int main(int argc,char *argv[])
   char key;
   char grDev[128]="/xs";
   char title[128]="";
-  char ylabel[128]="Signal strength";
+  char ylabel[128]="Signal strength (arbitrary)";
   int splitRF=0;
   int waterfall=0;
   int wNchan=0;
@@ -576,8 +576,8 @@ int main(int argc,char *argv[])
 
 	      }
 		cpgslw(3);
-		cpgline(nv,xp,yp);
-		cpgslw(1);
+                cpgline(nv,xp,yp);
+                cpgslw(1);
 	  }
 	//	cpgline(nVals,px,py1);
 	if (plotMaxHold==1)
@@ -602,7 +602,7 @@ int main(int argc,char *argv[])
 	int flagit;
 	int region;
 	
-	cpgsch(1.0);
+        cpgsch(charHeight);
 	cpgsvp(0.10,0.95,0.10,0.35);
 	drawBand(704,1344,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title,ylabel);
 		
