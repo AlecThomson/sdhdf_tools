@@ -959,8 +959,13 @@ void sdhdf_writeHistory(sdhdf_fileStruct *outFile,sdhdf_historyStruct *outParams
       status = H5Gclose(group_id);
     }
 
-  
-  dset_id = H5Dcreate2(outFile->fileID,"/metadata/history",datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  if (sdhdf_checkGroupExists(outFile,"metadata/history") == 0)    
+    {
+      printf("THE HISTORY TABLE ALREADY EXISTS\n");
+      dset_id  = H5Dopen2(outFile->fileID,"metadata/history",H5P_DEFAULT);
+    }
+  else
+    dset_id = H5Dcreate2(outFile->fileID,"/metadata/history",datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,outParams);
   status  = H5Dclose(dset_id);
   status  = H5Sclose(dataspace_id);  

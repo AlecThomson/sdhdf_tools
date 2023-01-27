@@ -46,6 +46,7 @@ void help()
 
 int main(int argc,char *argv[])
 {
+  char args[MAX_STRLEN]="";
   int ii,i,j,k,kk,l,nchan,totNchan,b,nd;
   char fname[MAX_FILES][64];
   int nFiles=0;
@@ -80,6 +81,7 @@ int main(int argc,char *argv[])
     help();
   for (i=1;i<argc;i++)
     {
+      strcat(args,argv[i]); strcat(args," ");
       if (strcmp(argv[i],"-h")==0)
 	help();
     }
@@ -388,7 +390,11 @@ int main(int argc,char *argv[])
 	  sdhdf_writeBeamHeader(outFile,inFile->beamHeader,inFile->nBeam); 
 	  // Don't want to "copyRemainder" as have only selected specific bands
 	  sdhdf_copyEntireGroup("config",inFile,outFile);
-
+	  sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_extractBand","INSPECTA software to extractBands",args);
+	  inFile->nHistory++;
+	  printf("Writing history %d\n",inFile->nHistory);
+	  sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
+	  printf("Done writing history\n");
 	  free(outBandParams);
 	  free(inBandParams);
 	  if (cal==1)

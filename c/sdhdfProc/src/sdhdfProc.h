@@ -214,6 +214,7 @@ void sdhdf_loadData(sdhdf_fileStruct *inFile,int ibeam,int iband,float *in_data,
 int  sdhdf_loadFlagData(sdhdf_fileStruct *inFile);
 
 // Calibration
+void sdhdf_noiseSourceOnOff(sdhdf_fileStruct *inFile,int ibeam,int iband,float *freq,float *aa,float *bb,float *re,float *im);
 void sdhdf_calculate_timedependent_response(sdhdf_calibration *polCal,int nPolCalChan);
 void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolCalChan);
 void sdhdf_formPCM_response(sdhdf_calibration *polCal,int nPolCalChan);
@@ -277,7 +278,10 @@ void sdhdf_ITRF_to_GRS80(double x,double y,double z,double *long_grs80,double *l
 
 // Mathematics
 //int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
-
+void TKspline_interpolate(int n,float *x,float **yd,float *interpX,
+			  float *interpY,int nInterp);
+void TKcmonot (int n, float *x, float *y, float **yd);
+float sdhdf_splineValue(float x,int n,float *xSpline,float **yd);
 double dms_turn(char *line);
 double hms_turn(char *line);
 int    turn_hms(double turn, char *hms);
