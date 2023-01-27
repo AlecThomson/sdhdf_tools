@@ -14,7 +14,7 @@ h5py = "^3.7"
 pandas = "^1.4"
 xarray = "^2022"
 matplotlib = "^3.5"
-pytables = "3.7"
+tables = "^3.7"
 
 [tool.poetry.dev-dependencies]
 black = "^22"
