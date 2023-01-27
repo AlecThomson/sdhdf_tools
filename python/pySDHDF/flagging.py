@@ -29,7 +29,7 @@ def get_persistent_rfi(telescope: str = "Parkes") -> pd.DataFrame:
         pd.Dataframe: Persistent RFI data.
     """
     rfi_file = pkg_resources.resource_filename(
-        "pySDHDF", f"{telescope.lower()}_rfi.csv"
+        "pyINSPECTA", f"{telescope.lower()}_rfi.csv"
     )
     if not Path(rfi_file).exists():
         raise NotImplementedError(

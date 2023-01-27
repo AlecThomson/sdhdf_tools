@@ -23,7 +23,7 @@ from dask.distributed import Client, get_client, get_task_stream, progress
 from tqdm.auto import tqdm
 from xarray import DataArray, Dataset, Variable
 
-from pySDHDF import flagging, history
+from pyINSPECTA import flagging, history
 
 
 def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -78,7 +78,7 @@ class MetaData:
     def __post_init__(self):
         version = _get_sdhdf_version(self.filename)
         defintion_file = pkg_resources.resource_filename(
-            "pySDHDF", f"definitions/sdhdf_def_v{version}.json"
+            "pyINSPECTA", f"definitions/sdhdf_def_v{version}.json"
         )
         with open(defintion_file, "r") as f:
             self.definition = json.load(f)

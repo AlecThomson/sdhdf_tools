@@ -164,7 +164,7 @@ cython_debug/
 #.idea/
 
 python/docs/_build/
-python/pySDHDF/scratch.ipynb
+python/pyINSPECTA/scratch.ipynb
 python/docs/examples/demo.rst
 python/docs/examples/output_3_0.png
 python/docs/examples/output_3_1.png

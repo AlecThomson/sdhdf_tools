@@ -1,5 +1,5 @@
 
-pySDHDF
+pyINSPECTA
 ==========================================
 
 .. mdinclude:: ../README.md

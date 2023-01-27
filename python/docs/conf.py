@@ -35,7 +35,7 @@ for key, val in resources["outputs"].items():
 
 # -- Project information -----------------------------------------------------
 
-project = "pySDHDF"
+project = "pyINSPECTA"
 copyright = "2023, CSIRO"
 author = "Lawrence Toomey, George Hobbs, Alec Thomson"
 
@@ -55,7 +55,7 @@ extensions = [
     "sphinx.ext.napoleon",
 ]
 
-autoapi_dirs = ["../pySDHDF"]
+autoapi_dirs = ["../pyINSPECTA"]
 
 
 # Add any paths that contain templates here, relative to this directory.
