@@ -104,6 +104,23 @@ class MetaData:
             print(df.T.to_markdown(tablefmt=format, headers=[]))
 
 
+    def write(self, filename: Union[str, Path], overwrite:bool=False) -> pd.DataFrame:
+        """Write the metadata to a file
+
+        Args:
+            filename (Union[str, Path]): Path to the output file
+        """
+        filename = Path(filename)
+
+        if filename.exists() and not overwrite:
+            raise FileExistsError(f"File '{filename}' already exists")
+        for name in ("metadata", "config"):
+            for key, val in tqdm(self.definition[name].items(), desc=f"Writing {name}"):
+                df = self.__dict__[key]
+                df.to_hdf(filename, key=f"{val}", mode="a", data_columns=True)
+
+        return history.generate_history_row()
+
 @dataclass
 class SubBand:
     """An SDHDF sub-band data object
@@ -384,6 +401,52 @@ class SubBand:
         hist = history.generate_history_row()
         return hist
 
+    def _write_astronomy_dataset(self, filename: Path) -> pd.DataFrame:
+        astro_def = self.definition["subband"]["astronomy"]
+        sb_path = f"{self.beam_label}/{self.label}"
+        with h5py.File(filename, "w") as f:
+            f[f"{sb_path}/{astro_def['data']}"] = self.astronomy_dataset.data.values
+            f[f"{sb_path}/{astro_def['frequency']}"] = self.astronomy_dataset.frequency.values
+            if "flags" in self.definition["subband"]["astronomy"]:
+                f[f"{sb_path}/{astro_def['flags']}"] = self.astronomy_dataset.flag.values
+            else:
+                print("No flags in definition")
+                print("Saving flags to /astronomy_data/flags")
+                f[f"{sb_path}/astronomy_data/flags"] = self.astronomy_dataset.flag.values
+
+        self.astronomy_dataset.metadata.to_dataframe().to_hdf(
+            filename,
+            f"{sb_path}/{astro_def['metadata']}",
+            mode="a",
+        )
+        return history.generate_history_row()
+
+    def _write_cal_dataset(self, filename: Path):
+        # TODO: Write the cal dataset
+        return history.generate_history_row()
+
+    def write(self, filename: Union[str, Path], overwrite: bool = False) -> List[pd.DataFrame]:
+        """Write the dataset to a file
+
+        Args:
+            filename (Union[str, Path]): The filename to write to
+            overwrite (bool, optional): Overwrite the file if it exists. Defaults to False.
+
+        Raises:
+            FileExistsError: The file exists and overwrite is False
+
+        """
+        if isinstance(filename, str):
+            filename = Path(filename)
+        if filename.exists() and not overwrite:
+            raise FileExistsError(f"{filename} already exists")
+
+        astro_hist = self._write_astronomy_dataset(filename)
+        cal_hist = self._write_cal_dataset(filename)
+
+        return [astro_hist, cal_hist, history.generate_history_row()]
+
+
 
 @dataclass
 class Beam:
@@ -529,6 +592,23 @@ class Beam:
             )
             hists.append(hist)
         return hists
+
+
+    def write(self, filename: Union[str, Path], overwrite: bool = False) -> List[pd.DataFrame]:
+        """Write the data to a new file
+
+        Args:
+            filename (Union[str, Path]): The filename to write to
+            overwrite (bool, optional): Overwrite the file if it exists. Defaults to False.
+
+        Returns:
+            List[pd.DataFrame]: List of history rows
+        """
+        hists = []
+        for sb in tqdm(self.subbands, "Writing subbands"):
+            hists.extend(sb.write(filename, overwrite=overwrite))
+
+        return hists + [history.generate_history_row()]
 
 
 @dataclass
@@ -710,10 +790,15 @@ class SDHDF:
 
         self.metadata.history = pd.concat([self.metadata.history] + hists)
 
-    def write(self, filename: Path):
+    def write(self, filename: Union[str, Path], overwrite: bool = False):
         """Write the SDHDF object to a file.
 
         Args:
             filename (Path): Filename to write to.
         """
-        raise NotImplementedError
+        hists = []
+        for beam in tqdm(self.beams, desc="Writing beams"):
+            hists.extend(beam.write(filename, overwrite=overwrite))
+
+        self.metadata.history = pd.concat([self.metadata.history] + hists + [history.generate_history_row()])
+        self.metadata.write(filename, overwrite=overwrite)
