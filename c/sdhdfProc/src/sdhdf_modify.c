@@ -487,9 +487,10 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
   float wt,wtVal;
   unsigned char flag;
   int nsum;
+  int nMedian;
   double s_flag_wt;
   int flagVal;
-  
+  float medVal[nfreqAv],medWt[nfreqAv];
   if (nfreqAv == 0)
     {nfreq = 1; avFreq = in->nchan;}
   else
@@ -505,11 +506,12 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 
   allocateMemory(out);
   memcpy(out->obsParams,in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump); 
-  //  printf("A %d %d %d %d\n",out->nchan,out->npol,out->ndump,out->nchan*out->npol*out->ndump);
-  //  printf("npol here = %d\n",out->npol);
 
-  //  memcpy(out->freq,in->freq,sizeof(float)*out->nchan);
-  // FIX THE FREQUENCY CHANNELS -- FIX ME
+  if (meanMedian==1)
+    printf("Calculating mean\n");
+  else
+    printf("Calculating median\n");
+  
   for (p=0;p<out->npol;p++)
     {
       for (k=0;k<out->ndump;k++)
@@ -523,32 +525,64 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 	      
 	      wt=0;
 	      flag = 1;
+	      nMedian=0;
 	      for (kk=0;kk<avFreq;kk++)
 		{
 		  wtVal     = in->wt[(k*in->nchan) + (j*avFreq)+kk];
 		  flagVal   = 1-in->flag[(k*in->nchan) + (j*avFreq)+kk];
-		  avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk+k*in->nchan];
-		  avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
-		  
-		  av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
-		  s_flag_wt+= wtVal*flagVal;
+
+		  if (meanMedian==1)
+		    {
+		      avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk+k*in->nchan];
+		      avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+		      av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+		      s_flag_wt+= wtVal*flagVal;
+		    }
+		  else
+		    {
+		      avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+		      if (flagVal == 1 && wtVal != 0)
+			{
+			  medVal[nMedian] = in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
+			  medWt[nMedian]  = in->wt[(k*in->nchan) + (j*avFreq)+kk];
+			  s_flag_wt+= wtVal;
+			  nMedian++;
+			}
+		    }
 		}
-	      // FOR MEDIAN NEED TO DETERMINE WHAT THE WEIGHT SHOULD BE ***
-	      
-	      out->wt[k*out->nchan + j] =   s_flag_wt; 
-	      if (s_flag_wt > 0)
-		out->flag[k*out->nchan + j] = 0;
-	      else
-		out->flag[k*out->nchan + j] = 1;
-	      
-	      if (sum==1)
-		out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+	      if (meanMedian==1) // Mean
+		{
+		  out->wt[k*out->nchan + j] =   s_flag_wt; 
+		  if (s_flag_wt > 0)
+		    out->flag[k*out->nchan + j] = 0;
+		  else
+		    out->flag[k*out->nchan + j] = 1;
+		  
+		  if (sum==1)
+		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		  else
+		    {
+		      if (s_flag_wt > 0)
+			out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+		      else
+			out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		    }
+		}
 	      else
 		{
-		  if (s_flag_wt > 0)
-		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+		  // Currently doing an unweighted median ** FIX ME **
+		  if (nMedian==0)
+		    {
+		      out->data[k*out->nchan*out->npol + p*out->nchan + j] = 0;
+		      out->flag[k*out->nchan + j] = 1;
+		      out->wt[k*out->nchan + j] = 0;
+		    }
 		  else
-		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		    {
+		      out->data[k*out->nchan*out->npol + p*out->nchan + j] = quick_select_float(medVal,nMedian);
+		      out->flag[k*out->nchan + j] = 0;
+		      out->wt[k*out->nchan + j]   = s_flag_wt/(float)nMedian; 
+		    }
 		}
 
 	      // FIX ME **
