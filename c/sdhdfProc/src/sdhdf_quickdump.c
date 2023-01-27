@@ -49,6 +49,7 @@ void help()
   printf("-freqRange <f0> <f1>   Output data between f0 and f1 (in MHz)\n");
   printf("-h                     this help\n");
   printf("-mjd                   Print dump time MJD in output\n");
+  printf("-noflagged             Do not print out lines that have been flagged\n");
   printf("-stokes                Convert coherency products to Stokes (for calibrated data) or pseudo-Stokes (uncalibrated data)\n");
   printf("-tsys                  output system temperature measurements\n");
 
@@ -63,6 +64,7 @@ int main(int argc,char *argv[])
   int i,j,k,beam,band;
   int mjd=0;
   int display=0;
+  int notFlagged=0;
   int nFiles=0;
   char fname[MAX_FILES][MAX_STRLEN];
   float freq;
@@ -95,6 +97,8 @@ int main(int argc,char *argv[])
 	help();
       else if (strcmp(argv[i],"-mjd")==0)
 	mjd=1;
+      else if (strcasecmp(argv[i],"-notFlagged")==0)
+	notFlagged=1;
       else if (strcmp(argv[i],"-stokes")==0)
 	stokes=1;
       else if (strcmp(argv[i],"-tsys")==0)
@@ -233,8 +237,10 @@ int main(int argc,char *argv[])
 				  pol4 = sV;
 				}
 			      
-			      weight = inFile->beam[beam].bandData[band].astro_data.dataWeights[k*nchan+j];
-
+			      weight = inFile->beam[beam].bandData[band].astro_data.dataWeights[k*nchan+j]*(1-inFile->beam[beam].bandData[band].astro_data.flag[k*nchan+j]);
+			      if (notFlagged == 1 && weight == 0)
+				display=0;
+			      
 			      if (display==1)
 				{
 				  if (outFile==1)
@@ -331,9 +337,13 @@ int main(int argc,char *argv[])
 				  cal_on_pol2/=(double)nd;  cal_off_pol2/=(double)nd;
 				  cal_on_pol3/=(double)nd;  cal_off_pol3/=(double)nd;
 				  cal_on_pol4/=(double)nd;  cal_off_pol4/=(double)nd;
+				  /*
 				  printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,0,freq,
 					 cal_on_pol1,cal_off_pol1,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4,
 					 inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
+				  */
+				  printf("%s %d %d %d %d %g %g %g %g %g %g %g %g %g\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1,cal_off_pol1
+					 ,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4);
 				}
 			    }
 
