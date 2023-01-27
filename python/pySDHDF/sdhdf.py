@@ -156,7 +156,7 @@ class SubBand:
 
             data = h5[data_path]
             freqs = h5[freq_path]
-            meta = pd.DataFrame(h5[meta_path][:])
+            meta = _decode_df(pd.DataFrame(h5[meta_path][:]))
 
             # Get the flags (if they exists)
             has_flags = "flags" in astro_def.keys()
@@ -295,8 +295,8 @@ class SubBand:
         """Average the data along the an axis
 
         Args:
-            bins (Union[float, int]): If int, the number of frequency bins to average.
-                If float, the width of the frequency bins in MHz.
+            bins (Union[float, int]): If int, the number of channels to bin in an average.
+                If float, the desired width of a channel after averaging.
             axis (str, optional): The axis to decimate along. Defaults to "frequency".
             use_median (bool, optional): Use the median instead of the mean. Defaults to False.
 
@@ -325,7 +325,10 @@ class SubBand:
                 f"Dimension {axis} has range {dataset[axis].min()} to {dataset[axis].max()}: {dataset[axis].max() - dataset[axis].min()} {unit}"
             )
             bins = int((dataset[axis].max() - dataset[axis].min()) / bins)
-            print(f"Using {bins} bins")
+
+        print(f"Using {bins} channels per bin")
+
+
 
         # Apply CASA-style decimation
 
@@ -509,8 +512,8 @@ class Beam:
         """Decimate the data
 
         Args:
-            bins (Union[float, int]): If int, the number of frequency bins to average.
-                If float, the width of the axis bins in axis units.
+            bins (Union[float, int]): If int, the number of channels to bin in an average.
+                If float, the desired width of a channel after averaging.
             axis (str, optional): The axis to decimate along. Defaults to "frequency".
             use_median (bool, optional): Use the median instead of the mean. Defaults to False.
 
@@ -695,8 +698,8 @@ class SDHDF:
         """Decimate the data in all subbands.
 
         Args:
-            bins (Union[float, int]): If int, the number of frequency bins to average.
-                If float, the width of the axis bins in axis units.
+            bins (Union[float, int]): If int, the number of channels to bin in an average.
+                If float, the desired width of a channel after averaging.
             axis (str, optional): Axis to decimate along. Defaults to 'frequency'.
             use_median (bool, optional): Use median instead of mean. Defaults to False.
 
