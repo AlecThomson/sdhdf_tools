@@ -53,6 +53,7 @@ typedef struct commandStruct {
   int type;
   float param1;
   float param2;
+  int   iparam;
 } commandStruct;
 
 // Structure allowing the data to be passed through multiple processing steps
@@ -72,12 +73,12 @@ typedef struct dataStruct {
 } dataStruct;
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args);
-void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int verbose);
+void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum);
-void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum);
+void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int meanMedian);
 void polarisationAverage(dataStruct *in,dataStruct *out,int sum);
-void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes);
+void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
 void allocateMemory(dataStruct *in);
 
 //void timeAverage(float *in_data,int nchan,int npol,int ndump,int ntime,float *out_data,int *out_nchan,int *out_npol,int *out_ndump);
@@ -85,7 +86,24 @@ void allocateMemory(dataStruct *in);
 void help()
 {
   printf("sdhdf_modify: routine to process an sdhdf file\n\n");
+  printf("-bary_noregrid      - convert frequency axis to the barycentre\n");
+  printf("-bary_regrid        - convert frequency axis to the barycentre and regrid back to the original frequency axis\n");
+  printf("-e <ext>            - use output file extension <ext>\n");
+  printf("-h                  - this help\n");
+  printf("-F or -Fsum         - completely sum frequency channels\n");
+  printf("-Fav                - completely average frequency channels (weighted mean)\n");
+  printf("-fav <val>          - average (weighted mean) val frequency channels together\n");
+  printf("-favMedian <val>    - average (*un*weighted median) val frequency channels together\n");
+  printf("-lsr_noregrid       - convert frequency axis to the LSR\n");
+  printf("-lsr_regrid         - convert frequency axis to the LSR and regrid back to the original frequency axis\n");
+  printf("-p1 or -p1_sum      - summation of P0 and P1\n");
+  printf("-p1_av              - (P0+P1)/2 \n");
+  printf("-T or -Tsum         - completely sum in time\n");
+  printf("-Tav                - completely average (weighted mean) in time\n");
+  printf("-tav <val>          - average (weighted mean) val time dumps together\n");
+  printf("-tsum <val>         - sum val time dumps together\n");
 
+  printf("-v                  - verbose output\n");
   printf("\n\n");
   printf("Example: sdhdf_modify -T -e T *.hdf\n");  
 }
@@ -101,6 +119,7 @@ int main(int argc,char *argv[])
   char extension[MAX_STRLEN];
   commandStruct *commands;
   char args[MAX_STRLEN]="";
+  int verbose=0;
   
   strcpy(extension,"modify");
   
@@ -115,20 +134,26 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-Tsum")==0 || strcmp(argv[i],"-T")==0)        // Completely sum in time
 	{commands[nCommands].type=1; commands[nCommands].param2 = 1; commands[nCommands++].param1 = 0;}
+      else if (strcmp(argv[i],"-h")==0)
+	{help(); exit(1);}
+      else if (strcmp(argv[i],"-v")==0)
+	verbose=1;    
       else if (strcmp(argv[i],"-Tav")==0)    // Completely average in time
 	{commands[nCommands].type=1; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
       else if (strcmp(argv[i],"-tsum")==0)   // Sum <val> time dumps together
 	{commands[nCommands].type=1; commands[nCommands].param2 = 1; sscanf(argv[++i],"%f",(&commands[nCommands++].param1)); }
       else if (strcmp(argv[i],"-Fsum")==0 || strcmp(argv[i],"-F")==0)   // Sum all> frequency channels together
-	{commands[nCommands].type=2; commands[nCommands].param2 = 1; commands[nCommands++].param1 = 0;}
+	{commands[nCommands].type=2; commands[nCommands].iparam = 1; commands[nCommands].param2 = 1; commands[nCommands++].param1 = 0;}
       else if (strcmp(argv[i],"-Fav")==0)
-	{commands[nCommands].type=2; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
+	{commands[nCommands].type=2; commands[nCommands].iparam = 1; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
       else if (strcmp(argv[i],"-fsum")==0)   // Sum <val> frequency channels together
-	{commands[nCommands].type=2; commands[nCommands].param2 = 1; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
+	{commands[nCommands].type=2; commands[nCommands].iparam = 1; commands[nCommands].param2 = 1; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
       else if (strcmp(argv[i],"-tav")==0)    // Average <val> time dumps together
 	{commands[nCommands].type=1; commands[nCommands].param2 = 2; sscanf(argv[++i],"%f",(&commands[nCommands++].param1)); }
       else if (strcmp(argv[i],"-fav")==0)   // Average <val> frequency channels together
-	{commands[nCommands].type=2; commands[nCommands].param2 = 2; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
+	{commands[nCommands].type=2; commands[nCommands].iparam = 1; commands[nCommands].param2 = 2; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
+      else if (strcmp(argv[i],"-favMedian")==0)   // Average <val> frequency channels together
+	{commands[nCommands].type=2; commands[nCommands].iparam = 2; commands[nCommands].param2 = 2; sscanf(argv[++i],"%f",(&commands[nCommands++].param1));}
       else if (strcmp(argv[i],"-p1")==0 || strcmp(argv[i],"-p1_sum")==0)    // Form 1 polarisation (AA+BB)
 	{commands[nCommands].type=3; commands[nCommands++].param1 = 1;}
       else if (strcmp(argv[i],"-p1_av")==0)    // Form 1 polarisation (AA+BB)/2
@@ -155,7 +180,7 @@ int main(int argc,char *argv[])
     {
       printf("Processing file: %s\n",fname[i]);
       sdhdf_formOutputFilename(fname[i],extension,oname);
-      processFile(fname[i],oname,commands,nCommands,args);
+      processFile(fname[i],oname,commands,nCommands,args,verbose);
     }
 
 
@@ -163,7 +188,7 @@ int main(int argc,char *argv[])
 }
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args)
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int verbose)
 {
   int ii,i,c,j,k;
   
@@ -255,7 +280,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	    }
 	  for (c=0;c<nCommands;c++)
 	    {
-	      processCommand(in,out,&commands[c],freqAttributes,nFreqAttributes);
+	      processCommand(in,out,&commands[c],freqAttributes,nFreqAttributes,verbose);
 	      if (c!=nCommands-1)
 		{ swp = in; in = out; out = swp;} 
 	    }      
@@ -297,17 +322,17 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
   free(dset);
 }
 
-void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
+void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
 {
   printf("Processing command: %d\n",command->type);
   if (command->type==1)
     timeAverage(in,out,command->param1,command->param2);
   else if (command->type==2)
-    frequencyAverage(in,out,command->param1,command->param2);
+    frequencyAverage(in,out,command->param1,command->param2,command->iparam);
   else if (command->type==3)
     polarisationAverage(in,out,command->param1);
   else if (command->type==4)
-    changeFrequencyAxis(in,out,command->param1,command->param2,freqAttributes,nFreqAttributes);
+    changeFrequencyAxis(in,out,command->param1,command->param2,freqAttributes,nFreqAttributes,verbose);
 }
 
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
@@ -453,7 +478,7 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
     }
 }
 
-void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum)
+void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int meanMedian)
 {
   int i,j,k,kk,p;
   int include;
@@ -508,7 +533,8 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum)
 		  av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
 		  s_flag_wt+= wtVal*flagVal;
 		}
-
+	      // FOR MEDIAN NEED TO DETERMINE WHAT THE WEIGHT SHOULD BE ***
+	      
 	      out->wt[k*out->nchan + j] =   s_flag_wt; 
 	      if (s_flag_wt > 0)
 		out->flag[k*out->nchan + j] = 0;
@@ -539,7 +565,7 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum)
     }
 }
 
-void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
+void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
 {
   int i,j,k,kk,p;
   int include;
@@ -595,6 +621,8 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
   
   for (i=0;i<out->ndump;i++)
     {
+      if (verbose==1)
+	printf("velocity: mjd = %.6f idump = %d vOverC = %g\n",mjdVals[i],i,vOverC[i]);
       if (regrid == 1) // (note 2 = regrid, 1 = don't regrid)
 	{
 	  for (j=0;j<out->nchan;j++)
