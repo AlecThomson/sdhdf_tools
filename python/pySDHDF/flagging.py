@@ -2,24 +2,26 @@
 # -*- coding: utf-8 -*-
 """SDHDF flagging utilities"""
 
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
-import pkg_resources
 from typing import List, Optional, Tuple, Union
-import warnings
 
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from astropy.stats import sigma_clip, mad_std
+import pkg_resources
+from astropy.stats import mad_std, sigma_clip
 from astropy.table import Table
 from tqdm.auto import tqdm
-from xarray import DataArray, Variable, Dataset
+from xarray import DataArray, Dataset, Variable
+
 
 class AutoFlagError(Exception):
     def __init__(self, msg):
         self.msg = msg
+
 
 def get_persistent_rfi(telescope: str = "Parkes") -> pd.DataFrame:
     """Read persistent RFI file

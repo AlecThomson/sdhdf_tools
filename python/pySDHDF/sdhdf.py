@@ -3,26 +3,27 @@
 """Core SDHDF module
 """
 
+import inspect
+import json
+import warnings
 from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
-import pkg_resources
-import inspect
 from typing import List, Optional, Tuple, Union
-import warnings
 
-from dask.distributed import Client, get_client, get_task_stream, progress
-from dask.diagnostics import ProgressBar
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import json
-from astropy.table import Table
-from tqdm.auto import tqdm
-from pySDHDF import flagging, history
-from xarray import DataArray, Variable, Dataset
+import pkg_resources
 import xarray as xr
+from astropy.table import Table
+from dask.diagnostics import ProgressBar
+from dask.distributed import Client, get_client, get_task_stream, progress
+from tqdm.auto import tqdm
+from xarray import DataArray, Dataset, Variable
+
+from pySDHDF import flagging, history
 
 
 def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -32,6 +33,7 @@ def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
     for col in str_df:
         df[col] = str_df[col]
     return df
+
 
 def _get_sdhdf_version(filename: Path) -> str:
     """Get the SDHDF version of a file
@@ -50,6 +52,7 @@ def _get_sdhdf_version(filename: Path) -> str:
         except KeyError:
             raise KeyError(f"SDHDF version not found in file '{filename}'")
     return version
+
 
 @dataclass
 class MetaData:
@@ -192,7 +195,9 @@ class SubBand:
             names = meta.columns
             coords = {name: ("time", meta[name]) for name in names}
             coords["frequency"] = Variable(
-                dims="frequency", data=freqs, attrs={"units": h5[freq_path].attrs["UNIT"]}
+                dims="frequency",
+                data=freqs,
+                attrs={"units": h5[freq_path].attrs["UNIT"]},
             )
             dims = h5[data_path].attrs["DIMENSION_LABELS"]
 
@@ -251,7 +256,9 @@ class SubBand:
         flag: bool = False,
         **plot_kwargs,
     ):
-        sub_data = self.astronomy_dataset.isel(time=time, polarization=polarization, bin=bin)
+        sub_data = self.astronomy_dataset.isel(
+            time=time, polarization=polarization, bin=bin
+        )
         if flag:
             sub_data = sub_data.where(sub_data.flag == 0)
         sub_data.data.plot(**plot_kwargs)
@@ -265,7 +272,7 @@ class SubBand:
             ~self.astronomy_dataset.flag.astype(bool)
         )
         # Set chunks for parallel processing
-        chunks = {d:1 for d in data_xr_flg.dims}
+        chunks = {d: 1 for d in data_xr_flg.dims}
         chunks["frequency"] = len(self.astronomy_dataset.data.frequency)
         data_xr_flg = data_xr_flg.chunk(chunks)
         mask = xr.apply_ufunc(
@@ -282,8 +289,9 @@ class SubBand:
         hist = history.generate_history_row()
         return hist
 
-
-    def decimate(self, bins: Union[float, int], axis:str="frequency", use_median:bool=False) -> pd.DataFrame:
+    def decimate(
+        self, bins: Union[float, int], axis: str = "frequency", use_median: bool = False
+    ) -> pd.DataFrame:
         """Average the data along the an axis
 
         Args:
@@ -301,8 +309,10 @@ class SubBand:
         """
 
         if axis == "time":
-            #TODO: Figure out how to decimate along the time axis - includeing the metadata / coords
-            raise NotImplementedError("Decimation along the time axis is not yet implemented")
+            # TODO: Figure out how to decimate along the time axis - includeing the metadata / coords
+            raise NotImplementedError(
+                "Decimation along the time axis is not yet implemented"
+            )
         dataset = self.astronomy_dataset
         if isinstance(bins, float):
             # Convert to integer number of bins
@@ -311,7 +321,9 @@ class SubBand:
             except AttributeError:
                 unit = "units"
             print(f"Asked for a bin width of {bins} {unit}")
-            print(f"Dimension {axis} has range {dataset[axis].min()} to {dataset[axis].max()}: {dataset[axis].max() - dataset[axis].min()} {unit}")
+            print(
+                f"Dimension {axis} has range {dataset[axis].min()} to {dataset[axis].max()}: {dataset[axis].max() - dataset[axis].min()} {unit}"
+            )
             bins = int((dataset[axis].max() - dataset[axis].min()) / bins)
             print(f"Using {bins} bins")
 
@@ -321,31 +333,35 @@ class SubBand:
         unflagged = dataset
 
         if use_median:
-            unflagged_dec = unflagged.coarsen(
-                **{axis: bins}, boundary="trim"
-                ).construct(**{axis: ("decimated", "original")}).median(
-                        dim="original", skipna=True
-                    ).rename({"decimated": axis})
+            unflagged_dec = (
+                unflagged.coarsen(**{axis: bins}, boundary="trim")
+                .construct(**{axis: ("decimated", "original")})
+                .median(dim="original", skipna=True)
+                .rename({"decimated": axis})
+            )
 
-            flagged_dec = flagged.coarsen(
-                **{axis: bins}, boundary="trim"
-            ).construct(
-                **{axis: ("decimated", "original")}
-            ).median(dim="original", skipna=True).rename({"decimated": axis})
+            flagged_dec = (
+                flagged.coarsen(**{axis: bins}, boundary="trim")
+                .construct(**{axis: ("decimated", "original")})
+                .median(dim="original", skipna=True)
+                .rename({"decimated": axis})
+            )
             axis_dec = unflagged[axis].coarsen(**{axis: bins}, boundary="trim").median()
 
         else:
-            unflagged_dec = unflagged.coarsen(
-                **{axis: bins}, boundary="trim"
-                ).construct(**{axis: ("decimated", "original")}).mean(
-                        dim="original", skipna=True
-                    ).rename({"decimated": axis})
+            unflagged_dec = (
+                unflagged.coarsen(**{axis: bins}, boundary="trim")
+                .construct(**{axis: ("decimated", "original")})
+                .mean(dim="original", skipna=True)
+                .rename({"decimated": axis})
+            )
 
-            flagged_dec = flagged.coarsen(
-                **{axis: bins}, boundary="trim"
-            ).construct(
-                **{axis: ("decimated", "original")}
-            ).mean(dim="original", skipna=True).rename({"decimated": axis})
+            flagged_dec = (
+                flagged.coarsen(**{axis: bins}, boundary="trim")
+                .construct(**{axis: ("decimated", "original")})
+                .mean(dim="original", skipna=True)
+                .rename({"decimated": axis})
+            )
             axis_dec = unflagged[axis].coarsen(**{axis: bins}, boundary="trim").mean()
 
         unflagged_dec[axis] = axis_dec
@@ -364,6 +380,7 @@ class SubBand:
         self.astronomy_dataset = dataset_dec
         hist = history.generate_history_row()
         return hist
+
 
 @dataclass
 class Beam:
@@ -479,11 +496,16 @@ class Beam:
         """Automatic flagging using rolling sigma clipping"""
         hists = []
         for sb in tqdm(self.subbands, desc="Flagging subbands"):
-            hist = sb.autoflag(sigma=sigma, n_windows=n_windows,)
+            hist = sb.autoflag(
+                sigma=sigma,
+                n_windows=n_windows,
+            )
             hists.append(hist)
         return hists
 
-    def decimate(self, bins: Union[float, int], axis:str="frequency", use_median:bool=False) -> List[pd.DataFrame]:
+    def decimate(
+        self, bins: Union[float, int], axis: str = "frequency", use_median: bool = False
+    ) -> List[pd.DataFrame]:
         """Decimate the data
 
         Args:
@@ -497,9 +519,14 @@ class Beam:
         """
         hists = []
         for sb in tqdm(self.subbands, desc="Decimating subbands"):
-            hist = sb.decimate(bins=bins, axis=axis, use_median=use_median,)
+            hist = sb.decimate(
+                bins=bins,
+                axis=axis,
+                use_median=use_median,
+            )
             hists.append(hist)
         return hists
+
 
 @dataclass
 class SDHDF:
@@ -548,7 +575,6 @@ class SDHDF:
             ]
             for beam in self.beams:
                 self.__dict__[beam.label] = beam
-
 
     def plot_waterfall(
         self,
@@ -635,35 +661,37 @@ class SDHDF:
     def print_config(self):
         self.metadata.print_config()
 
-
     def flag_persistent_rfi(self):
         """Flag persistent RFI in all subbands."""
         telescope = self.metadata.primary_header["TELESCOPE"].values[0]
         rfi = flagging.get_persistent_rfi(telescope=telescope)
-        for i, x in tqdm(rfi.iterrows(), desc="Flagging persistent RFI", total=len(rfi)):
+        for i, x in tqdm(
+            rfi.iterrows(), desc="Flagging persistent RFI", total=len(rfi)
+        ):
             for beam in self.beams:
                 for sb in beam.subbands:
                     sb.astronomy_dataset.flag.loc[
-                        dict(
-                            frequency=slice(
-                                x["freq0 MHz"], x["freq1 MHz"]
-                            )
-                        )
+                        dict(frequency=slice(x["freq0 MHz"], x["freq1 MHz"]))
                     ] = 1
         row = history.generate_history_row()
         self.metadata.history = pd.concat([self.metadata.history, row])
 
-    def auto_flag_rfi(self, sigma=3, n_windows=100,):
+    def auto_flag_rfi(
+        self,
+        sigma=3,
+        n_windows=100,
+    ):
         """Automatic flagging using rolling sigma clipping"""
         self.flag_persistent_rfi()
         hists = []
         for beam in tqdm(self.beams, desc="Flagging beams"):
             hists.extend(beam.autoflag(sigma=sigma, n_windows=n_windows))
 
-        self.metadata.history = pd.concat([self.metadata.history]+ hists)
+        self.metadata.history = pd.concat([self.metadata.history] + hists)
 
-
-    def decimate(self, bins: Union[float, int], axis:str="frequency", use_median=False):
+    def decimate(
+        self, bins: Union[float, int], axis: str = "frequency", use_median=False
+    ):
         """Decimate the data in all subbands.
 
         Args:
@@ -677,8 +705,7 @@ class SDHDF:
         for beam in tqdm(self.beams, desc="Decimating beams"):
             hists.extend(beam.decimate(bins=bins, axis=axis, use_median=use_median))
 
-        self.metadata.history = pd.concat([self.metadata.history]+ hists)
-
+        self.metadata.history = pd.concat([self.metadata.history] + hists)
 
     def write(self, filename: Path):
         """Write the SDHDF object to a file.

@@ -1,22 +1,23 @@
 #!/usr/bin/env python
-import numpy as np
-import pylab as plt
-import pandas as pd
-import h5py
 import os
 import shlex
 import subprocess
+
+import h5py
 import matplotlib as mpl
+import numpy as np
+import pandas as pd
+import pylab as plt
 from astropy.table import QTable
 from show_sdhdf_definition import show_sdhdf_definition
 
-__version__ = '2.2'
-__author__ = 'Lawrence Toomey'
+__version__ = "2.2"
+__author__ = "Lawrence Toomey"
 
 # increase matplotlib chunk size above default -
 # this improves speed and prevents Agg rendering failure
 # when plotting large data sets
-mpl.rcParams['agg.path.chunksize'] = 20000
+mpl.rcParams["agg.path.chunksize"] = 20000
 
 
 def print_hdr(tb):
@@ -29,7 +30,7 @@ def print_hdr(tb):
     params = []
     for col in tb.colnames:
         params.append([col, tb[col][0]])
-    df = pd.DataFrame(params, columns=('-- Key --', '-- Value --'))
+    df = pd.DataFrame(params, columns=("-- Key --", "-- Value --"))
     print(df)
 
 
@@ -42,10 +43,10 @@ def read_sdhdf_header(f_pth, dset_pth):
     :return astropy.QTable tb: astropy.QTable metadata object
     """
     try:
-        with h5py.File(f_pth, 'r') as h5:
+        with h5py.File(f_pth, "r") as h5:
             tb = QTable.read(h5, path=dset_pth)
     except Exception as e:
-        print('ERROR: failed to read file %s' % f_pth, e)
+        print("ERROR: failed to read file %s" % f_pth, e)
 
     return tb
 
@@ -58,7 +59,7 @@ def save_plot(plt, out_pth):
     :param string out_pth: Path to output directory
     :return None
     """
-    plt.savefig(out_pth, bbox_inches='tight')
+    plt.savefig(out_pth, bbox_inches="tight")
 
     return None
 
@@ -74,8 +75,8 @@ def save_hdr(tb, out_pth):
     params = []
     for col in tb.colnames:
         params.append([col, tb[col][0]])
-    df = pd.DataFrame(params, columns=('-- Key --', '-- Value --'))
-    df.to_csv(out_pth, sep=' ', index=False, header=False)
+    df = pd.DataFrame(params, columns=("-- Key --", "-- Value --"))
+    df.to_csv(out_pth, sep=" ", index=False, header=False)
 
     return None
 
@@ -111,9 +112,9 @@ def check_definition(f_pth):
     output = False
 
     try:
-        show_sdhdf_definition(f_pth, sb='all', output=False)
+        show_sdhdf_definition(f_pth, sb="all", output=False)
     except Exception as e:
-        print('ERROR: File %s does not conform to the SDHDF definition' % f_pth, e)
+        print("ERROR: File %s does not conform to the SDHDF definition" % f_pth, e)
 
     return None
 
@@ -126,11 +127,11 @@ def check_atoa_ingest(f_pth):
     :return None
     """
     try:
-        cmd = 'sdhdf_describe -atoa ' + f_pth
+        cmd = "sdhdf_describe -atoa " + f_pth
         cmd_args = shlex.split(cmd)
         subprocess.check_call(cmd_args)
     except Exception as e:
-        print('ERROR: File %s does not conform to the ATOA ingest process' % f_pth, e)
+        print("ERROR: File %s does not conform to the ATOA ingest process" % f_pth, e)
 
     return None
 
@@ -149,7 +150,7 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, hdr_ver, op=None):
     :return None
     """
     if op is not None:
-        if len(op['MJD']) > 1:
+        if len(op["MJD"]) > 1:
             if hdr_ver >= 2.1:
                 av = np.mean(h5_obj[sb_data], axis=3)
                 av_arr = av[:, 0, :]
@@ -157,26 +158,29 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, hdr_ver, op=None):
                 av = np.mean(h5_obj[sb_data], axis=4)
                 av_arr = av[:, 0, 0, :]
 
-            axs[1, sb_id].imshow(av_arr,
-                                 aspect='auto',
-                                 extent=(h5_obj[sb_freq][0],
-                                         h5_obj[sb_freq][-1],
-                                         op['MJD'][0],
-                                         op['MJD'][-1]),
-                                 interpolation='nearest')
-            axs[1, sb_id].axis('off')
+            axs[1, sb_id].imshow(
+                av_arr,
+                aspect="auto",
+                extent=(
+                    h5_obj[sb_freq][0],
+                    h5_obj[sb_freq][-1],
+                    op["MJD"][0],
+                    op["MJD"][-1],
+                ),
+                interpolation="nearest",
+            )
+            axs[1, sb_id].axis("off")
     else:
-        lc = 'b'
+        lc = "b"
         np.mean(h5_obj[sb_data], axis=0)
-        plt.yscale('log')
+        plt.yscale("log")
         if hdr_ver >= 2.1:
             data_arr = h5_obj[sb_data][0, 0, :]
         else:
             data_arr = h5_obj[sb_data][0, 0, 0, :]
-        axs[0, sb_id].plot(h5_obj[sb_freq][:], data_arr,
-                           linewidth=0.5, color=lc)
+        axs[0, sb_id].plot(h5_obj[sb_freq][:], data_arr, linewidth=0.5, color=lc)
         axs[0, sb_id].set_title(sb_id, fontsize=6)
-        axs[0, sb_id].axis('off')
+        axs[0, sb_id].axis("off")
 
     return None
 
@@ -197,80 +201,82 @@ def verify_sdhdf(f_pth, out_pth):
     :param string out_pth: Path to directory for output data products
     :return None
     """
-    h5 = h5py.File(f_pth, 'r')
+    h5 = h5py.File(f_pth, "r")
     f_name = os.path.basename(f_pth)
-    hdr_pth = out_pth + '/' + f_name + '.hdr'
-    plot_pth = out_pth + '/' + f_name + '.png'
-    bp = QTable.read(h5, path='/metadata/beam_params')
+    hdr_pth = out_pth + "/" + f_name + ".hdr"
+    plot_pth = out_pth + "/" + f_name + ".png"
+    bp = QTable.read(h5, path="/metadata/beam_params")
 
     # get primary header metadata
-    print('Reading primary header metadata ...')
-    hdr = read_sdhdf_header(f_pth, '/metadata/primary_header')
+    print("Reading primary header metadata ...")
+    hdr = read_sdhdf_header(f_pth, "/metadata/primary_header")
     print_hdr(hdr)
 
     # get header version
-    hdr_ver = float(hdr['HDR_DEFN_VERSION'][0])
+    hdr_ver = float(hdr["HDR_DEFN_VERSION"][0])
 
     # create quick-look plots for web monitor
     # loop over the beams
     for beam in range(0, len(bp)):
-        beam_label = 'beam_' + str(beam)
-        sb_avail = QTable.read(h5, path=beam_label + '/metadata/band_params')
-        print('Processing beam %s ...' % beam_label)
+        beam_label = "beam_" + str(beam)
+        sb_avail = QTable.read(h5, path=beam_label + "/metadata/band_params")
+        print("Processing beam %s ..." % beam_label)
 
         # set up the figure
         fig, axs = setup_figure()
 
         # loop over the sub-bands
         for sb_id in range(0, 26):
-            sb_label = 'band_SB' + str(sb_id)
-            if sb_label in sb_avail['LABEL']:
-                sb_data = beam_label + '/' + sb_label + '/astronomy_data/data'
-                sb_freq = beam_label + '/' + sb_label + '/astronomy_data/frequency'
-                op = QTable.read(h5, path=beam_label + '/' + sb_label + '/metadata/obs_params')
+            sb_label = "band_SB" + str(sb_id)
+            if sb_label in sb_avail["LABEL"]:
+                sb_data = beam_label + "/" + sb_label + "/astronomy_data/data"
+                sb_freq = beam_label + "/" + sb_label + "/astronomy_data/frequency"
+                op = QTable.read(
+                    h5, path=beam_label + "/" + sb_label + "/metadata/obs_params"
+                )
 
                 # plot spectra (flux vs. frequency)
-                print('Plotting spectra for sub-band %s ...' % sb_label)
+                print("Plotting spectra for sub-band %s ..." % sb_label)
                 plot_data(h5, axs, sb_id, sb_freq, sb_data, hdr_ver)
 
                 # plot waterfall (time vs. frequency)
-                print('Plotting waterfall data for sub-band %s ...' % sb_label)
+                print("Plotting waterfall data for sub-band %s ..." % sb_label)
                 plot_data(h5, axs, sb_id, sb_freq, sb_data, hdr_ver, op=op)
             else:
                 # leave the plots empty
                 axs[0, sb_id].set_title(sb_id, fontsize=6)
-                axs[0, sb_id].axis('off')
-                axs[1, sb_id].axis('off')
+                axs[0, sb_id].axis("off")
+                axs[1, sb_id].axis("off")
 
         # write plot to disk
-        print('Writing plot to disk ...')
+        print("Writing plot to disk ...")
         save_plot(plt, plot_pth)
 
         # write header to disk
-        print('Writing header to disk ...')
+        print("Writing header to disk ...")
         save_hdr(hdr, hdr_pth)
 
     # check file conforms to the ATOA ingest process
-    print('Checking file conforms to the ATOA ingest process ...')
+    print("Checking file conforms to the ATOA ingest process ...")
     check_atoa_ingest(f_pth)
 
     # check file conforms to the SDHDF definition
-    print('Checking file conforms to the SDHDF definition...')
+    print("Checking file conforms to the SDHDF definition...")
     check_definition(f_pth)
 
     # finish up
-    print('Validation complete')
+    print("Validation complete")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
     ap = argparse.ArgumentParser()
-    ap.add_argument('--filename', help='Path to SDHDF file to read',
-                    required=True)
-    ap.add_argument('--outpath', help='Path to directory for output data products',
-                    required=True)
+    ap.add_argument("--filename", help="Path to SDHDF file to read", required=True)
+    ap.add_argument(
+        "--outpath", help="Path to directory for output data products", required=True
+    )
     args = ap.parse_args()
 
-    print('Running verification checks on file %s ...' % args.filename)
+    print("Running verification checks on file %s ..." % args.filename)
     verify_sdhdf(args.filename, args.outpath)
