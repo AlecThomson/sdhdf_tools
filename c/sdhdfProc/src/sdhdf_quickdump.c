@@ -43,6 +43,7 @@ void help()
   printf("-cal_tav               Average calibration data in time\n");
   printf("-cal32_ch <ch>         Set the channel to 'ch' when outputting data for the 32-bin cal\n");
   printf("-cal32_tav             Average the 32-binned calibration signal in time before output\n");  
+  printf("-calOnOff              Calculate ON-OFF for the noise source parameters\n");
   printf("-dumpRange <s0> <s1>   Output data in specificed sub-integration range\n");
   printf("-e <ext>               Output to data file with defined extension\n");
   printf("-fref <fref> Use 'fref' as a reference frequency and output velocities as well as frequencies\n");
@@ -85,6 +86,7 @@ int main(int argc,char *argv[])
   int   setDumpRange=0;
   int nchan;
   int dataType=1;
+  int calOnOff = 0;
   int cal32_chN=-1;
   int cal32_tav=-1;
   int band0=-1,band1=-1;
@@ -109,6 +111,8 @@ int main(int argc,char *argv[])
 	dataType=3;
       else if (strcmp(argv[i],"-cal_tav")==0)
 	cal_tav=1;
+      else if (strcmp(argv[i],"-calOnOff")==0)
+	calOnOff=1;
       else if (strcmp(argv[i],"-cal32")==0)
 	dataType=4;
       else if (strcmp(argv[i],"-cal32_ch")==0)
@@ -342,8 +346,12 @@ int main(int argc,char *argv[])
 					 cal_on_pol1,cal_off_pol1,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4,
 					 inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
 				  */
-				  printf("%s %d %d %d %d %g %g %g %g %g %g %g %g %g\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1,cal_off_pol1
-					 ,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4);
+				  if (calOnOff==0)
+				    printf("%s %d %d %d %d %g %g %g %g %g %g %g %g %g\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1,cal_off_pol1
+					   ,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4);
+				  else
+				    printf("%s %d %d %d %d %g %g %g %g %g\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1-cal_off_pol1
+					   ,cal_on_pol2-cal_off_pol2,cal_on_pol3-cal_off_pol3,cal_on_pol4-cal_off_pol4);
 				}
 			    }
 
