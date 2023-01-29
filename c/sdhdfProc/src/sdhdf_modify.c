@@ -60,6 +60,7 @@ typedef struct commandStruct {
 typedef struct dataStruct {
   // Data ordering = dump,pol,channel
   float *data;
+  float *data2; // For noise source
   float *freq; 
   int nFreqDump;
   float *wt;
@@ -70,10 +71,12 @@ typedef struct dataStruct {
   int memoryAllocated;
 
   sdhdf_obsParamsStruct  *obsParams;
+
+  int astroCal;
 } dataStruct;
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int verbose);
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int verbose);
 void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum);
 void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int meanMedian);
@@ -88,6 +91,7 @@ void help()
   printf("sdhdf_modify: routine to process an sdhdf file\n\n");
   printf("-bary_noregrid      - convert frequency axis to the barycentre\n");
   printf("-bary_regrid        - convert frequency axis to the barycentre and regrid back to the original frequency axis\n");
+  printf("-cal                = process the noise source, not the astronomy data\n");
   printf("-e <ext>            - use output file extension <ext>\n");
   printf("-h                  - this help\n");
   printf("-F or -Fsum         - completely sum frequency channels\n");
@@ -120,6 +124,7 @@ int main(int argc,char *argv[])
   commandStruct *commands;
   char args[MAX_STRLEN]="";
   int verbose=0;
+  int astroCal=0; // Modify the astronomy data
   
   strcpy(extension,"modify");
   
@@ -138,6 +143,8 @@ int main(int argc,char *argv[])
 	{help(); exit(1);}
       else if (strcmp(argv[i],"-v")==0)
 	verbose=1;    
+      else if (strcmp(argv[i],"-cal")==0)
+	astroCal=1;
       else if (strcmp(argv[i],"-Tav")==0)    // Completely average in time
 	{commands[nCommands].type=1; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
       else if (strcmp(argv[i],"-tsum")==0)   // Sum <val> time dumps together
@@ -180,7 +187,7 @@ int main(int argc,char *argv[])
     {
       printf("Processing file: %s\n",fname[i]);
       sdhdf_formOutputFilename(fname[i],extension,oname);
-      processFile(fname[i],oname,commands,nCommands,args,verbose);
+      processFile(fname[i],oname,commands,nCommands,args,astroCal,verbose);
     }
 
 
@@ -188,7 +195,7 @@ int main(int argc,char *argv[])
 }
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int verbose)
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int verbose)
 {
   int ii,i,c,j,k;
   
@@ -247,35 +254,77 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
       for (ii=0;ii<inFile->beam[b].nBand;ii++)
 	{
 	  printf(" ... Processing subband %d/%d\n",ii,inFile->beam[b].nBand-1);
-	  in->nchan = inFile->beam[b].bandHeader[ii].nchan;
-	  in->npol  = inFile->beam[b].bandHeader[ii].npol;
-	  in->ndump = inFile->beam[b].bandHeader[ii].ndump;
-	  
+	  if (astroCal==0)
+	    {
+	      in->nchan = inFile->beam[b].bandHeader[ii].nchan;
+	      in->npol  = inFile->beam[b].bandHeader[ii].npol;
+	      in->ndump = inFile->beam[b].bandHeader[ii].ndump;
+	      sdhdf_loadBandData(inFile,b,ii,1);
+	      in->nFreqDump = inFile->beam[b].bandData[ii].astro_data.nFreqDumps;
+	      in->astroCal = 0;
+	    }
+	  else
+	    {
+	      in->nchan = inFile->beam[b].calBandHeader[ii].nchan;
+	      in->npol  = inFile->beam[b].calBandHeader[ii].npol;
+	      in->ndump = inFile->beam[b].calBandHeader[ii].ndump;
+	      sdhdf_loadBandData(inFile,b,ii,2);
+	      sdhdf_loadBandData(inFile,b,ii,3);
+	      in->nFreqDump = in->nchan; // NFREQ_DUMPS ?
+	      in->astroCal = 1;
+	    }
 	  // Load in the data
-	  sdhdf_loadBandData(inFile,b,ii,1);
-	  in->nFreqDump = inFile->beam[b].bandData[ii].astro_data.nFreqDumps;
 	  allocateMemory(in);
 
 	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
 	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 
-	  for (i=0;i<in->nFreqDump;i++)
-	    memcpy(in->freq+i*in->nchan,inFile->beam[b].bandData[ii].astro_data.freq+i*in->nchan,sizeof(float)*in->nchan);
+	  if (astroCal==0)
+	    {
+	      for (i=0;i<in->nFreqDump;i++)
+		{
+		  memcpy(in->freq+i*in->nchan,inFile->beam[b].bandData[ii].astro_data.freq+i*in->nchan,sizeof(float)*in->nchan);
+		}
+	    }
+	  else
+	    memcpy(in->freq,inFile->beam[b].bandData[ii].cal_on_data.freq,sizeof(float)*in->nchan);
+	
 	  for (i=0;i<in->ndump;i++)
-	    sdhdf_copySingleObsParams(inFile,b,ii,i,&in->obsParams[i]); 
-
+	    {
+	      if (astroCal==0)
+		sdhdf_copySingleObsParams(inFile,b,ii,i,&in->obsParams[i]); 
+	      else
+		sdhdf_copySingleObsParamsCal(inFile,b,ii,i,&in->obsParams[i]); 
+	    }
 	  for (k=0;k<in->nchan;k++)
 	    {
 	      for (j=0;j<in->ndump;j++)
 		{
 		  // SHOULD CHECK NUMBER OF POLS -- FIX ME
 		  // SHOULD HAVE A WAY TO FGET THE DATA DIRECTLY IN THE CORRECT FORMAT AS IT IS STORED IN THAT FORMAT ANYWAY
-		  in->data[j*in->nchan*in->npol + k] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*in->nchan];
-		  in->data[j*in->nchan*in->npol + k + in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*in->nchan];
-		  in->data[j*in->nchan*in->npol + k + 2*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*in->nchan];
-		  in->data[j*in->nchan*in->npol + k + 3*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*in->nchan];
-		  in->wt[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[k+j*in->nchan];
-		  in->flag[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.flag[k+j*in->nchan];
+		  if (astroCal==0)
+		    {
+		      in->data[j*in->nchan*in->npol + k] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*in->nchan];
+		      in->data[j*in->nchan*in->npol + k + in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*in->nchan];
+		      in->data[j*in->nchan*in->npol + k + 2*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*in->nchan];
+		      in->data[j*in->nchan*in->npol + k + 3*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*in->nchan];
+		      in->wt[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[k+j*in->nchan];
+		      in->flag[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.flag[k+j*in->nchan];
+		    }
+		  else
+		    {
+		      in->data[j*in->nchan*in->npol + k] = inFile->beam[b].bandData[ii].cal_on_data.pol1[k+j*in->nchan];
+		      in->data[j*in->nchan*in->npol + k + in->nchan] = inFile->beam[b].bandData[ii].cal_on_data.pol2[k+j*in->nchan];
+		      in->data[j*in->nchan*in->npol + k + 2*in->nchan] = inFile->beam[b].bandData[ii].cal_on_data.pol3[k+j*in->nchan];
+		      in->data[j*in->nchan*in->npol + k + 3*in->nchan] = inFile->beam[b].bandData[ii].cal_on_data.pol4[k+j*in->nchan];
+		    
+		      in->data2[j*in->nchan*in->npol + k] = inFile->beam[b].bandData[ii].cal_off_data.pol1[k+j*in->nchan];
+		      in->data2[j*in->nchan*in->npol + k + in->nchan] = inFile->beam[b].bandData[ii].cal_off_data.pol2[k+j*in->nchan];
+		      in->data2[j*in->nchan*in->npol + k + 2*in->nchan] = inFile->beam[b].bandData[ii].cal_off_data.pol3[k+j*in->nchan];
+		      in->data2[j*in->nchan*in->npol + k + 3*in->nchan] = inFile->beam[b].bandData[ii].cal_off_data.pol4[k+j*in->nchan];
+		      in->wt[j*in->nchan + k]   = 1;    // FIX ME HERE, currently do not FLAG or WEIGHT the noise source  and only 1 frequency dump
+		      in->flag[j*in->nchan + k] = 0; 
+		    }
 		}
 	    }
 	  for (c=0;c<nCommands;c++)
@@ -285,10 +334,24 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 		{ swp = in; in = out; out = swp;} 
 	    }      
 	  // Sort out the observation parameters
-	  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
-				  out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+	  if (astroCal==0)
+	    {
+	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
+				    out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,1);
+	    }
+	  else
+	    {
+	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
+				      out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      
+	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data2,
+				      out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,2);
+	    }
 	  // Write out the obs_params file
-	  sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,1);
+
 	  sdhdf_writeDataWeights(outFile,b,ii,out->wt,out->nchan,out->ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label);
 	  sdhdf_writeFlags(outFile,b,ii,out->flag,out->nchan,out->ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label);
 	  	  
@@ -300,8 +363,19 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
  	  outBandParams[ii].f1    = out->freq[out->nchan-1];
 	  outBandParams[ii].ndump = out->ndump;
 	  outBandParams[ii].dtime = out->obsParams[0].dtime;
+
+	  if (astroCal==0)
+	    sdhdf_releaseBandData(inFile,b,ii,1); 		      
+	  else
+	    {
+	      sdhdf_releaseBandData(inFile,b,ii,2);
+	      sdhdf_releaseBandData(inFile,b,ii,3); 		      
+	    }
 	}
-      sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
+      if (astroCal==0)
+	sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,1);
+      else
+	sdhdf_writeBandHeader(outFile,outBandParams,inFile->beamHeader[b].label,inFile->beam[b].nBand,2);
       free(inBandParams);
       free(outBandParams);
     }
@@ -483,7 +557,7 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
   int i,j,k,kk,p;
   int include;
   int avFreq,nfreq;
-  double av,avFreqVal,avFreqNoWt;
+  double av,avFreqVal,avFreqNoWt,av2;
   float wt,wtVal;
   unsigned char flag;
   int nsum;
@@ -491,6 +565,7 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
   double s_flag_wt;
   int flagVal;
   float medVal[nfreqAv],medWt[nfreqAv];
+  float medVal2[nfreqAv];
   if (nfreqAv == 0)
     {nfreq = 1; avFreq = in->nchan;}
   else
@@ -501,9 +576,9 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
   out->npol =  in->npol;
   out->ndump = in->ndump;
   out->nFreqDump = in->nFreqDump;
+  out->astroCal = in->astroCal;
   
   printf("Averaging: %d frequency channels together giving %d frequency channels out of %d original channels\n",avFreq,nfreq,in->nchan);
-
   allocateMemory(out);
   memcpy(out->obsParams,in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump); 
 
@@ -520,7 +595,7 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 	    {
 	      s_flag_wt=0;
 	      nsum=0;
-	      av=0;
+	      av=av2=0;
 	      avFreqVal=avFreqNoWt = 0;
 	      
 	      wt=0;
@@ -530,26 +605,44 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		{
 		  wtVal     = in->wt[(k*in->nchan) + (j*avFreq)+kk];
 		  flagVal   = 1-in->flag[(k*in->nchan) + (j*avFreq)+kk];
-
+		  //		  printf("wt/flag = %d %d %g %d\n",k,(j*avFreq)+kk,wtVal,flagVal);
 		  if (meanMedian==1)
 		    {
-		      avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk+k*in->nchan];
-		      avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
-		      av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+		      if (in->astroCal==0)
+			{
+			  avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk+k*in->nchan];
+			  avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+			  av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+			}
+		      else
+			{
+			  avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk];
+			  avFreqNoWt += in->freq[(j*avFreq)+kk];
+			  av  += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
+			  av2 += wtVal*flagVal*in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+			  //			  printf("Using: %g %g\n",in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk],in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk]);
+			}
+
 		      s_flag_wt+= wtVal*flagVal;
 		    }
 		  else
 		    {
-		      avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+		      if (in->astroCal == 0)
+			avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+		      else
+			avFreqNoWt += in->freq[(j*avFreq)+kk];
+			
 		      if (flagVal == 1 && wtVal != 0)
 			{
-			  medVal[nMedian] = in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
+			  medVal[nMedian]  = in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
+			  medVal2[nMedian] = in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
 			  medWt[nMedian]  = in->wt[(k*in->nchan) + (j*avFreq)+kk];
 			  s_flag_wt+= wtVal;
 			  nMedian++;
 			}
 		    }
 		}
+
 	      if (meanMedian==1) // Mean
 		{
 		  out->wt[k*out->nchan + j] =   s_flag_wt; 
@@ -559,14 +652,40 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		    out->flag[k*out->nchan + j] = 1;
 		  
 		  if (sum==1)
-		    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		    {
+		      if (in->astroCal==0)
+			out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+		      else
+			{
+			  out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+			  out->data2[k*out->nchan*out->npol + p*out->nchan + j] = av2;
+			}
+		    }
 		  else
 		    {
-		      if (s_flag_wt > 0)
-			out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+		      if (in->astroCal==0)
+			{
+			  if (s_flag_wt > 0)
+			    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+			  else
+			    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+			}
 		      else
-			out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+			{
+
+			  if (s_flag_wt > 0)
+			    {
+			      out->data[k*out->nchan*out->npol + p*out->nchan + j]  = av/s_flag_wt;
+			      out->data2[k*out->nchan*out->npol + p*out->nchan + j] = av2/s_flag_wt;
+			    }
+			  else
+			    {
+			      out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+			      out->data2[k*out->nchan*out->npol + p*out->nchan + j] = av2;
+			    }
+			}
 		    }
+		      
 		}
 	      else
 		{
@@ -574,12 +693,16 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		  if (nMedian==0)
 		    {
 		      out->data[k*out->nchan*out->npol + p*out->nchan + j] = 0;
+		      if (in->astroCal==1)
+			out->data2[k*out->nchan*out->npol + p*out->nchan + j] = 0;
 		      out->flag[k*out->nchan + j] = 1;
 		      out->wt[k*out->nchan + j] = 0;
 		    }
 		  else
 		    {
 		      out->data[k*out->nchan*out->npol + p*out->nchan + j] = quick_select_float(medVal,nMedian);
+		      if (in->astroCal==1)
+			out->data2[k*out->nchan*out->npol + p*out->nchan + j] = quick_select_float(medVal2,nMedian);
 		      out->flag[k*out->nchan + j] = 0;
 		      out->wt[k*out->nchan + j]   = s_flag_wt/(float)nMedian; 
 		    }
@@ -588,8 +711,13 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 	      // FIX ME **
 	      // NOTE: Not doing weighted average as need to set for a single spectral dump
 	      if (p==0)
-		out->freq[j+k*out->nchan] = avFreqNoWt/avFreq; // 		  // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCU ARRAY
-	      //	      else
+		{
+		  if (in->astroCal == 0)
+		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq; // 		  // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCU ARRAY
+		  else
+		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq;
+		}
+		  //	      else
 		//		{
 		  //		  printf("WARNING: channel %d (%g) has a weighting of zero\n",j,avFreqNoWt/avFreq);
 		//		  out->freq[j] = avFreqNoWt/avFreq;
@@ -742,7 +870,8 @@ void allocateMemory(dataStruct *in)
 	  printf("ERROR: Unable to allocate memory in sdhdf_modify\n");
 	  exit(1);
 	}
-
+      if (in->astroCal==1)
+	  in->data2 = (float *)malloc(sizeof(float)*in->nchan*in->ndump*in->npol);
       in->freq = (float *)malloc(sizeof(float)*in->nchan*in->nFreqDump);
       in->wt   = (float *)malloc(sizeof(float)*in->nchan*in->ndump);
       in->flag = (unsigned char *)malloc(sizeof(unsigned char)*in->nchan*in->ndump);
@@ -752,6 +881,9 @@ void allocateMemory(dataStruct *in)
   else
     {
       in->data = (float *)realloc(in->data,sizeof(float)*in->nchan*in->ndump*in->npol);
+      if (in->astroCal==1)
+	  in->data2 = (float *)realloc(in->data2,sizeof(float)*in->nchan*in->ndump*in->npol);
+
       in->freq = (float *)realloc(in->freq,sizeof(float)*in->nchan*in->nFreqDump);
       //      in->freq = (float *)realloc(in->freq,sizeof(float)*in->nchan);
       in->wt = (float *)realloc(in->wt,sizeof(float)*in->nchan*in->ndump);

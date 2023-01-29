@@ -696,7 +696,28 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
 	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
 	  status = H5Gclose(group_id);
 	}
-      // FIX ME -- SHOULD MAKE CAL DATA SETS
+    }
+  else if (type==2 || type==3)
+    {
+      sprintf(groupName,"%s",beamLabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status   = H5Gclose(group_id);
+	}
+
+      sprintf(groupName,"%s/%s",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
+      sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
     }
   dims[0] = nsub;
   dims[1] = 1;
@@ -769,9 +790,17 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 
-  dims[0] = nFreqDump;
-  dims[1] = nchan;
-  dataspace_id = H5Screate_simple(2,dims,NULL);
+  if (type==2 || type==3)
+    {
+      dims[0] = 1; // FIX ME IF NEEDED **
+      dims[1] = nchan;
+    }
+  else
+    {
+      dims[0] = nFreqDump;
+      dims[1] = nchan;
+    }
+      dataspace_id = H5Screate_simple(2,dims,NULL);
 
   if (type==0 || type==1 || type==4)
     {
