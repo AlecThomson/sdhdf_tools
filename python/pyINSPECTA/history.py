@@ -20,9 +20,10 @@ from astropy.table import Table
 from IPython import embed
 from tqdm.auto import tqdm
 from xarray import DataArray, Dataset, Variable
+from .tables import SDHDFTable
 
 
-def generate_history_row() -> pd.DataFrame:
+def generate_history_row() -> SDHDFTable:
     """Generate a history row.
     Returns:
         pd.DataFrame: History row.
@@ -35,7 +36,7 @@ def generate_history_row() -> pd.DataFrame:
     # Get the calling function's arguments
     process_arguments = str(inspect.stack()[1][0].f_locals["self"].__dict__)
 
-    history_row = pd.DataFrame(
+    history_row = SDHDFTable(
         {
             "DATE": datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"),
             "PROC": process_name,
