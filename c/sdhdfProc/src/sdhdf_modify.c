@@ -823,13 +823,13 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
 		  deltaI = -(int)(fabs(df)+0.5);
 		  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN		  
 		}
-	      if (j + deltaI >= 0 && j+deltaI < in->nchan)
+	      if (j + deltaI >= 0 && j+deltaI < in->nchan-1)
 		{
 		  for (kk=0;kk<in->npol;kk++)
 		    {
 		      iX1 = 0; iX2 = 1;
 		      iY1 = in->data[i*in->nchan*in->npol + kk*in->nchan + (j + deltaI)];
-		      iY2 = in->data[i*in->nchan*in->npol + kk*in->nchan + (j + deltaI + 1)]; // SHOULD CHECK IF AT EDGE ** FIX ME
+		      iY2 = in->data[i*in->nchan*in->npol + kk*in->nchan + (j + deltaI + 1)]; 
 		      m   = (iY2-iY1)/(iX2-iX1);
 		      c   = iY1;
 		      iX  = fracDeltaI;
