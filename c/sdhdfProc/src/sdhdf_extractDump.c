@@ -125,7 +125,7 @@ int main(int argc,char *argv[])
       if (inFile->fileID!=-1) // Did we successfully open the file?
 	{
 	  sdhdf_loadMetaData(inFile);
-	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname,inFile->primary[0].utc0,
+	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname[ii],inFile->primary[0].utc0,
 		 inFile->primary[0].hdr_defn_version,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->primary[0].telescope,
 		 inFile->primary[0].observer, inFile->primary[0].rcvr,inFile->beam[0].nBand);
 
@@ -144,7 +144,7 @@ int main(int argc,char *argv[])
 		      nchan = inFile->beam[b].bandHeader[i].nchan;
 		      npol  = inFile->beam[b].bandHeader[i].npol;
 		      ndump = inFile->beam[b].bandHeader[i].ndump;
-		      printf("Processing subband %d (number of spectral dumps = %d)\n",i,ndump);
+		      printf("Processing subband %d (number of spectral dumps = %d)\n",i,(int)ndump);
 		      out_ndump = nSelectDumps;
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
 		      for (k=0;k<out_ndump;k++)

@@ -855,12 +855,9 @@ void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam
   // FIX ME -- NOW 4 DIMENSIONS
   dataspace_id = H5Screate_simple(5,dims,NULL);
   
-  printf("Replacing data %d\n",dataspace_id);
   sprintf(dsetName,"%s/data",groupName);
   dset_id = H5Dopen2(outFile->fileID,dsetName,H5P_DEFAULT);
-  printf("dset_id = %d\n",dset_id);
   status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
-  printf("Status 1 = %d\n",status);
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 
@@ -1068,7 +1065,7 @@ void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned cha
   char dSetName[MAX_STRLEN];
   char groupName[MAX_STRLEN];
   hid_t dataspace_id,stid,dset_id,datatype_id,group_id;
-  hsize_t dims[1];
+  hsize_t dims[2];
   herr_t status;
   
   dims[0] = ndump; 

@@ -342,7 +342,7 @@ void createDataForAstro(fitsfile *astro,sdhdf_fileStruct *inFile,int fixFreq)
 	  sdhdf_releaseBandData(inFile,0,k,3); 		      
 
 	}
-      printf("nchan and n = %d %d\n",nchan,n);
+      printf("nchan and n = %d %d\n",(int)nchan,(int)n);
       if (i==0)
 	{
 	  cfreq = sumFreq/n;

@@ -174,7 +174,7 @@ int main(int argc,char *argv[])
 	      nchan = inFile->beam[b].bandHeader[i].nchan;
 	      npol  = inFile->beam[b].bandHeader[i].npol;
 	      ndump = 1;
-	      printf("nchan = %d, npol = %d\n",nchan,npol);
+	      printf("nchan = %d, npol = %d\n",(int)nchan,(int)npol);
 	      
 	      sdhdf_loadBandData(inFile,b,i,1);
 	      tav += inFile->beam[b].bandHeader[i].dtime;

@@ -568,7 +568,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    {
 	      printf("Number of channels = %d\n",nchan);
 	      for (i=0;i<nchan;i++)
-		printf("%d %.6f %g\n",freq[i],pol1[i]);
+		printf("%.6f %g\n",freq[i],pol1[i]);
 	    }
 	  else if (key=='s')
 	    {

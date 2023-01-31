@@ -622,7 +622,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
       if (dims[0] != nband)
 	{
-	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,dims[0]);
+	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,(int)dims[0]);
 	  printf("ndims = %d\n",ndims);
 	  printf("Label = %s\n",label);
 	  printf("File = %s\n",inFile->fname);
@@ -835,7 +835,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	    }
 	  if (dims[0] != ndump)
 	    {
-	      printf("ERROR: [%s] Missing data detected. In %s number of dumps %d (expected) !== %d (actual) (band = %d) [%s]. ndims = %d, dims[0] = %d, type = %d\n",inFile->fname,inFile->beam[i].bandHeader[j].label,ndump,dims[0],j,label,ndims,dims[0],type);
+	      printf("ERROR: [%s] Missing data detected. In %s number of dumps %d (expected) !== %d (actual) (band = %d) [%s]. ndims = %d, dims[0] = %d, type = %d\n",inFile->fname,inFile->beam[i].bandHeader[j].label,ndump,(int)dims[0],j,label,ndims,(int)dims[0],(int)type);
 	      printf("ATTEMPTING TO CONTINUE ....\n");
 	    }
 	  else

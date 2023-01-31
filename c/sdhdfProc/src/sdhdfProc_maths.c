@@ -267,7 +267,7 @@ int turn_dms(double turn, char *dms){
       }
     }
   sprintf(dms,"%c%02d:%02d:%010.7f",sign,dd,mm,sec);
- 
+  return 0;
 }
 
 
@@ -295,7 +295,7 @@ int turn_hms(double turn, char *hms){
     }
 
   sprintf(hms," %02d:%02d:%010.7f",hh,mm,sec);
- 
+  return 0;
 }
 
 

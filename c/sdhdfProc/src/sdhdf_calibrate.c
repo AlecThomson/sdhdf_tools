@@ -302,7 +302,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 		  fluxScale = fluxValAA + fluxValBB;
 		  if (verbose==2)
 		    {
-		      fprintf(debugOut1,"%.6f %g %g\n",freq,interpCoeff_fluxCalAA,interpCoeff_fluxCalBB);
+		      fprintf(debugOut1,"%.6f %g %g\n",freq,fluxValAA,fluxValBB);
 		    }
 		  // Form Jones matrix
 		  sdhdf_complex_matrix_2x2(rho,stabilised_aa,stabilised_rab-I*stabilised_iab,

@@ -261,7 +261,7 @@ int main(int argc,char *argv[])
 	{
 	  // NOTE: SHOULD BE ABLE TO LOAD MULTPLE FILES ...
 	  allocateMemory=1;
-	  printf("Allocating memory for %d data points\n",nVals);
+	  printf("Allocating memory for %d data points\n",(int)nVals);
 	  if (waterfall==1)
 	    arr = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[sb].nchan*wMax_dump);
 	  else
@@ -470,7 +470,7 @@ int main(int argc,char *argv[])
     minx = setMinX;
   else
     minx = px[0];
-  printf("and here nVals = %d\n",nVals);
+  printf("and here nVals = %d\n",(int)nVals);
   if (setMaxX >= 0)
     maxx = setMaxX;
   else

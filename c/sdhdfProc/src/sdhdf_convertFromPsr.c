@@ -253,7 +253,7 @@ int main(int argc,char *argv[])
 	    nread = fread(fvals,sizeof(float),nchan,fin); 
 	  if (nread > 0)
 	    {
-	      printf("%d Have read %d values, sizeof(float) = %d\n",ndump,nread,sizeof(float));
+	      printf("%d Have read %d values, sizeof(float) = %d\n",(int)ndump,(int)nread,sizeof(float));
 	      
 	      printf("Complete conversion %d %d %d\n",nchan,npol,nsblk);
 	      for (i=0;i<nchan;i++)
@@ -596,7 +596,7 @@ int main(int argc,char *argv[])
   sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[0].label,1,1);
   sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[0].label,0,obsParams,ndump,1);
   // FIX ME: Only sending 1 frequency channel through
-  sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatVals,&freqVals,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+  sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatVals,freqVals,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 
   if (cal==1)
     {
@@ -608,8 +608,8 @@ int main(int argc,char *argv[])
       // 
 
       // FIX ME: Only sending 1 frequency channel through
-      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOn,&freqCalVals,1,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOff,&freqCalVals,1,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOn,freqCalVals,1,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOff,freqCalVals,1,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
     }
   sdhdf_writeSoftwareVersions(outFile,softwareVersions);
   sdhdf_writeHistory(outFile,history,1);
@@ -773,7 +773,7 @@ void readFilHeader(char *fname,FILE *inputfile,header *head)
     if (totalbytes != ftell(inputfile)){
 	    fprintf(stderr,"ERROR: Header bytes does not equal file position\n");
 	    fprintf(stderr,"String was: '%s'\n",string);
-	    fprintf(stderr,"       header: %d file: %d\n",totalbytes,ftell(inputfile));
+	    fprintf(stderr,"       header: %d file: %d\n",totalbytes,(int)ftell(inputfile));
 	    exit(1);
     }
 
@@ -792,10 +792,10 @@ void readFilHeader(char *fname,FILE *inputfile,header *head)
 
   if (totalbytes != ftell(inputfile)){
 	  fprintf(stderr,"ERROR: Header bytes does not equal file position\n");
-	  fprintf(stderr,"       header: %d file: %d\n",totalbytes,ftell(inputfile));
+	  fprintf(stderr,"       header: %d file: %d\n",totalbytes,(int)ftell(inputfile));
 	  exit(1);
   }
-  printf("total bytes = %d file position = %d\n",totalbytes,ftell(inputfile));
+  printf("total bytes = %d file position = %d\n",totalbytes,(int)ftell(inputfile));
 
 }
 
@@ -805,7 +805,7 @@ void get_string(FILE *fin,int *nbytes,char string[])
   int nchar;
   strcpy(string,"ERROR");
   fread(&nchar, sizeof(int),1,fin);
-  printf("Have read in %d chars, sizeof(int) is %d\n",nchar,sizeof(int));
+  printf("Have read in %d chars, sizeof(int) is %d\n",nchar,(int)sizeof(int));
   *nbytes = sizeof(int);
 
   if (feof(fin)) exit(0);
