@@ -1084,15 +1084,9 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
   H5O_info_t object_info;
   
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-  #ifdef EARLY_HDF5
-   printf("Using EARLY_HDF5 library\n");
-   status = H5Oget_info(dataset_id,&object_info);
-  #else
-    printf("Using RECENT_HDF5 library\n");
-    status = H5Oget_info(dataset_id,&object_info,H5O_INFO_NUM_ATTRS);
-  #endif
-   status = H5Dclose(dataset_id);
-    return object_info.num_attrs;  
+  status = H5Oget_info2(dataset_id,&object_info,H5O_INFO_NUM_ATTRS);
+  status = H5Dclose(dataset_id);
+  return object_info.num_attrs;  
 }
 
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute)

@@ -21,6 +21,7 @@ AC_PROG_LIBTOOL
 
 # Check for libraries
 LIB_PGPLOT
+LIB_HDF5
 
 # Check for header files
 AC_HEADER_STDC
