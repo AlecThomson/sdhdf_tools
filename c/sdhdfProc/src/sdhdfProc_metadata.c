@@ -1082,9 +1082,13 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
   hid_t dataset_id;
   herr_t status;
   H5O_info_t object_info;
-  
+  //  printf("VERSION:   H5_VERS_RELEASE = %d %d\n",H5_VERS_MAJOR,H5_VERS_MINOR);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-  status = H5Oget_info2(dataset_id,&object_info,H5O_INFO_NUM_ATTRS);
+  #if H5_VERS_MINOR == 10
+   status = H5Oget_info(dataset_id,&object_info);
+  #else
+   status = H5Oget_info(dataset_id,&object_info,H5O_INFO_NUM_ATTRS);
+  #endif
   status = H5Dclose(dataset_id);
   return object_info.num_attrs;  
 }
