@@ -11,6 +11,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_sum \
   sdhdf_modify \
   sdhdf_calibrate \
+  sdhdf_calibrateOld \
   sdhdf_join \
   sdhdf_identify \
   sdhdf_plotNoiseCal \
@@ -60,6 +61,9 @@ sdhdf_modify_SOURCES = sdhdf_modify.c \
   $(COMMON_SRCS)
 
 sdhdf_calibrate_SOURCES = sdhdf_calibrate.c \
+  $(COMMON_SRCS)
+
+sdhdf_calibrateOld_SOURCES = sdhdf_calibrateOld.c \
   $(COMMON_SRCS)
 
 sdhdf_join_SOURCES = sdhdf_join.c \
