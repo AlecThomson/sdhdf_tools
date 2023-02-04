@@ -190,14 +190,9 @@ int main(int argc,char *argv[])
       ra0 = (9.+18/60.0+5.69/60./60.)*180./12.;
       dec0 = -12.0-5.0/60.-44.0/60./60.;
     }
-  else if (strcmp(inFile->beamHeader[ibeam].source,"1934_RASCAN")==0)
-    {
-      printf("Setting default position to 1934-638\n");
-      //  19:39:25.01 -63:42:45.7
-      ra0 = (19.+39/60.0+25.01/60./60.)*180./12.;
-      dec0 = -63.0-42.0/60.-45.7/60./60.;
-    }
-  else if (strcmp(inFile->beamHeader[ibeam].source,"1934_DCSCAN")==0)
+  else if (strcmp(inFile->beamHeader[ibeam].source,"1934_RASCAN")==0
+	   || strcmp(inFile->beamHeader[ibeam].source,"1934_DECSCAN")==0
+	   || strcmp(inFile->beamHeader[ibeam].source,"1934-638")==0)
     {
       printf("Setting default position to 1934-638\n");
       //  19:39:25.01 -63:42:45.7
