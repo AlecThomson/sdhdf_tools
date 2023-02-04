@@ -54,6 +54,7 @@ typedef struct commandStruct {
   float param1;
   float param2;
   int   iparam;
+  int   iparam2;
 } commandStruct;
 
 // Structure allowing the data to be passed through multiple processing steps
@@ -77,11 +78,12 @@ typedef struct dataStruct {
 
 
 void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int verbose);
-void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
+void processCommand(dataStruct *in,dataStruct *out,int iband, commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum);
 void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int meanMedian);
 void polarisationAverage(dataStruct *in,dataStruct *out,int sum);
 void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
+void scaleValues(dataStruct *in,dataStruct *out,int iband,  int useBand, int multDiv, float aaScale, float bbScale);
 void allocateMemory(dataStruct *in);
 
 //void timeAverage(float *in_data,int nchan,int npol,int ndump,int ntime,float *out_data,int *out_nchan,int *out_npol,int *out_ndump);
@@ -145,6 +147,10 @@ int main(int argc,char *argv[])
 	verbose=1;    
       else if (strcmp(argv[i],"-cal")==0)
 	astroCal=1;
+      else if (strcmp(argv[i],"-divide2pol")==0) 
+	{commands[nCommands].type=5; commands[nCommands].iparam = 1; sscanf(argv[++i],"%d",&(commands[nCommands].iparam2)); sscanf(argv[++i],"%f",(&commands[nCommands].param1)); sscanf(argv[++i],"%f",(&commands[nCommands++].param2)); }
+      else if (strcmp(argv[i],"-mult2pol")==0) 
+	{commands[nCommands].type=5; commands[nCommands].iparam = 2; sscanf(argv[++i],"%d",&(commands[nCommands].iparam2)); sscanf(argv[++i],"%f",(&commands[nCommands].param1)); sscanf(argv[++i],"%f",(&commands[nCommands++].param2)); }
       else if (strcmp(argv[i],"-Tav")==0)    // Completely average in time
 	{commands[nCommands].type=1; commands[nCommands].param2 = 2; commands[nCommands++].param1 = 0;}
       else if (strcmp(argv[i],"-tsum")==0)   // Sum <val> time dumps together
@@ -329,7 +335,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	    }
 	  for (c=0;c<nCommands;c++)
 	    {
-	      processCommand(in,out,&commands[c],freqAttributes,nFreqAttributes,verbose);
+	      processCommand(in,out,ii,&commands[c],freqAttributes,nFreqAttributes,verbose);
 	      if (c!=nCommands-1)
 		{ swp = in; in = out; out = swp;} 
 	    }      
@@ -396,7 +402,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
   free(dset);
 }
 
-void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
+void processCommand(dataStruct *in,dataStruct *out,int iband,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
 {
   printf("Processing command: %d\n",command->type);
   if (command->type==1)
@@ -407,7 +413,10 @@ void processCommand(dataStruct *in,dataStruct *out,commandStruct *command,sdhdf_
     polarisationAverage(in,out,command->param1);
   else if (command->type==4)
     changeFrequencyAxis(in,out,command->param1,command->param2,freqAttributes,nFreqAttributes,verbose);
+  else if (command->type==5)
+    scaleValues(in,out,iband,command->iparam2,command->iparam,command->param1,command->param2);
 }
+
 
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 {
@@ -932,6 +941,59 @@ void polarisationAverage(dataStruct *in,dataStruct *out,int sum)
 	      out->flag[k*out->nchan + j] =   in->flag[k*out->nchan+j]; 
 	      out->data[k*out->nchan + j] = av;
 	      
+	    }
+	}
+    }
+}
+
+
+void scaleValues(dataStruct *in,dataStruct *out,int iband, int useBand, int multDiv, float aaScale, float bbScale)
+{
+  int i,j,k,kk,p;
+  double v;
+  float wt,wtVal;
+  unsigned char flag;
+  int flagVal;
+
+  out->ndump = in->ndump;
+  out->nchan = in->nchan;
+  out->npol =  in->npol;
+  out->nFreqDump = in->nFreqDump;
+  
+  allocateMemory(out);
+  
+  memcpy(out->obsParams,in->obsParams,sizeof(sdhdf_obsParamsStruct)*in->ndump); 
+  memcpy(out->freq,in->freq,sizeof(float)*out->nchan*out->nFreqDump);
+  if (useBand != iband)
+    memcpy(out->data,in->data,sizeof(float)*out->nchan*out->ndump*out->npol);
+  else
+    {
+      printf("Scaling band %d by %g %g\n",iband,aaScale,bbScale);
+      for (j=0;j<out->nchan;j++)
+	{
+	  for (k=0;k<out->ndump;k++)
+	    {
+	      for (p=0;p<out->npol;p++)
+		{	      
+		  v = in->data[k*in->nchan*in->npol + p*in->nchan + j];
+		  if (multDiv==1)
+		    {
+		      if (p==0)      v/=aaScale;
+		      else if (p==1) v/=bbScale;		  // No clear solution to the cross terms -- FIX ME
+		    }
+		  else
+		    {
+		      if (p==0)      v*=aaScale;
+		      else if (p==1) v*=bbScale;		  // No clear solution to the cross terms -- FIX ME
+		    }
+		  if (p==0)
+		    {
+		      out->wt[k*out->nchan + j] =   in->wt[k*out->nchan+j]; 
+		      out->flag[k*out->nchan + j] =   in->flag[k*out->nchan+j]; 
+		    }
+		  out->data[k*out->nchan + p*out->nchan + j] = v;
+		  
+		}
 	    }
 	}
     }
