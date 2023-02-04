@@ -130,7 +130,8 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
   double complex finalJ[2][2];
   double alpha = -45.0*M_PI/180.0; // FIX ME
   double fluxScale;
-
+  char obsDir[1024];
+  
   FILE *debugOut1,*debugOut2;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
@@ -158,10 +159,11 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 
   nFluxCalChan=0;
   fluxCal = (sdhdf_fluxCalibration *)malloc(sizeof(sdhdf_fluxCalibration)*MAX_POL_CAL_CHAN); //  Should change to MAX_FLUXCAL OR SIMILAR ** FIX ME
+  sdhdf_getTelescopeDirName(inFile->primary[0].telescope,obsDir);
   if (tcal==0)
-    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
+    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,fluxCalFile); 
   else
-    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
+    sdhdf_loadTcal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,"tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
   
   // FIX ME: SHOULD KNOW IF DATA FLAGGED OR NOT HERE IN THE FLUX CAL
   // SHOULD SET FLAGS AT END TO SAY WHAT HAS NOT BEEN CORRECTLY FLAGGED
