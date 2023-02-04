@@ -36,7 +36,7 @@
 #define VERSION "v0.5"
 #define MAX_POL_CAL_CHAN 4096    // FIX ME -- SHOULD SET DYNAMICALLY
 
-void processFile(char *fname,char *oname, int stabiliseType, int out_npol, char *fluxCalFile, int verbose);
+void processFile(char *fname,char *oname, int stabiliseType, int out_npol, char *fluxCalFile, int tcal, int verbose);
 
 void help()
 {
@@ -64,7 +64,8 @@ int main(int argc,char *argv[])
   int stabiliseType=1;
   int out_npol = 4;
   char fluxCalFile[1024] = "uwl_220705_132107.fluxcal";
-  
+  int tcal=0; // Using Scal if 0, or Tcal = 1
+    
   strcpy(extension,"calibrate");
   
   for (i=1;i<argc;i++)
@@ -75,6 +76,8 @@ int main(int argc,char *argv[])
 	verbose=2;    
       else if (strcmp(argv[i],"-e")==0)
 	strcpy(extension,argv[++i]);
+      else if (strcmp(argv[i],"-tcal")==0)
+	tcal=1;
       else if (strcmp(argv[i],"-fluxcal")==0)
 	strcpy(fluxCalFile,argv[++i]);
       else if (strcmp(argv[i],"-s")==0)
@@ -89,12 +92,12 @@ int main(int argc,char *argv[])
     {
       printf("Processing file: %s\n",fname[i]);
       sdhdf_formOutputFilename(fname[i],extension,oname);
-      processFile(fname[i],oname,stabiliseType,out_npol,fluxCalFile,verbose);
+      processFile(fname[i],oname,stabiliseType,out_npol,fluxCalFile,tcal,verbose);
     }
 
 }
 
-void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *fluxCalFile, int verbose)
+void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *fluxCalFile, int tcal,int verbose)
 {
   int ii,i,c,j,k,b;
   sdhdf_fileStruct *inFile,*outFile;
@@ -155,8 +158,11 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 
   nFluxCalChan=0;
   fluxCal = (sdhdf_fluxCalibration *)malloc(sizeof(sdhdf_fluxCalibration)*MAX_POL_CAL_CHAN); //  Should change to MAX_FLUXCAL OR SIMILAR ** FIX ME
-  sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
-
+  if (tcal==0)
+    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
+  else
+    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
+  
   // FIX ME: SHOULD KNOW IF DATA FLAGGED OR NOT HERE IN THE FLUX CAL
   // SHOULD SET FLAGS AT END TO SAY WHAT HAS NOT BEEN CORRECTLY FLAGGED
   
@@ -232,8 +238,8 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 	  
 	  // Note this averages the noise source in the entire observation
 	  sdhdf_noiseSourceOnOff(inFile,b,j,load_calFreq,load_calAA,load_calBB,load_calRe,load_calIm);
-	  for (k=0;k<load_nchanCal;k++)
-	    printf("MEASURECAL %g %g %g %g %g\n",load_calFreq[k],load_calAA[k],load_calBB[k],load_calRe[k],load_calIm[k]);
+	  //	  for (k=0;k<load_nchanCal;k++)
+	    //	    printf("MEASURECAL %g %g %g %g %g\n",load_calFreq[k],load_calAA[k],load_calBB[k],load_calRe[k],load_calIm[k]);
 	  // NOTE: THIS INTERPOLATION INCLUDES ALL THE RFI! FIX ME
 	  // EXTRACT_BAND SHOULD EXTRACT THE CAL AS WELL
 	  // NEED TO CHECK THIS INTERPOLATION MORE
@@ -273,7 +279,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 		  cal_rab = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Re);
 		  cal_iab = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Im);
 
-		  printf("testCAL: %g %g\n",freq,(pow(cal_rab,2)+pow(cal_iab,2))/cal_aa/cal_bb);
+		  //		  printf("testCAL: %g %g\n",freq,(pow(cal_rab,2)+pow(cal_iab,2))/cal_aa/cal_bb);
 		  
 		  // Stabilise the data set using the noise source		  
 		  if (stabiliseType==1 || stabiliseType == 2)
