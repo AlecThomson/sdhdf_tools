@@ -46,7 +46,7 @@ int main(int argc,char *argv[])
   sdhdf_bandHeaderStruct *outBandParams,*outCalBandParams,*inBandParams,*inCalBandParams;
   sdhdf_obsParamsStruct  *outObsParams,*outCalObsParams,*inObsParams,*inCalObsParams;
   
-  char fname[MAX_FILES][64];
+  char fname[MAX_FILES][128];
   int nFiles=0;
   char oname[MAX_STRLEN]="join.hdf";
   int nBeam;
