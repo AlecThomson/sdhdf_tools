@@ -116,8 +116,8 @@ int main(int argc,char *argv[])
     {
       sdhdf_initialiseFile(inFile);
       sdhdf_initialiseFile(outFile);
-      
-      sprintf(oname,"%s.%s",fname[ii],ext);
+
+      sdhdf_formOutputFilename(fname[ii],ext,oname);
             
       sdhdf_openFile(fname[ii],inFile,1);
       sdhdf_openFile(oname,outFile,3);
@@ -153,10 +153,11 @@ int main(int argc,char *argv[])
 		      
 		      
 		      out_data = (float *)malloc(sizeof(float)*nchan*npol*out_ndump);
-		      out_freq = (float *)malloc(sizeof(float)*nchan*nFreqDumps);
+		      // Should use nFreqDumps here -- FIX ME
+		      out_freq = (float *)malloc(sizeof(float)*nchan);
 		      
 		      sdhdf_loadBandData(inFile,b,i,1);
-		      for (j=0;j<nchan*nFreqDumps;j++)
+		      for (j=0;j<nchan;j++)
 			out_freq[j] = inFile->beam[b].bandData[i].astro_data.freq[j]; // FIX ME: DUMP FOR FREQ AXIS
 		      out_ndump_num=0;
 		      for (j=0;j<ndump;j++)
@@ -191,8 +192,9 @@ int main(int argc,char *argv[])
 		      //		  sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
 		      //		  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
 		      printf("Writing spectral data\n");
-		      // FIX ME: Only sending 1 frequency channel through
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,nFreqDumps,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+
+		      // For now just picking one frequency dump for output! ** FIX ME
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,1,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      printf("Writing obs params\n");
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,inFile->beamHeader[b].label,i,outObsParams,out_ndump,1);
 		      printf("Releasing data\n");
