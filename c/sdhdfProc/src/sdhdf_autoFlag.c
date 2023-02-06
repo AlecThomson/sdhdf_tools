@@ -82,7 +82,7 @@ int main(int argc,char *argv[])
   sdhdf_rfi rfi[MAX_RFI];
   sdhdf_rfi manual_rfi[MAX_RFI];
   sdhdf_transient_rfi transient_rfi[MAX_RFI];
-  char args[MAX_STRLEN]="";
+  char args[MAX_ARGLEN]="";
   int autoFlagDump=0;
   float autoFlagDump_sigma=3;
   
@@ -96,12 +96,7 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
-  for (i=1;i<argc;i++)
-    {
-      strcat(args,argv[i]);
-      strcat(args," ");
-    }
-
+  sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {      
       //      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}

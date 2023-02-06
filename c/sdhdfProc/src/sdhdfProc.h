@@ -25,6 +25,7 @@
 
 #define SOFTWARE_VER "v0.1"
 #define MAX_STRLEN     512
+#define MAX_ARGLEN     4096         // Maximum number of characters to be stored in HISTORY from the command line
 #define MAX_FILES      8192         // Maximum number of files to be processed in batch processing
 #define MAX_CHAN_SCAL  65536        // Maximum number of channels in the SCAL measurements
 
@@ -177,6 +178,7 @@ void sdhdf_add2arg(char *args,char *add1,char *add2);
 
 
 // Loading metadata information
+void sdhdf_storeArguments(char *args,int maxLen,int argc,char *argv[]);
 void sdhdf_formOutputFilename(char *inFile,char *extension,char *oname);
 void sdhdf_fixUnderscore(char *input,char *output);
 int sdhdf_getTelescopeDirName(char *tel,char *dir);

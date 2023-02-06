@@ -27,6 +27,25 @@
 
 void sdhdf_loadConfig(sdhdf_fileStruct *inFile);
 
+void sdhdf_storeArguments(char *args,int maxLen,int argc,char *argv[])
+{
+  int i;
+  int len1,len2;
+  for (i=1;i<argc;i++)
+    {
+      len1 = strlen(args);
+      len2 = strlen(argv[i]);
+      if (len1 + len2 > maxLen-5)
+	{strcat(args,"..."); break;}
+      else
+	{
+	  strcat(args,argv[i]);
+	  strcat(args," ");
+	}
+    }
+}
+
+
 // Sort out the filename when adding on an extension
 // If ending of filename = hdf then remove that, add the extension and then add .hdf at the end
 // If ending of filename = hdf5 then remove that, add the extension and then add .hdf5 at the end

@@ -46,7 +46,7 @@ void help()
 
 int main(int argc,char *argv[])
 {
-  char args[MAX_STRLEN]="";
+  char args[MAX_ARGLEN]="";
   int ii,i,j,k,kk,l,nchan,totNchan,b,nd;
   char fname[MAX_FILES][64];
   int nFiles=0;
@@ -79,13 +79,13 @@ int main(int argc,char *argv[])
 
   if (argc==1)
     help();
+  sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {
-      strcat(args,argv[i]); strcat(args," ");
       if (strcmp(argv[i],"-h")==0)
 	help();
     }
-  
+  printf("Allocating memory\n");
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -98,7 +98,7 @@ int main(int argc,char *argv[])
       exit(1);
     }
   
-  
+  printf("Checking input\n");
   for (i=1;i<argc;i++)
     {      
       if (strcmp(argv[i],"-e")==0)
@@ -117,7 +117,7 @@ int main(int argc,char *argv[])
 	  nFiles++;
 	}
     }
-
+  printf("Number of files = %d, number of zoom bands = %d\n",nFiles,zoomBand);
   for (ii=0;ii<nFiles;ii++)
     {
       sdhdf_initialiseFile(inFile);

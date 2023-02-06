@@ -124,7 +124,7 @@ int main(int argc,char *argv[])
   char oname[MAX_STRLEN];
   char extension[MAX_STRLEN];
   commandStruct *commands;
-  char args[MAX_STRLEN]="";
+  char args[MAX_ARGLEN]="";
   int verbose=0;
   int astroCal=0; // Modify the astronomy data
   
@@ -132,11 +132,7 @@ int main(int argc,char *argv[])
   
   commands = (commandStruct *)malloc(sizeof(commandStruct)*MAX_COMMANDS);
 
-  for (i=1;i<argc;i++)
-    {
-      strcat(args,argv[i]);
-      strcat(args," ");
-    }
+  sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-Tsum")==0 || strcmp(argv[i],"-T")==0)        // Completely sum in time
