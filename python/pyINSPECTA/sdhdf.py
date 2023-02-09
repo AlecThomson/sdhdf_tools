@@ -22,11 +22,9 @@ from dask.distributed import Client, get_client, get_task_stream, progress
 from tqdm.auto import tqdm
 from xarray import DataArray, Dataset, Variable
 
-from pyINSPECTA import flagging, history, logger
+from pyINSPECTA import flagging, history
+from pyINSPECTA.logger import logger
 from pyINSPECTA.tables import SDHDFTable
-
-# Configure logging
-logger = logger.logger
 
 
 def _get_sdhdf_version(filename: Path) -> str:
