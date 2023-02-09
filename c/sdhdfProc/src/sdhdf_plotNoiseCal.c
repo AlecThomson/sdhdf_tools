@@ -84,6 +84,10 @@ int main(int argc,char *argv[])
   int autoSsys=0;
   int autoSysGain=0;
   int av=0;
+  sdhdf_fluxCalibration *fluxCal;
+
+
+  fluxCal = (sdhdf_fluxCalibration *)malloc(sizeof(sdhdf_fluxCalibration)*3328); //  Should change to MAX_FLUXCAL OR SIMILAR ** FIX ME
   
   scalFreq = (float *)malloc(sizeof(float)*3328);
   scalAA   = (float *)malloc(sizeof(float)*3328);
@@ -115,29 +119,30 @@ int main(int argc,char *argv[])
 	av=1;
     }
 
-  if (strcmp(scalFname,"NULL")!=0)
-    {
-      FILE *fin;
-      
-      nScal=0;
-      fin = fopen(scalFname,"r");
-      while (!feof(fin))
-	{
-	  if (fscanf(fin,"%f %f %f",&scalFreq[nScal],&scalAA[nScal],&scalBB[nScal])==3)
-	    {
-	      scalAA[nScal] *= scaleCal;
-	      scalBB[nScal] *= scaleCal;
-	      nScal++;
-	    }
-	}
-      fclose(fin);
-      printf("Loaded %s, Number of SCAL values is %d\n",scalFname,nScal);
-    }
-    
   sdhdf_openFile(fname,inFile,1);
   printf("File opened\n");
   sdhdf_loadMetaData(inFile);
   printf("Loaded metadata\n");
+
+  if (strcmp(scalFname,"NULL")!=0)
+    {
+      FILE *fin;
+      char obsDir[1024];
+      int nFluxCalChan,kk;
+      sdhdf_getTelescopeDirName(inFile->primary[0].telescope,obsDir);
+
+      sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,scalFname); 
+      nScal=nFluxCalChan;
+      for (kk=0;kk<nFluxCalChan;kk++)
+	{
+	  scalFreq[kk] = fluxCal[kk].freq;
+	  scalAA[kk] = fluxCal[kk].scalAA * scaleCal;
+	  scalBB[kk] = fluxCal[kk].scalBB * scaleCal;
+	}
+      printf("Loaded %s, Number of SCAL values is %d\n",scalFname,nScal);
+    }
+    
+
   ndump = inFile->beam[beam].calBandHeader[0].ndump;
   printf("ndumps = %d\n",ndump);
   for (i=0;i<inFile->beam[beam].nBand;i++)
@@ -296,6 +301,7 @@ int main(int argc,char *argv[])
     
   sdhdf_closeFile(inFile);
   free(inFile);
+  free(fluxCal);
   free(scalFreq); free(scalAA); free(scalBB);
 }
 

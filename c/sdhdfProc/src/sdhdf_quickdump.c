@@ -305,7 +305,7 @@ int main(int argc,char *argv[])
 			  double cal_on_pol2,cal_off_pol2;
 			  double cal_on_pol3,cal_off_pol3;
 			  double cal_on_pol4,cal_off_pol4;
-
+			  double mjdAv;
 			  for (k=0;k<nchanCal;k++)
 			    {
 			      display=1;
@@ -321,6 +321,7 @@ int main(int argc,char *argv[])
 				  cal_on_pol2=cal_off_pol2=0;
 				  cal_on_pol3=cal_off_pol3=0;
 				  cal_on_pol4=cal_off_pol4=0;
+				  mjdAv = 0;
 				  nd=0;
 				  for (j=sd0;j<sd1;j++)
 				    {				      
@@ -335,23 +336,25 @@ int main(int argc,char *argv[])
 
 				      cal_on_pol4+=inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal];
 				      cal_off_pol4+=inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal];
+				      mjdAv += inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd;
 				      nd++;
 				    }
 				  cal_on_pol1/=(double)nd;  cal_off_pol1/=(double)nd;
 				  cal_on_pol2/=(double)nd;  cal_off_pol2/=(double)nd;
 				  cal_on_pol3/=(double)nd;  cal_off_pol3/=(double)nd;
 				  cal_on_pol4/=(double)nd;  cal_off_pol4/=(double)nd;
+				  mjdAv /= (double)nd;
 				  /*
 				  printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,0,freq,
 					 cal_on_pol1,cal_off_pol1,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4,
 					 inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
 				  */
 				  if (calOnOff==0)
-				    printf("%s %d %d %d %d %g %g %g %g %g %g %g %g %g\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1,cal_off_pol1
-					   ,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4);
+				    printf("%s %d %d %d %d %g %g %g %g %g %g %g %g %g %.6f\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1,cal_off_pol1
+					   ,cal_on_pol2,cal_off_pol2,cal_on_pol3,cal_off_pol3,cal_on_pol4,cal_off_pol4,mjdAv);
 				  else
-				    printf("%s %d %d %d %d %g %g %g %g %g\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1-cal_off_pol1
-					   ,cal_on_pol2-cal_off_pol2,cal_on_pol3-cal_off_pol3,cal_on_pol4-cal_off_pol4);
+				    printf("%s %d %d %d %d %g %g %g %g %g %.5f\n",inFile->fname,beam,band,k,0,freq,cal_on_pol1-cal_off_pol1
+					   ,cal_on_pol2-cal_off_pol2,cal_on_pol3-cal_off_pol3,cal_on_pol4-cal_off_pol4,mjdAv);
 				}
 			    }
 
