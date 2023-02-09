@@ -5,49 +5,59 @@
 __author__ = ["Danny Price", "Alec Thomson"]
 
 from astropy.table import QTable
+import pandas as pd
 from astropy.time import Time
 from .exceptions import VerificationError
 import h5py
+import numpy as np
+
 
 # Ignore astropy warnings
 import warnings
 warnings.filterwarnings('ignore', category=Warning, append=True)
 
-class SDHDFTable(QTable):
-    """ Class for sdhdf_table """
-    attrs: dict = {}
+class SDHDFTable:
 
     def __init__(self, sdhdf_dataset: h5py.Dataset, *args, **kwargs):
-        """ Initialise SDHDFTable from h5py dataset """
-        if hasattr(sdhdf_dataset, 'attrs'):
-            self.attrs = dict(sdhdf_dataset.attrs)
-        super().__init__(sdhdf_dataset[:], *args, **kwargs)
-        self._apply_units()
+        """Read an SDHDF table
 
-    def _apply_units(self):
-        """ Read attributes and convert columns into astropy Quanitites where possible """
-        for col in self.colnames:
-            if col + '_UNIT' in self.attrs:
-                try:
-                    if col == 'MJD':
-                        # NOTE: MJD currently expressed as Quantity (days), should be Time (mjd)
-                        # TODO: Fix in subsequent SDHDF version
-                        self[col] = Time(self[col], format='mjd')
-                    else:
-                        self[col].unit = self.attrs[col + '_UNIT']
-                        self[col] = self[col].astype('float64')
-                except:
-                    # Handling of time. This is a bit messy.
-                    # First, if something like ELAPSED_TIME has a unit,
-                    # e.g. seconds, then we treat it as a quantity
-                    # Second, we currently have to guess based on column names
-                    # TODO: Fix in susbsequent versions of SDHDF!
-                    try:
-                        if 'TIME' in col or 'DATE' in col:
-                            self[col] = Time(self[col], scale='utc')
-                        elif 'UTC' in col or 'AEST' in col:
-                            pass  # This is a HH:MM:SS, can't convert into astropy Time()
-                        if 'MJD' in col:
-                            self[col] = Time(self[col], format='mjd')
-                    except:
-                        raise VerificationError(f"Cannot convert {self.name} {col} into astropy time")
+        Args:
+            sdhdf_dataset (h5py.Dataset): SDHDF table dataset
+        """
+        self.attrs = dict(sdhdf_dataset.attrs)
+        self.table = self._decode_df(pd.DataFrame(sdhdf_dataset[:]))
+
+    def __repr__(self):
+        return self.table.__repr__()
+
+    def __str__(self):
+        return self.table.__str__()
+
+    def _repr_html_(self):
+        return self.table._repr_html_()
+
+    def __getitem__(self, key):
+        return self.table.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        return self.table.__setitem__(key, value)
+
+    def __len__(self):
+        return self.table.__len__()
+
+    def __iter__(self):
+        return self.table.__iter__()
+
+    def __contains__(self, key):
+        return self.table.__contains__(key)
+
+
+
+    @staticmethod
+    def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
+        """Decode a pandas dataframe to a string"""
+        str_df = df.select_dtypes([object])
+        str_df = str_df.stack().str.decode("utf-8").unstack()
+        for col in str_df:
+            df[col] = str_df[col]
+        return df

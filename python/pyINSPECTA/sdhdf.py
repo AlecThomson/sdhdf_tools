@@ -5,7 +5,6 @@
 
 import inspect
 import json
-import warnings
 from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,16 +22,11 @@ from dask.distributed import Client, get_client, get_task_stream, progress
 from tqdm.auto import tqdm
 from xarray import DataArray, Dataset, Variable
 
-from pyINSPECTA import flagging, history
+from pyINSPECTA import flagging, history, logger
+from pyINSPECTA.tables import SDHDFTable
 
-
-def _decode_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Decode a pandas dataframe to a string"""
-    str_df = df.select_dtypes([np.object])
-    str_df = str_df.stack().str.decode("utf-8").unstack()
-    for col in str_df:
-        df[col] = str_df[col]
-    return df
+# Configure logging
+logger = logger.logger
 
 
 def _get_sdhdf_version(filename: Path) -> str:
@@ -62,17 +56,16 @@ class MetaData:
         filename (Path): Path to the SDHDF file
 
     Attributes:
-        beam_params (DataFrame): The beam parameters as a pandas DataFrame
-        history (DataFrame): The history as a pandas DataFrame
-        primary_header (DataFrame): The primary header as a pandas DataFrame
-        backend_config (DataFrame): The backend configuration as a pandas DataFrame
-        cal_backend_config (DataFrame): The calibration backend configuration as a pandas DataFrame
+        beam_params (SDHDFTable): The beam parameters
+        history (SDHDFTable): The history as a pandas SDHDFTable
+        primary_header (SDHDFTable): The primary header
+        backend_config (SDHDFTable): The backend configuration
+        cal_backend_config (SDHDFTable): The calibration backend configuration
 
     Methods:
         print_metadata: Quickly list the metadata
 
     """
-
     filename: Path
 
     def __post_init__(self):
@@ -86,21 +79,21 @@ class MetaData:
             # Get the metadata and configs
             for name in ("metadata", "config"):
                 for key, val in self.definition[name].items():
-                    df = _decode_df(pd.DataFrame(f[name][val][:]))
-                    self.__dict__[key] = df
+                    tab = SDHDFTable(f[name][val])
+                    self.__setattr__(key, tab)
 
     def print_metadata(self, format: str = "grid") -> None:
         """Print the metadata to the terminal"""
         for label in self.definition["metadata"].keys():
             df = self.__dict__[label]
-            print(f"{label}:")
+            logger.info(f"{label}:")
             print(df.T.to_markdown(tablefmt=format, headers=[]))
 
     def print_config(self, format: str = "grid") -> None:
         """Print the configuration to the terminal"""
         for label in self.definition["config"].keys():
             df = self.__dict__[label]
-            print(f"{label}:")
+            logger.info(f"{label}:")
             print(df.T.to_markdown(tablefmt=format, headers=[]))
 
 
@@ -173,7 +166,8 @@ class SubBand:
 
             data = h5[data_path]
             freqs = h5[freq_path]
-            meta = _decode_df(pd.DataFrame(h5[meta_path][:]))
+            meta = SDHDFTable(h5[meta_path])
+            self.metadata = meta
 
             # Get the flags (if they exists)
             has_flags = "flags" in astro_def.keys()
@@ -192,7 +186,7 @@ class SubBand:
                             flag_reshape = np.expand_dims(flag_reshape, axis=i)
                 flags = flag_reshape
             else:
-                warnings.warn(
+                logger.warning(
                     f"""
                     No flags found for sub-band '{self.label}' in file '{self.filename}'!
                     SDHDF version is {self.definition['version']}.
@@ -203,14 +197,13 @@ class SubBand:
 
             # Load into memory if requested
             if self.in_memory:
-                print(f"Loading {self.label} into memory...")
+                logger.info(f"Loading {self.label} into memory...")
                 data = np.array(data)
                 freqs = np.array(freqs)
                 flags = np.array(flags)
 
             # Process into xarray
-            names = meta.columns
-            coords = {name: ("time", meta[name]) for name in names}
+            coords = {col: ("time", meta[col].values) for col in meta.table.columns}
             coords["frequency"] = Variable(
                 dims="frequency",
                 data=freqs,
@@ -224,16 +217,23 @@ class SubBand:
                 dims=dims,
                 coords=coords,
                 name=f"{self.label}_data",
-                attrs=h5[data_path].attrs,
-            ).isel(beam=0)
+                attrs=dict(h5[data_path].attrs),
+            )
+            # Check if data has beam dimension
+            if "beam" in data_xr.dims:
+                data_xr = data_xr.isel(beam=0)
             data_xr.attrs["units"] = data_xr.UNIT
+            self.attrs = dict(h5[data_path].attrs)
 
             flag_xr = DataArray(
                 flags,
                 dims=dims,
                 coords=coords,
                 name=f"{self.label}_flag",
-            ).isel(beam=0)
+            )
+            # Same as above
+            if "beam" in flag_xr.dims:
+                flag_xr = flag_xr.isel(beam=0)
 
             astronomy_dataset = Dataset(
                 {
@@ -284,7 +284,6 @@ class SubBand:
 
     def autoflag(self, sigma=3, n_windows=100):
         """Automatic flagging using rolling sigma clipping"""
-        client = self.client
         data_xr_flg = self.astronomy_dataset.data.where(
             ~self.astronomy_dataset.flag.astype(bool)
         )
@@ -337,13 +336,13 @@ class SubBand:
                 unit = dataset.data[axis].units
             except AttributeError:
                 unit = "units"
-            print(f"Asked for a bin width of {bins} {unit}")
-            print(
+            logger.info(f"Asked for a bin width of {bins} {unit}")
+            logger.info(
                 f"Dimension {axis} has range {dataset[axis].min()} to {dataset[axis].max()}: {dataset[axis].max() - dataset[axis].min()} {unit}"
             )
             bins = int((dataset[axis].max() - dataset[axis].min()) / bins)
 
-        print(f"Using {bins} channels per bin")
+        logger.info(f"Using {bins} channels per bin")
 
 
 
@@ -410,8 +409,8 @@ class SubBand:
             if "flags" in self.definition["subband"]["astronomy"]:
                 f[f"{sb_path}/{astro_def['flags']}"] = self.astronomy_dataset.flag.values
             else:
-                print("No flags in definition")
-                print("Saving flags to /astronomy_data/flags")
+                logger.warning("No flags in definition")
+                logger.info("Saving flags to /astronomy_data/flags")
                 f[f"{sb_path}/astronomy_data/flags"] = self.astronomy_dataset.flag.values
 
         self.astronomy_dataset.metadata.to_dataframe().to_hdf(
@@ -640,7 +639,7 @@ class SDHDF:
     def __post_init__(self):
         self.client = Client() if self.parallel else None
         if self.parallel:
-            print(f"Dask dashboard at: {self.client.dashboard_link}")
+            logger.info(f"Dask dashboard at: {self.client.dashboard_link}")
         self.metadata = MetaData(self.filename)
         self.definition = self.metadata.definition
         with h5py.File(self.filename, "r") as f:
@@ -746,7 +745,7 @@ class SDHDF:
 
     def flag_persistent_rfi(self):
         """Flag persistent RFI in all subbands."""
-        telescope = self.metadata.primary_header["TELESCOPE"].values[0]
+        telescope = self.metadata.primary_header["TELESCOPE"][0]
         rfi = flagging.get_persistent_rfi(telescope=telescope)
         for i, x in tqdm(
             rfi.iterrows(), desc="Flagging persistent RFI", total=len(rfi)
