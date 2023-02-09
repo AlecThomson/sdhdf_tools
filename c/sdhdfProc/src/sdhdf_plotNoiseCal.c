@@ -84,9 +84,10 @@ int main(int argc,char *argv[])
   int autoSsys=0;
   int autoSysGain=0;
   int av=0;
+  int verbose=0;
   sdhdf_fluxCalibration *fluxCal;
 
-
+  printf("Allocating memory\n");
   fluxCal = (sdhdf_fluxCalibration *)malloc(sizeof(sdhdf_fluxCalibration)*3328); //  Should change to MAX_FLUXCAL OR SIMILAR ** FIX ME
   
   scalFreq = (float *)malloc(sizeof(float)*3328);
@@ -98,13 +99,15 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
       exit(1);
     }
-
+  printf("Initialising the data file\n");
   sdhdf_initialiseFile(inFile);
-    
+  printf("Reading the command line argument\n");
   for (i=1;i<argc;i++)
     {      
       if (strcmp(argv[i],"-f")==0)
 	strcpy(fname,argv[++i]);	
+      else if (strcmp(argv[i],"-v")==0)
+	verbose=1;
       else if (strcmp(argv[i],"-h")==0)
 	{help(); exit(1);}
       else if (strcmp(argv[i],"-scal")==0)
@@ -118,7 +121,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-av")==0)
 	av=1;
     }
-
+  printf("Opening the data file\n");
   sdhdf_openFile(fname,inFile,1);
   printf("File opened\n");
   sdhdf_loadMetaData(inFile);
