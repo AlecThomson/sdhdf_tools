@@ -87,8 +87,9 @@ int main(int argc,char *argv[])
   int noBaseline=0;
   int scaleRMS=0;
   int nc;
-  float freq0 = 1660;
-  float freq1 = 1665;
+  float freq0;
+  float freq1;
+  int setFreq=0;
   
   //  loadBaselineRegions("cleanRegions.dat",baselineX1,baselineX2,&nBaseline);
   
@@ -103,8 +104,8 @@ int main(int argc,char *argv[])
     }
 
   //iband = 5;
-  //  iband=0;
-  iband = 5;
+  iband=0;
+  //  iband = 5;
   
   sdhdf_initialiseFile(inFile);
 
@@ -132,9 +133,8 @@ int main(int argc,char *argv[])
       else
 	strcpy(fname[inFiles++],argv[i]);
     }
-
-
-  printf("\n Results for frequency range %g to %g MHz\n\n\n",freq0,freq1);
+  if (setFreq==1)
+    printf("\n Results for frequency range %g to %g MHz\n\n\n",freq0,freq1);
   printf("------------------------------------------------------------------------------------------------------\n");
   printf("Label File Source Dump Mean_pol1 Mean_pol2 Sdev_pol1 Sdev_pol2 Min_pol1 Max_pol1 Min_pol2 Max-Pol2 MJD\n");
   printf("------------------------------------------------------------------------------------------------------\n");
@@ -145,6 +145,13 @@ int main(int argc,char *argv[])
       sdhdf_openFile(fname[i],inFile,1);
 
       sdhdf_loadMetaData(inFile);
+      if (setFreq==0)
+	{
+	  freq0 = inFile->beam[ibeam].bandHeader[iband].f0;
+	  freq1 = inFile->beam[ibeam].bandHeader[iband].f1;
+	  printf("Setting frequency to %g %g\n",freq0,freq1);
+	}
+      
       sdhdf_loadBandData(inFile,ibeam,iband,1);
       printf("iband = %d\n",iband);
       // Process each band
@@ -157,7 +164,6 @@ int main(int argc,char *argv[])
 	    avData1 = (float *)calloc(sizeof(float),inFile->beam[ibeam].bandHeader[j].nchan);
 	    avData2 = (float *)calloc(sizeof(float),inFile->beam[ibeam].bandHeader[j].nchan);
 	  }
-     
 	for (l=0;l<inFile->beam[ibeam].bandHeader[j].ndump;l++) 
 	  {
 	    sx=sx2=sx_2=sx2_2=0.0;
@@ -166,13 +172,11 @@ int main(int argc,char *argv[])
 	    for (k=0;k<inFile->beam[ibeam].bandHeader[j].nchan;k++)
 	      {
 		// FIX ME: using [0] for frequency dump
-		freq = inFile->beam[ibeam].bandData[j].astro_data.freq[k];
-
+		freq = inFile->beam[ibeam].bandData[j].astro_data.freq[idump*inFile->beam[ibeam].bandHeader[j].nchan+k];
 		if (freq > freq0 && freq < freq1)
 		  {
-		    val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
-		    val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[(ll+l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
-
+		    val1 = inFile->beam[ibeam].bandData[j].astro_data.pol1[(l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
+		    val2 = inFile->beam[ibeam].bandData[j].astro_data.pol2[(l)*inFile->beam[ibeam].bandHeader[j].nchan+k];
 		    if (scaleRMS==1)
 		      {
 			avData1[nc] += val1;

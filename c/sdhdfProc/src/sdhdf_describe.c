@@ -170,7 +170,7 @@ int main(int argc,char *argv[])
 		  
 		  printf("%-36.36s %-5d %-22.22s %-5.5s %-6.6s %-8d %-20.20s %-10.10s %-10.10s %-7.7s %-6d %-10.10s %-5.5s %-6.1f %s %s\n",
 			 inFile->fname, beam,inFile->primary[0].utc0,inFile->primary[0].hdr_defn_version,
-			 inFile->primary[0].pid,inFile->primary[0].sched_block_id,inFile->beamHeader[iband].source,
+			 inFile->primary[0].pid,(int)inFile->primary[0].sched_block_id,inFile->beamHeader[iband].source,
 			 inFile->primary[0].telescope,inFile->primary[0].observer,inFile->primary[0].rcvr,inFile->beam[beam].nBand,
 			 inFile->beam[beam].bandHeader[0].pol_type,inFile->primary[0].cal_mode,maxTime,inFile->beam[beam].bandData[iband].astro_obsHeader[0].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[0].decStr);
 
@@ -198,15 +198,15 @@ int main(int argc,char *argv[])
 			  type = H5Aget_type(attr_id);
 
 			  type_class   = H5Tget_class(type);
-			  printf("attr_id = %d, type = %d, type_class = %d > %s <\n",attr_id,type,type_class,attrName);
+			  printf("attr_id = %d, type = %d, type_class = %d > %s <\n",(int)attr_id,(int)type,(int)type_class,attrName);
 			  if (type_class == H5T_STRING) printf("STRING\n");
-			  else if (type_class = H5T_FLOAT) printf("FLOAT\n");
-			  else if (type_class = H5T_INTEGER) printf("INTEGER\n");
+			  else if (type_class == H5T_FLOAT) printf("FLOAT\n");
+			  else if (type_class == H5T_INTEGER) printf("INTEGER\n");
 			  else printf("NO IDEA WHAT TYPE_CLASS THIS IS\n");
 
 			  space = H5Aget_space(attr_id);
 			  space_type = H5Sget_simple_extent_type(space);
-			  printf("space = %d\n",space);
+			  printf("space = %d\n",(int)space);
 			  if (space_type == H5S_SCALAR) printf("SPACE: H5S_SCALAR\n");
 			  else if (space_type == H5S_SIMPLE) printf("SPACE: SIMPLE\n");
 			  else if (space_type == H5S_NULL) printf("SPACE: NULL\n");
@@ -218,16 +218,16 @@ int main(int argc,char *argv[])
 			    {
 			      nelmts *= size[ii];
 			      if (maxsize[ii] == H5S_UNLIMITED)
-				printf("dims %d, size = %d, maxsize = %d (UNLIMITED)\n",ii,size[ii],maxsize[ii]);
+				printf("dims %d, size = %d, maxsize = %d (UNLIMITED)\n",ii,(int)size[ii],(int)maxsize[ii]);
 			      else
-				printf("dims %d, size = %d, maxsize = %d\n",ii,size[ii],maxsize[ii]);
+				printf("dims %d, size = %d, maxsize = %d\n",ii,(int)size[ii],(int)maxsize[ii]);
 			    }
-			  printf("nelmts = %d\n",nelmts);
+			  printf("nelmts = %d\n",(int)nelmts);
 			  alloc_size = nelmts * H5Tget_size(type);
-			  printf("alloc_size = %d\n",alloc_size);
+			  printf("alloc_size = %d\n",(int)alloc_size);
 			  buf =  malloc((size_t)alloc_size);
 			  nread = H5Aread(attr_id, type, buf);
-			  printf("READ %d\n",nread);
+			  printf("READ %d\n",(int)nread);
 
 			  // TO PRINT IT -- SEE h5tools_dump_simple_data
 			}
@@ -235,7 +235,7 @@ int main(int argc,char *argv[])
 		    }
 		  if (calInfo==1)
 		    {
-		      printf("[CAL] %s %s %d %s %s %f %f %f\n",inFile->fname,inFile->beamHeader[iband].source,inFile->primary[0].sched_block_id,inFile->primary[0].cal_mode,inFile->cal_epoch,inFile->cal_freq,inFile->cal_phase,inFile->cal_duty_cycle);
+		      printf("[CAL] %s %s %d %s %s %f %f %f\n",inFile->fname,inFile->beamHeader[iband].source,(int)inFile->primary[0].sched_block_id,inFile->primary[0].cal_mode,inFile->cal_epoch,inFile->cal_freq,inFile->cal_phase,inFile->cal_duty_cycle);
 		    }
 		  
 		  if (showBands==1)

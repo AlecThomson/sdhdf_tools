@@ -257,7 +257,7 @@ int main(int argc,char *argv[])
 		   if (inFile->beam[ibeam].bandHeader[ii].nchan != nchan0)
 		     {
 		       printf("ERROR: SDFITS cannot accept different numbers of channels in different subbands.\n");
-		       printf("sdhdf_convertTo therefore cannot convert this file with %d channels for subband 0 and %d channels for subband %d\n",nchan0,inFile->beam[ibeam].bandHeader[ii].nchan,ii);
+		       printf("sdhdf_convertTo therefore cannot convert this file with %d channels for subband 0 and %d channels for subband %d\n",(int)nchan0,(int)inFile->beam[ibeam].bandHeader[ii].nchan,(int)ii);
 		       printf("Please re-run using the -band option to select a specific sub-band\n");
 		       exit(1);
 		     }
@@ -337,7 +337,7 @@ int main(int argc,char *argv[])
 		   fits_write_col(fptr,TSTRING,colnum,rowNum+1,1,1,strArray,&fitsStatus);
 		
 		   // TIME
-		   sprintf(timeStr,inFile->primary[ibeam].utc0+11); // CHECK THAT THIS IS CORRECT *** GEORGE
+		   strcpy(timeStr,inFile->primary[ibeam].utc0+11); // CHECK THAT THIS IS CORRECT *** GEORGE
 		   sscanf(timeStr,"%f:%f:%f",&hr,&min,&sec);
 		   fval = (hr*60*60+min*60.+sec);  
 		   fits_get_colnum(fptr,CASEINSEN,(char *)"TIME",&colnum,&fitsStatus); fits_report_error(stderr,fitsStatus);

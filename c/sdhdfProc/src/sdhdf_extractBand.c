@@ -46,6 +46,7 @@ void help()
 
 int main(int argc,char *argv[])
 {
+  char args[MAX_ARGLEN]="";
   int ii,i,j,k,kk,l,nchan,totNchan,b,nd;
   char fname[MAX_FILES][64];
   int nFiles=0;
@@ -78,12 +79,13 @@ int main(int argc,char *argv[])
 
   if (argc==1)
     help();
+  sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-h")==0)
 	help();
     }
-  
+  printf("Allocating memory\n");
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -96,7 +98,7 @@ int main(int argc,char *argv[])
       exit(1);
     }
   
-  
+  printf("Checking input\n");
   for (i=1;i<argc;i++)
     {      
       if (strcmp(argv[i],"-e")==0)
@@ -115,7 +117,7 @@ int main(int argc,char *argv[])
 	  nFiles++;
 	}
     }
-
+  printf("Number of files = %d, number of zoom bands = %d\n",nFiles,zoomBand);
   for (ii=0;ii<nFiles;ii++)
     {
       sdhdf_initialiseFile(inFile);
@@ -388,7 +390,11 @@ int main(int argc,char *argv[])
 	  sdhdf_writeBeamHeader(outFile,inFile->beamHeader,inFile->nBeam); 
 	  // Don't want to "copyRemainder" as have only selected specific bands
 	  sdhdf_copyEntireGroup("config",inFile,outFile);
-
+	  sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_extractBand","INSPECTA software to extractBands",args);
+	  inFile->nHistory++;
+	  printf("Writing history %d\n",inFile->nHistory);
+	  sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
+	  printf("Done writing history\n");
 	  free(outBandParams);
 	  free(inBandParams);
 	  if (cal==1)

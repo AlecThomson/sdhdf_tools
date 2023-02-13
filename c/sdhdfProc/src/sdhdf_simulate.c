@@ -486,7 +486,7 @@ int main(int argc,char *argv[])
 
 	  // SHOULD SET UP ATTRIBUTES
 	  // FIX ME: Sending only one frequency channel through
-	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,&freq,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,freq,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  free(freq);
 	  free(data);
 

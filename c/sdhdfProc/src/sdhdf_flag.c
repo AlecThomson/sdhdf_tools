@@ -191,7 +191,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
       if (max_nchan < inFile->beam[ibeam].bandHeader[i].nchan)
 	max_nchan = inFile->beam[ibeam].bandHeader[i].nchan;
     }
-  printf("Maximum channels = %d\n",max_nchan);
+  printf("Maximum channels = %d\n",(int)max_nchan);
   
   px  = (float *)malloc(sizeof(float)*max_nchan);
   py1 = (float *)malloc(sizeof(float)*max_nchan);
@@ -968,7 +968,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
       sdev1 = sqrt(1/(float)n*s1_2 - pow(1.0/(float)n*s1,2));
       sdev2 = sqrt(1/(float)n*s2_2 - pow(1.0/(float)n*s2,2));
       
-      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, pwr = %g, n = %d, band = %d\n",mean1,mean2,sdev1,sdev2,pwr_clean,n,bandNum);      
+      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, n = %d, band = %d\n",mean1,mean2,sdev1,sdev2,n,bandNum);      
     }
   
   // Obtain signal in different bands

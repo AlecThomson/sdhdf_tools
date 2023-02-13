@@ -46,7 +46,7 @@ int main(int argc,char *argv[])
   sdhdf_bandHeaderStruct *outBandParams,*outCalBandParams,*inBandParams,*inCalBandParams;
   sdhdf_obsParamsStruct  *outObsParams,*outCalObsParams,*inObsParams,*inCalObsParams;
   
-  char fname[MAX_FILES][64];
+  char fname[MAX_FILES][128];
   int nFiles=0;
   char oname[MAX_STRLEN]="join.hdf";
   int nBeam;
@@ -62,12 +62,11 @@ int main(int argc,char *argv[])
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
-  char args[MAX_STRLEN]="";
+  char args[MAX_ARGLEN]="";
   
-  
+  sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {
-      strcat(args,argv[i]); strcat(args," ");
       if (strcmp(argv[i],"-o")==0)
 	strcpy(oname,argv[++i]);
       else

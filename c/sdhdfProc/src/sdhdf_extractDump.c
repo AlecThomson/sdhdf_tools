@@ -52,7 +52,7 @@ void help()
 
 int main(int argc,char *argv[])
 {
-  int ii,i,j,k,kk,jj,l,nchan,totNchan,b;
+  int ii,i,j,k,kk,jj,l,nchan,totNchan,b,nFreqDumps;
   char fname[MAX_FILES][64];
   int nFiles=0;
   char ext[MAX_STRLEN]="extract";
@@ -116,8 +116,8 @@ int main(int argc,char *argv[])
     {
       sdhdf_initialiseFile(inFile);
       sdhdf_initialiseFile(outFile);
-      
-      sprintf(oname,"%s.%s",fname[ii],ext);
+
+      sdhdf_formOutputFilename(fname[ii],ext,oname);
             
       sdhdf_openFile(fname[ii],inFile,1);
       sdhdf_openFile(oname,outFile,3);
@@ -125,7 +125,7 @@ int main(int argc,char *argv[])
       if (inFile->fileID!=-1) // Did we successfully open the file?
 	{
 	  sdhdf_loadMetaData(inFile);
-	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname,inFile->primary[0].utc0,
+	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname[ii],inFile->primary[0].utc0,
 		 inFile->primary[0].hdr_defn_version,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->primary[0].telescope,
 		 inFile->primary[0].observer, inFile->primary[0].rcvr,inFile->beam[0].nBand);
 
@@ -142,9 +142,10 @@ int main(int argc,char *argv[])
 		  for (i=0;i<inFile->beam[b].nBand;i++)
 		    {
 		      nchan = inFile->beam[b].bandHeader[i].nchan;
+		      nFreqDumps = inFile->beam[b].bandData[i].astro_data.nFreqDumps;
 		      npol  = inFile->beam[b].bandHeader[i].npol;
 		      ndump = inFile->beam[b].bandHeader[i].ndump;
-		      printf("Processing subband %d (number of spectral dumps = %d)\n",i,ndump);
+		      printf("Processing subband %d (number of spectral dumps = %d)\n",i,(int)ndump);
 		      out_ndump = nSelectDumps;
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
 		      for (k=0;k<out_ndump;k++)
@@ -152,6 +153,7 @@ int main(int argc,char *argv[])
 		      
 		      
 		      out_data = (float *)malloc(sizeof(float)*nchan*npol*out_ndump);
+		      // Should use nFreqDumps here -- FIX ME
 		      out_freq = (float *)malloc(sizeof(float)*nchan);
 		      
 		      sdhdf_loadBandData(inFile,b,i,1);
@@ -190,7 +192,8 @@ int main(int argc,char *argv[])
 		      //		  sdhdf_writeBandHeader(outFile,outBandParams,b,nSelectBands,1);
 		      //		  sdhdf_writeBandHeader(outFile,outCalBandParams,b,nSelectBands,2);
 		      printf("Writing spectral data\n");
-		      // FIX ME: Only sending 1 frequency channel through
+
+		      // For now just picking one frequency dump for output! ** FIX ME
 		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,1,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      printf("Writing obs params\n");
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,inFile->beamHeader[b].label,i,outObsParams,out_ndump,1);
@@ -227,7 +230,8 @@ int main(int argc,char *argv[])
 	    }
 	  sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
 	  printf("Copy remainder\n");
-	  sdhdf_copyRemainder(inFile,outFile,1); // 1 = don't write extra beam information
+	  //	  sdhdf_copyRemainder(inFile,outFile,1); // 1 = don't write extra beam information
+	  sdhdf_copyRemainder(inFile,outFile,0); // 1 = don't write extra beam information
 	  printf("Closing files\n");
 	  sdhdf_closeFile(inFile);
 	  sdhdf_closeFile(outFile);

@@ -65,6 +65,48 @@ void sdhdf_calculate_timedependent_response(sdhdf_calibration *polCal,int nPolCa
 }
 
 
+// Note: this averages the cal signal through the entire observation
+//
+void sdhdf_noiseSourceOnOff(sdhdf_fileStruct *inFile,int ibeam,int iband,float *freq,float *aa,float *bb,float *re,float *im)
+{
+  int i,j;
+  int nchanCal = inFile->beam[ibeam].calBandHeader[iband].nchan;
+  int nsubCal  = inFile->beam[ibeam].calBandHeader[iband].ndump;
+  float aa_on,aa_off,bb_on,bb_off,re_on,re_off,im_on,im_off;
+  
+  for (i=0;i<nchanCal;i++)
+    {
+      // Should check NCHANFREQ ** FIX ME ** ASSUME 1
+      freq[i] = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[i];
+      aa_on = aa_off = bb_on = bb_off = re_on = re_off = im_on = im_off = 0.;
+      for (j=0;j<nsubCal;j++)
+	{
+	  aa_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol1[j*nchanCal+i];
+	  bb_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol2[j*nchanCal+i];
+	  re_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol3[j*nchanCal+i];
+	  im_on += inFile->beam[ibeam].bandData[iband].cal_on_data.pol4[j*nchanCal+i];
+
+	  aa_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol1[j*nchanCal+i];
+	  bb_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol2[j*nchanCal+i];
+	  re_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol3[j*nchanCal+i];
+	  im_off += inFile->beam[ibeam].bandData[iband].cal_off_data.pol4[j*nchanCal+i];
+	}
+      aa_on /= (float)nsubCal;
+      bb_on /= (float)nsubCal;
+      re_on /= (float)nsubCal;    
+      im_on /= (float)nsubCal;
+      aa_off /= (float)nsubCal;
+      bb_off /= (float)nsubCal;
+      re_off /= (float)nsubCal;    
+      im_off /= (float)nsubCal;
+
+      aa[i] = aa_on-aa_off;
+      bb[i] = bb_on-bb_off;
+      re[i] = re_on-re_off;
+      im[i] = im_on-im_off;
+    }
+  
+}
 
 
 void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolCalChan)
@@ -90,6 +132,7 @@ void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolC
 
       G2 = sqrt((pow(Im,2) - pow(Qm,2))/(pow(In,2)-pow(Qn,2)));
       polCal[i].gain = sqrt(G2);
+      printf("CALIBRATION: gain diffPhase: %g %g %g %g %d\n",polCal[i].freq,polCal[i].gain,polCal[i].diff_gain,polCal[i].diff_phase,nPolCalChan);
     }
     
 }
@@ -196,10 +239,13 @@ void sdhdf_set_stokes_noise_measured(sdhdf_fileStruct *inFile,int ibeam,sdhdf_ca
 	  polCal[i].stokes_noise_measured[1] = aa-bb;
 	  polCal[i].stokes_noise_measured[2] = 2*rab;
 	  polCal[i].stokes_noise_measured[3] = 2*iab;
+	  printf("Calibration solution (Stokes noise measured): %g %g %g %g\n",polCal[i].stokes_noise_measured[0],polCal[i].stokes_noise_measured[1],polCal[i].stokes_noise_measured[2],polCal[i].stokes_noise_measured[3]);
 	  //	  printf("%d At this point setting %g , iband = %d\n",i,polCal[i].stokes_noise_measured[0],iband);
 	}
       //      printf("%d At this point\n",i);
     }
+  
+  
   // If requested should change to an averaged value
   if (av==1 || av==2)
     {

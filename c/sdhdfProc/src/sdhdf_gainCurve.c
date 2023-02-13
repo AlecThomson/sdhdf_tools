@@ -215,6 +215,7 @@ float getMinMax2(float *in1,float *in2,int n,float *miny,float *maxy)
       if (*maxy < in1[i]) *maxy = in1[i];
       if (*maxy < in2[i]) *maxy = in2[i];
     }
+  return 0;
 }
 
 float getMinMax1(float *in1,int n,float *miny,float *maxy)
@@ -226,4 +227,5 @@ float getMinMax1(float *in1,int n,float *miny,float *maxy)
       if (*miny > in1[i]) *miny = in1[i];
       if (*maxy < in1[i]) *maxy = in1[i];
     }
+  return 0;
 }

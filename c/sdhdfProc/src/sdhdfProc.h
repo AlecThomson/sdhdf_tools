@@ -25,6 +25,7 @@
 
 #define SOFTWARE_VER "v0.1"
 #define MAX_STRLEN     512
+#define MAX_ARGLEN     4096         // Maximum number of characters to be stored in HISTORY from the command line
 #define MAX_FILES      8192         // Maximum number of files to be processed in batch processing
 #define MAX_CHAN_SCAL  65536        // Maximum number of channels in the SCAL measurements
 
@@ -177,6 +178,7 @@ void sdhdf_add2arg(char *args,char *add1,char *add2);
 
 
 // Loading metadata information
+void sdhdf_storeArguments(char *args,int maxLen,int argc,char *argv[]);
 void sdhdf_formOutputFilename(char *inFile,char *extension,char *oname);
 void sdhdf_fixUnderscore(char *input,char *output);
 int sdhdf_getTelescopeDirName(char *tel,char *dir);
@@ -214,6 +216,7 @@ void sdhdf_loadData(sdhdf_fileStruct *inFile,int ibeam,int iband,float *in_data,
 int  sdhdf_loadFlagData(sdhdf_fileStruct *inFile);
 
 // Calibration
+void sdhdf_noiseSourceOnOff(sdhdf_fileStruct *inFile,int ibeam,int iband,float *freq,float *aa,float *bb,float *re,float *im);
 void sdhdf_calculate_timedependent_response(sdhdf_calibration *polCal,int nPolCalChan);
 void sdhdf_calculate_gain_diffgain_diffphase(sdhdf_calibration *polCal,int nPolCalChan);
 void sdhdf_formPCM_response(sdhdf_calibration *polCal,int nPolCalChan);
@@ -277,7 +280,10 @@ void sdhdf_ITRF_to_GRS80(double x,double y,double z,double *long_grs80,double *l
 
 // Mathematics
 //int sdhdf_inv4x4(float m[4][4],float inv[4][4]);
-
+void TKspline_interpolate(int n,float *x,float **yd,float *interpX,
+			  float *interpY,int nInterp);
+void TKcmonot (int n, float *x, float *y, float **yd);
+float sdhdf_splineValue(float x,int n,float *xSpline,float **yd);
 double dms_turn(char *line);
 double hms_turn(char *line);
 int    turn_hms(double turn, char *hms);

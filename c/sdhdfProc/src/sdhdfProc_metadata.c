@@ -27,6 +27,25 @@
 
 void sdhdf_loadConfig(sdhdf_fileStruct *inFile);
 
+void sdhdf_storeArguments(char *args,int maxLen,int argc,char *argv[])
+{
+  int i;
+  int len1,len2;
+  for (i=1;i<argc;i++)
+    {
+      len1 = strlen(args);
+      len2 = strlen(argv[i]);
+      if (len1 + len2 > maxLen-5)
+	{strcat(args,"..."); break;}
+      else
+	{
+	  strcat(args,argv[i]);
+	  strcat(args," ");
+	}
+    }
+}
+
+
 // Sort out the filename when adding on an extension
 // If ending of filename = hdf then remove that, add the extension and then add .hdf at the end
 // If ending of filename = hdf5 then remove that, add the extension and then add .hdf5 at the end
@@ -622,7 +641,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
       if (dims[0] != nband)
 	{
-	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,dims[0]);
+	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,(int)dims[0]);
 	  printf("ndims = %d\n",ndims);
 	  printf("Label = %s\n",label);
 	  printf("File = %s\n",inFile->fname);
@@ -835,7 +854,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	    }
 	  if (dims[0] != ndump)
 	    {
-	      printf("ERROR: [%s] Missing data detected. In %s number of dumps %d (expected) !== %d (actual) (band = %d) [%s]. ndims = %d, dims[0] = %d, type = %d\n",inFile->fname,inFile->beam[i].bandHeader[j].label,ndump,dims[0],j,label,ndims,dims[0],type);
+	      printf("ERROR: [%s] Missing data detected. In %s number of dumps %d (expected) !== %d (actual) (band = %d) [%s]. ndims = %d, dims[0] = %d, type = %d\n",inFile->fname,inFile->beam[i].bandHeader[j].label,ndump,(int)dims[0],j,label,ndims,(int)dims[0],(int)type);
 	      printf("ATTEMPTING TO CONTINUE ....\n");
 	    }
 	  else
@@ -959,8 +978,13 @@ void sdhdf_writeHistory(sdhdf_fileStruct *outFile,sdhdf_historyStruct *outParams
       status = H5Gclose(group_id);
     }
 
-  
-  dset_id = H5Dcreate2(outFile->fileID,"/metadata/history",datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  if (sdhdf_checkGroupExists(outFile,"metadata/history") == 0)    
+    {
+      printf("THE HISTORY TABLE ALREADY EXISTS\n");
+      dset_id  = H5Dopen2(outFile->fileID,"metadata/history",H5P_DEFAULT);
+    }
+  else
+    dset_id = H5Dcreate2(outFile->fileID,"/metadata/history",datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,outParams);
   status  = H5Dclose(dset_id);
   status  = H5Sclose(dataspace_id);  
@@ -1077,9 +1101,13 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
   hid_t dataset_id;
   herr_t status;
   H5O_info_t object_info;
-  
+  //  printf("VERSION:   H5_VERS_RELEASE = %d %d\n",H5_VERS_MAJOR,H5_VERS_MINOR);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-  status = H5Oget_info(dataset_id,&object_info);
+  #if H5_VERS_MINOR == 10
+   status = H5Oget_info(dataset_id,&object_info);
+  #else
+   status = H5Oget_info(dataset_id,&object_info,H5O_INFO_NUM_ATTRS);
+  #endif
   status = H5Dclose(dataset_id);
   return object_info.num_attrs;  
 }
