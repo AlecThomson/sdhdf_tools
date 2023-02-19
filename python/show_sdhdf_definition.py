@@ -22,7 +22,7 @@ def add_rows_to_csv(f_name, rows):
     :return: None
     """
     f_csv = open(f_name, 'a')
-    writer = csv.writer(f_csv, lineterminator="\n")
+    writer = csv.writer(f_csv, lineterminator="\n", delimiter='|')
     writer.writerows(rows)
     f_csv.close()
 
@@ -69,12 +69,11 @@ def append_attributes(obj_attrs, defn_list):
     :return: None
     """
     for attr in obj_attrs:
+        print(attr)
         if attr in ('DIMENSION_LIST', 'REFERENCE_LIST'):
             print('Ignoring attribute %s' % attr)
         elif attr == 'DIMENSION_LABELS':
-            vl = []
-            for v in obj_attrs[attr]:
-                vl.append(v.decode("utf-8"))
+            vl = ','.join(obj_attrs[attr])
             defn_list.append([attr, 'Attribute', vl])
         elif attr == 'CLASS':
             vl = obj_attrs[attr].decode("utf-8")
@@ -94,32 +93,42 @@ def show_sdhdf_definition(f, sb, output):
     :param bool output: Print output to stdout [True|False]
     :return: None
     """
-    defn_list = []
+    defn_list = [['SDHDF Definition Overview', '-', '-']]
     try:
         with h5py.File(f, 'r') as h5:
             # Definition overview
             sdhdf_ver = bytes(h5['/metadata/primary_header']['HDR_DEFN_VERSION']).decode()
             f_name = os.path.basename(f)
             defn_csv = 'SDHDF_definition_' + sdhdf_ver + '.csv'
+            defn_list.append(['-', '-', '-'])
 
-            add_line(defn_csv, 'SDHDF Definition Overview,-,-')
-            add_line(defn_csv, 'SDHDF Definition Version,%s,-' % sdhdf_ver)
-            add_line(defn_csv, 'Author,%s,-' % __author__)
-            add_line(defn_csv, 'Copyright,CSIRO %s,-' % dte)
+            #add_line(defn_csv, 'SDHDF Definition Overview|-|-')
+            defn_list.append(['SDHDF Definition Version', sdhdf_ver, '-'])
+            #add_line(defn_csv, 'SDHDF Definition Version,%s,-' % sdhdf_ver)
+            #add_line(defn_csv, 'Author,%s,-' % __author__)
+            defn_list.append(['Author', __author__, '-'])
+            #add_line(defn_csv, 'Copyright,CSIRO %s,-' % dte)
+            defn_list.append(['Copyright', 'CSIRO, ' + dte, '-'])
+            defn_list.append(['-', '-', '-'])
 
             # File object metadata overview
-            add_line(defn_csv, "-, -, -")
-            add_line(defn_csv, 'SDHDF File Overview,-,-')
-            add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
+            #add_line(defn_csv, "-,-,-")
+            #add_line(defn_csv, 'SDHDF File Overview,-,-')
+            defn_list.append(['SDHDF File Overview', '-', '-'])
+            #add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
+            defn_list.append(['HDF_Object_Name', 'HDF_Object_Type', 'Value'])
             append_attributes(h5.attrs, defn_list)
             defn_list.append(['-', '-', '-'])
             add_rows_to_csv(defn_csv, defn_list)
 
             # SDHDF structure overview
-            add_line(defn_csv, "-, -, -")
-            add_line(defn_csv, 'SDHDF Structure Overview,-,-')
-            add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
-            add_line(defn_csv, "-, -, -")
+            #add_line(defn_csv, "-,-,-")
+            #add_line(defn_csv, 'SDHDF Structure Overview,-,-')
+            defn_list.append(['SDHDF Structure Overview', '-', '-'])
+            #add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
+            #add_line(defn_csv, "-,-,-")
+            defn_list.append(['HDF_Object_Name', 'HDF_Object_Type', 'Value'])
+            defn_list.append(['-', '-', '-'])
 
             # check existence of requested sub-band
             root_keys = list(h5.keys())
@@ -140,46 +149,38 @@ def show_sdhdf_definition(f, sb, output):
                     defn_list.append(['-', '-', '-'])
                     # beam, config, metadata groups
                     for a in list(h5[k].keys()):
-                        if a == sb or 'SB' not in a or sb != 'all':
-                            print('-> Processing group %s' % a)
-                            if 'Group' in str(type(h5[k][a])):
-                                pth_str = '/' + k + '/' + a
-                                defn_list.append([pth_str, 'Group', '-'])
-                                append_attributes(h5[k][a].attrs, defn_list)
-                                defn_list.append(['-', '-', '-'])
-                                # band group
-                                for b in list(h5[k][a].keys()):
-                                    if 'Group' in str(type(h5[k][a][b])):
-                                        pth_str = '/' + k + '/' + a + '/' + b
-                                        defn_list.append([pth_str, 'Group', '-'])
-                                        append_attributes(h5[k][a][b].attrs, defn_list)
-                                        defn_list.append(['-', '-', '-'])
-                                        # data group
-                                        for c in list(h5[k][a][b].keys()):
-                                            if 'Dataset' in str(type(h5[k][a][b][c])):
-                                                pth_str = '/' + k + '/' + a + '/' + b + '/' + c
-                                                defn_list.append([pth_str, 'Dataset', '-'])
-                                                append_attributes(h5[k][a][b][c].attrs, defn_list)
-                                                defn_list.append(['-', '-', '-'])
-                                    elif 'Dataset' in str(type(h5[k][a][b])):
-                                        pth_str = '/' + k + '/' + a + '/' + b
-                                        defn_list.append([pth_str, 'Dataset', '-'])
-                                        append_attributes(h5[k][a][b].attrs, defn_list)
-                                        defn_list.append(['-', '-', '-'])
-                            elif 'Dataset' in str(type(h5[k][a])):
-                                pth_str = '/' + k + '/' + a
-                                defn_list.append([pth_str, 'Dataset', '-'])
-                                append_attributes(h5[k][a].attrs, defn_list)
-                                defn_list.append(['-', '-', '-'])
-                        else:
-                            if 'SB' in a:
-                                print('Skipping group %s' % a)
+                        print('-> Processing group %s' % a)
+                        if 'Group' in str(type(h5[k][a])):
+                            pth_str = '/' + k + '/' + a
+                            defn_list.append([pth_str, 'Group', '-'])
+                            append_attributes(h5[k][a].attrs, defn_list)
+                            defn_list.append(['-', '-', '-'])
+                            # band group
+                            for b in list(h5[k][a].keys()):
+                                if 'Group' in str(type(h5[k][a][b])):
+                                    pth_str = '/' + k + '/' + a + '/' + b
+                                    defn_list.append([pth_str, 'Group', '-'])
+                                    append_attributes(h5[k][a][b].attrs, defn_list)
+                                    defn_list.append(['-', '-', '-'])
+                                    # data group
+                                    for c in list(h5[k][a][b].keys()):
+                                        if 'Dataset' in str(type(h5[k][a][b][c])):
+                                            pth_str = '/' + k + '/' + a + '/' + b + '/' + c
+                                            defn_list.append([pth_str, 'Dataset', '-'])
+                                            append_attributes(h5[k][a][b][c].attrs, defn_list)
+                                            defn_list.append(['-', '-', '-'])
+                                elif 'Dataset' in str(type(h5[k][a][b])):
+                                    pth_str = '/' + k + '/' + a + '/' + b
+                                    defn_list.append([pth_str, 'Dataset', '-'])
+                                    append_attributes(h5[k][a][b].attrs, defn_list)
+                                    defn_list.append(['-', '-', '-'])
+                        elif 'Dataset' in str(type(h5[k][a])):
+                            pth_str = '/' + k + '/' + a
+                            defn_list.append([pth_str, 'Dataset', '-'])
+                            append_attributes(h5[k][a].attrs, defn_list)
+                            defn_list.append(['-', '-', '-'])
 
                     add_rows_to_csv(defn_csv, defn_list)
-
-            add_line(defn_csv, "\n" + hr)
-            add_line(defn_csv, "PASS: File %s conforms to SDHDF definition v%s" % (f_name, sdhdf_ver))
-            add_line(defn_csv, 'Output written to %s' % defn_csv)
 
             # read back csv file
             if bool(output) is True:
