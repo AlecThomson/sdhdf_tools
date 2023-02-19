@@ -94,6 +94,7 @@ int main(int argc,char *argv[])
 {  
   int        i,j,k,l,ii;
   char       fname[MAX_FILES][64];
+  char fnameFix[1024];
   sdhdf_fileStruct *inFile;
   int        idump,iband,ibeam;
   float f0=-1,f1=-1;
@@ -554,11 +555,12 @@ int main(int argc,char *argv[])
 	if (charHeight < 1.1)
 	  cpgsvp(0.10,0.95,0.10,0.90);
 	else
-	  cpgsvp(0.10,0.95,0.15,0.90);
+	  cpgsvp(0.10,0.95,0.15,0.90); 
+	sdhdf_fixUnderscore(fname[0],fnameFix);
 	if (sb >= 0 && sd >= 0)
-	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fname[0],sb,sd);
+	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fnameFix,sb,sd);
 	else
-	  sprintf(title,"%s",fname[0]);
+	  sprintf(title,"%s",fnameFix);
 	drawBand(minx,maxx,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title,ylabel);
 	if (nOverlay > 0) // Draw a curve overlay	  
 	  {
