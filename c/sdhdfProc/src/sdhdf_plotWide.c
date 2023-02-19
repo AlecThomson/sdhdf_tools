@@ -593,6 +593,14 @@ int main(int argc,char *argv[])
 	    cpgsls(4); cpgline(nVals,px,py2_max); cpgsls(1);
 	  }
 	cpgsci(1);
+	if (dispAz==1)
+	  {
+	    char label[128];
+	    cpgsch(1.0);
+	    sprintf(label,"Azimuth: %.1f deg",azVal);
+	    cpgtext(minx + (maxx-minx)*0.05,maxy-(maxy-miny)*0.1,label);
+	    cpgsch(1.4);
+	  }
 
       }
     else
@@ -611,7 +619,7 @@ int main(int argc,char *argv[])
 
 	cpgsvp(0.10,0.95,0.7,0.95);
 	drawBand(2368,4096,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title,ylabel);
-
+      
 	cpgsch(1.4);
 	if (dispAz==1)
 	  {
