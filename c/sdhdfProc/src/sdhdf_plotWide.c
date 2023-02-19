@@ -560,7 +560,7 @@ int main(int argc,char *argv[])
 	if (sb >= 0 && sd >= 0)
 	  sprintf(title,"%s (sub-band %d, spectral-dump %d)",fnameFix,sb,sd);
 	else
-	  sprintf(title,"%s",fnameFix);
+	  sprintf(title,"%s (spectral-dump %d)",fnameFix,sd);
 	drawBand(minx,maxx,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,3,miny,maxy,1,title,ylabel);
 	if (nOverlay > 0) // Draw a curve overlay	  
 	  {
