@@ -152,10 +152,16 @@ int main(int argc,char *argv[])
     {
       FILE *fin;
       char obsDir[1024];
+      char fname[1024];
       int kk;
-
+      
+      sdhdf_getTelescopeDirName(inFile->primary[0].telescope,obsDir);
+      //      sprintf(fname,"%s/observatory/%s/rfi/persistentRFI.dat",runtimeDir,dirName);
+      
+      sprintf(fname,"%s/observatory/%s/calibration/UWL/%s",getenv("SDHDF_RUNTIME"),obsDir,tcalFname);
+      printf("Opening %s\n",fname);
       kk=0;
-      fin = fopen(tcalFname,"r");
+      fin = fopen(fname,"r");
       while (!feof(fin))
 	{
 	  if (fscanf(fin,"%f %f %f",&scalFreq[kk],&scalAA[kk],&scalBB[kk])==3)
