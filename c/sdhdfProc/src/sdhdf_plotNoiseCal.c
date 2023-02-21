@@ -32,7 +32,7 @@
 #include <cpgplot.h>
 
 
-void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB,int av);
+void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB,int av,int SorT);
 void obtainScal(float freq,float *scalFreq,float *scalAA,float *scalBB,int nScal,float *retAA,float *retBB,int interp);
 
 void help()
@@ -79,6 +79,8 @@ int main(int argc,char *argv[])
   float *scalFreq,*scalAA,*scalBB;
   float retAA,retBB;
   char scalFname[1024]="NULL";
+  char tcalFname[1024]="NULL";
+  int SorT=0;
   int  nScal=-1;
   float scaleCal=1;
   int autoSsys=0;
@@ -112,6 +114,8 @@ int main(int argc,char *argv[])
 	{help(); exit(1);}
       else if (strcmp(argv[i],"-scal")==0)
 	strcpy(scalFname,argv[++i]);
+      else if (strcmp(argv[i],"-tcal")==0)
+	strcpy(tcalFname,argv[++i]);
       else if (strcmp(argv[i],"-scale")==0)
 	sscanf(argv[++i],"%f",&scaleCal);
       else if (strcmp(argv[i],"-autoSsys")==0)
@@ -133,7 +137,6 @@ int main(int argc,char *argv[])
       char obsDir[1024];
       int nFluxCalChan,kk;
       sdhdf_getTelescopeDirName(inFile->primary[0].telescope,obsDir);
-
       sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,scalFname); 
       nScal=nFluxCalChan;
       for (kk=0;kk<nFluxCalChan;kk++)
@@ -142,7 +145,26 @@ int main(int argc,char *argv[])
 	  scalAA[kk] = fluxCal[kk].scalAA * scaleCal;
 	  scalBB[kk] = fluxCal[kk].scalBB * scaleCal;
 	}
+      SorT = 1;
       printf("Loaded %s, Number of SCAL values is %d\n",scalFname,nScal);
+    }
+  else if (strcmp(tcalFname,"NULL")!=0)
+    {
+      FILE *fin;
+      char obsDir[1024];
+      int kk;
+
+      kk=0;
+      fin = fopen(tcalFname,"r");
+      while (!feof(fin))
+	{
+	  if (fscanf(fin,"%f %f %f",&scalFreq[kk],&scalAA[kk],&scalBB[kk])==3)
+	    kk++;
+	}
+      fclose(fin);
+      nScal = kk;
+      SorT=2;
+      printf("Loaded %s, Number of TCAL values is %d\n",tcalFname,nScal);
     }
     
 
@@ -299,7 +321,7 @@ int main(int argc,char *argv[])
 	}
     }
   else
-    doPlot(inFile,beam,totChan,nScal,scalFreq,scalAA,scalBB,av);
+    doPlot(inFile,beam,totChan,nScal,scalFreq,scalAA,scalBB,av,SorT);
 
     
   sdhdf_closeFile(inFile);
@@ -308,7 +330,7 @@ int main(int argc,char *argv[])
   free(scalFreq); free(scalAA); free(scalBB);
 }
 
-void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB,int av)
+void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalFreq,float *scalAA,float *scalBB,int av,int SorT)
 {
   float fx[totChan];
   float fy1[totChan];
@@ -507,7 +529,12 @@ void doPlot(sdhdf_fileStruct *inFile,int beam,int totChan,int nScal,float *scalF
     if (plot==1)      cpglab("Frequency (MHz)","Cal On for pol 1 and 2",title);
     else if (plot==2) cpglab("Frequency (MHz)","Cal On and Cal off for pol 1",title);
     else if (plot==3) cpglab("Frequency (MHz)","OFF/(ON-OFF)",title);
-    else if (plot==4) cpglab("Frequency (MHz)","S_sys (Jy)",title);
+    else if (plot==4)
+      {
+	if (SorT == 1) cpglab("Frequency (MHz)","S_sys (Jy)",title);
+	else if (SorT == 2) cpglab("Frequency (MHz)","T_sys (K)",title);
+	else cpglab("Frequency (MHz)","Sys (unknown)",title);
+      }
     else if (plot==5) cpglab("Frequency (MHz)","Diff. gain",title);
     else if (plot==6) cpglab("Frequency (MHz)","Diff. phase",title);
     else              cpglab("Frequency (MHz)","",title);
