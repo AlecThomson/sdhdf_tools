@@ -37,7 +37,7 @@
 
 void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV,char *title);
 
 void help()
 {
@@ -71,6 +71,7 @@ void help()
   printf("-sb <bandNumber>    Plot data within specified band number\n");
   printf("-sd <dumpNumber>    Plot data within specified spectral dump\n");
   printf("-stokes             Plot as Stokes parameters\n");
+  printf("-title <word>       Plot title\n");
   printf("-vline <val>        Draw a vertical line at val\n");
   printf("-ylabel <str>       Label to display on y-axis\n");
   printf("-yscale <val>       Scale (multiply) the values in the spectra by val\n");
@@ -91,6 +92,7 @@ int main(int argc,char *argv[])
   int        idump,iband,ibeam;
   char ylabel[1024] = "UNSET";
   char label[1024] = "";
+  char title[1024] = "UNSET";
   
   double yscale=1;
   int rlcp = 0;
@@ -146,6 +148,8 @@ int main(int argc,char *argv[])
 	}
       else if (strcmp(argv[i],"-ylabel")==0)
 	strcpy(ylabel,argv[++i]);
+      else if (strcmp(argv[i],"-title")==0)
+	strcpy(title,argv[++i]);
       else if (strcmp(argv[i],"-label")==0)
 	strcpy(label,argv[++i]);
       else if (strcmp(argv[i],"-yscale")==0)
@@ -247,7 +251,7 @@ int main(int argc,char *argv[])
 	  
 
 	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,label,
-		       hline,nHline,vline,nVline,yscale,rlcp,flipV);	  	  
+		       hline,nHline,vline,nVline,yscale,rlcp,flipV,title);	  	  
 
 	  if (recordQuery==1)
 	    {
@@ -268,7 +272,7 @@ int main(int argc,char *argv[])
 }
 
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV)
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV,char *title)
 {
   static int entry=0;
   static int entryX=0;
@@ -283,7 +287,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   float ominx,omaxx,ominy,omaxy;
   int kk;
   int t=0;
-  char title[1024];
   char xlabel[1024];
   char freqUnit[1024]="unset",freqFrame[1024]="unset";
   char dataUnit[1024]="unset";
@@ -579,7 +582,13 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	cpgenv(minx,maxx,miny,maxy,0,1);
       else
 	cpgenv(minx,maxx,miny,maxy,0,20);
-      sprintf(title,"%s: Spectral dump %d",inFile->beam[ibeam].bandHeader[iband].label,idump);
+      if (strcmp(title,"UNSET")==0)
+	{
+	  char fixLabel[1024];
+	  sdhdf_fixUnderscore(inFile->beam[ibeam].bandHeader[iband].label,fixLabel);
+
+	  sprintf(title,"%s: Spectral dump %d",fixLabel,idump);
+	}
 
       // FIX ME
       /*
@@ -596,7 +605,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	sprintf(xlabel,"Velocity (km/s)");
       if (strcmp(ylabel,"UNSET")==0)
 	sprintf(ylabel,"Signal strength (%s)",dataUnit);
-      cpglab(xlabel,ylabel,fname);
+      cpglab(xlabel,ylabel,title);
       
     }
   else
@@ -713,8 +722,8 @@ cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,label);
   else if (polPlot==2)
     {
       cpgsci(2); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
-      cpgsci(4); drawIncludeWeights(nchan,freq,pol3,wt); cpgsci(1);
-      cpgsci(5); drawIncludeWeights(nchan,freq,pol4,wt); cpgsci(1);
+      cpgsci(7); drawIncludeWeights(nchan,freq,pol3,wt); cpgsci(1);
+      cpgsci(4); drawIncludeWeights(nchan,freq,pol4,wt); cpgsci(1);
       cpgsci(1); drawIncludeWeights(nchan,freq,pol1,wt); cpgsci(1);
     }
 
