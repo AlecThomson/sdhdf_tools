@@ -610,7 +610,6 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		{
 		  wtVal     = in->wt[(k*in->nchan) + (j*avFreq)+kk];
 		  flagVal   = 1-in->flag[(k*in->nchan) + (j*avFreq)+kk];
-		  //		  printf("wt/flag = %d %d %g %d\n",k,(j*avFreq)+kk,wtVal,flagVal);
 		  if (meanMedian==1)
 		    {
 		      if (in->astroCal==0)
@@ -636,18 +635,17 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 			avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
 		      else
 			avFreqNoWt += in->freq[(j*avFreq)+kk];
-			
 		      if (flagVal == 1 && wtVal != 0)
 			{
 			  medVal[nMedian]  = in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
-			  medVal2[nMedian] = in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
+			  if (in->astroCal!=0)
+			    medVal2[nMedian] = in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
 			  medWt[nMedian]  = in->wt[(k*in->nchan) + (j*avFreq)+kk];
 			  s_flag_wt+= wtVal;
 			  nMedian++;
 			}
 		    }
 		}
-
 	      if (meanMedian==1) // Mean
 		{
 		  out->wt[k*out->nchan + j] =   s_flag_wt; 
@@ -718,7 +716,7 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 	      if (p==0)
 		{
 		  if (in->astroCal == 0)
-		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq; // 		  // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCU ARRAY
+		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq; // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCY ARRAY
 		  else
 		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq;
 		}
