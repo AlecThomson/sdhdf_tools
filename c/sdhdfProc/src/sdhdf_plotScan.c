@@ -135,6 +135,15 @@ int main(int argc,char *argv[])
   char sourceFix[1024];
   double ra0 = 0;
   double dec0 = 0;
+
+  char userLabel[12][128];
+  float userLabelX[12];
+  float userLabelY[12];
+  float userLabelArrowX1[12];
+  float userLabelArrowY1[12];
+  float userLabelArrowX2[12];
+  float userLabelArrowY2[12];
+  int nUserLabel=0;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -442,11 +451,24 @@ int main(int argc,char *argv[])
 	      cpgsci(2);
 	    cpgline(plotNdump,fx[i],fy[i]);	    
 	    cpgsci(1);
-	    if (label==1)
-	      {
-		cpgsch(0.6);
-		cpgtext(minx+(maxx-minx)*0.1,fy[i][ndumps/4],inFile->beam[ibeam].bandHeader[i].label);
-		cpgsch(1.4);
+	    //	    if (label==1)
+	    if (nUserLabel > 0)
+	    {
+	      int kk;
+	      float xch,ych;
+	      
+	      cpgsch(1.0);
+	      cpgsci(4);
+	      cpgqcs(4,&xch,&ych);
+	      printf("xch = %g, ych = %g\n",xch,ych);
+	      for (kk=0;kk<nUserLabel;kk++)
+		{
+		  cpgarro(userLabelArrowX1[kk],userLabelArrowY1[kk],userLabelArrowX2[kk],userLabelArrowY2[kk]);
+		  cpgtext(userLabelX[kk],userLabelY[kk],userLabel[kk]);
+		}
+		  //		cpgtext(minx+(maxx-minx)*0.1,fy[i][ndumps/4],inFile->beam[ibeam].bandHeader[i].label);
+	      cpgsch(1.4);
+	      cpgsci(1);
 	      }
 	  }
       }
@@ -601,7 +623,33 @@ int main(int argc,char *argv[])
 	    recalc=1;
 	  }
 	else if (key=='L')
-	  label*=-1;
+	  {
+	    char loadStr[1024];
+	    char *tok;
+	    
+	    printf("Enter arrow X1, arrow Y1, arrow X2, arrow Y2, text X, text Y, label ");
+	    fgets(loadStr,1024,stdin);
+	    tok = strtok(loadStr," \n");
+	    sscanf(tok,"%f",&userLabelArrowX1[nUserLabel]);
+	    tok = strtok(NULL," \n");
+	    sscanf(tok,"%f",&userLabelArrowY1[nUserLabel]);
+	    tok = strtok(NULL," \n");
+	    sscanf(tok,"%f",&userLabelArrowX2[nUserLabel]);
+	    tok = strtok(NULL," \n");
+	    sscanf(tok,"%f",&userLabelArrowY2[nUserLabel]);
+	    tok = strtok(NULL," \n");
+	    sscanf(tok,"%f",&userLabelX[nUserLabel]);
+	    tok = strtok(NULL," \n");
+	    sscanf(tok,"%f",&userLabelY[nUserLabel]);
+	    tok = strtok(NULL,"\n");
+
+	    strcpy(userLabel[nUserLabel],tok);
+	    //	    sscanf(loadStr"%f %f",&userLabelX[nUserLabel],&userLabelY[nUserLabel]); // userLabel[nUserLabel]);
+	    
+	    nUserLabel++;
+		  //	    label*=-1;
+	    printf("Finished loading the label\n");
+	  }
 	else if  (key=='l')
 	  {
 	    logy*=-1;
