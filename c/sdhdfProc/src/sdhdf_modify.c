@@ -77,7 +77,7 @@ typedef struct dataStruct {
 } dataStruct;
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int verbose);
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int singleFreqAxis,int verbose);
 void processCommand(dataStruct *in,dataStruct *out,int iband, commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum);
 void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int meanMedian);
@@ -104,6 +104,7 @@ void help()
   printf("-lsr_regrid         - convert frequency axis to the LSR and regrid back to the original frequency axis\n");
   printf("-p1 or -p1_sum      - summation of P0 and P1\n");
   printf("-p1_av              - (P0+P1)/2 \n");
+  printf("-singleFreqAxis     - only write out a single frequency dimension (nchan) instead of (ndump x nchan)\n");
   printf("-T or -Tsum         - completely sum in time\n");
   printf("-Tav                - completely average (weighted mean) in time\n");
   printf("-tav <val>          - average (weighted mean) val time dumps together\n");
@@ -127,6 +128,7 @@ int main(int argc,char *argv[])
   char args[MAX_ARGLEN]="";
   int verbose=0;
   int astroCal=0; // Modify the astronomy data
+  int singleFreqAxis=0;
   
   strcpy(extension,"modify");
   
@@ -139,6 +141,8 @@ int main(int argc,char *argv[])
 	{commands[nCommands].type=1; commands[nCommands].param2 = 1; commands[nCommands++].param1 = 0;}
       else if (strcmp(argv[i],"-h")==0)
 	{help(); exit(1);}
+      else if (strcasecmp(argv[i],"-singleFreqAxis")==0)
+	  singleFreqAxis=1;
       else if (strcmp(argv[i],"-v")==0)
 	verbose=1;    
       else if (strcmp(argv[i],"-cal")==0)
@@ -189,7 +193,7 @@ int main(int argc,char *argv[])
     {
       printf("Processing file: %s\n",fname[i]);
       sdhdf_formOutputFilename(fname[i],extension,oname);
-      processFile(fname[i],oname,commands,nCommands,args,astroCal,verbose);
+      processFile(fname[i],oname,commands,nCommands,args,astroCal, singleFreqAxis,verbose);
     }
 
 
@@ -197,7 +201,7 @@ int main(int argc,char *argv[])
 }
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int verbose)
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int singleFreqAxis,int verbose)
 {
   int ii,i,c,j,k;
   
@@ -339,8 +343,13 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 
 	  if (astroCal==0)
 	    {
-	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
-				    out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      if (singleFreqAxis==0)
+		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
+					out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      else
+		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
+					out->freq,1,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		
 	      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,1);
 	    }
 	  else
