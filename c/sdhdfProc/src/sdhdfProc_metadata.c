@@ -1002,14 +1002,22 @@ void sdhdf_loadHistory(sdhdf_fileStruct *inFile)
   int ndims;
   hsize_t dims[2];
 
-  header_id  = H5Dopen2(inFile->fileID,"metadata/history",H5P_DEFAULT);
-  headerT    = H5Dget_type(header_id);
-  space      = H5Dget_space(header_id);
-  ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-
-  if (inFile->historyAllocatedMemory == 0)
+  if (sdhdf_checkGroupExists(inFile,"metadata/history") == 1)
     {
-      inFile->history = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct)*MAX_HISTORY);
+      printf("WARNING: no history information\n");
+      inFile->nHistory = 0;
+      inFile->historyAllocatedMemory = 0;
+    }
+  else
+    {
+      header_id  = H5Dopen2(inFile->fileID,"metadata/history",H5P_DEFAULT);
+      headerT    = H5Dget_type(header_id);
+      space      = H5Dget_space(header_id);
+      ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+      
+      if (inFile->historyAllocatedMemory == 0)
+	{
+	  inFile->history = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct)*MAX_HISTORY);
       if (dims[0] > MAX_HISTORY)
 	{
 	  printf("ERROR: need to increase MAX_HISTORY\n");
@@ -1017,24 +1025,25 @@ void sdhdf_loadHistory(sdhdf_fileStruct *inFile)
 	}
       inFile->nHistory = dims[0]; 
       inFile->historyAllocatedMemory = 1;
+	}
+      
+      val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_historyStruct));
+      stid = H5Tcopy(H5T_C_S1);
+      
+      status = H5Tset_size(stid,20); // Should set to value defined in sdhdf_v1.9.h
+      H5Tinsert(val_tid,"DATE",HOFFSET(sdhdf_historyStruct,date),stid);
+      status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+      H5Tinsert(val_tid,"PROC",HOFFSET(sdhdf_historyStruct,proc_name),stid);
+      H5Tinsert(val_tid,"PROC_DESCR",HOFFSET(sdhdf_historyStruct,proc_descr),stid);
+      H5Tinsert(val_tid,"PROC_ARGS",HOFFSET(sdhdf_historyStruct,proc_args),stid);
+      H5Tinsert(val_tid,"PROC_HOST",HOFFSET(sdhdf_historyStruct,proc_host),stid);
+      
+      status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->history);
+      
+      status = H5Tclose(val_tid);
+      status = H5Tclose(stid);
+      status = H5Dclose(header_id);
     }
-
-  val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_historyStruct));
-  stid = H5Tcopy(H5T_C_S1);
-
-  status = H5Tset_size(stid,20); // Should set to value defined in sdhdf_v1.9.h
-  H5Tinsert(val_tid,"DATE",HOFFSET(sdhdf_historyStruct,date),stid);
-  status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
-  H5Tinsert(val_tid,"PROC",HOFFSET(sdhdf_historyStruct,proc_name),stid);
-  H5Tinsert(val_tid,"PROC_DESCR",HOFFSET(sdhdf_historyStruct,proc_descr),stid);
-  H5Tinsert(val_tid,"PROC_ARGS",HOFFSET(sdhdf_historyStruct,proc_args),stid);
-  H5Tinsert(val_tid,"PROC_HOST",HOFFSET(sdhdf_historyStruct,proc_host),stid);
-
-  status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->history);
-    
-  status = H5Tclose(val_tid);
-  status = H5Tclose(stid);
-  status = H5Dclose(header_id);
 }
 
 void sdhdf_addHistory(sdhdf_historyStruct *history,int n,char *procName,char *descr,char *args)
