@@ -190,7 +190,7 @@ void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile)
 
   if (sdhdf_checkGroupExists(inFile,"metadata/primary_header") == 1)
     {
-      printf("WARNING: We do not have metadata/primary_header in the data file\n");
+      printf("WARNING: We do not have metadata/primary_header in the data file %s\n",inFile->fname);
     }
   else
     {
