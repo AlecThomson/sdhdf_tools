@@ -157,6 +157,7 @@ int main(int argc,char *argv[])
   double d_raj,d_decj;
   float tsky_model,tsky_model0;
   float ssky_model;
+  float noiseScaleAA,noiseScaleBB;
   float ssrc_model;
   double cmb = 2.725;
   
@@ -173,14 +174,14 @@ int main(int argc,char *argv[])
       printf("ERROR: must set a parameter filename using the -p option\n");
       exit(1);
     }
-
+  
   if (!(fin = fopen(paramFile,"r")))
     {
       printf("ERROR: unable to open parameter file >%s<\n",paramFile);
       exit(1);
     }
   params = (parameterStruct *)malloc(sizeof(parameterStruct));
-
+  
   
   // initialise
   params->persistentRFI=0;
@@ -430,7 +431,7 @@ int main(int argc,char *argv[])
 	      for (ii=0;ii<nchan;ii++)
 		{
 		  if (params->galacticHI==1)
-		    signal = 40*exp(-pow(freq[ii]-1421.0,2)/2./0.2/0.2);
+		    signal = 4*exp(-pow(freq[ii]-1421.0,2)/2./0.2/0.2);
 		  if (params->persistentRFI==1)
 		    {
 		      if (freq[ii] > 754 && freq[ii] < 768)
@@ -473,16 +474,20 @@ int main(int argc,char *argv[])
 		      printf("%d %g %g\n",k,angle,ssrc_model);
 		  }
 		  tsky_model = (tsky_model0 - cmb) * pow(freq[ii]/408.0,-2.6) + cmb;
-		  ssky_model = tsky_model; // FIX ME -- WITH GAINS ETC.
-		  
-		  data[k*nchan*npol + ii]           = TKgaussDev(&iseed) + ssys_aa + ssky_model + ssrc_model + signal;
-		  data[k*nchan*npol + nchan + ii]   = TKgaussDev(&iseed) + ssys_bb + ssky_model + ssrc_model + signal;
-		  data[k*nchan*npol + 2*nchan + ii] = TKgaussDev(&iseed);
-		  data[k*nchan*npol + 3*nchan + ii] = TKgaussDev(&iseed);
-		}
+		  ssky_model = tsky_model ; // FIX ME -- WITH GAINS ETC.
+		
+		  //		  printf("chbw = %g, dtime = %g ssky_model = %g\n",chbw,bandHeader[j].dtime,ssky_model);
+		  noiseScaleAA = params->beam[i].tsys_aa/sqrt(chbw*1e6*bandHeader[j].dtime);
+		  noiseScaleBB = params->beam[i].tsys_bb/sqrt(chbw*1e6*bandHeader[j].dtime);
+		  //		  printf("scaleAA, scaleBB = %g %g\n",noiseScaleAA,noiseScaleBB);
+		  data[k*nchan*npol + ii]           = noiseScaleAA*TKgaussDev(&iseed) + ssys_aa + ssky_model + ssrc_model + signal;
+		  data[k*nchan*npol + nchan + ii]   = noiseScaleBB*TKgaussDev(&iseed) + ssys_bb + ssky_model + ssrc_model + signal;
+		  data[k*nchan*npol + 2*nchan + ii] = sqrt(noiseScaleAA*noiseScaleBB)*TKgaussDev(&iseed);
+		  data[k*nchan*npol + 3*nchan + ii] = sqrt(noiseScaleAA*noiseScaleBB)*TKgaussDev(&iseed);
 	    }
-	  sdhdf_writeObsParams(outFile,bandHeader[j].label,beamHeader[i].label,j,obsParams,ndump,1);			       
-	  free(obsParams);
+	}
+      sdhdf_writeObsParams(outFile,bandHeader[j].label,beamHeader[i].label,j,obsParams,ndump,1);			       
+      free(obsParams);
 
 	  // SHOULD SET UP ATTRIBUTES
 	  // FIX ME: Sending only one frequency channel through
@@ -495,10 +500,10 @@ int main(int argc,char *argv[])
     
       free(bandHeader);
 
-    }
+}
 
-  
-  sdhdf_closeFile(outFile);
+
+sdhdf_closeFile(outFile);
   free(outFile);
   free(primaryHeader);
   free(beamHeader);
