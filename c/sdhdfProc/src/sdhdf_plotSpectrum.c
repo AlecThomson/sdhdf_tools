@@ -441,6 +441,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	sprintf(title,"%s, %s",fnameFix,blabelFix);
       else
 	sprintf(title,"%s, %s, spectral dump %d",fnameFix,blabelFix,idump);
+      if (ibeam > 0)
+	{
+	  char tStr[128];
+	  sprintf(tStr,", beam %d",ibeam);
+	  strcat(title,tStr);
+	}
       if (fref < 0)
 	{
 	  sprintf(xlabel,"%s frequency (%s)",freqFrame,freqUnit);
