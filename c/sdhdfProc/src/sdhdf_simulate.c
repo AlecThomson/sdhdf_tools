@@ -48,6 +48,7 @@
 #include "T2toolkit.h"
 #include "hdf5.h"
 
+#define MAX_INCLUDE_SPECTRA 128
 
 typedef struct dumpParameterStruct {
   float tdump; // Time of spectral dump
@@ -61,6 +62,14 @@ typedef struct dumpParameterStruct {
   double gb;
 
 } dumpParameterStruct;
+
+typedef struct includeSpectrumStruct {
+  int beam;
+  int band;
+  int dump;
+  char fname[1024];
+} includeSpectrumStruct;
+
 
 typedef struct bandParameterStruct {
   char  label[MAX_STRLEN];    // Band label
@@ -93,6 +102,9 @@ typedef struct parameterStruct {
   bandParameterStruct *band;
   dumpParameterStruct *dump;
 
+  includeSpectrumStruct *includeSpectrum;
+  int nIncludeSpectrum;
+  
   int persistentRFI;
   int galacticHI;
 } parameterStruct;
@@ -159,6 +171,8 @@ int main(int argc,char *argv[])
   float ssky_model;
   float noiseScaleAA,noiseScaleBB;
   float ssrc_model;
+  float *spectrumAdd;
+  int addUserSpectrum=0;
   double cmb = 2.725;
   
   for (i=1;i<argc;i++)
@@ -181,8 +195,9 @@ int main(int argc,char *argv[])
       exit(1);
     }
   params = (parameterStruct *)malloc(sizeof(parameterStruct));
-  
-  
+  params->includeSpectrum = (includeSpectrumStruct *)malloc(sizeof(includeSpectrumStruct)*MAX_INCLUDE_SPECTRA);
+  params->nIncludeSpectrum=0;
+   
   // initialise
   params->persistentRFI=0;
   params->galacticHI=0;
@@ -207,6 +222,15 @@ int main(int argc,char *argv[])
 		    params->persistentRFI=1;
 		  else if (strcmp(word1,"galactic_hi:")==0 && strcmp(word2,"gaussian")==0)
 		    params->galacticHI=1;
+		  else if (strcmp(word1,"inputSpectrum:")==0)
+		    {
+		      int nv = params->nIncludeSpectrum;
+		      sscanf(line,"%s %d %d %d %s",word1,&(params->includeSpectrum[nv].beam),
+			     &(params->includeSpectrum[nv].band),
+			     &(params->includeSpectrum[nv].dump),
+			     params->includeSpectrum[nv].fname);
+		      (params->nIncludeSpectrum)++;
+		    }
 		  else if (strcmp(word1,"beam:")==0)
 		    {
 		      if (ibeam == params->nbeams)
@@ -376,7 +400,8 @@ int main(int argc,char *argv[])
 	  bandHeader[j].fc = (bandHeader[j].f0+bandHeader[j].f1)/2.0;
 
 	  nchan = params->band[j].nchan;
-
+	  spectrumAdd = (float *)malloc(sizeof(float)*nchan);
+	  addUserSpectrum=0;
 	  obsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 	  freq = (float *)malloc(sizeof(float)*nchan);
 	  data = (float *)malloc(sizeof(float)*nchan*ndump*npol);
@@ -428,8 +453,24 @@ int main(int argc,char *argv[])
 	      obsParams[k].paraAngle = 0;
 	      obsParams[k].windDir = 0;
 	      obsParams[k].windSpd = 0;		      
+
+	      // Add in defined spectra
+	      for (jj=0;jj<params->nIncludeSpectrum;jj++)
+		{
+		  if (params->includeSpectrum[jj].beam == i && params->includeSpectrum[jj].band == j && params->includeSpectrum[jj].dump == k)
+		    {
+		      fin = fopen(params->includeSpectrum[jj].fname,"r");
+		      for (ii=0;ii<nchan;ii++)
+			fscanf(fin,"%g",&spectrumAdd[ii]);
+		      fclose(fin);
+		      addUserSpectrum=1;
+		    }
+		}
+
+	    
 	      for (ii=0;ii<nchan;ii++)
 		{
+		  signal = 0;
 		  if (params->galacticHI==1)
 		    signal = 4*exp(-pow(freq[ii]-1421.0,2)/2./0.2/0.2);
 		  if (params->persistentRFI==1)
@@ -455,7 +496,8 @@ int main(int argc,char *argv[])
 		      else if (freq[ii] > 1805 && freq[ii] < 1865)
 			signal += 9e5;
 		    }
-
+		  if (addUserSpectrum==1)
+		    signal += spectrumAdd[ii]; 
 		  // Build up ssys_aa and ssys_bb
 		  tsky_model = 0;
 		  if (ii==0)
@@ -480,6 +522,8 @@ int main(int argc,char *argv[])
 		  noiseScaleAA = params->beam[i].tsys_aa/sqrt(chbw*1e6*bandHeader[j].dtime);
 		  noiseScaleBB = params->beam[i].tsys_bb/sqrt(chbw*1e6*bandHeader[j].dtime);
 		  //		  printf("scaleAA, scaleBB = %g %g\n",noiseScaleAA,noiseScaleBB);
+
+		    
 		  data[k*nchan*npol + ii]           = noiseScaleAA*TKgaussDev(&iseed) + ssys_aa + ssky_model + ssrc_model + signal;
 		  data[k*nchan*npol + nchan + ii]   = noiseScaleBB*TKgaussDev(&iseed) + ssys_bb + ssky_model + ssrc_model + signal;
 		  data[k*nchan*npol + 2*nchan + ii] = sqrt(noiseScaleAA*noiseScaleBB)*TKgaussDev(&iseed);
@@ -488,7 +532,7 @@ int main(int argc,char *argv[])
 	}
       sdhdf_writeObsParams(outFile,bandHeader[j].label,beamHeader[i].label,j,obsParams,ndump,1);			       
       free(obsParams);
-
+      free(spectrumAdd);
 	  // SHOULD SET UP ATTRIBUTES
 	  // FIX ME: Sending only one frequency channel through
 	  sdhdf_writeSpectrumData(outFile,beamHeader[i].label,bandHeader[j].label,i,j,data,freq,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
@@ -510,6 +554,7 @@ sdhdf_closeFile(outFile);
   free(params->beam);
   free(params->band);
   free(params->dump);
+  free(params->includeSpectrum);
   free(params);
 }
 
