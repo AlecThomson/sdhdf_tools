@@ -722,7 +722,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
   dims[0] = nsub;
   dims[1] = npol;
   dims[2] = nchan;
-  dims[3] = 1;
+  dims[3] = nbin;
   dataspace_id = H5Screate_simple(4,dims,NULL);
 
   /* FIX ME -- SHOULD COPY CAL INFO
