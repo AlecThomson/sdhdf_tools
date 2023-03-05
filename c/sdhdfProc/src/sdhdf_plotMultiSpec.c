@@ -37,7 +37,7 @@
 
 void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY);
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV,char *title);
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,int labelPos,float labelChSize,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV,char *title);
 
 void help()
 {
@@ -51,6 +51,7 @@ void help()
 
   printf("-4pol               Plot 4 polarisations (default is just 1 or 2 polarisation)\n");
   printf("-av <av>            Frequency average this number of channels\n");
+  printf("-beam <val>         Select beam number\n");
   printf("-bl <f0> <f1>       Set baseline between f0 and f1 MHz\n");
   printf("-ch <chSize>        Character size\n");
   printf("-h                  This help\n");
@@ -93,6 +94,7 @@ int main(int argc,char *argv[])
   char ylabel[1024] = "UNSET";
   char label[1024] = "";
   char title[1024] = "UNSET";
+  int labelPos=0;
   
   double yscale=1;
   int rlcp = 0;
@@ -102,6 +104,7 @@ int main(int argc,char *argv[])
   float vline[MAX_HLINE];
   int nVline=0;
   float chSize=1.4;
+  float labelChSize=1.4;
   float f0=-1,f1=-1;
   int setf0=0,setf1=0;
   int av=0;
@@ -116,6 +119,7 @@ int main(int argc,char *argv[])
   int setBaseline=0;
   int setLog=-1;
   int setBand=0;
+  int setBeam=0;
   int stokes=0;
   char queryFile[1024]="query.txt";
   int recordQuery=0;
@@ -152,6 +156,8 @@ int main(int argc,char *argv[])
 	strcpy(title,argv[++i]);
       else if (strcmp(argv[i],"-label")==0)
 	strcpy(label,argv[++i]);
+      else if (strcmp(argv[i],"-labelPos")==0)
+	sscanf(argv[++i],"%d",&labelPos);
       else if (strcmp(argv[i],"-yscale")==0)
 	sscanf(argv[++i],"%lf",&yscale);
       else if (strcmp(argv[i],"-log")==0)
@@ -207,6 +213,10 @@ int main(int argc,char *argv[])
 	polPlot=2;
       else if (strcmp(argv[i],"-ch")==0) // Character height
 	sscanf(argv[++i],"%f",&chSize);
+      else if (strcmp(argv[i],"-labelch")==0) // Character height
+	sscanf(argv[++i],"%f",&labelChSize);
+      else if (strcmp(argv[i],"-beam")==0)
+	{sscanf(argv[++i],"%d",&ibeam); setBeam=1;}
       else if (strcmp(argv[i],"-sb")==0)
 	{sscanf(argv[++i],"%d",&iband); setBand=1;}
 	//	i++;
@@ -250,7 +260,7 @@ int main(int argc,char *argv[])
 	    }
 	  
 
-	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,label,
+	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,label,labelPos,labelChSize,
 		       hline,nHline,vline,nVline,yscale,rlcp,flipV,title);	  	  
 
 	  if (recordQuery==1)
@@ -272,7 +282,7 @@ int main(int argc,char *argv[])
 }
 
 
-void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV,char *title)
+void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *grDev,char *fname,float f0,int setf0,float f1,int setf1,int av,int sump,int nx,int ny,int polPlot,float chSize,float locky1,float locky2,int join,double fref,float bl_f0,float bl_f1,int setBaseline,int setLog,int stokes,char *ylabel,char *label,int labelPos,float labelChSize,float *hline,int nHline,float *vline,int nVline,double yscale,int rlcp,int flipV,char *title)
 {
   static int entry=0;
   static int entryX=0;
@@ -640,9 +650,9 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	    sprintf(xlabel,"%s velocity (km/s)",inFile->frequency_attr.frame);
 	  */
 	  if (fref < 0)
-	    sprintf(xlabel,"frequency (MHz)");
+	    sprintf(xlabel,"Frequency (MHz)");
 	  else
-	    sprintf(xlabel,"velocity (km/s)");
+	    sprintf(xlabel,"Velocity (km/s)");
 	  if (strcmp(ylabel,"UNSET")==0)
 	    sprintf(ylabel,"Signal strength (%s)",dataUnit);
 
@@ -666,11 +676,15 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	{
 	  if (strlen(label) > 0)
 	    {
-cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,label);
+	      cpgsch(labelChSize);
+	      if (labelPos==0)
+		cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,label);
+	      else if (labelPos==1)
+		cpgtext(minx+(maxx-minx)*0.05,miny+(maxy-miny)*0.15,label);
+	      cpgsch(chSize);
 	    }
 	  else
-	    {
-	      
+	    {	      
 	      char fixLabel[1024];
 	      sdhdf_fixUnderscore(inFile->fname,fixLabel);
 	      cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,fixLabel);
