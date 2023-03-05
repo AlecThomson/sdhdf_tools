@@ -340,7 +340,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 	    }
        
 	  // Do the calibration
-	  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label,b,j, out_data,out_freq,ndump,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);	  
+	  sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[j].label,b,j, out_data,out_freq,ndump,nchan,1,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);	  
 	  sdhdf_releaseBandData(inFile,b,j,1); 		      
 	
 	  

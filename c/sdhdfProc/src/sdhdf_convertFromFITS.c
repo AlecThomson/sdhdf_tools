@@ -270,14 +270,14 @@ int main(int argc,char *argv[])
       int nbin;
       int nbin_cal;
       int nOn,nOff;
+      printf("Reading PSRFITS\n");
       if (cal==1)
 	{
 	  calBandHeader  = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct));
 	  calObsParams   = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 
 	  strcpy(primaryHeader->cal_mode,"ON");
-	  
-	  
+	 	  
 	  // First process cal
 	  printf("Opening file >%s<\n",calFile);
 	  fits_open_file(&fptr,calFile,READONLY,&status);
@@ -498,7 +498,8 @@ int main(int argc,char *argv[])
 	}
       free(shortVals);
     }
-  printf("Closing file\n");
+  printf("Closing file, status = %d\n",status);
+  printf("ndump = %d\n",ndump);
   fits_close_file(fptr,&status);
   obsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
   for (i=0;i<ndump;i++)
@@ -537,7 +538,6 @@ int main(int argc,char *argv[])
   sdhdf_initialiseFile(outFile);
 
   // Set up the primary header information
-
   primaryHeader[0].nbeam = nBeam;
   
   // Set up the beam information
@@ -554,16 +554,20 @@ int main(int argc,char *argv[])
   bandHeader->dtime = 100; // FIX
   bandHeader->ndump = ndump;
 
-  printf("Writing output file\n");
+  printf("Writing output file %s\n",outname);
+  printf("A\n");
   sdhdf_openFile(outname,outFile,3);
+
+  printf("B\n");
   sdhdf_writePrimaryHeader(outFile,primaryHeader);
   sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);
+  printf("C\n");
   for (b=0;b<nBeam;b++)
     {
       sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[b].label,1,1);
       sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[b].label,0,obsParams,ndump,1);
       // FIX ME: Only sending 1 frequency channel through
-      sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatVals+b*nchan*npol*ndump,freqVals,1,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatVals+b*nchan*npol*ndump,freqVals,1,nchan,1,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
       if (cal==1)
 	{
 	  sdhdf_writeBandHeader(outFile,calBandHeader,beamHeader[b].label,1,2);
@@ -574,8 +578,8 @@ int main(int argc,char *argv[])
 	  // 
 	  
 	  // FIX ME: Only sending 1 frequency channel through
-	  sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatCalValsOn,freqCalVals,1,nchan_cal,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-	  sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,0,0,floatCalValsOff,freqCalVals,1,nchan_cal,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatCalValsOn,freqCalVals,1,nchan_cal,1,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	  sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,0,0,floatCalValsOff,freqCalVals,1,nchan_cal,1,npol_cal,ndump_cal,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  printf("Completed writing cal\n");      
 	}
     }

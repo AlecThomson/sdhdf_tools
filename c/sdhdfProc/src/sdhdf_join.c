@@ -165,7 +165,7 @@ int main(int argc,char *argv[])
 	      sdhdf_closeFile(inFile);
 	    }
 	  sdhdf_writeSpectrumData(outFile,inFile0->beamHeader[b].label,inFile0->beam[b].bandHeader[i].label,b,i,out_data,
-				  out_freq,nDumpOut,inFile0->beam[b].bandHeader[i].nchan,inFile0->beam[b].bandHeader[i].npol,nDumpOut,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+				  out_freq,nDumpOut,inFile0->beam[b].bandHeader[i].nchan,1,inFile0->beam[b].bandHeader[i].npol,nDumpOut,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	  if (haveWeights==1)
 	    sdhdf_writeDataWeights(outFile,b,i,out_wts,inFile0->beam[b].bandHeader[i].nchan,nDumpOut,inFile0->beamHeader[b].label,outBandParams[i].label);
 	  if (haveFlags==1)

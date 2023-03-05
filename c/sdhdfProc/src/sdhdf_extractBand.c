@@ -350,7 +350,7 @@ int main(int argc,char *argv[])
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
 
 		      // FIX ME: Only sending 1 frequency channel through
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[j].label,b,j,outVals,freqVals,1,totNchan,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[j].label,b,j,outVals,freqVals,1,totNchan,1,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      sdhdf_writeObsParams(outFile,outBandParams[j].label,inFile->beamHeader[b].label,j,outObsParams,outBandParams[j].ndump,1);
 		    
 		      sprintf(groupName1,"beam_%d/%s/metadata/cal_obs_params",b,inFile->beam[b].bandHeader[selectBandID].label);

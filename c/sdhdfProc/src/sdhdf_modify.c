@@ -345,20 +345,20 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	    {
 	      if (singleFreqAxis==0)
 		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
-					out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+					out->freq,out->nFreqDump,out->nchan,1,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      else
 		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
-					out->freq,1,out->nchan,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+					out->freq,1,out->nchan,1,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		
 	      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,1);
 	    }
 	  else
 	    {
 	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
-				      out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+				      out->freq,out->nFreqDump,out->nchan,1,out->npol,out->ndump,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      
 	      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data2,
-				      out->freq,out->nFreqDump,out->nchan,out->npol,out->ndump,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+				      out->freq,out->nFreqDump,out->nchan,1,out->npol,out->ndump,3,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[ii].label,inFile->beamHeader[b].label,ii,out->obsParams,out->ndump,2);
 	    }
 	  // Write out the obs_params file

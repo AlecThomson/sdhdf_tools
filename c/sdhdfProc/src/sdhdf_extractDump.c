@@ -194,7 +194,7 @@ int main(int argc,char *argv[])
 		      printf("Writing spectral data\n");
 
 		      // For now just picking one frequency dump for output! ** FIX ME
-		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,1,nchan,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,b,i,out_data,out_freq,1,nchan,1,npol,out_ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      printf("Writing obs params\n");
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,inFile->beamHeader[b].label,i,outObsParams,out_ndump,1);
 		      printf("Releasing data\n");

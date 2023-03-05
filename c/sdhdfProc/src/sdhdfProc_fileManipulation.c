@@ -663,7 +663,7 @@ void sdhdf_add2arg(char *args,char *add1,char *add2)
 
 
 // GEORGE: NEED TO ADD ATTRIBUTES HERE -- PASS THEM THROUGH
-void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  float *out,float *freq,int nFreqDump,long nchan,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
+void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  float *out,float *freq,int nFreqDump,long nchan,long nbin,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
 {
   int i;
   hid_t dset_id,datatype_id,group_id,ocpl_id;

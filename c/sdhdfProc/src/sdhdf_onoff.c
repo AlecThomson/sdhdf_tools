@@ -337,7 +337,7 @@ int main(int argc,char *argv[])
 	      sdhdf_releaseBandData(offFile,b,i,1);
 
 	      // FIX ME: Only sending 1 frequency channel through
-	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,1,nchan,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+	      sdhdf_writeSpectrumData(outFile,onFile->beamHeader[b].label,onFile->beam[b].bandHeader[i].label,b,i,out_data,freq,1,nchan,1,npol,ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      free(out_data);
 	      free(freq);
 	    }
