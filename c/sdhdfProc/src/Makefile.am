@@ -13,10 +13,14 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_calibrate \
   sdhdf_calibrateOld \
   sdhdf_join \
+  sdhdf_joinBands \
   sdhdf_identify \
   sdhdf_plotNoiseCal \
+  sdhdf_plotPulsar \
+  sdhdf_plotPulsarSearch \
   sdhdf_tsys \
   sdhdf_convertFromFITS \
+  sdhdf_convertPulsarSearchMode \
   sdhdf_convertTo \
   sdhdf_convertToPSRFITS \
   sdhdf_convertFromPsr \
@@ -69,10 +73,16 @@ sdhdf_calibrateOld_SOURCES = sdhdf_calibrateOld.c \
 sdhdf_join_SOURCES = sdhdf_join.c \
   $(COMMON_SRCS)
 
+sdhdf_joinBands_SOURCES = sdhdf_joinBands.c \
+  $(COMMON_SRCS)
+
 sdhdf_identify_SOURCES = sdhdf_identify.c \
   $(COMMON_SRCS)
 
 sdhdf_convertFromFITS_SOURCES = sdhdf_convertFromFITS.c \
+  $(COMMON_SRCS)
+
+sdhdf_convertPulsarSearchMode_SOURCES = sdhdf_convertPulsarSearchMode.c \
   $(COMMON_SRCS)
 
 sdhdf_convertTo_SOURCES = sdhdf_convertTo.c \
@@ -85,6 +95,12 @@ sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \
   $(COMMON_SRCS)
 
 sdhdf_plotNoiseCal_SOURCES = sdhdf_plotNoiseCal.c \
+  $(COMMON_SRCS)
+
+sdhdf_plotPulsar_SOURCES = sdhdf_plotPulsar.c \
+  $(COMMON_SRCS)
+
+sdhdf_plotPulsarSearch_SOURCES = sdhdf_plotPulsarSearch.c \
   $(COMMON_SRCS)
 
 sdhdf_tsys_SOURCES = sdhdf_tsys.c \

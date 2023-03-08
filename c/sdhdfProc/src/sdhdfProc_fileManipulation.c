@@ -236,6 +236,34 @@ void sdhdf_loadBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int typ
   
 }
 
+// Type = 1: astro_data
+// Type = 2: cal_on
+// Type = 3: cal_off
+void sdhdf_loadQuantisedBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int type,unsigned char *arr)
+{
+  int i,j,n;
+  int nchan;
+  int ndump;
+  int npol;
+  char dataName[MAX_STRLEN];
+  hid_t dataset_id;
+  herr_t status;
+  float *allData;
+
+  // astro_data
+  if (type==1)
+    {
+      sprintf(dataName,"%s/%s/astronomy_data/data",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);      
+      dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
+      inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
+      for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
+	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
+      status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
+      status = H5Dclose(dataset_id);
+    }
+  
+}
+
 // Note loads in all dumps (if present)
 void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float *arr,int *nFreqDump)
 {
@@ -829,6 +857,147 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
 
 
 }
+
+// GEORGE: NEED TO ADD ATTRIBUTES HERE -- PASS THEM THROUGH
+// Writes out unsigned characters
+void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  unsigned char *out,float *freq,int nFreqDump,long nchan,long nbin,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
+{
+  int i;
+  hid_t dset_id,datatype_id,group_id,ocpl_id;
+  herr_t status=0;
+  hid_t dataspace_id,stid;
+  char groupName[MAX_STRLEN];
+  char dsetName[MAX_STRLEN],label[MAX_STRLEN];
+  hsize_t dims[5];
+
+  
+  if (type==0 || type==1 || type==4)
+    {
+      sprintf(groupName,"%s",beamLabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status   = H5Gclose(group_id);
+	}
+
+      sprintf(groupName,"%s/%s",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
+
+      sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
+    }
+  else if (type==2 || type==3)
+    {
+      sprintf(groupName,"%s",beamLabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status   = H5Gclose(group_id);
+	}
+
+      sprintf(groupName,"%s/%s",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
+      sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
+    }
+  dims[0] = nsub;
+  dims[1] = npol;
+  dims[2] = nchan;
+  dims[3] = nbin;
+  dataspace_id = H5Screate_simple(4,dims,NULL);
+
+
+  if (type==0 || type==1 || type==4)
+    {
+      sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
+      sprintf(dsetName,"%s/data",groupName);
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      for (i=0;i<nDataAttributes;i++)
+	{
+	  sdhdf_writeAttribute(outFile,dsetName,&dataAttributes[i]); //dataAttributes[i].key,dataAttributes[i].value);
+	}
+
+    }
+  else if (type==2)
+    {
+      sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	{
+	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  status = H5Gclose(group_id);
+	}
+      sprintf(dsetName,"%s/cal_data_on",groupName);
+      printf("CREATING %s\n",dsetName);
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+    }
+  else if (type==3)
+    {
+      sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
+      sprintf(dsetName,"%s/cal_data_off",groupName);
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+    }
+  
+  status = H5Dwrite(dset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
+  status = H5Dclose(dset_id);
+  status = H5Sclose(dataspace_id);
+
+  if (type==2 || type==3)
+    {
+      dims[0] = 1; // FIX ME IF NEEDED **
+      dims[1] = nchan;
+    }
+  else
+    {
+      dims[0] = nFreqDump;
+      dims[1] = nchan;
+    }
+      dataspace_id = H5Screate_simple(2,dims,NULL);
+
+  if (type==0 || type==1 || type==4)
+    {
+      sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
+      sprintf(dsetName,"%s/frequency",groupName);
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
+    
+      // Now write attributes
+      //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
+      for (i=0;i<nFreqAttributes;i++)
+	sdhdf_writeAttribute(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
+      
+      status  = H5Dclose(dset_id);
+    }
+  else if (type==2)
+    {
+      sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
+      sprintf(dsetName,"%s/cal_frequency",groupName);
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
+      status  = H5Dclose(dset_id);      
+    }
+  status = H5Sclose(dataspace_id);
+  if (type == 0 || type == 1 || type == 4)
+    status = H5Gclose(group_id);
+
+
+}
+
 
 void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam,int iband,  float *out,int nsub,int npol,int nchan)
 {

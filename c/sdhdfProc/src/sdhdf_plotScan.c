@@ -75,6 +75,7 @@ void help()
   printf("                   - Angle between pointing position and source position\n");
   printf("                   - Offset in pointing position from source RA\n");
   printf("                   - Offset in pointing position from source DEC\n");
+  printf("X                 Define x-label\n");
   printf("z                 Zoom into specific region\n");
   
 }
@@ -136,6 +137,10 @@ int main(int argc,char *argv[])
   double ra0 = 0;
   double dec0 = 0;
 
+  char xLabelStr[128];
+  int defineXlabel=0;
+
+  
   char userLabel[12][128];
   float userLabelX[12];
   float userLabelY[12];
@@ -416,32 +421,37 @@ int main(int argc,char *argv[])
     }
     
     sprintf(title,"%s",sourceFix);
-    if (xaxis==0)
-      cpglab("Spectral dump number","Signal strength (arbitrary)",title);
-    else if (xaxis==1)
-      cpglab("Time since observation start (seconds)","Signal strength (arbitrary)",title);
-    else if (xaxis==2)
-      cpglab("Right ascension (degrees)","Signal strength (arbitrary)",title);
-    else if (xaxis==3)
-      cpglab("Declination (degrees)","Signal strength (arbitrary)",title);
-    else if (xaxis==4)
-      cpglab("Azimuth (degrees)","Signal strength (arbitrary)",title);
-    else if (xaxis==5)
-      cpglab("Elevation (degrees)","Signal strength (arbitrary)",title);
-    else if (xaxis==6)
-      {
-	sprintf(offsetStr,"Angular offset from (%.2f,%.2f) (degrees)",ra0,dec0);
-	cpglab(offsetStr,"Signal strength (arbitrary)",title);
-      }
-    else if (xaxis==7)
-      {
-	sprintf(offsetStr,"Right ascension - [%.4f] (degrees)",ra0);
-	cpglab(offsetStr,"Signal strength (arbitrary)",title);
-      }
-    else if (xaxis==8)
-      {
-	sprintf(offsetStr,"Declination - [%.4f] (degrees)",dec0);
-	cpglab(offsetStr,"Signal strength (arbitrary)",title);
+    if (defineXlabel == 1)
+      cpglab(xLabelStr,"Signal strength (arbitrary)",title);
+    else
+      {       
+	if (xaxis==0)
+	  cpglab("Spectral dump number","Signal strength (arbitrary)",title);
+	else if (xaxis==1)
+	  cpglab("Time since observation start (seconds)","Signal strength (arbitrary)",title);
+	else if (xaxis==2)
+	  cpglab("Right ascension (degrees)","Signal strength (arbitrary)",title);
+	else if (xaxis==3)
+	  cpglab("Declination (degrees)","Signal strength (arbitrary)",title);
+	else if (xaxis==4)
+	  cpglab("Azimuth (degrees)","Signal strength (arbitrary)",title);
+	else if (xaxis==5)
+	  cpglab("Elevation (degrees)","Signal strength (arbitrary)",title);
+	else if (xaxis==6)
+	  {
+	    sprintf(offsetStr,"Angular offset from (%.2f,%.2f) (degrees)",ra0,dec0);
+	    cpglab(offsetStr,"Signal strength (arbitrary)",title);
+	  }
+	else if (xaxis==7)
+	  {
+	    sprintf(offsetStr,"Right ascension - [%.4f] (degrees)",ra0);
+	    cpglab(offsetStr,"Signal strength (arbitrary)",title);
+	  }
+	else if (xaxis==8)
+	  {
+	    sprintf(offsetStr,"Declination - [%.4f] (degrees)",dec0);
+	    cpglab(offsetStr,"Signal strength (arbitrary)",title);
+	  }
       }
     if (select==-1)
       {
@@ -582,6 +592,14 @@ int main(int argc,char *argv[])
 	    if (xaxis==9)
 	      xaxis=0;
 	    recalc=1;
+	  }
+	else if (key=='X')
+	  {
+	    printf("Enter new label for X-axis\n");
+	    fgets(xLabelStr,128,stdin);
+	    if (xLabelStr[strlen(xLabelStr)-1]=='\n')
+	      xLabelStr[strlen(xLabelStr)-1]='\0';
+	    defineXlabel=1;
 	  }
 	else if (key=='z')
 	  {

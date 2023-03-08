@@ -639,6 +639,7 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
       headerT    = H5Dget_type(header_id);
       space      = H5Dget_space(header_id);
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+
       if (dims[0] != nband)
 	{
 	  printf("ERROR: incorrect number of bands.  In beam header have %d band. Dimension of data is %d\n",nband,(int)dims[0]);
@@ -687,7 +688,6 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
 
   // Need to allocate memory first
   //  outFile->beam[ibeam].nBand = outBands;  
-
   dims[0] = outBands;
 
   datatype_id = H5Tcreate (H5T_COMPOUND, sizeof(sdhdf_bandHeaderStruct));
@@ -704,11 +704,9 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
   H5Tinsert(datatype_id,"POL_TYPE",HOFFSET(sdhdf_bandHeaderStruct,pol_type),stid);
   H5Tinsert(datatype_id,"DUMP_TIME",HOFFSET(sdhdf_bandHeaderStruct,dtime),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"N_DUMPS",HOFFSET(sdhdf_bandHeaderStruct,ndump),H5T_NATIVE_INT);
-
   dataspace_id = H5Screate_simple(1,dims,NULL);
 
   // Do we need to create the groups
-
   sprintf(groupName,"%s",beamLabel);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     {
@@ -722,12 +720,13 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
       group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       status = H5Gclose(group_id);
     }
-  
   if (type==1)
     {
       sprintf(name,"%s/metadata/band_params",beamLabel);
       if (sdhdf_checkGroupExists(outFile,name) == 1)
-	dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	{
+	  dset_id = H5Dcreate2(outFile->fileID,name,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	}
       else
 	dset_id  = H5Dopen2(outFile->fileID,name,H5P_DEFAULT);
     }
@@ -739,13 +738,10 @@ void sdhdf_writeBandHeader(sdhdf_fileStruct *outFile,sdhdf_bandHeaderStruct *out
       else
 	dset_id  = H5Dopen2(outFile->fileID,name,H5P_DEFAULT);
     }
-
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,outBandParams);
   status  = H5Dclose(dset_id);
-
   status  = H5Sclose(dataspace_id);  
   status  = H5Tclose(datatype_id);
-
   status  = H5Tclose(stid);
 }
 

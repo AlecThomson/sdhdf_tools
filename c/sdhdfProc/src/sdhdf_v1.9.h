@@ -82,7 +82,7 @@ typedef struct sdhdf_spectralDumpsStruct {
   int    nchan;                // Number of channels
   int    ndump;                // Number of spectral dumps
   int    npol;                 // Number of polarisations allocated
-
+  
   int    freqAllocatedMemory;      // 0 = no, otherwise 1
   int    flagAllocatedMemory;      // 0 = no, otherwise 1
   int    dataWeightsAllocatedMemory;      // 0 = no, otherwise 1

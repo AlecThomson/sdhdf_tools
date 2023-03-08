@@ -119,8 +119,11 @@ int main(int argc,char *argv[])
   double *baseline1,*baseline2,*baseline3,*baseline4;
 
   int nBeam;
-
-  nBeam = 13; // FIX ME
+  int nbin;
+  int nbin_cal;
+  
+  nbin = 1;
+  nBeam = 1; // FIX ME
   pulseOff1=pulseOff2=-1;
   
   primaryHeader    = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
@@ -199,8 +202,6 @@ int main(int argc,char *argv[])
       floatVals   = (float *)malloc(sizeof(float)*nchan*npol*ndump*nBeam);
       freqVals    = (float *)malloc(sizeof(float)*nchan);
 
-      // FIX ME
-      nBeam = 13;
 
       for (i=0;i<nBeam;i++)
 	{
@@ -267,8 +268,6 @@ int main(int argc,char *argv[])
     }
   else if (fitsType==2)
     {
-      int nbin;
-      int nbin_cal;
       int nOn,nOff;
       printf("Reading PSRFITS\n");
       if (cal==1)
@@ -488,11 +487,10 @@ int main(int argc,char *argv[])
 	    {
 	      for (k=0;k<nchan;k++)
 		{
-		  floatVals[i*nchan*npol + j*nchan + k] = (shortVals[k*nbin+j*nchan*nbin + binVal])*datScl[j*nchan+k]+datOffs[j*nchan+k]; // WHAT ABOUT zeroOff?? -- CHECK
-		  if (j==0)      floatVals[i*nchan*npol + j*nchan + k] -= baseline1[k];
-		  else if (j==1) floatVals[i*nchan*npol + j*nchan + k] -= baseline2[k];
-		  else if (j==2) floatVals[i*nchan*npol + j*nchan + k] -= baseline3[k];
-		  else if (j==3) floatVals[i*nchan*npol + j*nchan + k] -= baseline4[k];
+		  for (b=0;b<nbin;b++)
+		    {
+		      floatVals[i*nchan*npol*nbin + j*nchan*nbin + k*nbin+ b] = (shortVals[k*nbin+j*nchan*nbin + b])*datScl[j*nchan+k]+datOffs[j*nchan+k]; // WHAT ABOUT zeroOff?? -- CHECK
+		    }
 		}
 	    }
 	}
@@ -538,6 +536,7 @@ int main(int argc,char *argv[])
   sdhdf_initialiseFile(outFile);
 
   // Set up the primary header information
+  printf("nbeam = %d\n",nBeam);
   primaryHeader[0].nbeam = nBeam;
   
   // Set up the beam information
@@ -559,15 +558,16 @@ int main(int argc,char *argv[])
   sdhdf_openFile(outname,outFile,3);
 
   printf("B\n");
-  sdhdf_writePrimaryHeader(outFile,primaryHeader);
   sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);
+  sdhdf_writePrimaryHeader(outFile,primaryHeader);
   printf("C\n");
   for (b=0;b<nBeam;b++)
     {
       sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[b].label,1,1);
       sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[b].label,0,obsParams,ndump,1);
       // FIX ME: Only sending 1 frequency channel through
-      sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatVals+b*nchan*npol*ndump,freqVals,1,nchan,1,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
+      printf("Number of bins = %d\n",nbin);
+      sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,floatVals+b*nchan*npol*ndump,freqVals,1,nchan,nbin,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
       if (cal==1)
 	{
 	  sdhdf_writeBandHeader(outFile,calBandHeader,beamHeader[b].label,1,2);
