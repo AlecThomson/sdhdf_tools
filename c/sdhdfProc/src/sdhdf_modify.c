@@ -302,6 +302,10 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	      else
 		sdhdf_copySingleObsParamsCal(inFile,b,ii,i,&in->obsParams[i]); 
 	    }
+	  printf("POS A\n");
+	  printf("astroCal = %d\n",astroCal);
+	  printf("nchan =  %d\n",in->nchan);
+	  printf("ndump = %d\n",in->ndump);
 	  for (k=0;k<in->nchan;k++)
 	    {
 	      for (j=0;j<in->ndump;j++)
@@ -310,12 +314,14 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 		  // SHOULD HAVE A WAY TO FGET THE DATA DIRECTLY IN THE CORRECT FORMAT AS IT IS STORED IN THAT FORMAT ANYWAY
 		  if (astroCal==0)
 		    {
-		      in->data[j*in->nchan*in->npol + k] = inFile->beam[b].bandData[ii].astro_data.pol1[k+j*in->nchan];
-		      in->data[j*in->nchan*in->npol + k + in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol2[k+j*in->nchan];
-		      in->data[j*in->nchan*in->npol + k + 2*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+j*in->nchan];
-		      in->data[j*in->nchan*in->npol + k + 3*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+j*in->nchan];
-		      in->wt[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[k+j*in->nchan];
-		      in->flag[j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.flag[k+j*in->nchan];
+		      //		      printf("Setting %d %d\n",k,j);
+		      in->data[(long)((long)j*in->nchan*in->npol) + k] = inFile->beam[b].bandData[ii].astro_data.pol1[k+(long)j*in->nchan];
+		      in->data[(long)((long)j*in->nchan*in->npol) + k + in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol2[k+(long)j*in->nchan];
+		      in->data[(long)((long)j*in->nchan*in->npol) + k + 2*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+(long)j*in->nchan];
+		      in->data[(long)((long)j*in->nchan*in->npol) + k + 3*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+(long)j*in->nchan];
+		      in->wt[(long)j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[k+(long)j*in->nchan];
+		      in->flag[(long)j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.flag[k+(long)j*in->nchan];
+		      //		      printf(" .. done\n");
 		    }
 		  else
 		    {
@@ -333,6 +339,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 		    }
 		}
 	    }
+	  printf("Processing cmomands\n");
 	  for (c=0;c<nCommands;c++)
 	    {
 	      processCommand(in,out,ii,&commands[c],freqAttributes,nFreqAttributes,verbose);
@@ -617,22 +624,22 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 	      nMedian=0;
 	      for (kk=0;kk<avFreq;kk++)
 		{
-		  wtVal     = in->wt[(k*in->nchan) + (j*avFreq)+kk];
-		  flagVal   = 1-in->flag[(k*in->nchan) + (j*avFreq)+kk];
+		  wtVal     = in->wt[((long)k*in->nchan) + ((long)j*avFreq)+kk];
+		  flagVal   = 1-in->flag[((long)k*in->nchan) + ((long)j*avFreq)+kk];
 		  if (meanMedian==1)
 		    {
 		      if (in->astroCal==0)
 			{
-			  avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk+k*in->nchan];
-			  avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
-			  av += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+			  avFreqVal  += wtVal*flagVal*in->freq[((long)j*avFreq)+kk+(long)k*in->nchan];
+			  avFreqNoWt += in->freq[((long)j*avFreq)+kk+(long)k*in->nchan];
+			  av += wtVal*flagVal*in->data[(long)k*in->nchan*in->npol + (long)p*in->nchan + ((long)j*avFreq)+kk];		      
 			}
 		      else
 			{
-			  avFreqVal  += wtVal*flagVal*in->freq[(j*avFreq)+kk];
-			  avFreqNoWt += in->freq[(j*avFreq)+kk];
-			  av  += wtVal*flagVal*in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
-			  av2 += wtVal*flagVal*in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];		      
+			  avFreqVal  += wtVal*flagVal*in->freq[((long)j*avFreq)+kk];
+			  avFreqNoWt += in->freq[((long)j*avFreq)+kk];
+			  av  += wtVal*flagVal*in->data[(long)k*in->nchan*in->npol + p*in->nchan + ((long)j*avFreq)+kk];
+			  av2 += wtVal*flagVal*in->data2[(long)k*in->nchan*in->npol + p*in->nchan + ((long)j*avFreq)+kk];		      
 			  //			  printf("Using: %g %g\n",in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk],in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk]);
 			}
 
@@ -641,15 +648,15 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		  else
 		    {
 		      if (in->astroCal == 0)
-			avFreqNoWt += in->freq[(j*avFreq)+kk+k*in->nchan];
+			avFreqNoWt += in->freq[((long)j*avFreq)+kk+(long)k*in->nchan];
 		      else
-			avFreqNoWt += in->freq[(j*avFreq)+kk];
+			avFreqNoWt += in->freq[((long)j*avFreq)+(long)kk];
 		      if (flagVal == 1 && wtVal != 0)
 			{
-			  medVal[nMedian]  = in->data[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
+			  medVal[nMedian]  = in->data[(long)k*in->nchan*in->npol + (long)p*in->nchan + ((long)j*avFreq)+kk];
 			  if (in->astroCal!=0)
-			    medVal2[nMedian] = in->data2[k*in->nchan*in->npol + p*in->nchan + (j*avFreq)+kk];
-			  medWt[nMedian]  = in->wt[(k*in->nchan) + (j*avFreq)+kk];
+			    medVal2[nMedian] = in->data2[(long)k*in->nchan*in->npol + (long)p*in->nchan + ((long)j*avFreq)+kk];
+			  medWt[nMedian]  = in->wt[((long)k*in->nchan) + ((long)j*avFreq)+kk];
 			  s_flag_wt+= wtVal;
 			  nMedian++;
 			}
@@ -657,20 +664,20 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		}
 	      if (meanMedian==1) // Mean
 		{
-		  out->wt[k*out->nchan + j] =   s_flag_wt; 
+		  out->wt[(long)k*out->nchan + j] =   s_flag_wt; 
 		  if (s_flag_wt > 0)
-		    out->flag[k*out->nchan + j] = 0;
+		    out->flag[(long)k*out->nchan + j] = 0;
 		  else
-		    out->flag[k*out->nchan + j] = 1;
+		    out->flag[(long)k*out->nchan + j] = 1;
 		  
 		  if (sum==1)
 		    {
 		      if (in->astroCal==0)
-			out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+			out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av;
 		      else
 			{
-			  out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
-			  out->data2[k*out->nchan*out->npol + p*out->nchan + j] = av2;
+			  out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av;
+			  out->data2[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av2;
 			}
 		    }
 		  else
@@ -678,22 +685,22 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		      if (in->astroCal==0)
 			{
 			  if (s_flag_wt > 0)
-			    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av/s_flag_wt;
+			    out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av/s_flag_wt;
 			  else
-			    out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
+			    out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av;
 			}
 		      else
 			{
 
 			  if (s_flag_wt > 0)
 			    {
-			      out->data[k*out->nchan*out->npol + p*out->nchan + j]  = av/s_flag_wt;
-			      out->data2[k*out->nchan*out->npol + p*out->nchan + j] = av2/s_flag_wt;
+			      out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j]  = av/s_flag_wt;
+			      out->data2[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av2/s_flag_wt;
 			    }
 			  else
 			    {
-			      out->data[k*out->nchan*out->npol + p*out->nchan + j] = av;
-			      out->data2[k*out->nchan*out->npol + p*out->nchan + j] = av2;
+			      out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av;
+			      out->data2[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = av2;
 			    }
 			}
 		    }
@@ -704,19 +711,19 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 		  // Currently doing an unweighted median ** FIX ME **
 		  if (nMedian==0)
 		    {
-		      out->data[k*out->nchan*out->npol + p*out->nchan + j] = 0;
+		      out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = 0;
 		      if (in->astroCal==1)
-			out->data2[k*out->nchan*out->npol + p*out->nchan + j] = 0;
-		      out->flag[k*out->nchan + j] = 1;
-		      out->wt[k*out->nchan + j] = 0;
+			out->data2[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = 0;
+		      out->flag[(long)k*out->nchan + j] = 1;
+		      out->wt[(long)k*out->nchan + j] = 0;
 		    }
 		  else
 		    {
-		      out->data[k*out->nchan*out->npol + p*out->nchan + j] = quick_select_float(medVal,nMedian);
+		      out->data[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = quick_select_float(medVal,nMedian);
 		      if (in->astroCal==1)
-			out->data2[k*out->nchan*out->npol + p*out->nchan + j] = quick_select_float(medVal2,nMedian);
-		      out->flag[k*out->nchan + j] = 0;
-		      out->wt[k*out->nchan + j]   = s_flag_wt/(float)nMedian; 
+			out->data2[(long)k*out->nchan*out->npol + (long)p*out->nchan + j] = quick_select_float(medVal2,nMedian);
+		      out->flag[(long)k*out->nchan + j] = 0;
+		      out->wt[(long)k*out->nchan + j]   = s_flag_wt/(float)nMedian; 
 		    }
 		}
 
@@ -725,9 +732,9 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
 	      if (p==0)
 		{
 		  if (in->astroCal == 0)
-		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq; // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCY ARRAY
+		    out->freq[j+(long)k*out->nchan] = avFreqNoWt/avFreq; // FIX ME: NOT PICKING UP CORRECT BIT OF FREQUENCY ARRAY
 		  else
-		    out->freq[j+k*out->nchan] = avFreqNoWt/avFreq;
+		    out->freq[j+(long)k*out->nchan] = avFreqNoWt/avFreq;
 		}
 		  //	      else
 		//		{
