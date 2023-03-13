@@ -302,10 +302,10 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	      else
 		sdhdf_copySingleObsParamsCal(inFile,b,ii,i,&in->obsParams[i]); 
 	    }
-	  printf("POS A\n");
-	  printf("astroCal = %d\n",astroCal);
-	  printf("nchan =  %d\n",in->nchan);
-	  printf("ndump = %d\n",in->ndump);
+	  //	  printf("POS A\n");
+	  //	  printf("astroCal = %d\n",astroCal);
+	  //	  printf("nchan =  %d\n",in->nchan);
+	  //	  printf("ndump = %d\n",in->ndump);
 	  for (k=0;k<in->nchan;k++)
 	    {
 	      for (j=0;j<in->ndump;j++)
@@ -339,7 +339,6 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 		    }
 		}
 	    }
-	  printf("Processing cmomands\n");
 	  for (c=0;c<nCommands;c++)
 	    {
 	      processCommand(in,out,ii,&commands[c],freqAttributes,nFreqAttributes,verbose);
@@ -416,7 +415,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 
 void processCommand(dataStruct *in,dataStruct *out,int iband,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
 {
-  printf("Processing command: %d\n",command->type);
+  //  printf("Processing command: %d\n",command->type);
   if (command->type==1)
     timeAverage(in,out,command->param1,command->param2);
   else if (command->type==2)
