@@ -36,7 +36,7 @@
 #define VERSION "v0.5"
 #define MAX_POL_CAL_CHAN 4096    // FIX ME -- SHOULD SET DYNAMICALLY
 
-void processFile(char *fname,char *oname, int stabiliseType, int out_npol, char *fluxCalFile, int tcal, int verbose);
+void processFile(char *fname,char *oname, int stabiliseType, int out_npol, char *fluxCalFile, int fluxCalMethod, int polCalMethod, int tcal, int verbose);
 
 void help()
 {
@@ -65,7 +65,8 @@ int main(int argc,char *argv[])
   int out_npol = 4;
   char fluxCalFile[1024] = "uwl_220705_132107.fluxcal";
   int tcal=0; // Using Scal if 0, or Tcal = 1
-    
+  int fluxCalMethod = 1; // 1 = spline, 2 = average
+  int polCalMethod = 1;  // 1 = spline, 2 = average
   strcpy(extension,"calibrate");
   
   for (i=1;i<argc;i++)
@@ -78,7 +79,11 @@ int main(int argc,char *argv[])
 	strcpy(extension,argv[++i]);
       else if (strcmp(argv[i],"-tcal")==0)
 	tcal=1;
-      else if (strcmp(argv[i],"-fluxcal")==0)
+      else if (strcasecmp(argv[i],"-fluxcalMethod")==0)
+	sscanf(argv[++i],"%d",&fluxCalMethod);
+      else if (strcasecmp(argv[i],"-polcalMethod")==0)
+	sscanf(argv[++i],"%d",&polCalMethod);
+      else if (strcmp(argv[i],"-fluxcal")==0 || strcmp(argv[i],"-scal")==0)
 	strcpy(fluxCalFile,argv[++i]);
       else if (strcmp(argv[i],"-s")==0)
 	sscanf(argv[++i],"%d",&stabiliseType);
@@ -92,12 +97,12 @@ int main(int argc,char *argv[])
     {
       printf("Processing file: %s\n",fname[i]);
       sdhdf_formOutputFilename(fname[i],extension,oname);
-      processFile(fname[i],oname,stabiliseType,out_npol,fluxCalFile,tcal,verbose);
+      processFile(fname[i],oname,stabiliseType,out_npol,fluxCalFile,fluxCalMethod,polCalMethod,tcal,verbose);
     }
 
 }
 
-void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *fluxCalFile, int tcal,int verbose)
+void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *fluxCalFile, int fluxCalMethod,int polCalMethod,int tcal,int verbose)
 {
   int ii,i,c,j,k,b;
   sdhdf_fileStruct *inFile,*outFile;
@@ -120,6 +125,10 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
   double stabilise_normFactor;
   float *fluxCalFreq,*fluxCalValAA,*fluxCalValBB;
   float fluxValAA,fluxValBB;
+  float meanFluxValAA,meanFluxValBB;
+  int meanFluxValN;
+  float meanPolValAA,meanPolValBB,meanPolValRe,meanPolValIm;
+  int meanPolValN;
   sdhdf_fluxCalibration *fluxCal;
 
   double complex Jast[2][2];
@@ -181,7 +190,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
   fluxCalFreq = (float *)malloc(sizeof(float)*nFluxCalChan);
   fluxCalValAA = (float *)malloc(sizeof(float)*nFluxCalChan);
   fluxCalValBB = (float *)malloc(sizeof(float)*nFluxCalChan);
-
+  
   for (i=0;i<nFluxCalChan;i++)
     {
       interpCoeff_fluxCalAA[i] = (float *)malloc(sizeof(float)*4);
@@ -190,9 +199,11 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
       fluxCalFreq[i]  = fluxCal[i].freq;
       fluxCalValAA[i] = fluxCal[i].scalAA;
       fluxCalValBB[i] = fluxCal[i].scalBB;
+      
     }
   TKcmonot(nFluxCalChan,fluxCalFreq,fluxCalValAA,interpCoeff_fluxCalAA);
   TKcmonot(nFluxCalChan,fluxCalFreq,fluxCalValBB,interpCoeff_fluxCalBB);
+
   //  for (freq=704;freq<4032;freq+=0.1)
   //    printf("fluxcalInterp: %g %g %g\n",freq,sdhdf_splineValue(freq,nFluxCalChan,fluxCalFreq,interpCoeff_fluxCalAA),sdhdf_splineValue(freq,nFluxCalChan,fluxCalFreq,interpCoeff_fluxCalBB));
 
@@ -245,15 +256,59 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 	  // NOTE: THIS INTERPOLATION INCLUDES ALL THE RFI! FIX ME
 	  // EXTRACT_BAND SHOULD EXTRACT THE CAL AS WELL
 	  // NEED TO CHECK THIS INTERPOLATION MORE
+
+	  // Get mean fluxvalue in the relevant part of the band
+	  meanFluxValAA = meanFluxValBB = 0;
+	  meanFluxValN=0;
+	  for (i=0;i<nFluxCalChan;i++)
+	    {
+	      //	      printf("Here with %g %g %g\n",fluxCalFreq[i],inFile->beam[b].bandData[j].astro_data.freq[0],inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1]);
+	      if (fluxCalFreq[i] > inFile->beam[b].bandData[j].astro_data.freq[0] &&
+		  fluxCalFreq[i] < inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1])
+		{
+		  meanFluxValAA += fluxCalValAA[i];
+		  meanFluxValBB += fluxCalValBB[i];
+		  meanFluxValN++;
+		}
+	    }
+
+	  meanFluxValAA /= (double)meanFluxValN;
+	  meanFluxValBB /= (double)meanFluxValN;
+	  printf("Mean flux value for AA/BB = %g, %g, number of entries = %d\n",meanFluxValAA,meanFluxValBB,meanFluxValN);
+	
 	  //
+
+	  // Get mean pol cal values in the relevant part of the band
+	  meanPolValAA = meanPolValBB = meanPolValRe = meanPolValIm = 0;
+	  meanPolValN=0;
+	  for (i=0;i<nFluxCalChan;i++)
+	    {
+	      //	      printf("Here with %g %g %g\n",fluxCalFreq[i],inFile->beam[b].bandData[j].astro_data.freq[0],inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1]);
+	      if (load_calFreq[i] > inFile->beam[b].bandData[j].astro_data.freq[0] &&
+		  load_calFreq[i] < inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1])
+		{
+		  meanPolValAA += load_calAA[i];
+		  meanPolValBB += load_calBB[i];
+		  meanPolValRe += load_calRe[i];
+		  meanPolValIm += load_calIm[i];
+		  meanPolValN++;
+		}
+	    }
+	  meanPolValAA /= (double)meanPolValN;
+	  meanPolValBB /= (double)meanPolValN;
+	  meanPolValRe /= (double)meanPolValN;
+	  meanPolValIm /= (double)meanPolValN;
+	  printf("pol values mean = %g, %g, %g, %g from %d points\n",meanPolValAA,meanPolValBB,meanPolValRe,meanPolValIm,meanPolValN);
 	  TKcmonot(load_nchanCal,load_calFreq,load_calAA,interpCoeff_AA);
 	  TKcmonot(load_nchanCal,load_calFreq,load_calBB,interpCoeff_BB);
 	  TKcmonot(load_nchanCal,load_calFreq,load_calRe,interpCoeff_Re);
 	  TKcmonot(load_nchanCal,load_calFreq,load_calIm,interpCoeff_Im);
+
+	  
 	  
 	  if (verbose==1 && j==0)
 	    {
-	      for (freq=1600;freq<1728;freq+=0.1)
+	      for (freq=load_calFreq[0];freq<load_calFreq[load_nchanCal-1];freq+=0.1)
 		printf("Using noise source: %g %g %g %g %g\n",freq,sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_AA),sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_BB),sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Re),sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Im));
 	      //	      for (k=0;k<use_nchanCal;k++)
 		//
@@ -275,12 +330,22 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 		  measured_bb = inFile->beam[b].bandData[j].astro_data.pol2[ii+k*nchan];
 		  measured_rab = inFile->beam[b].bandData[j].astro_data.pol3[ii+k*nchan];
 		  measured_iab = inFile->beam[b].bandData[j].astro_data.pol4[ii+k*nchan];
-
-		  cal_aa  = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_AA);
-		  cal_bb  = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_BB);
-		  cal_rab = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Re);
-		  cal_iab = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Im);
-
+		  
+		  if (polCalMethod==1)
+		    {
+		      cal_aa  = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_AA);
+		      cal_bb  = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_BB);
+		      cal_rab = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Re);
+		      cal_iab = sdhdf_splineValue(freq,load_nchanCal,load_calFreq,interpCoeff_Im);
+		    }
+		  else if (polCalMethod==2)
+		    {
+		      cal_aa = meanPolValAA;
+		      cal_bb = meanPolValAA;
+		      cal_rab = meanPolValAA;
+		      cal_iab = meanPolValAA;
+		    }
+		    
 		  //		  printf("testCAL: %g %g\n",freq,(pow(cal_rab,2)+pow(cal_iab,2))/cal_aa/cal_bb);
 		  
 		  // Stabilise the data set using the noise source		  
@@ -304,10 +369,17 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 		  
 		  stabilised_rab = (measured_rab*cal_rab + measured_iab*cal_iab)/stabilise_normFactor;
 		  stabilised_iab = (measured_iab*cal_rab - measured_rab*cal_iab)/stabilise_normFactor;
-
-		  fluxValAA = sdhdf_splineValue(freq,nFluxCalChan,fluxCalFreq,interpCoeff_fluxCalAA);
-		  fluxValBB = sdhdf_splineValue(freq,nFluxCalChan,fluxCalFreq,interpCoeff_fluxCalBB);
-		  fluxScale = fluxValAA + fluxValBB;
+		  if (fluxCalMethod==1)
+		    {
+		      fluxValAA = sdhdf_splineValue(freq,nFluxCalChan,fluxCalFreq,interpCoeff_fluxCalAA);
+		      fluxValBB = sdhdf_splineValue(freq,nFluxCalChan,fluxCalFreq,interpCoeff_fluxCalBB);
+		    }
+		  else if (fluxCalMethod==2)
+		    {
+		      fluxValAA = meanFluxValAA;
+		      fluxValBB = meanFluxValBB;
+		    }
+		      fluxScale = fluxValAA + fluxValBB;
 		  if (verbose==2)
 		    {
 		      fprintf(debugOut1,"%.6f %g %g\n",freq,fluxValAA,fluxValBB);
