@@ -14,6 +14,7 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_calibrateOld \
   sdhdf_join \
   sdhdf_joinBands \
+  sdhdf_joinFiles \
   sdhdf_identify \
   sdhdf_plotNoiseCal \
   sdhdf_plotPulsar \
@@ -72,6 +73,10 @@ sdhdf_calibrateOld_SOURCES = sdhdf_calibrateOld.c \
 
 sdhdf_join_SOURCES = sdhdf_join.c \
   $(COMMON_SRCS)
+
+sdhdf_joinFiles_SOURCES = sdhdf_joinFiles.c \
+  $(COMMON_SRCS)
+
 
 sdhdf_joinBands_SOURCES = sdhdf_joinBands.c \
   $(COMMON_SRCS)

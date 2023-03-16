@@ -276,7 +276,7 @@ int main(int argc,char *argv[])
 				}
 			    }
 			}
-		    
+		      printf("Selecting band %d\n",selectBandID);
 		      strcpy(outBandParams[j].pol_type,inBandParams[selectBandID].pol_type);
 		      npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].npol = inBandParams[selectBandID].npol;
