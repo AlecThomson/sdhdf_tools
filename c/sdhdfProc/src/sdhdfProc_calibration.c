@@ -78,6 +78,7 @@ void sdhdf_noiseSourceOnOff(sdhdf_fileStruct *inFile,int ibeam,int iband,float *
     {
       // Should check NCHANFREQ ** FIX ME ** ASSUME 1
       freq[i] = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[i];
+      printf("Noise source frequency = %g\n",freq);
       aa_on = aa_off = bb_on = bb_off = re_on = re_off = im_on = im_off = 0.;
       for (j=0;j<nsubCal;j++)
 	{
