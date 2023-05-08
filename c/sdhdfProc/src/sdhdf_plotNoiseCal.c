@@ -42,6 +42,7 @@ void help()
   printf("\n\n");
   printf("-autoSsys           Automatically determine Ssys and print out to screen\n");
   printf("-autoSysGain        Automatically determine system gain and print out to screen\n");
+  printf("-autoDiffPhase      Automatically determine differential phase and print out to screen\n");
   printf("-av                 Average the noise source information in time\n");
   printf("-f <filename>       Input filename\n");
   printf("-h                  This help\n");
@@ -85,6 +86,7 @@ int main(int argc,char *argv[])
   float scaleCal=1;
   int autoSsys=0;
   int autoSysGain=0;
+  int autoDiffPhase=0;
   int av=0;
   int verbose=0;
   sdhdf_fluxCalibration *fluxCal;
@@ -117,10 +119,12 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-tcal")==0)
 	strcpy(tcalFname,argv[++i]);
       else if (strcmp(argv[i],"-scale")==0)
-	sscanf(argv[++i],"%f",&scaleCal);
+	sscanf(argv[++i],"%f",&scaleCal); 
       else if (strcmp(argv[i],"-autoSsys")==0)
 	autoSsys=1;
-      else if (strcmp(argv[i],"-autoSysGain")==0)
+      else if (strcasecmp(argv[i],"-autoDiffPhase")==0)
+	autoDiffPhase=1;
+     else if (strcmp(argv[i],"-autoSysGain")==0)
 	autoSysGain=1;
       else if (strcmp(argv[i],"-av")==0)
 	av=1;
@@ -326,6 +330,41 @@ int main(int argc,char *argv[])
 	    }
 	}
     }
+  else if (autoDiffPhase==1)
+    {
+      double freq,s1,s2;
+      int np=0;
+      float onP1,offP1,onP2,offP2;
+      float onP3,offP3,onP4,offP4;
+      
+      np=0;
+      for (i=0;i<inFile->beam[beam].nBand;i++)
+	{
+	  nchan = inFile->beam[beam].calBandHeader[i].nchan;
+	  for (j=0;j<nchan;j++)
+	    {
+	      freq = inFile->beam[beam].bandData[i].cal_on_data.freq[j];  // FIX ME -- FREQ AXIS FOR DUMP
+	      onP1=offP1=onP2=offP2=onP3=offP3=onP4=offP4=0;
+	      for (k=0;k<inFile->beam[beam].calBandHeader[0].ndump;k++)
+		{	  		  
+		  onP1  += inFile->beam[beam].bandData[i].cal_on_data.pol1[j+k*nchan];
+		  offP1 += inFile->beam[beam].bandData[i].cal_off_data.pol1[j+k*nchan];
+		  onP2  += inFile->beam[beam].bandData[i].cal_on_data.pol2[j+k*nchan];
+		  offP2 += inFile->beam[beam].bandData[i].cal_off_data.pol2[j+k*nchan];
+		  onP3  += inFile->beam[beam].bandData[i].cal_on_data.pol3[j+k*nchan];
+		  offP3 += inFile->beam[beam].bandData[i].cal_off_data.pol3[j+k*nchan];
+		  onP4  += inFile->beam[beam].bandData[i].cal_on_data.pol4[j+k*nchan];
+		  offP4 += inFile->beam[beam].bandData[i].cal_off_data.pol4[j+k*nchan];
+		}
+	      float ucal = 2*(onP3-offP3);
+	      float vcal = 2*(onP4-offP4);
+	      
+	      printf("AvDiffPhase %.6f %g\n",freq,atan2(vcal,ucal)*180/M_PI);
+	      np++;
+	    }
+	}
+    }
+
   else
     doPlot(inFile,beam,totChan,nScal,scalFreq,scalAA,scalBB,av,SorT);
 
