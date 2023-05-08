@@ -69,7 +69,6 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 {
   herr_t status;
   int i,j,k;
-
   if (inFile->fileOpen==1)
     {
       if (inFile->beamAllocatedMemory > 0)
@@ -115,7 +114,6 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 			{ free(inFile->beam[i].bandData[j].cal_on_data.pol3); inFile->beam[i].bandData[j].cal_on_data.pol3AllocatedMemory = 0; }
 		      if (inFile->beam[i].bandData[j].cal_on_data.pol4AllocatedMemory > 0)
 			{ free(inFile->beam[i].bandData[j].cal_on_data.pol4); inFile->beam[i].bandData[j].cal_on_data.pol4AllocatedMemory = 0; }
-
 		      if (inFile->beam[i].bandData[j].cal_off_data.freqAllocatedMemory > 0)
 			{
 			  free(inFile->beam[i].bandData[j].cal_off_data.freq); inFile->beam[i].bandData[j].cal_off_data.freqAllocatedMemory = 0;
@@ -179,7 +177,6 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 		    }
 		  free(inFile->beam[i].bandData);
 		  free(inFile->beam[i].bandHeader);
-
 		  if (inFile->beam[i].calBandAllocatedMemory==1)
 		    {
 		      free(inFile->beam[i].calBandHeader);
@@ -198,10 +195,8 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 
       if (inFile->softwareAllocatedMemory > 0)
 	{free(inFile->software); inFile->softwareAllocatedMemory = 0;}
-
       if (inFile->primaryAllocatedMemory > 0)
 	{free(inFile->primary); inFile->primaryAllocatedMemory = 0;}
-
       status = H5Fclose(inFile->fileID);
       inFile->fileOpen = 0;
     }
@@ -355,6 +350,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
   herr_t status;
   float *allData;
   char beamLabel[MAX_STRLEN];
+  int calName=1;
   
   //  printf("LOADING DATA type = %d\n",type);
   // astro_data
@@ -481,6 +477,10 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	sdhdf_allocateBandData(&(inFile->beam[beam].bandData[band].cal_off_data),nchan,ndump,npol);
       
       sprintf(dataName,"%s/%s/calibrator_data/cal_frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+      if (sdhdf_checkGroupExists(inFile,dataName)==0)
+	{printf("Using cal_frequency to determine the noise source frequency information\n"); calName=1;}
+      else
+	{sprintf(dataName,"%s/%s/calibrator_data/frequency",beamLabel,inFile->beam[beam].bandHeader[band].label); calName=2;}
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       // FIX ME: freq[0]
       {
@@ -490,11 +490,14 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 
 	space      = H5Dget_space(dataset_id);
 	ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+
+
 	if (type==2)
 	  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].cal_on_data.freq);
 	else if (type==3)
 	  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].cal_off_data.freq);
 
+	printf("Number of dimentions = %d\n",ndims);
 	
 	if (ndims==1)
 	  {
@@ -508,11 +511,22 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  }
 	// FIX ME: SHOULD INCREASE NUMBER OF FREQDUMPS TO NDUMP
       }
-      if (type==2)
-	sprintf(dataName,"%s/%s/calibrator_data/cal_data_on",beamLabel,inFile->beam[beam].bandHeader[band].label);      
-      else if (type==3)
-	sprintf(dataName,"%s/%s/calibrator_data/cal_data_off",beamLabel,inFile->beam[beam].bandHeader[band].label);
-      
+      if (calName==1)
+	{
+	  if (type==2)
+	    sprintf(dataName,"%s/%s/calibrator_data/cal_data_on",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+	  else if (type==3)
+	    sprintf(dataName,"%s/%s/calibrator_data/cal_data_off",beamLabel,inFile->beam[beam].bandHeader[band].label);
+	}
+      else
+	{
+	  if (type==2)
+	    sprintf(dataName,"%s/%s/calibrator_data/cal_on",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+	  else if (type==3)
+	    sprintf(dataName,"%s/%s/calibrator_data/cal_off",beamLabel,inFile->beam[beam].bandHeader[band].label);
+
+	}
+	  
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);
       status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);  
