@@ -1,0 +1,4 @@
+# Filename                            <MJD FROM>   <MJD TO>
+uwl_210911_142647.anitaLines.fluxcal  0            59655.5
+uwl_220928_114054.anitaLines.fluxcal  59655.5      70000
+
