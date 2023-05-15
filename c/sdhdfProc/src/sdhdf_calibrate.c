@@ -186,7 +186,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
   fluxCal = (sdhdf_fluxCalibration *)malloc(sizeof(sdhdf_fluxCalibration)*MAX_POL_CAL_CHAN); //  Should change to MAX_FLUXCAL OR SIMILAR ** FIX ME
   sdhdf_getTelescopeDirName(inFile->primary[0].telescope,obsDir);
   if (tcal==0)
-    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,fluxCalFile); 
+    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,fluxCalFile,(float)inFile->beam[0].bandData[0].astro_obsHeader[0].mjd); 
   else
     sdhdf_loadTcal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,"tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
   
@@ -277,7 +277,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 	  nFitData=0; 
 	  for (k=0;k<load_nchanCal;k++)
 	    {
-	      printf("checking %g %g %g\n",load_calFreq[k],inFile->beam[b].bandData[j].astro_data.freq[0] , inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1]);
+	      //	      printf("checking %g %g %g\n",load_calFreq[k],inFile->beam[b].bandData[j].astro_data.freq[0] , inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1]);
 	      if (load_calFreq[k] > inFile->beam[b].bandData[j].astro_data.freq[0] &&
 		  load_calFreq[k] < inFile->beam[b].bandData[j].astro_data.freq[inFile->beam[b].bandHeader[j].nchan-1])
 		{
@@ -286,7 +286,7 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 		  fitY_bb[nFitData] = load_calBB[k];
 		  fitY_re[nFitData] = load_calRe[k];
 		  fitY_im[nFitData] = load_calIm[k];
-		  printf("Fit values = %g %g %g %g %g\n",fitX[nFitData],fitY_aa[nFitData],fitY_bb[nFitData],fitY_re[nFitData],fitY_im[nFitData]);
+		  //		  printf("Fit values = %g %g %g %g %g\n",fitX[nFitData],fitY_aa[nFitData],fitY_bb[nFitData],fitY_re[nFitData],fitY_im[nFitData]);
 		  nFitData++;
 		}
 	    }

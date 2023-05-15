@@ -242,7 +242,7 @@ int main(int argc,char *argv[])
 		  // Load the Scal information
 		  nFluxCalChan=0;
 		  if (tcal==0)
-		    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile); // REMOVE HARDCODE
+		    sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,"parkes","UWL",fluxCalFile,0.0); // REMOVE HARDCODE
 		  else
 		    sdhdf_loadTcal(fluxCal,&nFluxCalChan,"parkes","UWL","tcal_noflag.dat");  // Note this is a text file -- FIX ME -- should make consistent with fluxcal
 		  

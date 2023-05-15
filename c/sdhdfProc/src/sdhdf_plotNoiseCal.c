@@ -141,7 +141,7 @@ int main(int argc,char *argv[])
       char obsDir[1024];
       int nFluxCalChan,kk;
       sdhdf_getTelescopeDirName(inFile->primary[0].telescope,obsDir);
-      sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,scalFname); 
+      sdhdf_loadFluxCal(fluxCal,&nFluxCalChan,obsDir,inFile->primary[0].rcvr,scalFname,0.0); 
       nScal=nFluxCalChan;
       for (kk=0;kk<nFluxCalChan;kk++)
 	{
