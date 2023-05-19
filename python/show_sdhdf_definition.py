@@ -73,7 +73,10 @@ def append_attributes(obj_attrs, defn_list):
         if attr in ('DIMENSION_LIST', 'REFERENCE_LIST'):
             print('Ignoring attribute %s' % attr)
         elif attr == 'DIMENSION_LABELS':
-            vl = ','.join(obj_attrs[attr])
+            vl = []
+            for b in obj_attrs[attr]:
+                s = b.decode('utf-8')
+                vl.append(s)
             defn_list.append([attr, 'Attribute', vl])
         elif attr == 'CLASS':
             vl = obj_attrs[attr].decode("utf-8")
@@ -102,31 +105,20 @@ def show_sdhdf_definition(f, sb, output):
             defn_csv = 'SDHDF_definition_' + sdhdf_ver + '.csv'
             defn_list.append(['-', '-', '-'])
 
-            #add_line(defn_csv, 'SDHDF Definition Overview|-|-')
             defn_list.append(['SDHDF Definition Version', sdhdf_ver, '-'])
-            #add_line(defn_csv, 'SDHDF Definition Version,%s,-' % sdhdf_ver)
-            #add_line(defn_csv, 'Author,%s,-' % __author__)
             defn_list.append(['Author', __author__, '-'])
-            #add_line(defn_csv, 'Copyright,CSIRO %s,-' % dte)
             defn_list.append(['Copyright', 'CSIRO, ' + dte, '-'])
             defn_list.append(['-', '-', '-'])
 
             # File object metadata overview
-            #add_line(defn_csv, "-,-,-")
-            #add_line(defn_csv, 'SDHDF File Overview,-,-')
             defn_list.append(['SDHDF File Overview', '-', '-'])
-            #add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
             defn_list.append(['HDF_Object_Name', 'HDF_Object_Type', 'Value'])
             append_attributes(h5.attrs, defn_list)
             defn_list.append(['-', '-', '-'])
             add_rows_to_csv(defn_csv, defn_list)
 
             # SDHDF structure overview
-            #add_line(defn_csv, "-,-,-")
-            #add_line(defn_csv, 'SDHDF Structure Overview,-,-')
             defn_list.append(['SDHDF Structure Overview', '-', '-'])
-            #add_line(defn_csv, 'HDF_Object_Name,HDF_Object_Type,Value')
-            #add_line(defn_csv, "-,-,-")
             defn_list.append(['HDF_Object_Name', 'HDF_Object_Type', 'Value'])
             defn_list.append(['-', '-', '-'])
 

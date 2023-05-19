@@ -159,8 +159,8 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, hdr_ver, op=None):
 
             axs[1, sb_id].imshow(av_arr,
                                  aspect='auto',
-                                 extent=(h5_obj[sb_freq][0],
-                                         h5_obj[sb_freq][-1],
+                                 extent=(h5_obj[sb_freq][0][0],
+                                     h5_obj[sb_freq][0][-1],
                                          op['MJD'][0],
                                          op['MJD'][-1]),
                                  interpolation='nearest')
@@ -173,8 +173,13 @@ def plot_data(h5_obj, axs, sb_id, sb_freq, sb_data, hdr_ver, op=None):
             data_arr = h5_obj[sb_data][0, 0, :]
         else:
             data_arr = h5_obj[sb_data][0, 0, 0, :]
-        axs[0, sb_id].plot(h5_obj[sb_freq][:], data_arr,
-                           linewidth=0.5, color=lc)
+        if hdr_ver >= 3.0:
+            axs[0, sb_id].plot(h5_obj[sb_freq][:, 1], data_arr[0, :],
+                               linewidth=0.5, color=lc)
+        else:
+            axs[0, sb_id].plot(h5_obj[sb_freq][:], data_arr,
+                               linewidth=0.5, color=lc)
+
         axs[0, sb_id].set_title(sb_id, fontsize=6)
         axs[0, sb_id].axis('off')
 
