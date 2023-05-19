@@ -125,6 +125,7 @@ int main(int argc,char *argv[])
 	{
 	  sscanf(argv[++i],"%f",&freq0);
 	  sscanf(argv[++i],"%f",&freq1);
+	  setFreq=1;
 	}
       else if (strcmp(argv[i],"-nfit")==0) 
 	sscanf(argv[++i],"%d",&nfit);
@@ -149,11 +150,10 @@ int main(int argc,char *argv[])
 	{
 	  freq0 = inFile->beam[ibeam].bandHeader[iband].f0;
 	  freq1 = inFile->beam[ibeam].bandHeader[iband].f1;
-	  printf("Setting frequency to %g %g\n",freq0,freq1);
+	  //	  printf("Setting frequency to %g %g\n",freq0,freq1);
 	}
       
       sdhdf_loadBandData(inFile,ibeam,iband,1);
-      printf("iband = %d\n",iband);
       // Process each band
       //      for (j=0;j<inFile->beam[ibeam].nBand;j++)
       j=iband; // FIX ME -- UPDATE TO PROCESS EACH BAND
