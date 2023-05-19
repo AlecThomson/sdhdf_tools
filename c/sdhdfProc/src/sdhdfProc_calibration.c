@@ -78,6 +78,7 @@ void sdhdf_noiseSourceOnOff(sdhdf_fileStruct *inFile,int ibeam,int iband,float *
     {
       // Should check NCHANFREQ ** FIX ME ** ASSUME 1
       freq[i] = inFile->beam[ibeam].bandData[iband].cal_on_data.freq[i];
+      //      printf("Noise source frequency = %g\n",freq[i]);
       aa_on = aa_off = bb_on = bb_off = re_on = re_off = im_on = im_off = 0.;
       for (j=0;j<nsubCal;j++)
 	{
@@ -758,8 +759,9 @@ void sdhdf_loadTcal(sdhdf_fluxCalibration *fluxCal,int *nFluxCal,char *observato
 }
 //
 // Routine to load a flux calibration file
+// if "auto" then automatically choose a sensible file
 //
-void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile)
+void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *observatory, char *rcvr,char *fluxCalFile,float mjdObs)
 {
   int status=0;
   fitsfile *fptr;
@@ -786,6 +788,35 @@ void sdhdf_loadFluxCal(sdhdf_fluxCalibration *fluxCal,int *nFluxCalChan,char *ob
       exit(1);
     }
   strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
+  if (strcmp(fluxCalFile,"auto")==0)
+    {
+      FILE *fin;
+      char line[1024];
+      char loadName[1024];
+      float mjd0,mjd1;
+      sprintf(fname,"%s/observatory/%s/calibration/%s/automatic_selection_fluxcal.txt",runtimeDir,observatory,rcvr);
+      if (!(fin = fopen(fname,"r")))
+	{
+	  printf("Error: unable to open file %s\n",fname);
+	  exit(1);
+	}
+      while (!feof(fin))
+	{
+	  if (fgets(line,1024,fin)!=NULL)
+	    {
+	      if (line[0]!='#') // Not a comment line
+		{
+		  sscanf(line,"%s %f %f",loadName,&mjd0,&mjd1);
+		  if (mjd0 < mjdObs && mjd1 > mjdObs)
+		    {
+		      strcpy(fluxCalFile,loadName);
+		      break;
+		    }
+		}
+	    }
+	}
+      fclose(fin);
+    }
   sprintf(fname,"%s/observatory/%s/calibration/%s/%s",runtimeDir,observatory,rcvr,fluxCalFile);
   printf("Opening: %s\n",fname);
   

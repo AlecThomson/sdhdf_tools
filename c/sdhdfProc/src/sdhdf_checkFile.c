@@ -31,7 +31,7 @@
 
 #define VERSION "v1.0"
 #define MAX_HISTORY_LOG 512
-
+#define MAX_COMMANDS 16
 
 void checkVersion(char *ver);
 void checkLog(sdhdf_fileStruct *inFile);
@@ -65,8 +65,8 @@ int main(int argc,char *argv[])
   int nFiles=0;
   char fname[MAX_FILES][MAX_STRLEN];
   sdhdf_fileStruct *inFile;
-
-  
+  char cmdList[MAX_COMMANDS][MAX_STRLEN];
+  int nCommands=0;
   int iband=0;
 
   // Display help if no commands given
@@ -77,6 +77,8 @@ int main(int argc,char *argv[])
     {
       if (strcmp(argv[i],"-h")==0)
 	help();      
+      else if (strcmp(argv[i],"-c")==0)
+	strcpy(cmdList[nCommands++],argv[++i]);
       else
 	{
 	  strcpy(fname[nFiles++],argv[i]);
@@ -98,10 +100,25 @@ int main(int argc,char *argv[])
       else
 	{
 	  sdhdf_loadMetaData(inFile);
-	  printf("Report for %s\n",inFile->fname);
-	  printf(" ... sdhdf version: %s\n",inFile->primary[0].hdr_defn_version);
-	  checkVersion(inFile->primary[0].hdr_defn_version);       
-	  checkLog(inFile);
+	  if (nCommands==0) // Produce a report
+	    {
+	      printf("Report for %s\n",inFile->fname);
+	      printf(" ... sdhdf version: %s\n",inFile->primary[0].hdr_defn_version);
+	      checkVersion(inFile->primary[0].hdr_defn_version);       
+	      checkLog(inFile);
+	    }
+	  else
+	    {
+	      printf("%s ",inFile->fname);
+	      for (j=0;j<nCommands;j++)
+		{
+		  if (strcasecmp(cmdList[j],"ver")==0)
+		    printf("%s ",inFile->primary[0].hdr_defn_version);
+		  else if (strcasecmp(cmdList[j],"noisesource")==0)
+		    printf("%s ",inFile->primary[0].cal_mode);
+		}
+	      printf("\n");
+	    }
 	  sdhdf_closeFile(inFile);
 	}
     }

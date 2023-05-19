@@ -354,7 +354,7 @@ int main(int argc,char *argv[])
 		    }
 		  if (disp==1)
 		    {
-		      if (infoDisp==1) printf("[SRC MATCH] %s %s sub-band %d\n",info[i].fname,info[i].source,info[i].sb);
+		      if (infoDisp==1) printf("[SRC MATCH] %s %s sub-band %d %.3f\n",info[i].fname,info[i].source,info[i].sb,info[i].mjd);
 		      else printf("%s\n",info[i].fname);
 		    }
 		}
