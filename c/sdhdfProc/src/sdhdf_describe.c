@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -73,18 +73,18 @@ int main(int argc,char *argv[])
   int showAttributes=0;
   int atoa=0;
   int calInfo=0;
-  
+
   int iband=0;
   int test=0;
-  
+
   // Display help if no commands given
   if (argc==1)
     help();
-  
+
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-h")==0)
-	help();      
+	help();
       else if (strcmp(argv[i],"-atoa")==0)
 	atoa=1;
       else if (strcmp(argv[i],"-band")==0)
@@ -126,7 +126,7 @@ int main(int argc,char *argv[])
       printf("%-36.36s %-5.5s %-22.22s %-5.5s %-6.6s %-8.8s %-20.20s %-10.10s %-10.10s %-7.7s %-6.6s %-10.10s %-5.5s %-6.6s %-12.12s %-12.12s\n","File","Beam","UTC","SDHDF","PID","Sched_ID","Source","Tel","Observer","RCVR","Bands","POL_TYPE","CAL","M_Time","RA_s","DEC_s");
       printf("---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
     }
-  
+
   for (i=0;i<nFiles;i++)
     {
       sdhdf_initialiseFile(inFile);
@@ -160,14 +160,14 @@ int main(int argc,char *argv[])
 	    {
 	      for (beam=0;beam<inFile->nBeam;beam++)
 		{
-		  maxTime=0;  
+		  maxTime=0;
 		  for (j=0;j<inFile->beam[beam].nBand;j++)
 		    {
 		      intTime = inFile->beam[beam].bandHeader[j].dtime*inFile->beam[beam].bandHeader[j].ndump;
 		      if (maxTime < intTime)
 			maxTime = intTime;
 		    }
-		  
+
 		  printf("%-36.36s %-5d %-22.22s %-5.5s %-6.6s %-8d %-20.20s %-10.10s %-10.10s %-7.7s %-6d %-10.10s %-5.5s %-6.1f %s %s\n",
 			 inFile->fname, beam,inFile->primary[0].utc0,inFile->primary[0].hdr_defn_version,
 			 inFile->primary[0].pid,(int)inFile->primary[0].sched_block_id,inFile->beamHeader[iband].source,
@@ -211,7 +211,7 @@ int main(int argc,char *argv[])
 			  else if (space_type == H5S_SIMPLE) printf("SPACE: SIMPLE\n");
 			  else if (space_type == H5S_NULL) printf("SPACE: NULL\n");
 			  else printf("SPACE: UNKNOWN\n");
-			  
+
 			  ndims = H5Sget_simple_extent_dims(space, size, maxsize);
 			  printf("ndims = %d\n",ndims);
 			  for (ii=0;ii<ndims;ii++)
@@ -231,13 +231,13 @@ int main(int argc,char *argv[])
 
 			  // TO PRINT IT -- SEE h5tools_dump_simple_data
 			}
-		      
+
 		    }
 		  if (calInfo==1)
 		    {
 		      printf("[CAL] %s %s %d %s %s %f %f %f\n",inFile->fname,inFile->beamHeader[iband].source,(int)inFile->primary[0].sched_block_id,inFile->primary[0].cal_mode,inFile->cal_epoch,inFile->cal_freq,inFile->cal_phase,inFile->cal_duty_cycle);
 		    }
-		  
+
 		  if (showBands==1)
 		    {
 		      printf("-----------------------------------------------------------------------------\n");
@@ -249,7 +249,7 @@ int main(int argc,char *argv[])
 			  printf(" [Band] %3.3d %-15.15s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f %s\n",j,inFile->beam[beam].bandHeader[j].label,inFile->beam[beam].bandHeader[j].f0,inFile->beam[beam].bandHeader[j].f1,inFile->beam[beam].bandHeader[j].nchan,inFile->beam[beam].bandHeader[j].dtime,inFile->beam[beam].bandHeader[j].npol,inFile->beam[beam].bandHeader[j].ndump,intTime,inFile->fname);
 			}
 		    }
-		  
+
 		  // Showing dumps for band 0
 		  if (showDump==1)
 		    {
@@ -268,7 +268,7 @@ int main(int argc,char *argv[])
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].paraAngle,inFile->fname,j,beam);
 			}
 		    }
-		
+
 		  if (showCalBands==1)
 		    {
 		      printf("-----------------------------------------------------------------------------\n");
@@ -280,7 +280,7 @@ int main(int argc,char *argv[])
 			  printf(" [Band] %3.3d %-10.10s %8.2f %8.2f %-8d %-8.3f %-4d %-5d %-8.3f\n",j,inFile->beam[beam].calBandHeader[j].label,inFile->beam[beam].calBandHeader[j].f0,inFile->beam[beam].calBandHeader[j].f1,inFile->beam[beam].calBandHeader[j].nchan,inFile->beam[beam].calBandHeader[j].dtime,inFile->beam[beam].calBandHeader[j].npol,inFile->beam[beam].calBandHeader[j].ndump,intTime);
 			}
 		    }
-		  
+
 		  // Showing dumps for band 0
 		  if (showCalDump==1)
 		    {
@@ -296,7 +296,7 @@ int main(int argc,char *argv[])
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decDeg,
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].az,inFile->beam[beam].bandData[iband].cal_obsHeader[j].el,
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].gl,inFile->beam[beam].bandData[iband].cal_obsHeader[j].gb);
-			  
+
 			}
 		    }
 
@@ -339,7 +339,7 @@ int main(int argc,char *argv[])
 	      for (j=0;j<inFile->nBeamHeaderAttributes;j++)
 		printf("%-20.20s %s\n",inFile->beamHeaderAttr[j].key,inFile->beamHeaderAttr[j].value);
 	    }
-      
+
 	  sdhdf_closeFile(inFile);
 	}
     }

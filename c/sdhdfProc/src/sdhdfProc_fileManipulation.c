@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -37,7 +37,7 @@ void sdhdf_initialiseFile(sdhdf_fileStruct *inFile)
   inFile->nHistory = -1;
   inFile->historyAllocatedMemory = 0;
   inFile->nBeam = -1;
-  inFile->beamAllocatedMemory = 0;  
+  inFile->beamAllocatedMemory = 0;
 }
 
 // Open an SDHDF file
@@ -168,7 +168,7 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 			{ free(inFile->beam[i].bandData[j].cal_proc_diff_phase.pol3); inFile->beam[i].bandData[j].cal_proc_diff_phase.pol3AllocatedMemory = 0; }
 		      if (inFile->beam[i].bandData[j].cal_proc_diff_phase.pol4AllocatedMemory > 0)
 			{ free(inFile->beam[i].bandData[j].cal_proc_diff_phase.pol4); inFile->beam[i].bandData[j].cal_proc_diff_phase.pol4AllocatedMemory = 0; }
-				      
+
 		      if (inFile->beam[i].bandData[j].astro_obsHeaderAllocatedMemory == 1)
 			free(inFile->beam[i].bandData[j].astro_obsHeader);
 		      if (inFile->beam[i].bandData[j].cal_obsHeaderAllocatedMemory == 1)
@@ -183,7 +183,7 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 		      inFile->beam[i].calBandAllocatedMemory = 0;
 		    }
 		  inFile->beam[i].bandAllocatedMemory = 0;
-		  
+
 		}
 	    }
 	  free(inFile->beam);
@@ -220,15 +220,15 @@ void sdhdf_loadBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int typ
   // astro_data
   if (type==1)
     {
-      sprintf(dataName,"%s/%s/astronomy_data/data",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);      
+      sprintf(dataName,"%s/%s/astronomy_data/data",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
 	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
-      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
+      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);
       status = H5Dclose(dataset_id);
     }
-  
+
 }
 
 // Type = 1: astro_data
@@ -248,15 +248,15 @@ void sdhdf_loadQuantisedBandData2Array(sdhdf_fileStruct *inFile,int beam,int ban
   // astro_data
   if (type==1)
     {
-      sprintf(dataName,"%s/%s/astronomy_data/data",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);      
+      sprintf(dataName,"%s/%s/astronomy_data/data",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
 	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
-      status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
+      status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);
       status = H5Dclose(dataset_id);
     }
-  
+
 }
 
 // Note loads in all dumps (if present)
@@ -268,8 +268,8 @@ void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float 
   herr_t status;
   float *allData;
   hsize_t dims[2];
-  
-  sprintf(dataName,"%s/%s/astronomy_data/frequency",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);      
+
+  sprintf(dataName,"%s/%s/astronomy_data/frequency",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq = sdhdf_getNattributes(inFile,dataName);
 
@@ -278,7 +278,7 @@ void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float 
 
   space      = H5Dget_space(dataset_id);
   ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
+  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);
   *nFreqDump = dims[0];
   status = H5Dclose(dataset_id);
 
@@ -293,16 +293,16 @@ int sdhdf_loadWeights2Array(sdhdf_fileStruct *inFile,int beam,int band,float *ar
   herr_t status;
   float *allData;
   hsize_t dims[2];
-  
-  sprintf(dataName,"%s/%s/astronomy_data/weights",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);      
+
+  sprintf(dataName,"%s/%s/astronomy_data/weights",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);
   if (sdhdf_checkGroupExists(inFile,dataName)==0)
-    {      
+    {
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq = sdhdf_getNattributes(inFile,dataName);
-      
+
       space      = H5Dget_space(dataset_id);
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
+      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);
       status = H5Dclose(dataset_id);
       return 1;
     }
@@ -320,14 +320,14 @@ int sdhdf_loadFlags2Array(sdhdf_fileStruct *inFile,int beam,int band,unsigned ch
   hsize_t dims[2];
 
   if (sdhdf_checkGroupExists(inFile,dataName)==0)
-    {      
-      sprintf(dataName,"%s/%s/astronomy_data/flags",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);      
+    {
+      sprintf(dataName,"%s/%s/astronomy_data/flags",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label);
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq = sdhdf_getNattributes(inFile,dataName);
-      
+
       space      = H5Dget_space(dataset_id);
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-      status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);  
+      status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,arr);
       status = H5Dclose(dataset_id);
       return 1;
     }
@@ -351,7 +351,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
   float *allData;
   char beamLabel[MAX_STRLEN];
   int calName=1;
-  
+
   //  printf("LOADING DATA type = %d\n",type);
   // astro_data
   if (type==1)
@@ -366,14 +366,14 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	hid_t space;
 	hsize_t dims[2];
 	int ndims;
-	      
+
 	//	printf("Loading frequency\n");
-	sprintf(dataName,"%s/%s/astronomy_data/frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+	sprintf(dataName,"%s/%s/astronomy_data/frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);
 	dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
 
 	space      = H5Dget_space(dataset_id);
 	ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
-	status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.freq);  
+	status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.freq);
 	if (ndims==1)
 	  inFile->beam[beam].bandData[band].astro_data.nFreqDumps = 1;
 	else
@@ -399,7 +399,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  //	  printf("Loaded %d >%s<\n",j,inFile->beam[beam].bandData[band].astro_obsHeaderAttr_freq[j].value);
       	}
       //      printf("Done reading freq attributes\n");
-      sprintf(dataName,"%s/%s/astronomy_data/data",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+      sprintf(dataName,"%s/%s/astronomy_data/data",beamLabel,inFile->beam[beam].bandHeader[band].label);
 
       // Read attributes
       inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
@@ -409,29 +409,29 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       //      printf("Reading data attributes\n");
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
       	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
-	  
+
 
       //      printf("Done reading data attributes\n");
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-      allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);      
+      allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);
       if (allData==NULL)
 	{
           printf("ERROR: Failure in sdhdfProc_fileManipulation to allocate memory\n");
           printf("ERROR: Cannot recover. Sorry\n");
           exit(1);
 	}
-      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);  
+      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);
 
       sdhdf_extractPols(&(inFile->beam[beam].bandData[band].astro_data),allData,nchan,ndump,npol);
 
       free(allData);
       status = H5Dclose(dataset_id);
       // Flags
-      sprintf(dataName,"%s/%s/astronomy_data/flags",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+      sprintf(dataName,"%s/%s/astronomy_data/flags",beamLabel,inFile->beam[beam].bandHeader[band].label);
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
 	  dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-	  status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.flag);        
+	  status = H5Dread(dataset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.flag);
 	  status = H5Dclose(dataset_id);
 	}
       else
@@ -443,12 +443,12 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 
       // Data weights
       //      printf("Loading weights\n");
-      sprintf(dataName,"%s/%s/astronomy_data/weights",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+      sprintf(dataName,"%s/%s/astronomy_data/weights",beamLabel,inFile->beam[beam].bandHeader[band].label);
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
 	  //	  printf("Loading data weights\n");
 	  dataset_id = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-	  status     = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.dataWeights);        
+	  status     = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].astro_data.dataWeights);
 	  status     = H5Dclose(dataset_id);
 	}
       else
@@ -460,7 +460,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  chbw = 1e6*fabs(inFile->beam[beam].bandHeader[band].f0-inFile->beam[beam].bandHeader[band].f1)/(double)inFile->beam[beam].bandHeader[band].nchan;
 
 	  for (i=0;i<nchan*ndump;i++)
-	    inFile->beam[beam].bandData[band].astro_data.dataWeights[i] = tint*chbw; 
+	    inFile->beam[beam].bandData[band].astro_data.dataWeights[i] = tint*chbw;
 	}
     }
   // calibrator data
@@ -475,8 +475,8 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	sdhdf_allocateBandData(&(inFile->beam[beam].bandData[band].cal_on_data),nchan,ndump,npol);
       else if (type==3)
 	sdhdf_allocateBandData(&(inFile->beam[beam].bandData[band].cal_off_data),nchan,ndump,npol);
-      
-      sprintf(dataName,"%s/%s/calibrator_data/cal_frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+
+      sprintf(dataName,"%s/%s/calibrator_data/cal_frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{printf("Using cal_frequency to determine the noise source frequency information\n"); calName=1;}
       else
@@ -498,12 +498,12 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].cal_off_data.freq);
 
 	printf("Number of dimentions = %d\n",ndims);
-	
+
 	if (ndims==1)
 	  {
  	    if (type==2) inFile->beam[beam].bandData[band].cal_on_data.nFreqDumps = 1;
 	    else if (type==3)inFile->beam[beam].bandData[band].cal_off_data.nFreqDumps = 1;
-	  }	 
+	  }
 	else
 	  {
  	    if (type==2) inFile->beam[beam].bandData[band].cal_on_data.nFreqDumps = dims[0];
@@ -514,22 +514,22 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       if (calName==1)
 	{
 	  if (type==2)
-	    sprintf(dataName,"%s/%s/calibrator_data/cal_data_on",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+	    sprintf(dataName,"%s/%s/calibrator_data/cal_data_on",beamLabel,inFile->beam[beam].bandHeader[band].label);
 	  else if (type==3)
 	    sprintf(dataName,"%s/%s/calibrator_data/cal_data_off",beamLabel,inFile->beam[beam].bandHeader[band].label);
 	}
       else
 	{
 	  if (type==2)
-	    sprintf(dataName,"%s/%s/calibrator_data/cal_on",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+	    sprintf(dataName,"%s/%s/calibrator_data/cal_on",beamLabel,inFile->beam[beam].bandHeader[band].label);
 	  else if (type==3)
 	    sprintf(dataName,"%s/%s/calibrator_data/cal_off",beamLabel,inFile->beam[beam].bandHeader[band].label);
 
 	}
-	  
+
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
       allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);
-      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);  
+      status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);
       if (type==2)
 	{
 	  //	  printf("Extrating with %d %d %d\n",nchan,ndump,npol);
@@ -549,21 +549,21 @@ void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile,int beam,int band,sdh
   int j;
   char dataName[MAX_STRLEN];
   char beamLabel[MAX_STRLEN];
-  
+
   strcpy(beamLabel,inFile->beamHeader[beam].label);
-  sprintf(dataName,"%s/%s/astronomy_data/frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+  sprintf(dataName,"%s/%s/astronomy_data/frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);
   *nFreqAttributes = sdhdf_getNattributes(inFile,dataName);
   //      printf("Number of attributes = %d FREQUENCY SECTION\n",inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq);
   for (j=0;j<*nFreqAttributes;j++)
       sdhdf_readAttributeFromNum(inFile,dataName,j,&freqAttributes[j]);
-  
-  sprintf(dataName,"%s/%s/astronomy_data/data",beamLabel,inFile->beam[beam].bandHeader[band].label);      
+
+  sprintf(dataName,"%s/%s/astronomy_data/data",beamLabel,inFile->beam[beam].bandHeader[band].label);
 
   // Read attributes
   *nDataAttributes = sdhdf_getNattributes(inFile,dataName);
   for (j=0;j< *nDataAttributes; j++)
     sdhdf_readAttributeFromNum(inFile,dataName,j,&dataAttributes[j]);
-  
+
 
 }
 
@@ -571,7 +571,7 @@ void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int n
 {
   unsigned long int i,j;
   unsigned long int ii;
-  
+
   //  printf("Extracting polarisations\n");
 
   // SHOULD USE MEMCPY -- FIX ME
@@ -586,7 +586,7 @@ void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int n
 	  spec->pol1[(unsigned long int)j+(unsigned long int)nchan*i] = in[(unsigned long int)j+(unsigned long int)nchan*i*(unsigned long int)npol];
 	  if (npol > 1)
 	    {
-	      
+
 	      spec->pol2[j+(unsigned long int)nchan*i] = in[j+(unsigned long int)nchan*i*(unsigned long int)npol+(unsigned long int)nchan];
 	      if (npol > 2)
 		{
@@ -624,30 +624,30 @@ void sdhdf_allocateBandData(sdhdf_spectralDumpsStruct *spec,int nchan,int ndump,
     }
   if (spec->pol1AllocatedMemory == 0)
     {
-      spec->pol1 = (float *)malloc(sizeof(float)*nchan*npol*ndump); 
+      spec->pol1 = (float *)malloc(sizeof(float)*nchan*npol*ndump);
       spec->pol1AllocatedMemory = 1;
     }
   if (npol > 1 && spec->pol2AllocatedMemory == 0)
     {
-      spec->pol2 = (float *)malloc(sizeof(float)*nchan*npol*ndump); 
+      spec->pol2 = (float *)malloc(sizeof(float)*nchan*npol*ndump);
       spec->pol2AllocatedMemory = 1;
     }
   if (npol > 3 && spec->pol3AllocatedMemory == 0 && spec->pol4AllocatedMemory == 0)
     {
       spec->pol3 = (float *)malloc(sizeof(float)*nchan*ndump);
-      spec->pol4 = (float *)malloc(sizeof(float)*nchan*ndump); 
+      spec->pol4 = (float *)malloc(sizeof(float)*nchan*ndump);
       spec->pol3AllocatedMemory = 1;
       spec->pol4AllocatedMemory = 1;
     }
 }
-  
+
 
 // Type = 1: astro_data
 // FIX ME __ OTHER TYPES
 void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 {
   int k;
-  
+
   if (type==1)
     {
       if (inFile->beam[beam].bandData[band].astro_data.freqAllocatedMemory == 1)
@@ -666,7 +666,7 @@ void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       if (inFile->beam[beam].bandData[band].astro_data.pol3AllocatedMemory == 1)
 	{free(inFile->beam[beam].bandData[band].astro_data.pol3); inFile->beam[beam].bandData[band].astro_data.pol3AllocatedMemory = 0;}
       if (inFile->beam[beam].bandData[band].astro_data.pol4AllocatedMemory == 1)
-	{free(inFile->beam[beam].bandData[band].astro_data.pol4); inFile->beam[beam].bandData[band].astro_data.pol4AllocatedMemory = 0;}	      
+	{free(inFile->beam[beam].bandData[band].astro_data.pol4); inFile->beam[beam].bandData[band].astro_data.pol4AllocatedMemory = 0;}
     }
 }
 
@@ -715,7 +715,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
   char dsetName[MAX_STRLEN],label[MAX_STRLEN];
   hsize_t dims[5];
 
-  
+
   if (type==0 || type==1 || type==4)
     {
       sprintf(groupName,"%s",beamLabel);
@@ -768,7 +768,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
   dataspace_id = H5Screate_simple(4,dims,NULL);
 
   /* FIX ME -- SHOULD COPY CAL INFO
-  if (type==0)    
+  if (type==0)
     {
       ocpl_id = H5Pcreate(H5P_OBJECT_COPY);
       sprintf(label,"%s/cal_data_on",groupName);
@@ -797,7 +797,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
     {
       sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
       sprintf(dsetName,"%s/data",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       for (i=0;i<nDataAttributes;i++)
 	{
 	  //	  printf("GEORGE: in fileManipulation: writing data attribute\n");
@@ -818,16 +818,16 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
 	}
       sprintf(dsetName,"%s/cal_data_on",groupName);
       printf("CREATING %s\n",dsetName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
     }
   else if (type==3)
     {
       sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
       sprintf(dsetName,"%s/cal_data_off",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
     }
-  
-  status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
+
+  status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 
@@ -847,23 +847,23 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
     {
       sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
       sprintf(dsetName,"%s/frequency",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
-      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
-    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);
+
       // Now write attributes
       //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
       for (i=0;i<nFreqAttributes;i++)
 	sdhdf_writeAttribute(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
-      
+
       status  = H5Dclose(dset_id);
     }
   else if (type==2)
     {
       sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
       sprintf(dsetName,"%s/cal_frequency",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
-      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
-      status  = H5Dclose(dset_id);      
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);
+      status  = H5Dclose(dset_id);
     }
   status = H5Sclose(dataspace_id);
   if (type == 0 || type == 1 || type == 4)
@@ -884,7 +884,7 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
   char dsetName[MAX_STRLEN],label[MAX_STRLEN];
   hsize_t dims[5];
 
-  
+
   if (type==0 || type==1 || type==4)
     {
       sprintf(groupName,"%s",beamLabel);
@@ -941,7 +941,7 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
     {
       sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
       sprintf(dsetName,"%s/data",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       for (i=0;i<nDataAttributes;i++)
 	{
 	  sdhdf_writeAttribute(outFile,dsetName,&dataAttributes[i]); //dataAttributes[i].key,dataAttributes[i].value);
@@ -958,16 +958,16 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
 	}
       sprintf(dsetName,"%s/cal_data_on",groupName);
       printf("CREATING %s\n",dsetName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
     }
   else if (type==3)
     {
       sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
       sprintf(dsetName,"%s/cal_data_off",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
     }
-  
-  status = H5Dwrite(dset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
+
+  status = H5Dwrite(dset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 
@@ -987,23 +987,23 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
     {
       sprintf(groupName,"%s/%s/astronomy_data",beamLabel,blabel);
       sprintf(dsetName,"%s/frequency",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
-      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
-    
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);
+
       // Now write attributes
       //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
       for (i=0;i<nFreqAttributes;i++)
 	sdhdf_writeAttribute(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
-      
+
       status  = H5Dclose(dset_id);
     }
   else if (type==2)
     {
       sprintf(groupName,"%s/%s/calibrator_data",beamLabel,blabel);
       sprintf(dsetName,"%s/cal_frequency",groupName);
-      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);     
-      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);  
-      status  = H5Dclose(dset_id);      
+      dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,freq);
+      status  = H5Dclose(dset_id);
     }
   status = H5Sclose(dataspace_id);
   if (type == 0 || type == 1 || type == 4)
@@ -1036,10 +1036,10 @@ void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam
   dims[4] = 1;
   // FIX ME -- NOW 4 DIMENSIONS
   dataspace_id = H5Screate_simple(5,dims,NULL);
-  
+
   sprintf(dsetName,"%s/data",groupName);
   dset_id = H5Dopen2(outFile->fileID,dsetName,H5P_DEFAULT);
-  status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);  
+  status = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,out);
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 
@@ -1056,25 +1056,25 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
   hid_t group_id;
   herr_t status;
   int b,i;
-  
+
   // File information
-  sprintf(groupName,"/metadata");
+  sprintf(groupName,"/%s",METADATA_GRP);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     sdhdf_copyEntireGroup(groupName,inFile,outFile);
   else
     {
-      sprintf(groupName,"/metadata/beam_params");
+      sprintf(groupName,"/%s/%s",METADATA_GRP,BEAM_PARAMS);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
-      sprintf(groupName,"/metadata/history");
+      sprintf(groupName,"/%s/%s",METADATA_GRP,HISTORY);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
-      sprintf(groupName,"/metadata/primary_header");
+      sprintf(groupName,"/%s/%s",METADATA_GRP,PRIMARY_HEADER);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
-      sprintf(groupName,"/metadata/software_versions");
+      sprintf(groupName,"/%s/%s",METADATA_GRP,SOFTWARE_VERSIONS);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
     }
-  
+
   // Config
-  sprintf(groupName,"/config");
+  sprintf(groupName,"/%s",CONFIG_GRP);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     sdhdf_copyEntireGroup(groupName,inFile,outFile);
 
@@ -1092,19 +1092,19 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
 	    }
 	  else
 	    {
-	      sprintf(groupName,"/%s/metadata",inFile->beamHeader[b].label);
+	      sprintf(groupName,"/%s/%s",inFile->beamHeader[b].label,METADATA_GRP);
 	      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 		sdhdf_copyEntireGroup(groupName,inFile,outFile);
 	      else
 		{
-		  sprintf(groupName,"/%s/metadata/band_params",inFile->beamHeader[b].label);
+		  sprintf(groupName,"/%s/%s/%s",inFile->beamHeader[b].label),METADATA_GRP,BAND_PARAMS;
 		  if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 		    sdhdf_copyEntireGroup(groupName,inFile,outFile);
-		  sprintf(groupName,"/%s/metadata/cal_band_params",inFile->beamHeader[b].label);
+		  sprintf(groupName,"/%s/%s/%s",inFile->beamHeader[b].label,METADATA_GRP,CAL_BAND_PARAMS);
 		  if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
 		    sdhdf_copyEntireGroup(groupName,inFile,outFile);
 		}
-	      
+
 	      for (i=0;i<inFile->beam[b].nBand;i++)
 		{
 		  sprintf(groupName,"/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
@@ -1113,29 +1113,29 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
 		  else
 		    {
 		      // Metadata
-		      sprintf(groupName,"/%s/%s/metadata",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
+		      sprintf(groupName,"/%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,METADATA_GRP);
 		      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
 		      else
 			{
-			  sprintf(groupName,"/%s/%s/metadata/cal_obs_params",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
+			  sprintf(groupName,"/%s/%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,METADATA_GRP,CAL_OBS_PARAMS);
 			  if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
 			    sdhdf_copyEntireGroup(groupName,inFile,outFile);
-			  sprintf(groupName,"/%s/%s/metadata/obs_params",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
+			  sprintf(groupName,"/%s/%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,METADATA_GRP,OBS_PARAMS);
 			  if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
 			    sdhdf_copyEntireGroup(groupName,inFile,outFile);
-			  
+
 			}
 		      // calibrator_data
 		      sprintf(groupName,"/%s/%s/calibrator_data",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		      if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
-		      
+
 		      // astronomy_data
 		      sprintf(groupName,"/%s/%s/astronomy_data",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
-		      
+
 		      // Flagging information
 		      sprintf(groupName,"%s/%s/astronomy_data/flags",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 		      if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
@@ -1162,7 +1162,7 @@ void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_la
 
   sprintf(dataName,"/%s/%s/calibrator_proc/%s",inFile->beamHeader[ibeam].label,inFile->beam[ibeam].bandHeader[iband].label,cal_label);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
-  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,vals);  
+  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,vals);
   status = H5Dclose(dataset_id);
 }
 
@@ -1182,7 +1182,7 @@ void sdhdf_writeCalProc(sdhdf_fileStruct *outFile,int ibeam,int iband,char *band
   // Check if group exists
   status = H5Eset_auto1(NULL,NULL);
   status = H5Gget_objinfo(outFile->fileID,groupName,0,NULL);
-  if (status == 0)  
+  if (status == 0)
     {
       //printf("cal_proc already exists\n");
     }
@@ -1197,13 +1197,13 @@ void sdhdf_writeCalProc(sdhdf_fileStruct *outFile,int ibeam,int iband,char *band
   dims[3] = nchan;
   dims[4] = 1;
   dataspace_id = H5Screate_simple(5,dims,NULL);
-  
+
   sprintf(dsetName,"beam_%d/%s/calibrator_proc/%s",ibeam,band_label,cal_label);
-  dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
-  status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,vals);  
+  dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+  status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,vals);
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
-  status = H5Gclose(group_id);      
+  status = H5Gclose(group_id);
 
 }
 
@@ -1249,18 +1249,18 @@ void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned cha
   hid_t dataspace_id,stid,dset_id,datatype_id,group_id;
   hsize_t dims[2];
   herr_t status;
-  
-  dims[0] = ndump; 
+
+  dims[0] = ndump;
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);
 
   sprintf(dSetName,"%s/%s/astronomy_data/flags",beamLabel,bandLabel);
   if (sdhdf_checkGroupExists(outFile,dSetName) == 1)
-    dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+    dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   else
     dset_id = H5Dopen2(outFile->fileID,dSetName,H5P_DEFAULT);
-  
-  status  = H5Dwrite(dset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);  
+
+  status  = H5Dwrite(dset_id,H5T_NATIVE_UCHAR,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
 }
@@ -1275,23 +1275,23 @@ void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float 
 
 
   printf("In here and writing weights for ndump and nchan = %d and %d\n",ndump,nchan);
-  dims[0] = ndump; 
+  dims[0] = ndump;
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);
 
   sprintf(dSetName,"%s/%s/astronomy_data/weights",beamLabel,bandLabel);
   printf("Writing to %s\n",dSetName);
   if (sdhdf_checkGroupExists(outFile,dSetName) == 1)
-    dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);    
+    dset_id = H5Dcreate2(outFile->fileID,dSetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
   else
     dset_id = H5Dopen2(outFile->fileID,dSetName,H5P_DEFAULT);
-  if (dset_id < 0) // Returns negative number if not successful 
+  if (dset_id < 0) // Returns negative number if not successful
     {
       printf("WARNING: CANNOT WRITE WEIGHTS\n");
     }
   else
-    {  
-      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);  
+    {
+      status  = H5Dwrite(dset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,flag);
     }
   status = H5Dclose(dset_id);
   status = H5Sclose(dataspace_id);
@@ -1306,7 +1306,7 @@ void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFr
   char line[4096];
   char *tok;
   char trim[4096];
-  
+
   if (getenv("SDHDF_RUNTIME")==0)
     {
       printf("=========================================================\n");
@@ -1316,7 +1316,7 @@ void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFr
     }
   strcpy(runtimeDir,getenv("SDHDF_RUNTIME"));
   sprintf(fname,"%s/spectralLines/spectralLines.dat",runtimeDir);
-  
+
   *nRestFreq=0;
   if (!(fin = fopen(fname,"r")))
     printf("ERROR: unable to open file: %s .... trying to continue \n",fname);
@@ -1341,8 +1341,8 @@ void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFr
 		  strcpy(trim,sdhdf_trim(tok));
 		  strcpy(restFreq[*nRestFreq].label,trim);
 		  (*nRestFreq)++;
-		}		  
-	    }					 
+		}
+	    }
 	}
     }
 }
@@ -1363,5 +1363,5 @@ char *sdhdf_rtrim(char *s)
 
 char *sdhdf_trim(char *s)
 {
-    return sdhdf_rtrim(sdhdf_ltrim(s)); 
+    return sdhdf_rtrim(sdhdf_ltrim(s));
 }

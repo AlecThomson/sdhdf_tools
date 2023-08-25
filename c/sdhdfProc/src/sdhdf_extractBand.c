@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -74,7 +74,8 @@ int main(int argc,char *argv[])
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
-  
+	char metadata_grp[1024];
+
   strcpy(oname,"sdhdf_extract_output.hdf");
 
   if (argc==1)
@@ -97,10 +98,10 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
-  
+
   printf("Checking input\n");
   for (i=1;i<argc;i++)
-    {      
+    {
       if (strcmp(argv[i],"-e")==0)
 	strcpy(ext,argv[++i]);
       else if (strcmp(argv[i],"-zoom")==0)
@@ -123,13 +124,13 @@ int main(int argc,char *argv[])
       sdhdf_initialiseFile(inFile);
       sdhdf_initialiseFile(outFile);
       sdhdf_formOutputFilename(fname[ii],ext,oname);
-      
+
       if (zoomBand>0)
 	nSelectBands=zoomBand;
-      
+
       sdhdf_openFile(fname[ii],inFile,1);
       sdhdf_openFile(oname,outFile,3);
-      
+
       if (inFile->fileID!=-1) // Did we successfully open the file?
 	{
 	  sdhdf_loadMetaData(inFile);
@@ -137,11 +138,11 @@ int main(int argc,char *argv[])
 	    cal=1;
 	  else
 	    cal=0;
-	  
+
 	  printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname[ii],inFile->primary[0].utc0,
 		 inFile->primary[0].hdr_defn_version,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->primary[0].telescope,
 		 inFile->primary[0].observer, inFile->primary[0].rcvr,inFile->beam[0].nBand);
-       
+
 	  for (b=0;b<inFile->nBeam;b++)
 	    {
 	      printf("Setting memory %d %d\n",inFile->beam[b].nBand,nSelectBands);
@@ -152,7 +153,7 @@ int main(int argc,char *argv[])
 
 	      if (cal==1)
 		{
-		  inCalBandParams  = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);         
+		  inCalBandParams  = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);
 		  outCalBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nSelectBands);
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,inCalBandParams,inFile->beam[b].nBand);
 		}
@@ -167,7 +168,7 @@ int main(int argc,char *argv[])
 		      copyBand=0;
 		      for (i=0;i<inFile->beam[b].nBand;i++)
 			{
-			  
+
 			  if (strcmp(inFile->beam[b].bandHeader[i].label,selectBand[j])==0)
 			    {
 			      copyBand=1;
@@ -191,7 +192,7 @@ int main(int argc,char *argv[])
 			}
 		    }
 
-		      
+
 
 		  // Check if at least one band is to be copied
 		  for (i=0;i<inFile->beam[b].nBand;i++)
@@ -229,7 +230,7 @@ int main(int argc,char *argv[])
 			  strcpy(outBandParams[nBand].pol_type, inBandParams[i].pol_type);
 			  outBandParams[nBand].ndump = inBandParams[i].ndump;
 			  npol = inBandParams[i].npol;
-			  
+
 			  if (cal==1)
 			    {
 			      strcpy(outCalBandParams[nBand].label,inCalBandParams[i].label);
@@ -280,12 +281,12 @@ int main(int argc,char *argv[])
 		      strcpy(outBandParams[j].pol_type,inBandParams[selectBandID].pol_type);
 		      npol = inBandParams[selectBandID].npol;
 		      outBandParams[j].npol = inBandParams[selectBandID].npol;
-		      outBandParams[j].ndump = inBandParams[selectBandID].ndump; 
+		      outBandParams[j].ndump = inBandParams[selectBandID].ndump;
 		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*outBandParams[j].ndump);
 
 		      for (kk=0;kk<outBandParams[j].ndump;kk++)
 			sdhdf_copySingleObsParams(inFile,b,selectBandID,kk,&outObsParams[kk]);
-		    		 		      
+
 		      if (cal==1)
 			{
 			  strcpy(outCalBandParams[j].label,zoomLabel);
@@ -299,15 +300,15 @@ int main(int argc,char *argv[])
 			  outCalBandParams[j].ndump  = inCalBandParams[selectBandID].ndump;
 			  outCalBandParams[j].dtime  = inCalBandParams[selectBandID].dtime;
 			}
-		    	      
+
 		      outBandParams[j].nchan = totNchan;
 		      outBandParams[j].dtime = inBandParams[selectBandID].dtime;
 		      outVals  = (float *)malloc(sizeof(float)*outBandParams[j].nchan*4*outBandParams[j].ndump); // Fix 4 = npol, 1 = ndump
-		      freqVals = (float *)malloc(sizeof(float)*outBandParams[j].nchan); 
+		      freqVals = (float *)malloc(sizeof(float)*outBandParams[j].nchan);
 		      printf("Total nchan = %d\n",totNchan);
-		      
+
 		      printf("Using original channel %d for number of spectral dumps, calibration solution etc.\n",selectBandID);
-		      
+
 		      for (nd=0;nd<inBandParams[selectBandID].ndump;nd++)
 			{
 			  nchan=0;
@@ -317,22 +318,22 @@ int main(int argc,char *argv[])
 				{
 				  // FIX ME: FREQ FOR CORRECT DUMP
 				  if (inFile->beam[b].bandData[k].astro_data.freq[l] >= fSelect0[j] && inFile->beam[b].bandData[k].astro_data.freq[l] <= fSelect1[j])
-				    {   
+				    {
 				      if (npol==4)
 					{
-					  outVals[nd*totNchan*4+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
-					  outVals[nd*totNchan*4+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					  outVals[nd*totNchan*4+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan];
+					  outVals[nd*totNchan*4+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan];
 					  outVals[nd*totNchan*4+nchan+2*totNchan] = inFile->beam[b].bandData[k].astro_data.pol3[l+nd*inFile->beam[b].bandHeader[k].nchan];
 					  outVals[nd*totNchan*4+nchan+3*totNchan] = inFile->beam[b].bandData[k].astro_data.pol4[l+nd*inFile->beam[b].bandHeader[k].nchan];
 					}
 				      else if (npol==2)
 					{
-					  outVals[nd*totNchan*2+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
-					  outVals[nd*totNchan*2+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
+					  outVals[nd*totNchan*2+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan];
+					  outVals[nd*totNchan*2+nchan+totNchan]   = inFile->beam[b].bandData[k].astro_data.pol2[l+nd*inFile->beam[b].bandHeader[k].nchan];
 					}
 				      else if (npol==1)
-					outVals[nd*totNchan+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan]; 
-					
+					outVals[nd*totNchan+nchan]            = inFile->beam[b].bandData[k].astro_data.pol1[l+nd*inFile->beam[b].bandHeader[k].nchan];
+
 					  //				      printf("Seting freq\n");
 				      // FIX ME: FREQ FOR CORRECT DUMP
 				      if (nd==0) freqVals[nchan] = inFile->beam[b].bandData[k].astro_data.freq[l];
@@ -345,27 +346,27 @@ int main(int argc,char *argv[])
 
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
 		      sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
-		    
+
 		      printf("Output nchan = %d (%d), npol = %d\n",nchan,totNchan,npol);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0
 
 		      // FIX ME: Only sending 1 frequency channel through
 		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,outBandParams[j].label,b,j,outVals,freqVals,1,totNchan,1,npol,outBandParams[j].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 		      sdhdf_writeObsParams(outFile,outBandParams[j].label,inFile->beamHeader[b].label,j,outObsParams,outBandParams[j].ndump,1);
-		    
-		      sprintf(groupName1,"beam_%d/%s/metadata/cal_obs_params",b,inFile->beam[b].bandHeader[selectBandID].label);
-		      sprintf(groupName2,"beam_%d/%s/metadata/cal_obs_params",b,outBandParams[j].label);
+
+		      sprintf(groupName1,"beam_%d/%s/%s/%s",b,inFile->beam[b].bandHeader[selectBandID].label,METADATA_GRP,CAL_OBS_PARAMS);
+		      sprintf(groupName2,"beam_%d/%s/%s/%s",b,outBandParams[j].label,METADATA_GRP,CAL_OBS_PARAMS);
 		      sdhdf_copyEntireGroupDifferentLabels(groupName1,inFile,groupName2,outFile);
-		      //    sdhdf_writeObsParams(outFile,outBandParams[j].label,b,j,outCalObsParams,outCalBandParams[j].ndump,2); 
-		    
-		      sprintf(groupName1,"beam_%d/%s/calibrator_data",b,inFile->beam[b].bandHeader[selectBandID].label);
-		      sprintf(groupName2,"beam_%d/%s/calibrator_data",b,outBandParams[j].label);
+		      //    sdhdf_writeObsParams(outFile,outBandParams[j].label,b,j,outCalObsParams,outCalBandParams[j].ndump,2);
+
+		      sprintf(groupName1,"beam_%d/%s/%s",b,inFile->beam[b].bandHeader[selectBandID].label,CAL_DATA_GRP);
+		      sprintf(groupName2,"beam_%d/%s/%s",b,outBandParams[j].label,CAL_DATA_GRP);
 		      printf("Copying %s to %s\n",groupName1,groupName2);
 		      sdhdf_copyEntireGroupDifferentLabels(groupName1,inFile,groupName2,outFile);
-		      
+
 		      //		      sdhdf_writeNewBand(outFile,j,outVals,freqVals,&(outBandParams[j]));
 		      printf("Completed writing out the spectrum for zoomband %d\n",j);
-		   
+
 		      free(outVals);
 		      free(freqVals);
 		      free(outObsParams);
@@ -377,17 +378,18 @@ int main(int argc,char *argv[])
 	      if (cal==1)
 		sdhdf_writeBandHeader(outFile,outCalBandParams,inFile->beamHeader[b].label,nSelectBands,2);
 
-	      
-	      //	      sprintf(groupName,"beam_%d/metadata",b);
-	      //	      sdhdf_copyEntireGroup(groupName,inFile,outFile);	      	      
+
+	      //	      sprintf(groupName,"beam_%d"/"METADATA",b);
+	      //	      sdhdf_copyEntireGroup(groupName,inFile,outFile);
 
 	      inFile->beamHeader[b].nBand = nSelectBands;
 
 	    }
-       
+
 	  // Copy other primary tables
-	  sdhdf_copyEntireGroup("metadata",inFile,outFile);	      	      
-	  sdhdf_writeBeamHeader(outFile,inFile->beamHeader,inFile->nBeam); 
+		sprintf(metadata_grp,"/%s",metadata_grp);
+	  sdhdf_copyEntireGroup(metadata_grp,inFile,outFile);
+	  sdhdf_writeBeamHeader(outFile,inFile->beamHeader,inFile->nBeam);
 	  // Don't want to "copyRemainder" as have only selected specific bands
 	  sdhdf_copyEntireGroup("config",inFile,outFile);
 	  sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_extractBand","INSPECTA software to extractBands",args);
@@ -409,6 +411,3 @@ int main(int argc,char *argv[])
   free(inFile);
   free(outFile);
 }
-
-
-

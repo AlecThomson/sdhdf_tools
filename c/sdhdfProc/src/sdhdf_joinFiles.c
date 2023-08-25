@@ -6,18 +6,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -37,7 +37,7 @@
 void help()
 {
   printf("sdhdf_joinFiles: routine to join sdhdf files together\n");
-  
+
 }
 
 int main(int argc,char *argv[])
@@ -46,7 +46,7 @@ int main(int argc,char *argv[])
   sdhdf_fileStruct *inFile,*inFile0,*outFile;
   sdhdf_bandHeaderStruct *outBandParams,*outCalBandParams,*inBandParams,*inCalBandParams;
   sdhdf_obsParamsStruct  *outObsParams,*outCalObsParams,*inObsParams,*inCalObsParams;
-  
+
   char fname[MAX_FILES][128];
   int nFiles=0;
   char oname[MAX_STRLEN]="join.hdf";
@@ -70,7 +70,7 @@ int main(int argc,char *argv[])
   char groupName1[1024];
   char groupName2[1024];
   char tempStr[1024];
-  
+
   sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {
@@ -100,19 +100,19 @@ int main(int argc,char *argv[])
 
   sdhdf_initialiseFile(outFile);
   sdhdf_openFile(oname,outFile,3);
-  
-  
-  sdhdf_openFile(fname[0],inFile0,1); 
+
+
+  sdhdf_openFile(fname[0],inFile0,1);
   sdhdf_loadMetaData(inFile0);
   nBeam = inFile0->nBeam;
   sdhdf_allocateBeamMemory(outFile,nBeam);   // Assuming the same number of beams in each file
 
-  beamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nBeam);  
+  beamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nBeam);
   primaryHeader = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
   strcpy(beamHeader[0].label,inFile0->beamHeader[0].label);
   strcpy(beamHeader[0].source,inFile0->beamHeader[0].source);
   primaryHeader = inFile0->primary;
-  
+
   for (b=0;b<nBeam;b++)
     {
 
@@ -120,14 +120,14 @@ int main(int argc,char *argv[])
 
       for (ii=0;ii<nFiles;ii++)
 	{
-	  sdhdf_openFile(fname[ii],inFile,1); 
+	  sdhdf_openFile(fname[ii],inFile,1);
 	  sdhdf_loadMetaData(inFile); // Could do more checks here to check that we're properly combining everything
 	  nOutBands  += inFile->beam[b].nBand;
 	  sdhdf_closeFile(inFile);
 	}
       beamHeader[b].nBand = nOutBands;
       printf("Number of output bands = %d\n",nOutBands);
-      
+
       outBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nOutBands);
       outCalBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nOutBands);
 
@@ -141,14 +141,14 @@ int main(int argc,char *argv[])
 
 	  if (strcmp(inFile->primary[0].cal_mode,"ON")==0)
 	    sdhdf_copyBandHeaderStruct(inFile->beam[b].calBandHeader,outCalBandParams+bandParamsPos,inFile->beam[b].nBand);
-	  
+
 	  // Replace band names
 	  sprintf(newBandName,"band_%03d",ii); // NEEDS FIXING -- NEED TO USE ALL BANDS IN THAT FILE
 
 	  strcpy(outBandParams[bandParamsPos].label,newBandName);
 	  if (strcmp(inFile->primary[0].cal_mode,"ON")==0)
 	    strcpy(outCalBandParams[bandParamsPos].label,newBandName);
-	 
+
 	  bandParamsPos += inFile->beam[b].nBand;
 	  printf("Copying in file %d\n",ii);
 	  sprintf(groupName1,"%s/%s/astronomy_data",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[0].label); // FIX FOR MORE THAN ONE BAND
@@ -157,7 +157,7 @@ int main(int argc,char *argv[])
 	    {
 	      hid_t group_id;
 	      herr_t status=0;
-	      
+
 	      group_id = H5Gcreate2(outFile->fileID,tempStr,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
 	      status   = H5Gclose(group_id);
 	    }
@@ -170,19 +170,19 @@ int main(int argc,char *argv[])
 	      status   = H5Gclose(group_id);
 	    }
 
-	  sprintf(groupName2,"%s/%s/astronomy_data",inFile->beamHeader[b].label,newBandName); // FIX FOR MORE THAN ONE BAND	  
+	  sprintf(groupName2,"%s/%s/astronomy_data",inFile->beamHeader[b].label,newBandName); // FIX FOR MORE THAN ONE BAND
 	  printf("Copying from %s to %s\n",groupName1,groupName2);
 	  sdhdf_copyEntireGroupDifferentLabels(groupName1,inFile,groupName2,outFile);
 
-	  sprintf(groupName1,"%s/%s/metadata",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[0].label); // FIX FOR MORE THAN ONE BAND
-	  sprintf(groupName2,"%s/%s/metadata",inFile->beamHeader[b].label,newBandName); // FIX FOR MORE THAN ONE BAND	  
+	  sprintf(groupName1,"%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[0].label,METADATA_GRP); // FIX FOR MORE THAN ONE BAND
+	  sprintf(groupName2,"%s/%s/%s",inFile->beamHeader[b].label,newBandName,METADATA_GRP); // FIX FOR MORE THAN ONE BAND
 	  printf("Copying from %s to %s\n",groupName1,groupName2);
 	  sdhdf_copyEntireGroupDifferentLabels(groupName1,inFile,groupName2,outFile);
 
 	  if (strcmp(inFile->primary[0].cal_mode,"ON")==0)
 	    {
 	      sprintf(groupName1,"%s/%s/calibrator_data",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[0].label); // FIX FOR MORE THAN ONE BAND
-	      sprintf(groupName2,"%s/%s/calibrator_data",inFile->beamHeader[b].label,newBandName); // FIX FOR MORE THAN ONE BAND	  
+	      sprintf(groupName2,"%s/%s/calibrator_data",inFile->beamHeader[b].label,newBandName); // FIX FOR MORE THAN ONE BAND
 	      printf("Copying from %s to %s\n",groupName1,groupName2);
 	      sdhdf_copyEntireGroupDifferentLabels(groupName1,inFile,groupName2,outFile);
 	    }
@@ -191,7 +191,7 @@ int main(int argc,char *argv[])
 	  // Need to use: sdhdf_copyEntireGroupDifferentLabels
 	  //	  sdhdf_copyRemainder(inFile,outFile,0);
 	}
-      sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);		
+      sdhdf_writeBeamHeader(outFile,beamHeader,nBeam);
       for (i=0;i<nOutBands;i++)
 	printf("band label = %s\n",outBandParams[i].label);
       sdhdf_writeBandHeader(outFile,outBandParams,inFile0->beamHeader[b].label,nOutBands,1);
@@ -218,5 +218,3 @@ int main(int argc,char *argv[])
   sdhdf_closeFile(outFile);
   printf("Ending the code\n");
 }
-
-
