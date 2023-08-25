@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -23,7 +23,7 @@
 #include "sdhdf_v1.9.h"
 #include <complex.h>
 
-#define SOFTWARE_VER "v0.1"
+#define SOFTWARE_VER "v1.1"
 #define MAX_STRLEN     512
 #define MAX_ARGLEN     4096         // Maximum number of characters to be stored in HISTORY from the command line
 #define MAX_FILES      8192         // Maximum number of files to be processed in batch processing
@@ -35,13 +35,149 @@
 #define MAX_POLY_COEFF 16          // Maximum number of coefficients in baseline fits
 
 // Handling of geodetic coordinates
-#define GRS80_A 6378137.0          // semi-major axis (m) 
-#define GRS80_F 1.0/298.257222101  // flattening 
+#define GRS80_A 6378137.0          // semi-major axis (m)
+#define GRS80_F 1.0/298.257222101  // flattening
 
+// SDHDF variables >=v4.0
+// HDF groups
+#define BEAM_GRP "beam"
+#define CONFIG_GRP "configuration"
+#define METADATA_GRP "metadata"
+#define BAND_GRP "band"
+#define ASTRONOMY_DATA_GRP "astronomy_data"
+#define CAL_DATA_GRP "calibrator_data"
+// HDF datasets
+#define DATA "data"
+#define FREQUENCY "frequency"
+#define CAL_DATA_BINNED "calibrator_data_binned"
+#define CAL_DATA_OFF "calibrator_data_off"
+#define CAL_DATA_ON "calibrator_data_on"
+#define OBS_PARAMS "observation_parameters"
+#define CAL_OBS_PARAMS "calibrator_observation_parameters"
+#define BAND_PARAMS "band_parameters"
+#define CAL_BAND_PARAMS "calibrator_band_parameters"
+#define BACKEND_CONFIG "instrument_configuration"
+#define FRONTEND_CONFIG "receiver_configuration"
+#define TELESCOPE_CONFIG "telescope_configuration"
+#define BEAM_PARAMS "beam_parameters"
+#define HISTORY "history"
+#define PRIMARY_HEADER "primary_header"
+#define SCHEDULE "schedule"
+#define SOFTWARE_VERSIONS "software_versions"
+// HDF dataset field names
+// common
+#define LABEL "LABEL"
+#define DATE "DATE"
+#define PROC "PROCESS"
+// beam
+#define N_BANDS "NUMBER_OF_BANDS"
+#define SOURCE "SOURCE"
+#define RA "RIGHT_ASCENSION"
+#define DEC "DECLINATION"
+// band
+#define C_FREQ "CENTRE_FREQUENCY"
+#define LOW_FREQ "LOW_FREQUENCY"
+#define HIGH_FREQ "HIGH_FREQUENCY"
+#define N_CHANS "NUMBER_OF_CHANNELS"
+#define N_POLS "NUMBER_OF_POLARISATIONS"
+#define POL_TYPE "POLARISATION_TYPE"
+#define DUMP_TIME "INTEGRATION_TIME"
+#define N_DUMPS "NUMBER_OF_INTEGRATIONS"
+// primary header
+#define HDR_DEFN "HEADER_DEFINITION"
+#define HDR_DEFN_VERSION "HEADER_DEFINITION_VERSION"
+#define FILE_FORMAT "FILE_FORMAT"
+#define FILE_FORMAT_VERSION "FILE_FORMAT_VERSION"
+#define SCHED_BLOCK_ID "SCHEDULE_ID"
+#define CAL_MODE "CALIBRATION_MODE"
+#define INSTRUMENT "INSTRUMENT"
+#define OBSERVER "OBSERVER"
+#define PID "PROJECT_ID"
+#define RECEIVER "RECEIVER"
+#define TELESCOPE "TELESCOPE"
+#define UTC_START "UTC_START"
+#define N_BEAMS "NUMBER_OF_BEAMS"
+// software versions
+#define SOFTWARE "SOFTWARE"
+#define SOFTWARE_DESCR "SOFTWARE_DESCRIPTION"
+#define SOFTWARE_VERSION "SOFTWARE_VERSION"
+// history
+#define PROC_DESCR "PROCESS_DESCRIPTION"
+#define PROC_ARGS "PROCESS_ARGUMENTS"
+#define PROC_HOST "PROCESSING_HOST"
+#define PROC_LOG "PROCESS_LOG"
+
+// SDHDF variables <v4.0
+// HDF groups
+/*#define BEAM_GRP "beam"
+#define CONFIG_GRP "config"
+#define METADATA_GRP "metadata"
+#define BAND_GRP "band"
+#define ASTRONOMY_DATA_GRP "astronomy_data"
+#define CAL_DATA_GRP "calibrator_data"
+// HDF datasets
+#define DATA "data"
+#define FREQUENCY "frequency"
+#define CAL_DATA_BINNED "cal_data_binned"
+#define CAL_DATA_OFF "cal_data_off"
+#define CAL_DATA_ON "cal_data_on"
+#define OBS_PARAMS "obs_params"
+#define CAL_OBS_PARAMS "cal_obs_params"
+#define BAND_PARAMS "band_params"
+#define CAL_BAND_PARAMS "cal_band_params"
+#define BACKEND_CONFIG "backend_config"
+#define BEAM_PARAMS "beam_params"
+#define HISTORY "history"
+#define PRIMARY_HEADER "primary_header"
+#define SCHEDULE "schedule"
+#define SOFTWARE_VERSIONS "software_versions"
+// HDF dataset field names
+// common
+#define LABEL "LABEL"
+#define DATE "DATE"
+#define PROC "PROCESS"
+// beam
+#define N_BANDS "N_BANDS"
+#define SOURCE "SOURCE"
+#define RA "RA"
+#define DEC "DEC"
+// band
+#define C_FREQ "CENTRE_FREQ"
+#define LOW_FREQ "LOW_FREQ"
+#define HIGH_FREQ "HIGH_FREQ"
+#define N_CHANS "N_CHANS"
+#define N_POLS "N_POLS"
+#define POL_TYPE "POL_TYPE"
+#define DUMP_TIME "DUMP_TIME"
+#define N_DUMPS "N_DUMPS"
+// primary header
+#define HDR_DEFN "HDR_DEFN"
+#define HDR_DEFN_VERSION "HDR_DEFN_VERSION"
+#define FILE_FORMAT "FILE_FORMAT"
+#define FILE_FORMAT_VERSION "FILE_FORMAT_VERSION"
+#define SCHED_BLOCK_ID "SCHED_BLOCK_ID"
+#define CAL_MODE "CAL_MODE"
+#define INSTRUMENT "INSTRUMENT"
+#define OBSERVER "OBSERVER"
+#define PID "PID"
+#define RECEIVER "RECEIVER"
+#define TELESCOPE "TELESCOPE"
+#define UTC_START "UTC_START"
+#define N_BEAMS "N_BEAMS"
+// software versions
+#define SOFTWARE "SOFTWARE"
+#define SOFTWARE_DESCR "SOFTWARE_DESCR"
+#define SOFTWARE_VERSION "SOFTWARE_VERSION"
+// history
+#define PROC_DESCR "PROC_DESCR"
+#define PROC_ARGS "PROC_ARGS"
+#define PROC_HOST "PROC_HOST"
+#define PROC_LOG "PROC_LOG"
+*/
 
 // Structure to contain the calibration information
 typedef struct sdhdf_calibration {
-  int    bad;  
+  int    bad;
   double freq; // MHz - centre of frequency channel corresponding to provided information
 
   // These are 7 parameters that represent the constant properties of the feed and calibration system as well as
@@ -51,11 +187,11 @@ typedef struct sdhdf_calibration {
   float noiseSource_UoverI; // U/I
   float noiseSource_VoverI; // V/I
 
-  float noiseSource_I_postResponse; 
-  float noiseSource_Q_postResponse; 
+  float noiseSource_I_postResponse;
+  float noiseSource_Q_postResponse;
   float noiseSource_U_postResponse;
-  float noiseSource_V_postResponse; 
-    
+  float noiseSource_V_postResponse;
+
   float constant_gain;
   float constant_diff_gain;
   float constant_diff_phase;
@@ -67,7 +203,7 @@ typedef struct sdhdf_calibration {
   // PCM response
   double complex response_pcm[2][2];
   double complex response_pcm_feed[2][2];
-  
+
   // Time dependent properties
   double stokes_noise_measured[4];
   double stokes_noise_actual[4];
@@ -76,7 +212,7 @@ typedef struct sdhdf_calibration {
   double diff_phase;
 
   double complex td_response[2][2];
-  
+
 } sdhdf_calibration;
 
 
@@ -98,7 +234,7 @@ typedef struct sdhdf_rfi {
   double f1;
   double mjd0;
   double mjd1;
-  char description[MAX_STRLEN];  
+  char description[MAX_STRLEN];
 } sdhdf_rfi;
 
 // RFI structure for transient RFI
@@ -113,7 +249,7 @@ typedef struct sdhdf_transient_rfi {
   double threshold;
   double mjd0;
   double mjd1;
-  char description[MAX_STRLEN];  
+  char description[MAX_STRLEN];
 } sdhdf_transient_rfi;
 
 // Rest frequency list
@@ -122,7 +258,7 @@ typedef struct sdhdf_restfrequency_struct {
   double f0;   // Rest frequency in MHz
   int    flag;
 } sdhdf_restfrequency_struct;
-  
+
 
 // Calibrator temperature structure
 typedef struct sdhdf_tcal_struct {
@@ -162,7 +298,7 @@ void sdhdf_initialiseFile(sdhdf_fileStruct *inFile);
 int  sdhdf_openFile(char *fname,sdhdf_fileStruct *inFile,int openType);
 void sdhdf_closeFile(sdhdf_fileStruct *inFile);
 
-// Data 
+// Data
 void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type);
 void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type);
 void sdhdf_loadQuantisedBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int type,unsigned char *arr);
@@ -240,7 +376,7 @@ void sdhdf_get_tcal(sdhdf_tcal_struct *tcalData,int n,double f0,double *tcalA,do
 void sdhdf_addHistory(sdhdf_historyStruct *history,int n,char *procName,char *descr,char *args);
 
 // Output information
-void sdhdf_copyEntireGroup(char *groupLabel,sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile); 
+void sdhdf_copyEntireGroup(char *groupLabel,sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile);
 void sdhdf_copyEntireGroupDifferentLabels(char *bandLabelIn,sdhdf_fileStruct *inFile,char *bandLabelOut,sdhdf_fileStruct *outFile);
 void sdhdf_setMetadataDefaults(sdhdf_primaryHeaderStruct *primaryHeader,sdhdf_beamHeaderStruct *beamHeader,
 			       sdhdf_bandHeaderStruct *bandHeader,sdhdf_softwareVersionsStruct *softwareVersions,sdhdf_historyStruct *history,
