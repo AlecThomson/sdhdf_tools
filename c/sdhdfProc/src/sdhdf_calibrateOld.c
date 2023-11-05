@@ -117,6 +117,11 @@ int main(int argc,char *argv[])
   float averageCalValuesF1=-1;
   int averageCal=0;
   int noFluxCal=0;
+  char pcmFile[1024];
+
+  // Default PCM file // FIX ME - THIS IS FOR PARKES
+  strcpy(pcmFile,"uwl_210621_145853.extzoom.cal.hdf");
+
   
   // Setup output defaults
   strcpy(oname,"sdhdf_calibrate_output.hdf");
@@ -150,6 +155,8 @@ int main(int argc,char *argv[])
 	{sscanf(argv[++i],"%d",&nchanAstro); setNchanAstro=1;}
       else if (strcmp(argv[i],"-fluxcal")==0)
 	strcpy(fluxCalFile,argv[++i]);
+      else if (strcasecmp(argv[i],"-pcmfile")==0)
+	strcpy(pcmFile,argv[++i]);
       else if (strcmp(argv[i],"-h")==0)
 	help();
       else
@@ -235,7 +242,7 @@ int main(int argc,char *argv[])
 		  // Load the information within the PCM file	  
 		  // This is assuming same number of channels in the PCM cal as in the noise source *** FIX ME
 		  //
-		  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL","uwl_181105_105441_b4.pcm",averageCal,averageCalValuesF0,averageCalValuesF1); // REMOVE HARDCODE
+		  sdhdf_loadPCM(polCal,&nPolCalChan,"parkes","UWL",pcmFile,averageCal,averageCalValuesF0,averageCalValuesF1); // REMOVE HARDCODE
 		  sdhdf_formPCM_response(polCal,nPolCalChan);
 		  
 		  
