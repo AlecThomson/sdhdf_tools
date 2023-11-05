@@ -1,10 +1,10 @@
-README for sdhdfProc
-=======================
+README for INSPECTA
+===================
 
 
 # About
 ---
-**sdhdfProc** is a software package to read, manipulate and process radio astronomy data in Single Dish Hierarchical Data Format (SDHDF)
+**INSPECTA** is an 'INtegrated SDHDF Processing Engine in C for Telescope data Analysis'. Formerly known as 'sdhdfProc', INSPECTA is a software package to read, manipulate and process radio astronomy data in Spectral-Domain Hierarchical Data Format (SDHDF).
 
 **Author**    George.Hobbs@csiro.au
 **Copyright** CSIRO 2020
