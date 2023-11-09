@@ -497,7 +497,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	else if (type==3)
 	  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[beam].bandData[band].cal_off_data.freq);
 
-	printf("Number of dimentions = %d\n",ndims);
+	printf("Number of dimensions = %d\n",ndims);
 
 	if (ndims==1)
 	  {
@@ -1070,6 +1070,8 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
       sprintf(groupName,"/%s/%s",METADATA_GRP,PRIMARY_HEADER);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
       sprintf(groupName,"/%s/%s",METADATA_GRP,SOFTWARE_VERSIONS);
+      if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
+			sprintf(groupName,"/%s/%s",METADATA_GRP,SCHEDULE);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
     }
 
