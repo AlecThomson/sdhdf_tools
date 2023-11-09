@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -37,7 +37,7 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
 void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
 
-#define VNUM "v0.2"
+#define VNUM "v0.3"
 #define MAX_REST_FREQUENCIES 1024
 
 void help()
@@ -56,7 +56,7 @@ void help()
   printf("-sb <num>           Set the sub-band number (starting from 0)\n");
   printf("-sd <num>           Set the spectral dump number (starting from 0)\n");
   printf("-yuint <string>     The text that will be written on the y-axis (by default this comes from the internal SDHDF attributes)\n");
-  
+
   printf("\nExample:\n\n");
   printf("sdhdf_plotSpectrum -f diff.hdf -sb 0\n");
   printf("---------------------\n");
@@ -101,12 +101,12 @@ int main(int argc,char *argv[])
   char dataName[MAX_STRLEN];
   int ibeam=0;
   char grDev[128]="/xs";
-  
+
   //  help();
-  
+
   // Defaults
   idump = iband = 0;
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -114,9 +114,9 @@ int main(int argc,char *argv[])
     }
 
   for (i=1;i<argc;i++)
-    {      
-      if (strcmp(argv[i],"-f")==0)   	     strcpy(fname,argv[++i]);	
-      else if (strcmp(argv[i],"-yunit")==0)  strcpy(yUnit,argv[++i]);	
+    {
+      if (strcmp(argv[i],"-f")==0)   	     strcpy(fname,argv[++i]);
+      else if (strcmp(argv[i],"-yunit")==0)  strcpy(yUnit,argv[++i]);
       else if (strcmp(argv[i],"-fref")==0)   sscanf(argv[++i],"%lf",&fref);
       else if (strcmp(argv[i],"-h")==0)      {help(); exit(1);}
       else if (strcmp(argv[i],"-g")==0)      strcpy(grDev,argv[++i]);
@@ -127,14 +127,14 @@ int main(int argc,char *argv[])
     }
 
   sdhdf_initialiseFile(inFile);
-    
+
   if (strcmp(fname,"unset")==0)
     {
       printf("Please define an input file name using the -f option\n");
       free(inFile);
       exit(1);
     }
-  
+
   if (sdhdf_openFile(fname,inFile,1)==-1)
     {
       printf("Unable to open input file >%s<\n",fname);
@@ -154,7 +154,7 @@ int main(int argc,char *argv[])
 	iband = sdhdf_getBandID(inFile,argv[++i]);
     }
   */
-  
+
   // FIX THESE
   //  sdhdf_loadFrequencyAttributes(inFile,iband);
   //  sdhdf_loadDataAttributes(inFile,iband);
@@ -162,13 +162,13 @@ int main(int argc,char *argv[])
   //  strcpy(freqFrame,inFile->frequency_attr.frame);
   //  strcpy(freqUnit,inFile->frequency_attr.unit);
   //  strcpy(att_yUnit,inFile->data_attr.unit);
-  
-  
+
+
 	//    strcpy(yUnit,att_yUnit);
-  
+
   plotSpectrum(inFile,ibeam,iband,idump,fref,yUnit,freqFrame,freqUnit,grDev);
 
-  
+
   sdhdf_closeFile(inFile);
   free(inFile);
 }
@@ -207,11 +207,11 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   int flagIt=2;
   int nFreq;
   int allDataFlagged=1;
-  
+
   sdhdf_restfrequency_struct *restFrequencies;
   restFrequencies = (sdhdf_restfrequency_struct *)malloc(sizeof(sdhdf_restfrequency_struct)*MAX_REST_FREQUENCIES);
   sdhdf_loadRestFrequencies(restFrequencies,&nFreq);
-  
+
 
 
   cpgbeg(0,grDev,1,1);
@@ -233,7 +233,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
       iband = inFile->beam[ibeam].nBand-1;
       printf("Setting band number to %d\n",iband);
     }
-  
+
   pol1 = (float *)malloc(sizeof(float)*maxNchan);
   pol2 = (float *)malloc(sizeof(float)*maxNchan);
   pol3 = (float *)malloc(sizeof(float)*maxNchan);
@@ -241,7 +241,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   freq = (float *)malloc(sizeof(float)*maxNchan);
 
   npol  = inFile->beam[ibeam].bandHeader[iband].npol;
-  
+
   do
     {
       if (plot==1)
@@ -276,23 +276,23 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 			  //			  printf("Checking attribute %s\n",inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key);
 			  if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"FRAME")==0)
 			    {strcpy(freqFrame,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);}
-			  else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"UNIT")==0)		    
+			  else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"UNIT")==0)
 			    {
 			      //			      printf("Value = %s\n",inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);
 			      strcpy(freqUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);
 			    }
 			}
 		    }
-		  
+
 		}
 	      reload=0;
 	    }
 	  allDataFlagged=1;
 	  for (i=0;i<nchan;i++)
 	    {
-	      wts     = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i]; 
+	      wts     = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i];
 	      //	      printf("WEIGHTS: %d %g\n",i,wts);
-	      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i]; 
+	      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i];
 
 	      if (xplot==1)
 		{
@@ -308,7 +308,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		  //		  printf("Not flagged in channel %d\n",i);
 		  allDataFlagged=0;
 		  if (divWeights==1)
-		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;		 
+		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;
 		  else
 		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
 		  //printf("Loaded %f %f\n",freq[i],pol1[i]);
@@ -320,7 +320,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    {
 		      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan];
 		    }
-		  
+
 		  if (setLog == 1)
 		    {
 		      pol1[i]=log10(pol1[i]);
@@ -334,13 +334,13 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 	    }
 
-	
+
 	  if (t==-1 || t==0 || t==1)
 	    {
 	      if (t==0 || t==1)
 		{
 		  int setMiny=0;
-		  
+
 		  for (i=0;i<nchan;i++)
 		    {
 		      //		      printf("IN HERE %g\n",pol1[i]);
@@ -358,7 +358,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 			    {
 			      if (pol1[i] > maxy) maxy = pol1[i];
 			      if (pol1[i] < miny) miny = pol1[i];
-			      
+
 			      if (npol > 1)
 				{
 				  if (pol2[i] > maxy) maxy = pol2[i];
@@ -369,7 +369,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    }
 		  ominy = miny; omaxy = maxy;
 		}
-	   
+
 	      if (t==0)
 		{
 		  if (xplot==1)
@@ -389,7 +389,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		  float f0,f1;
 		  sminx = minx;
 		  smaxx = maxx;
-		  
+
 		  if (xplot==1) // Convert channel to frequency
 		    {
 		      minx = freq[(int)sminx];
@@ -408,10 +408,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		}
 
 	      t=2;
-	      
+
 	    }
 	}
-      
+
       if (minx == maxx || miny == maxy)
 	{
 	  cpgenv(0,1,0,1,0,0);
@@ -437,7 +437,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  strcpy(blabelFix,inFile->beam[ibeam].bandHeader[iband].label);
 	  strcpy(sourceFix,inFile->beamHeader[ibeam].source);
 	}
-      if (inFile->beam[ibeam].bandHeader[iband].ndump==1)       
+      if (inFile->beam[ibeam].bandHeader[iband].ndump==1)
 	sprintf(title,"%s, %s",fnameFix,blabelFix);
       else
 	sprintf(title,"%s, %s, spectral dump %d",fnameFix,blabelFix,idump);
@@ -456,7 +456,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  sprintf(xlabel,"Velocity (km s\\u-1\\d) [f\\dref\\u = %.2f MHz]",fref);
 	}
       cpglab(xlabel,ylabel,title);
-	  
+
       cpgsch(0.9);
       sprintf(legend,"Source: %s",sourceFix);
       cpgtext(minx+0.05*(maxx-minx),maxy-0.05*(maxy-miny),legend);
@@ -467,10 +467,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
       sprintf(legend,"Dec: %s",inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decStr);
       cpgtext(minx+0.05*(maxx-minx),maxy-0.2*(maxy-miny),legend);
       cpgsch(1.4);
-      
+
       if (molecularLines==1 || molecularLines==2)
 	{
-	  for (i=0;i<nFreq;i++)	    
+	  for (i=0;i<nFreq;i++)
 	    drawMolecularLine(restFrequencies[i].f0,restFrequencies[i].label,minx,maxx,miny,maxy,molecularLines);
 	}
       if (recombLines==1)
@@ -501,7 +501,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    }
 		  drawIt=-1;
 
-		}	      
+		}
 	    }
 	  if (drawIt==1)
 	    {
@@ -536,7 +536,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    {minx = mx; maxx = mx2;}
 		  else
 		    {minx = mx2; maxx = mx;}
-		  
+
 		  if (my < my2)
 		    {miny = my; maxy = my2;}
 		  else
@@ -647,13 +647,13 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      else npol=1;
 	    }
 	  else if (key=='>')
-	    {	  
+	    {
 	      iband++;
 	      if (iband >= inFile->beam[ibeam].nBand)
 		iband = inFile->beam[ibeam].nBand-1;
 	      reload=1;
 	      t=0;
-	      
+
 	    }
 	  else if (key=='<')
 	    {
@@ -712,7 +712,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	    }
 	}
   } while (key!='q');
-  
+
   cpgend();
 
   free(pol1);
@@ -720,7 +720,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   free(pol3);
   free(pol4);
   free(restFrequencies);
-  
+
   /*
   for (i=0;i<inFile->bandHeader[iband].nchan;i++)
     {
@@ -728,7 +728,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	     spectrum.pol1[i].val,spectrum.pol2[i].val,spectrum.pol3[i].val,spectrum.pol4[i].val,
 	     spectrum.pol1[i].weight,spectrum.pol2[i].weight,spectrum.pol3[i].weight,spectrum.pol4[i].weight);
     }
-  */  
+  */
 
 }
 
@@ -745,7 +745,7 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
       cpgsch(0.8);
       cpgtext(fx[0],fy[1]-0.1*(fy[1]-fy[0]),label);
       cpgsch(1.4);
-    }  
+    }
 }
 
 //
@@ -764,7 +764,7 @@ void drawRecombLine(float minX,float maxX,float minY,float maxY)
   double M = 1836.1 * me; // Hydrogen nucleus is a single proton of mass mp ~ 1836.1m_e
   char text[1024];
   char greek[6];
-  
+
   //  n = 187;
   //  dn = 1;
 
@@ -780,7 +780,7 @@ void drawRecombLine(float minX,float maxX,float minY,float maxY)
 	sprintf(greek,"\\gd");
       for (n=1;n<400;n++)
 	{
-	  RM_c = Rinf_c *pow(1+me/M,-1);  
+	  RM_c = Rinf_c *pow(1+me/M,-1);
 	  freq = RM_c*(1./pow(n,2) - 1./pow(n+dn,2))/1e6; // MHz
 	  if (freq > minX && freq < maxX)
 	    {
@@ -800,5 +800,5 @@ void drawRecombLine(float minX,float maxX,float minY,float maxY)
 	    }
 	}
     }
-  
+
 }

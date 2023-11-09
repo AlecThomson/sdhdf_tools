@@ -129,12 +129,19 @@ int main(int argc,char *argv[])
 
   for (i=0;i<nFiles;i++)
     {
+			printf("INITIALISING\n");
       sdhdf_initialiseFile(inFile);
+			printf("INITIALISING COMPLETE\n");
+
       if (sdhdf_openFile(fname[i],inFile,1)==-1)
 	printf("Warning: unable to open file >%s<. Skipping\n",fname[i]);
       else
 	{
+		printf("LOADING METADATA\n");
 	  sdhdf_loadMetaData(inFile);
+		//
+		printf("LOADING METADATA COMPLETE\n");
+
 	  if (atoa==1)
 	    {
 	      maxTime=0;
@@ -147,6 +154,7 @@ int main(int argc,char *argv[])
 		  if (maxTime < intTime)
 		    maxTime = intTime;
 		}
+
 	      printf("%s %s %s %s %s %s %8.3f\n",inFile->fname,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->beam[0].bandData[0].astro_obsHeader[0].raStr,inFile->beam[0].bandData[0].astro_obsHeader[0].decStr,inFile->primary[0].utc0,maxTime);
 
               for (j=0;j<inFile->beam[0].nBand;j++)
@@ -186,14 +194,17 @@ int main(int argc,char *argv[])
 		      hsize_t     nelmts = 1;
 		      void       *buf = NULL;
 		      int nread;
+					char dset[1024] = "/metadata/primary_header";
+
 		      printf("IN TESTING ATTRIBUTES\n");
-		      na = sdhdf_getNattributes(inFile,"/beam_0/band_SB0/astronomy_data/data");
+
+		      na = sdhdf_getNattributes(inFile,dset);
 		      printf("na = %d\n",na);
 		      for (kk=0;kk<na;kk++)
 			{
 			  nelmts = 1;
-			  printf("Attribute %d\n",kk);
-			  attr_id = H5Aopen_by_idx(inFile->fileID,"/beam_0/band_SB0/astronomy_data/data", H5_INDEX_NAME, H5_ITER_NATIVE,kk,H5P_DEFAULT,H5P_DEFAULT);
+			  printf("Attribute no. %d\n",kk);
+			  attr_id = H5Aopen_by_idx(inFile->fileID,dset, H5_INDEX_NAME, H5_ITER_NATIVE,kk,H5P_DEFAULT,H5P_DEFAULT);
 			  H5Aget_name(attr_id,1024,attrName);
 			  type = H5Aget_type(attr_id);
 
@@ -202,6 +213,14 @@ int main(int argc,char *argv[])
 			  if (type_class == H5T_STRING) printf("STRING\n");
 			  else if (type_class == H5T_FLOAT) printf("FLOAT\n");
 			  else if (type_class == H5T_INTEGER) printf("INTEGER\n");
+				else if (type_class == 6) {
+					printf("COMPOUND\n");
+					// LT
+					printf("###\n");
+					printf("LT reading attribute ID: %s\n", attrName);
+					sdhdf_readAttributes(inFile, dset, attrName);
+					printf("###\n");
+				}
 			  else printf("NO IDEA WHAT TYPE_CLASS THIS IS\n");
 
 			  space = H5Aget_space(attr_id);
@@ -254,18 +273,18 @@ int main(int argc,char *argv[])
 		  if (showDump==1)
 		    {
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		      printf("          ElapsedTime MJD           UTC         LOCAL        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB     PA \n");
+		      printf("          ElapsedTime MJD           UTC         LOCAL       RA          DEC         AZ       EL       GL      GB      PA\n");
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
 		      for (j=0;j<inFile->beam[beam].bandData[iband].nAstro_obsHeader;j++)
 			{
-			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %s %d %d\n",
+			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.5f %7.5f %7.5f %7.5f %7.5f\n",
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].astro_obsHeader[j].mjd,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].utc,inFile->beam[beam].bandData[iband].astro_obsHeader[j].local_time,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decStr,
-				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decDeg,
+				 //inFile->beam[beam].bandData[iband].astro_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].astro_obsHeader[j].decDeg,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].az,inFile->beam[beam].bandData[iband].astro_obsHeader[j].el,
 				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].gl,inFile->beam[beam].bandData[iband].astro_obsHeader[j].gb,
-				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].paraAngle,inFile->fname,j,beam);
+				 inFile->beam[beam].bandData[iband].astro_obsHeader[j].paraAngle);
 			}
 		    }
 
@@ -285,15 +304,15 @@ int main(int argc,char *argv[])
 		  if (showCalDump==1)
 		    {
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-		      printf("          ElapsedTime MJD           UTC         LOCAL        RA          DEC          RADEG   DECDEG AZ       EL     GL      GB\n");
+		      printf("          ElapsedTime MJD           UTC         LOCAL       RA          DEC          AZ      EL       GL      GB\n");
 		      printf("------------------------------------------------------------------------------------------------------------------------------------\n");
 		      for (j=0;j<inFile->beam[beam].bandData[iband].nCal_obsHeader;j++)
 			{
-			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n",
+			  printf(" [SDUMP] %12.3f %.7f %-11.11s %-11.11s %-11.11s %-11.11s %7.3f %7.3f %7.3f %7.3f\n",
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].timeElapsed,inFile->beam[beam].bandData[iband].cal_obsHeader[j].mjd,
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].utc,inFile->beam[beam].bandData[iband].cal_obsHeader[j].local_time,
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].raStr,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decStr,
-				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decDeg,
+				 //inFile->beam[beam].bandData[iband].cal_obsHeader[j].raDeg,inFile->beam[beam].bandData[iband].cal_obsHeader[j].decDeg,
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].az,inFile->beam[beam].bandData[iband].cal_obsHeader[j].el,
 				 inFile->beam[beam].bandData[iband].cal_obsHeader[j].gl,inFile->beam[beam].bandData[iband].cal_obsHeader[j].gb);
 

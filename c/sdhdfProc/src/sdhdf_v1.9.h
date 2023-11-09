@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -34,32 +34,105 @@
 //
 // filename/
 //          obs_meta/
-//                  primary header            
-//                  software_versions         
-//                  history                   
+//                  primary header
+//                  software_versions
+//                  history
 //          obs_config/                     (this group is currently ignored by sdhdfProc)
-//                  backend_config            
-//                  cal_backend_config        
+//                  backend_config
+//                  cal_backend_config
 //          beam_XX/
-//                  beam_header               
-//                  band_header               
+//                  beam_header
+//                  band_header
 //                  band_YY/
 //                          astronomy/
 //                                data
 //                                frequency
-//                                  obs_params  
+//                                  obs_params
 //                          calibrator/
 //                              cal_data_on
 //                              cal_data_off
 //                              cal_frequency
 //                              obs_meta/
-//                                       cal_band_header 
-//                                       cal_obs_params   
+//                                       cal_band_header
+//                                       cal_obs_params
 //                              cal_proc/
 //                                       cal_proc_tsys
 //                                       cal_proc_diff_gain
 //                                       cal_proc_diff_phase
 
+//
+// SDHDF variables
+//
+// HDF groups
+#define BEAM_GRP "beam"
+#define CONFIG_GRP "config"
+#define METADATA_GRP "metadata"
+#define BAND_GRP "band"
+#define ASTRONOMY_DATA_GRP "astronomy_data"
+#define CAL_DATA_GRP "calibrator_data"
+// HDF datasets
+#define DATA "data"
+#define FREQUENCY "frequency"
+#define CAL_DATA_BINNED "cal_data_binned"
+#define CAL_DATA_OFF "cal_data_off"
+#define CAL_DATA_ON "cal_data_on"
+#define OBS_PARAMS "obs_params"
+#define CAL_OBS_PARAMS "cal_obs_params"
+#define BAND_PARAMS "band_params"
+#define CAL_BAND_PARAMS "cal_band_params"
+#define BACKEND_CONFIG "backend_config"
+#define BEAM_PARAMS "beam_params"
+#define HISTORY "history"
+#define PRIMARY_HEADER "primary_header"
+#define SCHEDULE "schedule"
+#define SOFTWARE_VERSIONS "software_versions"
+// HDF dataset field names
+// common
+#define LABEL "LABEL"
+#define DATE "DATE"
+#define PROC "PROCESS"
+// beam
+#define N_BANDS "N_BANDS"
+#define SOURCE "SOURCE"
+#define RA "RA"
+#define DEC "DEC"
+// band
+#define C_FREQ "CENTRE_FREQ"
+#define LOW_FREQ "LOW_FREQ"
+#define HIGH_FREQ "HIGH_FREQ"
+#define N_CHANS "N_CHANS"
+#define N_POLS "N_POLS"
+#define POL_TYPE "POL_TYPE"
+#define DUMP_TIME "DUMP_TIME"
+#define N_DUMPS "N_DUMPS"
+// primary header
+#define HDR_DEFN "HDR_DEFN"
+#define HDR_DEFN_VERSION "HDR_DEFN_VERSION"
+#define FILE_FORMAT "FILE_FORMAT"
+#define FILE_FORMAT_VERSION "FILE_FORMAT_VERSION"
+#define SCHED_BLOCK_ID "SCHED_BLOCK_ID"
+#define CAL_MODE "CAL_MODE"
+#define INSTRUMENT "INSTRUMENT"
+#define OBSERVER "OBSERVER"
+#define PID "PID"
+#define RECEIVER "RECEIVER"
+#define TELESCOPE "TELESCOPE"
+#define UTC_START "UTC_START"
+#define N_BEAMS "N_BEAMS"
+// software versions
+#define SOFTWARE "SOFTWARE"
+#define SOFTWARE_DESCR "SOFTWARE_DESCR"
+#define SOFTWARE_VERSION "SOFTWARE_VERSION"
+// history
+#define PROC_DESCR "PROC_DESCR"
+#define PROC_ARGS "PROC_ARGS"
+#define PROC_HOST "PROC_HOST"
+#define PROC_LOG "PROC_LOG"
+// schedule
+#define DTE "DATE";
+#define SCHED_HOST "SCHED_HOST";
+#define SCHED_VERSION "SCHED_VERSION";
+#define SCHED_METADATA "SCHED_BLOCK";
 
 //
 // Attribute structure
@@ -82,7 +155,7 @@ typedef struct sdhdf_spectralDumpsStruct {
   int    nchan;                // Number of channels
   int    ndump;                // Number of spectral dumps
   int    npol;                 // Number of polarisations allocated
-  
+
   int    freqAllocatedMemory;      // 0 = no, otherwise 1
   int    flagAllocatedMemory;      // 0 = no, otherwise 1
   int    dataWeightsAllocatedMemory;      // 0 = no, otherwise 1
@@ -90,12 +163,12 @@ typedef struct sdhdf_spectralDumpsStruct {
   int    pol2AllocatedMemory;      // 0 = no, otherwise 1
   int    pol3AllocatedMemory;      // 0 = no, otherwise 1
   int    pol4AllocatedMemory;      // 0 = no, otherwise 1
-  
+
   float  *freq;                // Frequency (frequency axis per spectral dump)
-  int    nFreqDumps;           // Number of frequency dumps 
+  int    nFreqDumps;           // Number of frequency dumps
   float  *dataWeights;         // Weight information for channels and spectral dumps
   unsigned char *flag;                // Flagging information only for channels
-  
+
   float  *pol1;
   float  *pol2;
   float  *pol3;
@@ -158,7 +231,7 @@ typedef struct sdhdf_beamHeaderStruct {
   char label[MAX_STRLEN];
   int  nBand;
   char source[MAX_STRLEN];
-  
+
 } sdhdf_beamHeaderStruct;
 
 // ***********************************************
@@ -255,7 +328,7 @@ typedef struct sdhdf_backendConfigStruct {
   char osamp_denominator[64];
   char order[64];
   char file_size[64];
-  
+
 } sdhdf_backendConfigStruct;
 
 
@@ -294,7 +367,7 @@ typedef struct sdhdf_obsParamsStruct {
 // Band information
 typedef struct sdhdf_bandStruct {
   int haveCal;                // = 0 if no, = 1 if yes
-  
+
   sdhdf_obsParamsStruct     *astro_obsHeader;
   sdhdf_obsParamsStruct     *cal_obsHeader;
   int astro_obsHeaderAllocatedMemory;
@@ -308,7 +381,7 @@ typedef struct sdhdf_bandStruct {
   int nAstro_obsHeaderAttributes_freq;
   sdhdf_attributes_struct cal_obsHeaderAttr[MAX_ATTRIBUTES];
   int nCal_obsHeaderAttributes;
-  
+
   sdhdf_spectralDumpsStruct astro_data;
   sdhdf_attributes_struct astro_dataAttr[MAX_ATTRIBUTES];
   int nAstro_dataAttributes;
@@ -324,7 +397,7 @@ typedef struct sdhdf_bandStruct {
   sdhdf_spectralDumpsStruct cal_proc_tsys;
   sdhdf_spectralDumpsStruct cal_proc_diff_gain;
   sdhdf_spectralDumpsStruct cal_proc_diff_phase;
-  
+
 } sdhdf_bandStruct;
 
 
@@ -346,7 +419,7 @@ typedef struct sdhdf_beamStruct {
   sdhdf_bandHeaderStruct *calBandHeader;
   int nCalBand;
   int calBandAllocatedMemory; // 0 = no, 1 = yes
-  
+
 } sdhdf_beamStruct;
 
 //
@@ -355,7 +428,7 @@ typedef struct sdhdf_beamStruct {
 typedef struct sdhdf_fileStruct {
   char  fname[MAX_STRLEN];      // Input filename
   int   fileOpen;               // 0 = file closed, 1 = file opened
-  hid_t fileID;                 // File pointer 
+  hid_t fileID;                 // File pointer
 
   // Primary information
   int nPrimary;
@@ -371,11 +444,11 @@ typedef struct sdhdf_fileStruct {
   double cal_phase;
   //  sdhdf_backendConfigStruct config[512]; // Note currently will just load a single line
 
-  
+
   // Software versions
   int nSoftware;
   int softwareAllocatedMemory;             // 0 = no, 1 = yes
-  sdhdf_softwareVersionsStruct *software; 
+  sdhdf_softwareVersionsStruct *software;
   sdhdf_attributes_struct softwareAttr[MAX_ATTRIBUTES];
   int nSoftwareAttributes;
 

@@ -387,11 +387,11 @@ int main(int argc,char *argv[])
 	    }
 
 	  // Copy other primary tables
-		sprintf(metadata_grp,"/%s",metadata_grp);
+		sprintf(metadata_grp,"/%s",METADATA_GRP);
 	  sdhdf_copyEntireGroup(metadata_grp,inFile,outFile);
 	  sdhdf_writeBeamHeader(outFile,inFile->beamHeader,inFile->nBeam);
 	  // Don't want to "copyRemainder" as have only selected specific bands
-	  sdhdf_copyEntireGroup("config",inFile,outFile);
+	  sdhdf_copyEntireGroup(CONFIG_GRP,inFile,outFile);
 	  sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_extractBand","INSPECTA software to extractBands",args);
 	  inFile->nHistory++;
 	  printf("Writing history %d\n",inFile->nHistory);

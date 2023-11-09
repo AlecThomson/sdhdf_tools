@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -76,12 +76,12 @@ int main(int argc,char *argv[])
   int nDataAttributes=0;
   int nFreqAttributes=0;
   int selectBeam=-1;
-  
+
   long npol,ndump,out_ndump,out_ndump_num;
   float *out_data,*out_freq;
-  
+
   strcpy(oname,"sdhdf_extract_output.hdf");
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -93,10 +93,10 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
-  
-  
+
+
   for (i=1;i<argc;i++)
-    {      
+    {
       if (strcmp(argv[i],"-e")==0)
 	strcpy(ext,argv[++i]);
       else if (strcmp(argv[i],"-h")==0)
@@ -118,10 +118,10 @@ int main(int argc,char *argv[])
       sdhdf_initialiseFile(outFile);
 
       sdhdf_formOutputFilename(fname[ii],ext,oname);
-            
+
       sdhdf_openFile(fname[ii],inFile,1);
       sdhdf_openFile(oname,outFile,3);
-      
+
       if (inFile->fileID!=-1) // Did we successfully open the file?
 	{
 	  sdhdf_loadMetaData(inFile);
@@ -134,11 +134,11 @@ int main(int argc,char *argv[])
 	  for (b=0;b<inFile->nBeam;b++)
 	    {
 	      if (selectBeam == -1 || b == selectBeam)
-		{
+		 {
 		  printf("Processing beam %d\n",b);
-		  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);      
+		  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*inFile->beam[b].nBand);
 		  sdhdf_copyBandHeaderStruct(inFile->beam[b].bandHeader,inBandParams,inFile->beam[b].nBand);
-		  
+
 		  for (i=0;i<inFile->beam[b].nBand;i++)
 		    {
 		      nchan = inFile->beam[b].bandHeader[i].nchan;
@@ -147,15 +147,15 @@ int main(int argc,char *argv[])
 		      ndump = inFile->beam[b].bandHeader[i].ndump;
 		      printf("Processing subband %d (number of spectral dumps = %d)\n",i,(int)ndump);
 		      out_ndump = nSelectDumps;
-		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);      
+		      outObsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*out_ndump);
 		      for (k=0;k<out_ndump;k++)
 			sdhdf_copySingleObsParams(inFile,b,i,k,&outObsParams[k]);
-		      
-		      
+
+
 		      out_data = (float *)malloc(sizeof(float)*nchan*npol*out_ndump);
 		      // Should use nFreqDumps here -- FIX ME
 		      out_freq = (float *)malloc(sizeof(float)*nchan);
-		      
+
 		      sdhdf_loadBandData(inFile,b,i,1);
 		      for (j=0;j<nchan;j++)
 			out_freq[j] = inFile->beam[b].bandData[i].astro_data.freq[j]; // FIX ME: DUMP FOR FREQ AXIS
@@ -198,7 +198,7 @@ int main(int argc,char *argv[])
 		      printf("Writing obs params\n");
 		      sdhdf_writeObsParams(outFile,inFile->beam[b].bandHeader[i].label,inFile->beamHeader[b].label,i,outObsParams,out_ndump,1);
 		      printf("Releasing data\n");
-		      sdhdf_releaseBandData(inFile,b,ii,1);		  
+		      sdhdf_releaseBandData(inFile,b,ii,1);
 
 		      free(outObsParams);
 		      inBandParams[i].ndump = out_ndump;
@@ -209,9 +209,9 @@ int main(int argc,char *argv[])
 		}
 	    }
 	  printf("Freeing\n");
-	    
 
-	      
+
+
 
 	  printf("Writing other tables\n");
 	  // Copy other primary tables
@@ -241,6 +241,3 @@ int main(int argc,char *argv[])
   free(inFile);
   free(outFile);
 }
-
-
-

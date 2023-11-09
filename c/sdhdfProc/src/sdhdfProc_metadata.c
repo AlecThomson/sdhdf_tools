@@ -109,7 +109,7 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
 	printf("FINISH CONFIG\n");
   sdhdf_loadBeamHeader(inFile);
 	printf("FINISH BEAM\n");
-  sdhdf_loadBandHeader(inFile,1);
+  sdhdf_loadBandHeader(inFile,1); //this might be where the Ra and Dec strings are set to "unset"
 	printf("FINISH BAND\n");
   sdhdf_loadObsHeader(inFile,1);
 	printf("FINISH OBS\n");
@@ -129,11 +129,19 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
 
   if (strcmp(inFile->primary[0].cal_mode,"ON")==0)
     {
+			printf("LOADING BAND HEADER\n");
       sdhdf_loadBandHeader(inFile,2);
+			printf("FINISHED LOADING BAND HEADER\n");
+			printf("LOADING OBS HEADER\n");
       sdhdf_loadObsHeader(inFile,2);
+			printf("FINISHED LOADING OBS HEADER\n");
     }
+	printf("LOADING HISTORY\n");
   sdhdf_loadHistory(inFile);
+	printf("FINISHED LOADING HISTORY\n");
+	printf("LOADING SOFTWARE\n");
   sdhdf_loadSoftware(inFile);
+	printf("FINISHED LOADING SOFTWARE\n");
 }
 
 void sdhdf_loadConfig(sdhdf_fileStruct *inFile)
@@ -298,6 +306,7 @@ void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile)
   char label[MAX_STRLEN];
 
   nbeam = inFile->nBeam;
+	printf("nbeam= %d\n",nbeam);
 
   if (inFile->beamAllocatedMemory == 0)
     {
@@ -811,6 +820,7 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	  else if (type==2)
 	    ndump = inFile->beam[i].calBandHeader[j].ndump;
 
+
 	  if (ndump < 1)
 	    {
 	      printf("ERROR: Trying to load observation metadata, but ndump = 0\n");
@@ -844,7 +854,6 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 		sdhdf_initialise_obsHeader(&(inFile->beam[i].bandData[j].cal_obsHeader[k]));
 	    }
 
-
 	  if (type==1)
 	    sprintf(label,"%s/%s/%s/%s",beamLabel,inFile->beam[i].bandHeader[j].label,METADATA_GRP,OBS_PARAMS);
 	  else if (type==2)
@@ -871,29 +880,54 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	      status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
 
 	      H5Tinsert(val_tid,"ELAPSED_TIME",HOFFSET(sdhdf_obsParamsStruct,timeElapsed),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"DUMP_TIME",HOFFSET(sdhdf_obsParamsStruct,dtime),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"TIME_DB",HOFFSET(sdhdf_obsParamsStruct,timedb),stid);
+	      H5Tinsert(val_tid,"INTEGRATION_TIME",HOFFSET(sdhdf_obsParamsStruct,dtime),H5T_NATIVE_DOUBLE);
+				// deprecated in v4
+				//H5Tinsert(val_tid,"TIME_DB",HOFFSET(sdhdf_obsParamsStruct,timedb),stid);
 	      H5Tinsert(val_tid,"MJD",HOFFSET(sdhdf_obsParamsStruct,mjd),H5T_NATIVE_DOUBLE);
 	      H5Tinsert(val_tid,"UTC",HOFFSET(sdhdf_obsParamsStruct,utc),stid);
-	      H5Tinsert(val_tid,"UT_DATE",HOFFSET(sdhdf_obsParamsStruct,ut_date),stid);
+				// deprecated in v4
+	      //H5Tinsert(val_tid,"UT_DATE",HOFFSET(sdhdf_obsParamsStruct,ut_date),stid);
 	      H5Tinsert(val_tid,"LOCAL_TIME",HOFFSET(sdhdf_obsParamsStruct,local_time),stid);
-	      H5Tinsert(val_tid,"RA_STR",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
-	      H5Tinsert(val_tid,"DEC_STR",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
-	      H5Tinsert(val_tid,"RA_DEG",HOFFSET(sdhdf_obsParamsStruct,raDeg),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"DEC_DEG",HOFFSET(sdhdf_obsParamsStruct,decDeg),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"RA_OFFSET",HOFFSET(sdhdf_obsParamsStruct,raOffset),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"DEC_OFFSET",HOFFSET(sdhdf_obsParamsStruct,decOffset),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"GL",HOFFSET(sdhdf_obsParamsStruct,gl),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"GB",HOFFSET(sdhdf_obsParamsStruct,gb),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"AZ",HOFFSET(sdhdf_obsParamsStruct,az),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"ZE",HOFFSET(sdhdf_obsParamsStruct,ze),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"EL",HOFFSET(sdhdf_obsParamsStruct,el),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"AZ_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,az_drive_rate),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"ZE_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,ze_drive_rate),H5T_NATIVE_DOUBLE);
+				// changed in v4
+				//H5Tinsert(val_tid,"RA_STR",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
+				H5Tinsert(val_tid,"RIGHT_ASCENSION",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
+				// changed in v4
+	      //H5Tinsert(val_tid,"DEC_STR",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
+				H5Tinsert(val_tid,"DECLINATION",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
+				// deprecated in v4
+				//H5Tinsert(val_tid,"RA_DEG",HOFFSET(sdhdf_obsParamsStruct,raDeg),H5T_NATIVE_DOUBLE);
+	      //H5Tinsert(val_tid,"DEC_DEG",HOFFSET(sdhdf_obsParamsStruct,decDeg),H5T_NATIVE_DOUBLE);
+	      //H5Tinsert(val_tid,"RA_OFFSET",HOFFSET(sdhdf_obsParamsStruct,raOffset),H5T_NATIVE_DOUBLE);
+	      //H5Tinsert(val_tid,"DEC_OFFSET",HOFFSET(sdhdf_obsParamsStruct,decOffset),H5T_NATIVE_DOUBLE);
+				// added in v4
+				H5Tinsert(val_tid,"DRIVE_STATUS",HOFFSET(sdhdf_obsParamsStruct,fstat),H5T_NATIVE_INT);
+				// changed in v4
+	      //H5Tinsert(val_tid,"GL",HOFFSET(sdhdf_obsParamsStruct,gl),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"GALACTIC_LONGITUDE",HOFFSET(sdhdf_obsParamsStruct,gl),H5T_NATIVE_DOUBLE);
+				// changed in v4
+	      //H5Tinsert(val_tid,"GB",HOFFSET(sdhdf_obsParamsStruct,gb),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"GALACTIC_LATITUDE",HOFFSET(sdhdf_obsParamsStruct,gb),H5T_NATIVE_DOUBLE);
+				// changed in v4
+	      //H5Tinsert(val_tid,"AZ",HOFFSET(sdhdf_obsParamsStruct,az),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"AZIMUTH_ANGLE",HOFFSET(sdhdf_obsParamsStruct,az),H5T_NATIVE_DOUBLE);
+				// changed in v4
+	      //H5Tinsert(val_tid,"ZE",HOFFSET(sdhdf_obsParamsStruct,ze),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"ZENITH_ANGLE",HOFFSET(sdhdf_obsParamsStruct,ze),H5T_NATIVE_DOUBLE);
+				// changed in v4
+	      //H5Tinsert(val_tid,"EL",HOFFSET(sdhdf_obsParamsStruct,el),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"ELEVATION_ANGLE",HOFFSET(sdhdf_obsParamsStruct,el),H5T_NATIVE_DOUBLE);
+				// deprecated in v4
+				//H5Tinsert(val_tid,"AZ_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,az_drive_rate),H5T_NATIVE_DOUBLE);
+	      //H5Tinsert(val_tid,"ZE_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,ze_drive_rate),H5T_NATIVE_DOUBLE);
 	      H5Tinsert(val_tid,"HOUR_ANGLE",HOFFSET(sdhdf_obsParamsStruct,hourAngle),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"PARA_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"WIND_DIR",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
-	      H5Tinsert(val_tid,"WIND_SPD",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
+				// changed in v4
+	      //H5Tinsert(val_tid,"PARA_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"PARALLACTIC_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
+				// changed in v4
+	      //H5Tinsert(val_tid,"WIND_DIR",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
+	      //H5Tinsert(val_tid,"WIND_SPD",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"WIND_DIRECTION",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
+	      H5Tinsert(val_tid,"WIND_SPEED",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
 
 	      if (type==1)
 		status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[i].bandData[j].astro_obsHeader);
@@ -935,24 +969,29 @@ void sdhdf_initialise_obsHeader(sdhdf_obsParamsStruct *obs)
 {
   obs->timeElapsed=-1;
   obs->dtime = -1;
-  strcpy(obs->timedb,"unset");
+  // deprecated in v4
+	//strcpy(obs->timedb,"unset");
   obs->mjd = -1;
   strcpy(obs->utc,"unset");
   strcpy(obs->ut_date,"unset");
   strcpy(obs->local_time,"unset");
   strcpy(obs->raStr,"unset");
   strcpy(obs->decStr,"unset");
-  obs->raDeg = -1;
-  obs->decDeg = -1;
-  obs->raOffset = -1;
-  obs->decOffset = -1;
+	// new for v4
+	obs->fstat = -1;
+  // deprecated v4
+	//obs->raDeg = -1;
+  //obs->decDeg = -1;
+  //obs->raOffset = -1;
+  //obs->decOffset = -1;
   obs->gl = -1;
   obs->gb = -1;
   obs->az = -1;
   obs->ze = -1;
   obs->el = -1;
-  obs->az_drive_rate = -1;
-  obs->ze_drive_rate = -1;
+	// deprecated v4
+  //obs->az_drive_rate = -1;
+  //obs->ze_drive_rate = -1;
   obs->hourAngle = -1;
   obs->paraAngle = -1;
   obs->windDir = -1;
@@ -1134,6 +1173,44 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
   return object_info.num_attrs;
 }
 
+void sdhdf_readAttributes(sdhdf_fileStruct *inFile,char *dataName, char *attr_name)
+{
+		sdhdf_attributes_struct2 s1[1];
+    hid_t   attr, s1_tid, dataset, space, dtype1, dtype2, dtype3;
+    herr_t  status;
+
+    dtype1 = H5Tcopy(H5T_C_S1);
+    dtype2 = H5Tcopy(H5T_C_S1);
+    dtype3 = H5Tcopy(H5T_C_S1);
+    status = H5Tset_size(dtype1, MAX_STRLEN);
+    status = H5Tset_size(dtype2, MAX_STRLEN);
+    status = H5Tset_size(dtype3, MAX_STRLEN);
+
+    dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
+		attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
+		s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct2));
+
+    H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct2, key), dtype1);
+    H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct2, value), dtype2);
+    H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct2, def), dtype3);
+
+		status = H5Aread(attr, H5T_COMPOUND, s1);
+		//status = H5Dread(dataset, s1_tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, s1);
+
+    /*for (int i = 0; i < 3; i++)
+    {
+			printf("in sdhdf_readAttributes: ");
+			printf("key: %s value: %s\n", s1[i].key, s1[i]);
+    }*/
+		printf("KEY: %s\n", s1[1].key);
+		printf("VALUE: %s\n", s1[1].value);
+		printf("DEFAULT: %s\n", s1[1].def);
+
+    H5Tclose(s1_tid);
+    H5Dclose(dataset);
+
+}
+
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute)
 {
   hid_t dataset_id,attr_id,atype,atype_mem,aspace,space;
@@ -1143,7 +1220,6 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   int rank;
   hsize_t dims[5];
   int ndims;
-
 
   // Open the attribute based on its number
   attr_id      = H5Aopen_by_idx(inFile->fileID,dataName, H5_INDEX_NAME, H5_ITER_NATIVE,num,H5P_DEFAULT,H5P_DEFAULT);
@@ -1312,28 +1388,31 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLa
   status = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
 
   H5Tinsert(datatype_id,"ELAPSED_TIME",HOFFSET(sdhdf_obsParamsStruct,timeElapsed),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"DUMP_TIME",HOFFSET(sdhdf_obsParamsStruct,dtime),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"TIME_DB",HOFFSET(sdhdf_obsParamsStruct,timedb),stid);
+  H5Tinsert(datatype_id,"INTEGRATION_TIME",HOFFSET(sdhdf_obsParamsStruct,dtime),H5T_NATIVE_DOUBLE);
+  //H5Tinsert(datatype_id,"TIME_DB",HOFFSET(sdhdf_obsParamsStruct,timedb),stid);
   H5Tinsert(datatype_id,"MJD",HOFFSET(sdhdf_obsParamsStruct,mjd),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"UTC",HOFFSET(sdhdf_obsParamsStruct,utc),stid);
-  H5Tinsert(datatype_id,"UT_DATE",HOFFSET(sdhdf_obsParamsStruct,ut_date),stid);
+  //H5Tinsert(datatype_id,"UT_DATE",HOFFSET(sdhdf_obsParamsStruct,ut_date),stid);
   H5Tinsert(datatype_id,"LOCAL_TIME",HOFFSET(sdhdf_obsParamsStruct,local_time),stid);
-  H5Tinsert(datatype_id,"RA_STR",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
-  H5Tinsert(datatype_id,"DEC_STR",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
-  H5Tinsert(datatype_id,"RA_DEG",HOFFSET(sdhdf_obsParamsStruct,raDeg),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"DEC_DEG",HOFFSET(sdhdf_obsParamsStruct,decDeg),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"RA_OFFSET",HOFFSET(sdhdf_obsParamsStruct,raOffset),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"DEC_OFFSET",HOFFSET(sdhdf_obsParamsStruct,decOffset),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"GL",HOFFSET(sdhdf_obsParamsStruct,gl),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"GB",HOFFSET(sdhdf_obsParamsStruct,gb),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"AZ",HOFFSET(sdhdf_obsParamsStruct,az),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"ZE",HOFFSET(sdhdf_obsParamsStruct,ze),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"EL",HOFFSET(sdhdf_obsParamsStruct,el),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"AZ_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,az_drive_rate),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"ZE_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,ze_drive_rate),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"PARA_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"WIND_DIR",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
-  H5Tinsert(datatype_id,"WIND_SPD",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"RIGHT_ASCENSION",HOFFSET(sdhdf_obsParamsStruct,raStr),stid);
+  H5Tinsert(datatype_id,"DECLINATION",HOFFSET(sdhdf_obsParamsStruct,decStr),stid);
+	// added in v4
+	H5Tinsert(datatype_id,"DRIVE_STATUS",HOFFSET(sdhdf_obsParamsStruct,fstat),H5T_NATIVE_INT);
+  //H5Tinsert(datatype_id,"RA_DEG",HOFFSET(sdhdf_obsParamsStruct,raDeg),H5T_NATIVE_DOUBLE);
+  //H5Tinsert(datatype_id,"DEC_DEG",HOFFSET(sdhdf_obsParamsStruct,decDeg),H5T_NATIVE_DOUBLE);
+  //H5Tinsert(datatype_id,"RA_OFFSET",HOFFSET(sdhdf_obsParamsStruct,raOffset),H5T_NATIVE_DOUBLE);
+  //H5Tinsert(datatype_id,"DEC_OFFSET",HOFFSET(sdhdf_obsParamsStruct,decOffset),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"GALACTIC_LONGITUDE",HOFFSET(sdhdf_obsParamsStruct,gl),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"GALACTIC_LATITUDE",HOFFSET(sdhdf_obsParamsStruct,gb),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"AZIMUTH_ANGLE",HOFFSET(sdhdf_obsParamsStruct,az),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"ZENITH_ANGLE",HOFFSET(sdhdf_obsParamsStruct,ze),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"ELEVATION_ANGLE",HOFFSET(sdhdf_obsParamsStruct,el),H5T_NATIVE_DOUBLE);
+  //H5Tinsert(datatype_id,"AZ_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,az_drive_rate),H5T_NATIVE_DOUBLE);
+  //H5Tinsert(datatype_id,"ZE_DRIVE_RATE",HOFFSET(sdhdf_obsParamsStruct,ze_drive_rate),H5T_NATIVE_DOUBLE);
+	H5Tinsert(datatype_id,"HOUR_ANGLE",HOFFSET(sdhdf_obsParamsStruct,hourAngle),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"PARALLACTIC_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"WIND_DIRECTION",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
+  H5Tinsert(datatype_id,"WIND_SPEED",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
 
 
   dataspace_id = H5Screate_simple(1,dims,NULL);
@@ -1382,6 +1461,7 @@ void sdhdf_copySingleObsParams(sdhdf_fileStruct *inFile,int ibeam,int iband,int 
   strcpy(obsParam->local_time,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].local_time);
   strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raStr);
   strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decStr);
+	//strcpy(obsParam->fstat,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].fstat);
   obsParam->raDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raDeg;
   obsParam->decDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decDeg;
   obsParam->raOffset = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raOffset;
@@ -1410,6 +1490,7 @@ void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,i
   strcpy(obsParam->local_time,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].local_time);
   strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raStr);
   strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decStr);
+	//strcpy(obsParam->fstat,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].fstat);
   obsParam->raDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raDeg;
   obsParam->decDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decDeg;
   obsParam->raOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raOffset;
