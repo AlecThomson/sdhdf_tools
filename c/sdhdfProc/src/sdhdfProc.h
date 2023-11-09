@@ -20,7 +20,10 @@
 #include <string.h>
 #include <math.h>
 #include <hdf5.h>
-#include "sdhdf_v1.9.h"
+// check SDHDF definition in file and include the relevant header
+//#include "sdhdf_v1.9.h"
+#include "sdhdf_v4.0.h"
+//
 #include <complex.h>
 
 #define SOFTWARE_VER "v1.1"
@@ -37,143 +40,6 @@
 // Handling of geodetic coordinates
 #define GRS80_A 6378137.0          // semi-major axis (m)
 #define GRS80_F 1.0/298.257222101  // flattening
-
-// SDHDF variables >=v4.0
-// HDF groups
-#define BEAM_GRP "beam"
-#define CONFIG_GRP "configuration"
-#define METADATA_GRP "metadata"
-#define BAND_GRP "band"
-#define ASTRONOMY_DATA_GRP "astronomy_data"
-#define CAL_DATA_GRP "calibrator_data"
-// HDF datasets
-#define DATA "data"
-#define FREQUENCY "frequency"
-#define CAL_DATA_BINNED "calibrator_data_binned"
-#define CAL_DATA_OFF "calibrator_data_off"
-#define CAL_DATA_ON "calibrator_data_on"
-#define OBS_PARAMS "observation_parameters"
-#define CAL_OBS_PARAMS "calibrator_observation_parameters"
-#define BAND_PARAMS "band_parameters"
-#define CAL_BAND_PARAMS "calibrator_band_parameters"
-#define BACKEND_CONFIG "instrument_configuration"
-#define FRONTEND_CONFIG "receiver_configuration"
-#define TELESCOPE_CONFIG "telescope_configuration"
-#define BEAM_PARAMS "beam_parameters"
-#define HISTORY "history"
-#define PRIMARY_HEADER "primary_header"
-#define SCHEDULE "schedule"
-#define SOFTWARE_VERSIONS "software_versions"
-// HDF dataset field names
-// common
-#define LABEL "LABEL"
-#define DATE "DATE"
-#define PROC "PROCESS"
-// beam
-#define N_BANDS "NUMBER_OF_BANDS"
-#define SOURCE "SOURCE"
-#define RA "RIGHT_ASCENSION"
-#define DEC "DECLINATION"
-// band
-#define C_FREQ "CENTRE_FREQUENCY"
-#define LOW_FREQ "LOW_FREQUENCY"
-#define HIGH_FREQ "HIGH_FREQUENCY"
-#define N_CHANS "NUMBER_OF_CHANNELS"
-#define N_POLS "NUMBER_OF_POLARISATIONS"
-#define POL_TYPE "POLARISATION_TYPE"
-#define DUMP_TIME "INTEGRATION_TIME"
-#define N_DUMPS "NUMBER_OF_INTEGRATIONS"
-// primary header
-#define HDR_DEFN "HEADER_DEFINITION"
-#define HDR_DEFN_VERSION "HEADER_DEFINITION_VERSION"
-#define FILE_FORMAT "FILE_FORMAT"
-#define FILE_FORMAT_VERSION "FILE_FORMAT_VERSION"
-#define SCHED_BLOCK_ID "SCHEDULE_ID"
-#define CAL_MODE "CALIBRATION_MODE"
-#define INSTRUMENT "INSTRUMENT"
-#define OBSERVER "OBSERVER"
-#define PID "PROJECT_ID"
-#define RECEIVER "RECEIVER"
-#define TELESCOPE "TELESCOPE"
-#define UTC_START "UTC_START"
-#define N_BEAMS "NUMBER_OF_BEAMS"
-// software versions
-#define SOFTWARE "SOFTWARE"
-#define SOFTWARE_DESCR "SOFTWARE_DESCRIPTION"
-#define SOFTWARE_VERSION "SOFTWARE_VERSION"
-// history
-#define PROC_DESCR "PROCESS_DESCRIPTION"
-#define PROC_ARGS "PROCESS_ARGUMENTS"
-#define PROC_HOST "PROCESSING_HOST"
-#define PROC_LOG "PROCESS_LOG"
-
-// SDHDF variables <v4.0
-// HDF groups
-/*#define BEAM_GRP "beam"
-#define CONFIG_GRP "config"
-#define METADATA_GRP "metadata"
-#define BAND_GRP "band"
-#define ASTRONOMY_DATA_GRP "astronomy_data"
-#define CAL_DATA_GRP "calibrator_data"
-// HDF datasets
-#define DATA "data"
-#define FREQUENCY "frequency"
-#define CAL_DATA_BINNED "cal_data_binned"
-#define CAL_DATA_OFF "cal_data_off"
-#define CAL_DATA_ON "cal_data_on"
-#define OBS_PARAMS "obs_params"
-#define CAL_OBS_PARAMS "cal_obs_params"
-#define BAND_PARAMS "band_params"
-#define CAL_BAND_PARAMS "cal_band_params"
-#define BACKEND_CONFIG "backend_config"
-#define BEAM_PARAMS "beam_params"
-#define HISTORY "history"
-#define PRIMARY_HEADER "primary_header"
-#define SCHEDULE "schedule"
-#define SOFTWARE_VERSIONS "software_versions"
-// HDF dataset field names
-// common
-#define LABEL "LABEL"
-#define DATE "DATE"
-#define PROC "PROCESS"
-// beam
-#define N_BANDS "N_BANDS"
-#define SOURCE "SOURCE"
-#define RA "RA"
-#define DEC "DEC"
-// band
-#define C_FREQ "CENTRE_FREQ"
-#define LOW_FREQ "LOW_FREQ"
-#define HIGH_FREQ "HIGH_FREQ"
-#define N_CHANS "N_CHANS"
-#define N_POLS "N_POLS"
-#define POL_TYPE "POL_TYPE"
-#define DUMP_TIME "DUMP_TIME"
-#define N_DUMPS "N_DUMPS"
-// primary header
-#define HDR_DEFN "HDR_DEFN"
-#define HDR_DEFN_VERSION "HDR_DEFN_VERSION"
-#define FILE_FORMAT "FILE_FORMAT"
-#define FILE_FORMAT_VERSION "FILE_FORMAT_VERSION"
-#define SCHED_BLOCK_ID "SCHED_BLOCK_ID"
-#define CAL_MODE "CAL_MODE"
-#define INSTRUMENT "INSTRUMENT"
-#define OBSERVER "OBSERVER"
-#define PID "PID"
-#define RECEIVER "RECEIVER"
-#define TELESCOPE "TELESCOPE"
-#define UTC_START "UTC_START"
-#define N_BEAMS "N_BEAMS"
-// software versions
-#define SOFTWARE "SOFTWARE"
-#define SOFTWARE_DESCR "SOFTWARE_DESCR"
-#define SOFTWARE_VERSION "SOFTWARE_VERSION"
-// history
-#define PROC_DESCR "PROC_DESCR"
-#define PROC_ARGS "PROC_ARGS"
-#define PROC_HOST "PROC_HOST"
-#define PROC_LOG "PROC_LOG"
-*/
 
 // Structure to contain the calibration information
 typedef struct sdhdf_calibration {
@@ -343,6 +209,7 @@ void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_la
 void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile0,int beam,int band,sdhdf_attributes_struct *dataAttributes,int *nDataAttributes,
 				  sdhdf_attributes_struct *freqAttributes,int *nFreqAttributes);
 int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName);
+void sdhdf_readAttributes(sdhdf_fileStruct *inFile,char *dataName, char *attr_name); // LT
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out);
 void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attr); //char *attrName,char *result);
