@@ -48,6 +48,7 @@ void help()
   printf("-f <file>         Input file name\n");
   printf("-freqRange <f0> <f1> Define frequency range for plot (in MHz)\n");
   printf("-h                This help\n");
+  printf("-pol <polNum>     polNum = 0 for AA, 1 for BB, 2 for (AA+BB) (default)\n");
   printf("-src <name>       Define source name (if scan is across a known source)\n");
 
   printf("\n\n");
@@ -149,6 +150,8 @@ int main(int argc,char *argv[])
   float userLabelArrowX2[12];
   float userLabelArrowY2[12];
   int nUserLabel=0;
+
+  int polChoice=2;
   
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
@@ -169,6 +172,8 @@ int main(int argc,char *argv[])
        strcpy(srcName,argv[++i]);
      else if (strcasecmp(argv[i],"-noWeights")==0)
        useWeights=0;
+     else if (strcasecmp(argv[i],"-pol")==0) // 0 = AA, 1 = BB, 2 = I
+       sscanf(argv[++i],"%d",&polChoice);
      else if (strcmp(argv[i],"-freqRange")==0)
        {
 	 sscanf(argv[++i],"%f",&f0);
@@ -336,10 +341,26 @@ int main(int argc,char *argv[])
 		      }
 		    fx[i][plotNdump] = timeVal[i][plotNdump];
 		    if (logy==1)
-		      fy[i][plotNdump] = log10(fluxI[i][sub]);
+		      {
+			if (polChoice==0)
+			  fy[i][plotNdump] = log10(fluxAA[i][sub]);		
+			else if (polChoice==1)
+			  fy[i][plotNdump] = log10(fluxBB[i][sub]);		
+			else if (polChoice==2)
+			  fy[i][plotNdump] = log10(fluxI[i][sub]);		
+
+
+		      }
 		    else
-		      fy[i][plotNdump] = fluxI[i][sub];		
-		    if (plotNdump==0)
+		      {
+			if (polChoice==0)
+			  fy[i][plotNdump] = fluxAA[i][sub];		
+			else if (polChoice==1)
+			  fy[i][plotNdump] = fluxBB[i][sub];		
+			else if (polChoice==2)
+			  fy[i][plotNdump] = fluxI[i][sub];		
+		      }
+			if (plotNdump==0)
 		      miny_norm = maxy_norm = fy[i][plotNdump];
 		    else
 		      {
