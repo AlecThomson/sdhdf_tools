@@ -844,7 +844,8 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
 		  //		  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN
 		  fracDeltaI = df-deltaI;
 		}
-	      printf("Regridding df = %g %g %g chanbw = %g nchan = %d deltaI = %d fracDeltaI = %g\n",df,oldFreq,newFreq,chanbw,out->nchan,deltaI,fracDeltaI);
+	      if (verbose==1)
+		printf("Regridding df = %g %g %g chanbw = %g nchan = %d deltaI = %d fracDeltaI = %g\n",df,oldFreq,newFreq,chanbw,out->nchan,deltaI,fracDeltaI);
 	      if (j + deltaI >= 0 && j+deltaI < in->nchan-1)
 		{
 		  for (kk=0;kk<in->npol;kk++)
