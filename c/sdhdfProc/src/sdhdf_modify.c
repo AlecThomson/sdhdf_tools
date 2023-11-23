@@ -830,6 +830,7 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
 	      // Should first check if we're still in topocentric frequencies -- DO THIS ***  FIX ME
 	      // FIX ME: this assumes equally sampled frequency channels
 	      df = (double)(oldFreq-newFreq)/(double)chanbw; // Check if frequency channelisation changes - e.g., at subband boundaries ** FIX ME
+
 	      if (df > 0)
 		{
 		  deltaI = (int)df;
@@ -838,9 +839,12 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
 	      else
 		{
 		  // CHECK THIS -- FIX ME
-		  deltaI = -(int)(fabs(df)+0.5);
-		  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN		  
+		  //		  deltaI = -(int)(fabs(df)+0.5);
+		  deltaI = -(int)(fabs(df)+1);
+		  //		  fracDeltaI = deltaI - df;  // CHECK MINUS SIGN
+		  fracDeltaI = df-deltaI;
 		}
+	      printf("Regridding df = %g %g %g chanbw = %g nchan = %d deltaI = %d fracDeltaI = %g\n",df,oldFreq,newFreq,chanbw,out->nchan,deltaI,fracDeltaI);
 	      if (j + deltaI >= 0 && j+deltaI < in->nchan-1)
 		{
 		  for (kk=0;kk<in->npol;kk++)
