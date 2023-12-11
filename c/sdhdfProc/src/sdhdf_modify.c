@@ -77,12 +77,12 @@ typedef struct dataStruct {
 } dataStruct;
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int singleFreqAxis,int verbose);
-void processCommand(dataStruct *in,dataStruct *out,int iband, commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int singleFreqAxis,int verbose,int showVel);
+void processCommand(dataStruct *in,dataStruct *out,int iband, commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose,int showVel);
 void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum);
 void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int meanMedian);
 void polarisationAverage(dataStruct *in,dataStruct *out,int sum);
-void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose);
+void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose,int showVel);
 void scaleValues(dataStruct *in,dataStruct *out,int iband,  int useBand, int multDiv, float aaScale, float bbScale);
 void allocateMemory(dataStruct *in);
 
@@ -104,6 +104,7 @@ void help()
   printf("-lsr_regrid         - convert frequency axis to the LSR and regrid back to the original frequency axis\n");
   printf("-p1 or -p1_sum      - summation of P0 and P1\n");
   printf("-p1_av              - (P0+P1)/2 \n");
+  printf("-showVel            - output the velocity correction to the LSR or barycentre\n");
   printf("-singleFreqAxis     - only write out a single frequency dimension (nchan) instead of (ndump x nchan)\n");
   printf("-T or -Tsum         - completely sum in time\n");
   printf("-Tav                - completely average (weighted mean) in time\n");
@@ -129,6 +130,7 @@ int main(int argc,char *argv[])
   int verbose=0;
   int astroCal=0; // Modify the astronomy data
   int singleFreqAxis=0;
+  int showVel=0;
   
   strcpy(extension,"modify");
   
@@ -179,6 +181,8 @@ int main(int argc,char *argv[])
 	{commands[nCommands].type=4; commands[nCommands].param1 = 2; commands[nCommands++].param2 = 2;}
       else if (strcmp(argv[i],"-bary_regrid")==0)
 	{commands[nCommands].type=4; commands[nCommands].param1 = 1; commands[nCommands++].param2 = 2;}
+      else if (strcasecmp(argv[i],"-showVel")==0)
+	showVel=1;
       else if (strcmp(argv[i],"-e")==0)
 	{strcpy(extension,argv[++i]);}
       else
@@ -193,7 +197,7 @@ int main(int argc,char *argv[])
     {
       printf("Processing file: %s\n",fname[i]);
       sdhdf_formOutputFilename(fname[i],extension,oname);
-      processFile(fname[i],oname,commands,nCommands,args,astroCal, singleFreqAxis,verbose);
+      processFile(fname[i],oname,commands,nCommands,args,astroCal, singleFreqAxis,verbose,showVel);
     }
 
 
@@ -201,7 +205,7 @@ int main(int argc,char *argv[])
 }
 
 
-void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int singleFreqAxis,int verbose)
+void processFile(char *fname,char *oname, commandStruct *commands, int nCommands,char *args,int astroCal,int singleFreqAxis,int verbose,int showVel)
 {
   int ii,i,c,j,k;
   
@@ -280,21 +284,25 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	      in->astroCal = 1;
 	    }
 	  // Load in the data
+	  if (verbose==1) printf("Allocating memory\n");
 	  allocateMemory(in);
+	  if (verbose==1) printf("Complete\n");
 
 	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
 	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 
 	  if (astroCal==0)
 	    {
+	      if (verbose==1) printf("Copying memory\n");
 	      for (i=0;i<in->nFreqDump;i++)
 		{
 		  memcpy(in->freq+i*in->nchan,inFile->beam[b].bandData[ii].astro_data.freq+i*in->nchan,sizeof(float)*in->nchan);
 		}
+	      if (verbose==1) printf("Complete memory\n");
 	    }
 	  else
 	    memcpy(in->freq,inFile->beam[b].bandData[ii].cal_on_data.freq,sizeof(float)*in->nchan);
-	
+	  if (verbose==1) printf("Copying observation parameters\n");
 	  for (i=0;i<in->ndump;i++)
 	    {
 	      if (astroCal==0)
@@ -302,10 +310,15 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	      else
 		sdhdf_copySingleObsParamsCal(inFile,b,ii,i,&in->obsParams[i]); 
 	    }
+	  if (verbose==1) printf("Complete copying observation parameters\n");
 	  //	  printf("POS A\n");
 	  //	  printf("astroCal = %d\n",astroCal);
 	  //	  printf("nchan =  %d\n",in->nchan);
 	  //	  printf("ndump = %d\n",in->ndump);
+	  if (in->npol==1)
+	    {printf("ERROR: SORRY, for now only 2 pol data has been implemented not 1 pol\n"); exit(1);}
+	    
+	    
 	  for (k=0;k<in->nchan;k++)
 	    {
 	      for (j=0;j<in->ndump;j++)
@@ -314,14 +327,13 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 		  // SHOULD HAVE A WAY TO FGET THE DATA DIRECTLY IN THE CORRECT FORMAT AS IT IS STORED IN THAT FORMAT ANYWAY
 		  if (astroCal==0)
 		    {
-		      //		      printf("Setting %d %d\n",k,j);
-		      in->data[(long)((long)j*in->nchan*in->npol) + k] = inFile->beam[b].bandData[ii].astro_data.pol1[k+(long)j*in->nchan];
-		      in->data[(long)((long)j*in->nchan*in->npol) + k + in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol2[k+(long)j*in->nchan];
+		      in->data[(long)((long)j*in->nchan*in->npol) + k] = inFile->beam[b].bandData[ii].astro_data.pol1[(long)k+(long)j*in->nchan];
+		      in->data[(long)((long)j*in->nchan*in->npol) + (long)k + (long)in->nchan] =
+			inFile->beam[b].bandData[ii].astro_data.pol2[(long)k+(long)j*in->nchan];
 		      in->data[(long)((long)j*in->nchan*in->npol) + k + 2*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol3[k+(long)j*in->nchan];
 		      in->data[(long)((long)j*in->nchan*in->npol) + k + 3*in->nchan] = inFile->beam[b].bandData[ii].astro_data.pol4[k+(long)j*in->nchan];
 		      in->wt[(long)j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.dataWeights[k+(long)j*in->nchan];
 		      in->flag[(long)j*in->nchan + k] = inFile->beam[b].bandData[ii].astro_data.flag[k+(long)j*in->nchan];
-		      //		      printf(" .. done\n");
 		    }
 		  else
 		    {
@@ -341,7 +353,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	    }
 	  for (c=0;c<nCommands;c++)
 	    {
-	      processCommand(in,out,ii,&commands[c],freqAttributes,nFreqAttributes,verbose);
+	      processCommand(in,out,ii,&commands[c],freqAttributes,nFreqAttributes,verbose,showVel);
 	      if (c!=nCommands-1)
 		{ swp = in; in = out; out = swp;} 
 	    }      
@@ -413,9 +425,10 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
   free(dset);
 }
 
-void processCommand(dataStruct *in,dataStruct *out,int iband,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
+void processCommand(dataStruct *in,dataStruct *out,int iband,commandStruct *command,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose,int showVel)
 {
-  //  printf("Processing command: %d\n",command->type);
+  if (verbose==1)
+    printf("Processing command: %d\n",command->type);
   if (command->type==1)
     timeAverage(in,out,command->param1,command->param2);
   else if (command->type==2)
@@ -423,7 +436,7 @@ void processCommand(dataStruct *in,dataStruct *out,int iband,commandStruct *comm
   else if (command->type==3)
     polarisationAverage(in,out,command->param1);
   else if (command->type==4)
-    changeFrequencyAxis(in,out,command->param1,command->param2,freqAttributes,nFreqAttributes,verbose);
+    changeFrequencyAxis(in,out,command->param1,command->param2,freqAttributes,nFreqAttributes,verbose,showVel);
   else if (command->type==5)
     scaleValues(in,out,iband,command->iparam2,command->iparam,command->param1,command->param2);
 }
@@ -745,7 +758,7 @@ void frequencyAverage(dataStruct *in,dataStruct *out,int nfreqAv,int sum,int mea
     }
 }
 
-void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose)
+void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes,int verbose,int showVel)
 {
   int i,j,k,kk,p;
   int include;
@@ -801,8 +814,8 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
   
   for (i=0;i<out->ndump;i++)
     {
-      if (verbose==1)
-	printf("velocity: mjd = %.6f idump = %d vOverC = %g\n",mjdVals[i],i,vOverC[i]);
+      if (verbose==1 || showVel==1)
+	printf("velocity correction: mjd = %.6f idump = %d vOverC = %g\n",mjdVals[i],i,vOverC[i]);
       if (regrid == 1) // (note 2 = regrid, 1 = don't regrid)
 	{
 	  for (j=0;j<out->nchan;j++)
