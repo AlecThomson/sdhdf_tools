@@ -1179,6 +1179,9 @@ void sdhdf_readAttributes(sdhdf_fileStruct *inFile,char *dataName, char *attr_na
     hid_t   attr, s1_tid, dataset, space, dtype1, dtype2, dtype3;
     herr_t  status;
 
+    dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
+		attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
+
     dtype1 = H5Tcopy(H5T_C_S1);
     dtype2 = H5Tcopy(H5T_C_S1);
     dtype3 = H5Tcopy(H5T_C_S1);
@@ -1186,28 +1189,21 @@ void sdhdf_readAttributes(sdhdf_fileStruct *inFile,char *dataName, char *attr_na
     status = H5Tset_size(dtype2, MAX_STRLEN);
     status = H5Tset_size(dtype3, MAX_STRLEN);
 
-    dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
-		attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
 		s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct2));
 
     H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct2, key), dtype1);
     H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct2, value), dtype2);
     H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct2, def), dtype3);
 
-		status = H5Aread(attr, H5T_COMPOUND, s1);
-		//status = H5Dread(dataset, s1_tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, s1);
+		status = H5Aread(attr, s1_tid, s1);
 
-    /*for (int i = 0; i < 3; i++)
-    {
-			printf("in sdhdf_readAttributes: ");
-			printf("key: %s value: %s\n", s1[i].key, s1[i]);
-    }*/
-		printf("KEY: %s\n", s1[1].key);
-		printf("VALUE: %s\n", s1[1].value);
-		printf("DEFAULT: %s\n", s1[1].def);
+		printf("KEY:     %s\n", s1[0].key);
+		printf("VALUE:   %s\n", s1[0].value);
+		printf("DEFAULT: %s\n", s1[0].def);
 
     H5Tclose(s1_tid);
     H5Dclose(dataset);
+		H5Aclose(attr);
 
 }
 
