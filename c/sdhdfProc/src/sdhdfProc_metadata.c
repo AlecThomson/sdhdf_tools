@@ -1162,7 +1162,8 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
   hid_t dataset_id;
   herr_t status;
   H5O_info_t object_info;
-  //  printf("VERSION:   H5_VERS_RELEASE = %d %d\n",H5_VERS_MAJOR,H5_VERS_MINOR);
+
+	printf("\nRetrieving number of attributes for: %s\n", dataName);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   #if H5_VERS_MINOR == 10
    status = H5Oget_info(dataset_id,&object_info);
@@ -1170,40 +1171,56 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
    status = H5Oget_info(dataset_id,&object_info,H5O_INFO_NUM_ATTRS);
   #endif
   status = H5Dclose(dataset_id);
+	printf("Number of attributes found: %d\n",object_info.num_attrs);
+
   return object_info.num_attrs;
 }
 
-void sdhdf_readAttributes(sdhdf_fileStruct *inFile,char *dataName, char *attr_name)
+void sdhdf_readAttributes(sdhdf_fileStruct *inFile,char *dataName, char *attr_name, sdhdf_attributes_struct *s1)
 {
-		sdhdf_attributes_struct2 s1[1];
-    hid_t   attr, s1_tid, dataset, space, dtype1, dtype2, dtype3;
-    herr_t  status;
+		//sdhdf_attributes_struct s1[1];
+    hid_t  attr, s1_tid, dataset, space, dtype1;
+    herr_t status;
+		char   name[MAX_STRLEN];
 
-    dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
-		attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
+		printf("\nReading attribute: %s\n", attr_name);
 
-    dtype1 = H5Tcopy(H5T_C_S1);
-    dtype2 = H5Tcopy(H5T_C_S1);
-    dtype3 = H5Tcopy(H5T_C_S1);
-    status = H5Tset_size(dtype1, MAX_STRLEN);
-    status = H5Tset_size(dtype2, MAX_STRLEN);
-    status = H5Tset_size(dtype3, MAX_STRLEN);
+		// ignore the following attributes for now:
+		// REFERENCE_LIST
+		// DIMENSION_LABELS
+		// CLASS
+		if (strcmp(attr_name,"REFERENCE_LIST")==0 ||
+		    strcmp(attr_name,"DIMENSION_LABELS")==0 ||
+			  strcmp(attr_name,"CLASS")==0) {
+					printf("Cannot read attribute: %s\n",attr_name);
+		    }
+    else {
+    	dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
+			attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
 
-		s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct2));
+    	dtype1 = H5Tcopy(H5T_C_S1);
+    	status = H5Tset_size(dtype1, MAX_STRLEN);
 
-    H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct2, key), dtype1);
-    H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct2, value), dtype2);
-    H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct2, def), dtype3);
+			s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct));
 
-		status = H5Aread(attr, s1_tid, s1);
+			H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype1);
+    	H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct, key), dtype1);
+    	H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype1);
+    	H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype1);
 
-		printf("KEY:     %s\n", s1[0].key);
-		printf("VALUE:   %s\n", s1[0].value);
-		printf("DEFAULT: %s\n", s1[0].def);
+			status = H5Aread(attr, s1_tid, s1);
 
-    H5Tclose(s1_tid);
-    H5Dclose(dataset);
-		H5Aclose(attr);
+			strcpy(s1[0].name, attr_name);
+
+			printf("NAME:    %s\n", s1[0].name);
+			printf("KEY:     %s\n", s1[0].key);
+			printf("VALUE:   %s\n", s1[0].value);
+			printf("DEFAULT: %s\n", s1[0].def);
+
+    	H5Tclose(s1_tid);
+    	H5Dclose(dataset);
+			H5Aclose(attr);
+		}
 
 }
 
@@ -1231,37 +1248,16 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   // Find out if this is a multi-dimensional array
   aspace       = H5Aget_space(attr_id);
   ndims        = H5Sget_simple_extent_dims(aspace,dims,NULL);
-  //  printf("ndims = %d, aspace = %d, dims[0] = %d\n",ndims,aspace,dims[0]);
   if (ndims != 0) // 1 && ndims != 0)
     {
       hid_t dataspace_id;
       hsize_t storeSize;
       char *buf;
-      //      printf("A\n");
 
       H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
       strcpy(attribute->value,"NOT SET");
       attribute->attributeType=0;
-      //      printf("Cannot read attributes with multi dimensions >%s< >%s<\n",attribute->key,inFile->fname);
 
-      /*
-            buf = (char *)malloc(sizeof(char)*MAX_STRLEN);
-      printf("ndims > 0.  ndims = %d (%s), dims[0] = %d\n",ndims,dataName,dims[0]);
-
-      dataspace_id = H5Screate_simple(1,dims,NULL);
-      printf("dataspace\n");
-      storeSize = H5Aget_storage_size(attr_id);
-      printf("Storage size - %d\n",storeSize);
-      atype        = H5Aget_type(attr_id); // Retrieves a copy of the datatype for an attribute
-      atype_mem = H5Tcopy(H5T_C_S1);
-      H5Tset_size (atype_mem, H5T_VARIABLE);
-      H5Aread(attr_id,atype_mem,&buf);
-      printf("LOADED >%s<\n",buf);
-
-      status = H5Sclose(dataspace_id);
-      free(buf);
-      */
-      // For now not read attributes like DIMENSION_LABEL and DIMENSION_LIST
     }
   else // Here the number of dimensions is zero as storing a scalar
     {
@@ -1275,12 +1271,10 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	  buffer = (char *)malloc(sizeof(char)*MAX_STRLEN);
 
 	  H5Aget_name(attr_id,MAX_STRLEN,attribute->key);
-	  //	  atype_mem = H5Tget_native_type(atype,H5T_DIR_ASCEND);
 
 	  attribute->attributeType=0;
 	  if (strcmp(attribute->key,"CLASS")==0)
 	    {
-	      //	      printf("Reading scalar CLASS\n");
 	      strcpy(attribute->value,"FIX ME");
 	    }
 	  else
@@ -1297,26 +1291,18 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	      else // ASCII STRING
 		{
 		  H5A_info_t attribute_info;
-		  //		  printf("Reading an ASCII string\n");
 		  strcpy(buffer,"");
 
 		  status = H5Aget_info(attr_id,&attribute_info);
 		  status = H5Tset_cset(atype_mem,H5T_CSET_ASCII);
-		  //		  printf("Size = %d\n",attribute_info.data_size);
 		  status = H5Tset_size(atype_mem,attribute_info.data_size);
-		  //		  printf("Setting size: status = %d\n",status);
 		  status = H5Aread(attr_id,atype_mem,buffer);
-		  //		  printf("Buffer = %s, status = %d\n",buffer,status);
-		  // FIX ME: somehow it is not reading in the currect length
 		  buffer[attribute_info.data_size]='\0';
 
 		  strcpy(attribute->value,buffer);
 
-
 		}
-
 	      status = H5Tclose(atype_mem);
-	      //	      printf("status at close = %d\n",status);
 	    }
 	  free(buffer);
 	}
@@ -1343,7 +1329,6 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
 	}
       status = H5Tclose(atype);
     }
-  //  printf("Closing off\n");
   status = H5Sclose(aspace);
   status = H5Aclose(attr_id);
 

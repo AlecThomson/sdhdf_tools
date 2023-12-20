@@ -37,7 +37,7 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
 void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
 
-#define VNUM "v0.3"
+#define VNUM "v1.0"
 #define MAX_REST_FREQUENCIES 1024
 
 void help()
@@ -102,7 +102,11 @@ int main(int argc,char *argv[])
   int ibeam=0;
   char grDev[128]="/xs";
 
-  //  help();
+	// Display help if no commands given
+  if (argc==1) {
+    help();
+		exit(1);
+	}
 
   // Defaults
   idump = iband = 0;
@@ -259,11 +263,21 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    {
 		      int kk;
 		      for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes;kk++)
-			{
-			  if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].key,"UNIT")==0)
-			    {strcpy(yUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].value); break;}
-			}
+			      {
+				      printf("kk: %s\n", inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].key);
+			        if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].name,"UNIT")==0)
+			          {
+									strcpy(yUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].def); break;
+								}
+			      }
+
+				  // NEW
+					char attr_name[128];
+					attr_name = H5Aopen_by_name(inFile->fileID, "UNIT", H5P_DEFAULT, H5P_DEFAULT);
+					printf(attr_name);
 		    }
+			printf("yUnit: %s",yUnit); // "NOT SET"
+
 		  //  char freqFrame[MAX_STRLEN] = "[unknown]";
 		  //  char freqUnit[MAX_STRLEN] = "unknown";
 		  //		  printf("freqUnit = %s <<, freqFrame = %s\n",freqUnit,freqFrame);
@@ -272,18 +286,18 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		    {
 		      int kk;
 		      for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq;kk++)
-			{
-			  //			  printf("Checking attribute %s\n",inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key);
-			  if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"FRAME")==0)
-			    {strcpy(freqFrame,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);}
-			  else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"UNIT")==0)
-			    {
-			      //			      printf("Value = %s\n",inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);
-			      strcpy(freqUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);
-			    }
-			}
+			      {
+			        if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].name,"FRAME")==0)
+			          {
+									strcpy(freqFrame,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].def);
+								}
+			        else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].name,"UNIT")==0)
+			          {
+			            strcpy(freqUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].def);
+			          }
+			      }
 		    }
-
+      printf("FRAME: %s",freqFrame);
 		}
 	      reload=0;
 	    }

@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -50,7 +50,7 @@ typedef struct infoStruct {
   int nband;
   int ndump;
   int sb;
-  
+
 } infoStruct;
 
 double haversine(double centre_long,double centre_lat,double src_long,double src_lat);
@@ -133,12 +133,12 @@ int main(int argc,char *argv[])
   int useNdump=0;
   int select_ndump;
 
-  
+
   int writeOut=0;
   FILE *fout;
   int disp;
   int nEntry=0;
-  
+
   src = (char **)malloc(sizeof(char *)*MAX_SRC);
   onSrc = (char **)malloc(sizeof(char *)*MAX_SRC);
   offSrc = (char **)malloc(sizeof(char *)*MAX_SRC);
@@ -148,7 +148,7 @@ int main(int argc,char *argv[])
       onSrc[i] = (char *)malloc(sizeof(char)*MAX_STRLEN);
       offSrc[i] = (char *)malloc(sizeof(char)*MAX_STRLEN);
     }
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -156,7 +156,7 @@ int main(int argc,char *argv[])
     }
 
   for (i=1;i<argc;i++)
-    {      
+    {
       if (strcmp(argv[i],"-coord")==0)
 	{
 	  useCoord=1;
@@ -238,8 +238,8 @@ int main(int argc,char *argv[])
 	    {
 	      strcpy(info[nEntry].fname,fname[i]);
 	      strcpy(info[nEntry].source,inFile->beamHeader[ibeam].source);
-	      info[nEntry].ra = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].raDeg; // Note 0 here
-	      info[nEntry].dec = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].decDeg;
+	      //info[nEntry].ra = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].raDeg; // Note 0 here
+	      //info[nEntry].dec = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].decDeg;
 	      info[nEntry].mjd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[0].mjd;
 	      info[nEntry].nband = inFile->beam[ibeam].nBand;
 	      info[nEntry].sb = iband;
@@ -251,7 +251,7 @@ int main(int argc,char *argv[])
 	      info[nEntry].scheduleNumber = inFile->primary[0].sched_block_id;
 	      info[nEntry].ndump = inFile->beam[ibeam].bandHeader[iband].ndump;
 	      info[nEntry].npol = inFile->beam[ibeam].bandHeader[iband].npol;
-	      
+
 	      nEntry++;
 	    }
 	  else
@@ -260,8 +260,8 @@ int main(int argc,char *argv[])
 		{
 		  strcpy(info[nEntry].fname,fname[i]);
 		  strcpy(info[nEntry].source,inFile->beamHeader[ibeam].source);
-		  info[nEntry].ra = inFile->beam[ibeam].bandData[j].astro_obsHeader[0].raDeg; // Note 0 here
-		  info[nEntry].dec = inFile->beam[ibeam].bandData[j].astro_obsHeader[0].decDeg;
+		  //info[nEntry].ra = inFile->beam[ibeam].bandData[j].astro_obsHeader[0].raDeg; // Note 0 here
+		  //info[nEntry].dec = inFile->beam[ibeam].bandData[j].astro_obsHeader[0].decDeg;
 		  info[nEntry].mjd = inFile->beam[ibeam].bandData[j].astro_obsHeader[0].mjd;
 		  info[nEntry].nband = inFile->beam[ibeam].nBand;
 		  info[nEntry].sb = j;
@@ -284,7 +284,7 @@ int main(int argc,char *argv[])
 
   if (writeOut==1)
     fout = fopen(outFile,"w");
-    
+
   if (pair==1)
     {
       int foundOn=0;
@@ -346,7 +346,7 @@ int main(int argc,char *argv[])
 		  disp=0;
 		  if (exactMatch==1)
 		    {
-		      if (strcmp(info[i].source,src[j])==0) disp=1;			
+		      if (strcmp(info[i].source,src[j])==0) disp=1;
 		    }
 		  else
 		    {
@@ -358,19 +358,19 @@ int main(int argc,char *argv[])
 		      else printf("%s\n",info[i].fname);
 		    }
 		}
-	      
+
 	    }
 	  // Check coordinates
 	  if (useCoord==1)
-	    {	      
+	    {
 	      ra0 = turn_deg(hms_turn(ra0Str));
 	      dec0 = turn_deg(dms_turn(dec0Str));
 	      dist = haversine(ra0,dec0,info[i].ra,info[i].dec);
-	      
+
 	      if (dist < raddist)
 		{
 		  if (infoDisp==1) printf("[DIST MATCH] %s %g %g %g sub-band %d\n",info[i].fname,info[i].ra,info[i].dec,dist,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check project ID
@@ -379,7 +379,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(info[i].projid,projID)==0)
 		{
 		  if (infoDisp==1) printf("[PROJID MATCH] %s %s sub-band %d\n",info[i].fname,info[i].projid,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check HdrVersion
@@ -388,7 +388,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(info[i].hdrVersion,hdrVersion)==0)
 		{
 		  if (infoDisp==1) printf("[HDR_VERSION MATCH] %s %s sub-band %d\n",info[i].fname,info[i].hdrVersion,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check observer
@@ -397,7 +397,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(info[i].observer,observer)==0)
 		{
 		  if (infoDisp==1) printf("[OBSERVER MATCH] %s %s sub-band %d\n",info[i].fname,info[i].observer,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check receiver
@@ -406,7 +406,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(info[i].rcvr,rcvr)==0)
 		{
 		  if (infoDisp==1) printf("[RECEIVER MATCH] %s %s sub-band %d\n",info[i].fname,info[i].rcvr,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check telescope
@@ -415,7 +415,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(info[i].telescope,telescope)==0)
 		{
 		  if (infoDisp==1) printf("[TELESCOPE MATCH] %s %s sub-band %d\n",info[i].fname,info[i].telescope,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check cal_mode
@@ -424,7 +424,7 @@ int main(int argc,char *argv[])
 	      if (strcmp(info[i].calMode,calMode)==0)
 		{
 		  if (infoDisp==1) printf("[CAL MATCH] %s %s sub-band %d\n",info[i].fname,info[i].calMode,info[i].sb);
-		  else printf("%s\n",info[i].fname);		    
+		  else printf("%s\n",info[i].fname);
 		}
 	    }
 	  // Check nband
@@ -496,7 +496,7 @@ double haversine(double centre_long,double centre_lat,double src_long,double src
   centre_lat*=deg2rad;
   src_long*=deg2rad;
   src_lat*=deg2rad;
-  
+
   /* Apply the Haversine formula */
   dlon = (src_long - centre_long);
   dlat = (src_lat  - centre_lat);
@@ -508,5 +508,3 @@ double haversine(double centre_long,double centre_lat,double src_long,double src
     c = 2.0 * atan2(sqrt(a),sqrt(1.0-a));
   return c/deg2rad;
 }
-
-

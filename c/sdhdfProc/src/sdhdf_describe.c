@@ -63,6 +63,7 @@ int main(int argc,char *argv[])
   float maxTime=0;
   float intTime=0;
   sdhdf_fileStruct *inFile;
+	sdhdf_attributes_struct *attribute;
 
   int showBands=0;
   int showDump=0;
@@ -194,7 +195,7 @@ int main(int argc,char *argv[])
 		      hsize_t     nelmts = 1;
 		      void       *buf = NULL;
 		      int nread;
-					char dset[1024] = "/metadata/primary_header";
+					char dset[1024] = "/metadata/history";
 
 		      printf("IN TESTING ATTRIBUTES\n");
 
@@ -203,22 +204,22 @@ int main(int argc,char *argv[])
 		      for (kk=0;kk<na;kk++)
 			{
 			  nelmts = 1;
-			  printf("Attribute no. %d\n",kk);
+			  printf("\nAttribute no. %d\n",kk);
 			  attr_id = H5Aopen_by_idx(inFile->fileID,dset, H5_INDEX_NAME, H5_ITER_NATIVE,kk,H5P_DEFAULT,H5P_DEFAULT);
 			  H5Aget_name(attr_id,1024,attrName);
 			  type = H5Aget_type(attr_id);
 
 			  type_class   = H5Tget_class(type);
 			  printf("attr_id = %d, type = %d, type_class = %d > %s <\n",(int)attr_id,(int)type,(int)type_class,attrName);
-			  if (type_class == H5T_STRING) printf("STRING\n");
-			  else if (type_class == H5T_FLOAT) printf("FLOAT\n");
-			  else if (type_class == H5T_INTEGER) printf("INTEGER\n");
+			  if (type_class == H5T_STRING) printf("Attribute class: STRING\n");
+			  else if (type_class == H5T_FLOAT) printf("Attribute class: FLOAT\n");
+			  else if (type_class == H5T_INTEGER) printf("Attribute class: INTEGER\n");
 				else if (type_class == 6) {
-					printf("COMPOUND\n");
+					printf("Attribute class: COMPOUND\n");
 					// LT
 					printf("###\n");
 					printf("LT reading attribute ID: %s\n", attrName);
-					sdhdf_readAttributes(inFile, dset, attrName);
+					sdhdf_readAttributes(inFile, dset, attrName, attribute);
 					printf("###\n");
 				}
 			  else printf("NO IDEA WHAT TYPE_CLASS THIS IS\n");
