@@ -35,17 +35,17 @@ void help()
 {
   printf("sdhdf_describe %s (SDHDFProc %s)\n",VERSION,SOFTWARE_VER);
   printf("Authors: G. Hobbs\n");
-  printf("Purpose: to present meta-data information for multiple SDHDF files\n");
+  printf("Purpose: to present metadata information for multiple SDHDF files\n");
   printf("Example: sdhdf_describe file1.hdf file2.hdf\n");
   printf("\n");
   printf("Command line arguments:\n\n");
+	printf("-h               This help\n");
   printf("-atoa            Provide information useful for the ATOA\n");
   printf("-attributes      Show group and data set attributes\n");
   printf("-band            Provide band information\n");
   printf("-cband           Provide band information for the calibrator source\n");
   printf("-cdump           Provide spectral dump information for the calibrator source\n");
   printf("-dump            Provide spectral dump information\n");
-  printf("-h               This help\n");
   printf("-history         Provide history information\n");
   printf("-sb <band>       Select band identifier (default = 0)\n");
   printf("-software        Provide software information\n");
@@ -84,14 +84,14 @@ int main(int argc,char *argv[])
 
   for (i=1;i<argc;i++)
     {
-      if (strcmp(argv[i],"-h")==0)
+      if (strcmp(argv[i],"-h")==0 || strcmp(argv[i],"-f")==0 || strcmp(argv[i],"")==0)
 	help();
       else if (strcmp(argv[i],"-atoa")==0)
 	atoa=1;
       else if (strcmp(argv[i],"-band")==0)
 	showBands=1;
-      else if (strcmp(argv[i],"-test")==0)
-	test=1;
+      //else if (strcmp(argv[i],"-test")==0)
+	//test=1;
       else if (strcmp(argv[i],"-cband")==0)
 	showCalBands=1;
       else if (strcmp(argv[i],"-attributes")==0)
@@ -139,6 +139,7 @@ int main(int argc,char *argv[])
       else
 	{
 		printf("LOADING METADATA\n");
+		// TODO this is not loading attributes
 	  sdhdf_loadMetaData(inFile);
 		//
 		printf("LOADING METADATA COMPLETE\n");
@@ -183,7 +184,7 @@ int main(int argc,char *argv[])
 			 inFile->primary[0].telescope,inFile->primary[0].observer,inFile->primary[0].rcvr,inFile->beam[beam].nBand,
 			 inFile->beam[beam].bandHeader[0].pol_type,inFile->primary[0].cal_mode,maxTime,inFile->beam[beam].bandData[iband].astro_obsHeader[0].raStr,inFile->beam[beam].bandData[iband].astro_obsHeader[0].decStr);
 
-		  if (test==1)
+		  /*if (test==1)
 		    {
 		      int na,kk,ndims,ii;
 		      hsize_t     size[32];
@@ -219,7 +220,7 @@ int main(int argc,char *argv[])
 					// LT
 					printf("###\n");
 					printf("LT reading attribute ID: %s\n", attrName);
-					sdhdf_readAttributes(inFile, dset, attrName, attribute);
+					//sdhdf_readAttributes(inFile, dset, attrName, attribute);
 					printf("###\n");
 				}
 			  else printf("NO IDEA WHAT TYPE_CLASS THIS IS\n");
@@ -252,7 +253,7 @@ int main(int argc,char *argv[])
 			  // TO PRINT IT -- SEE h5tools_dump_simple_data
 			}
 
-		    }
+		}*/
 		  if (calInfo==1)
 		    {
 		      printf("[CAL] %s %s %d %s %s %f %f %f\n",inFile->fname,inFile->beamHeader[iband].source,(int)inFile->primary[0].sched_block_id,inFile->primary[0].cal_mode,inFile->cal_epoch,inFile->cal_freq,inFile->cal_phase,inFile->cal_duty_cycle);
@@ -349,15 +350,30 @@ int main(int argc,char *argv[])
 	    }
 	  if (showAttributes==1)
 	    {
-	      printf("\n\n");
-	      printf("Attributes\n\n");
-	      printf("Primary_header\n\n");
-	      for (j=0;j<inFile->nPrimaryAttributes;j++)
-		printf("%-20.20s %s\n",inFile->primaryAttr[j].key,inFile->primaryAttr[j].value);
+				// TODO: loop over all the datasets here
+	      printf("\nReading attributes for primary_header...\n");
 
-	      printf("\n\nBeam_header\n\n");
-	      for (j=0;j<inFile->nBeamHeaderAttributes;j++)
-		printf("%-20.20s %s\n",inFile->beamHeaderAttr[j].key,inFile->beamHeaderAttr[j].value);
+				// NEW
+				// have something like
+				//printf("%d\n", inFile->nPrimaryAttributes);
+				//& = sdhdf_getNattributes(inFile, dataName);
+				sdhdf_readAttributes(inFile->nPrimaryAttributes, &inFile->primaryAttr);
+				//sdhdf_readAttributes(&inFile->primaryAttr);
+				//
+
+	      /*for (j=0;j<inFile->nPrimaryAttributes;j++)
+				  {
+						printf("%-20.20s %s\n",inFile->primaryAttr[j].key,inFile->primaryAttr[j].value);
+				  }*/
+
+        //
+				//
+
+	      //printf("\n\nBeam_header\n\n");
+				printf("\nReading attributes for beam_header...\n");
+				sdhdf_readAttributes(inFile->nBeamHeaderAttributes, &inFile->beamHeaderAttr);
+	      //for (j=0;j<inFile->nBeamHeaderAttributes;j++)
+		    //printf("%-20.20s %s\n",inFile->beamHeaderAttr[j].key,inFile->beamHeaderAttr[j].value);
 	    }
 
 	  sdhdf_closeFile(inFile);

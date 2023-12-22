@@ -172,7 +172,6 @@ int main(int argc,char *argv[])
 
   plotSpectrum(inFile,ibeam,iband,idump,fref,yUnit,freqFrame,freqUnit,grDev);
 
-
   sdhdf_closeFile(inFile);
   free(inFile);
 }
@@ -216,8 +215,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   restFrequencies = (sdhdf_restfrequency_struct *)malloc(sizeof(sdhdf_restfrequency_struct)*MAX_REST_FREQUENCIES);
   sdhdf_loadRestFrequencies(restFrequencies,&nFreq);
 
-
-
   cpgbeg(0,grDev,1,1);
   cpgask(0);
   cpgscf(2);
@@ -259,45 +256,20 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      if (inFile->beam[ibeam].bandData[iband].astro_data.pol1AllocatedMemory == 0)
 		{
 		  sdhdf_loadBandData(inFile,ibeam,iband,1);
+
 		  if (strcmp(yUnit,"not set")==0)
 		    {
-		      int kk;
-		      for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes;kk++)
-			      {
-				      printf("kk: %s\n", inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].key);
-			        if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].name,"UNIT")==0)
-			          {
-									strcpy(yUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].def); break;
-								}
-			      }
-
-				  // NEW
-					char attr_name[128];
-					attr_name = H5Aopen_by_name(inFile->fileID, "UNIT", H5P_DEFAULT, H5P_DEFAULT);
-					printf(attr_name);
+					yUnit = sdhdf_getAttribute(&inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr, "UNIT");
 		    }
-			printf("yUnit: %s",yUnit); // "NOT SET"
-
-		  //  char freqFrame[MAX_STRLEN] = "[unknown]";
-		  //  char freqUnit[MAX_STRLEN] = "unknown";
-		  //		  printf("freqUnit = %s <<, freqFrame = %s\n",freqUnit,freqFrame);
 
 		  if (strcmp(freqFrame,"[unknown]")==0)
 		    {
-		      int kk;
-		      for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq;kk++)
-			      {
-			        if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].name,"FRAME")==0)
-			          {
-									strcpy(freqFrame,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].def);
-								}
-			        else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].name,"UNIT")==0)
-			          {
-			            strcpy(freqUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].def);
-			          }
-			      }
+					freqFrame = sdhdf_getAttribute(&inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq, "FRAME");
+					freqUnit = sdhdf_getAttribute(&inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq, "UNIT");
 		    }
-      printf("FRAME: %s",freqFrame);
+			printf("yUnit set to: %s\n", yUnit);
+			printf("freqFrame set to: %s\n",freqFrame);
+			printf("freqUnit set to: %s\n",freqUnit);
 		}
 	      reload=0;
 	    }
@@ -319,13 +291,11 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		freq[i] = i;
 	      if (wts > 0 && flagVal == 0)
 		{
-		  //		  printf("Not flagged in channel %d\n",i);
 		  allDataFlagged=0;
 		  if (divWeights==1)
 		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan]/wts;
 		  else
 		    pol1[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol1[i+idump*nchan];
-		  //printf("Loaded %f %f\n",freq[i],pol1[i]);
 		  if (divWeights==1)
 		    {
 		      if (npol > 1) pol2[i] = inFile->beam[ibeam].bandData[iband].astro_data.pol2[i+idump*nchan]/wts;
@@ -357,8 +327,6 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 
 		  for (i=0;i<nchan;i++)
 		    {
-		      //		      printf("IN HERE %g\n",pol1[i]);
-
 		      wts     = inFile->beam[ibeam].bandData[iband].astro_data.dataWeights[idump*nchan+i];
 		      flagVal = inFile->beam[ibeam].bandData[iband].astro_data.flag[idump*nchan+i];
 		      if ((wts != 0 && flagVal == 0) || flagIt==0)
@@ -734,15 +702,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
   free(pol3);
   free(pol4);
   free(restFrequencies);
-
-  /*
-  for (i=0;i<inFile->bandHeader[iband].nchan;i++)
-    {
-      printf("%d %d %d %.5f %g %g %g %g %g %g %g %g\n",iband,idump,i,inFile->bandHeader[iband].topoFreq[i],
-	     spectrum.pol1[i].val,spectrum.pol2[i].val,spectrum.pol3[i].val,spectrum.pol4[i].val,
-	     spectrum.pol1[i].weight,spectrum.pol2[i].weight,spectrum.pol3[i].weight,spectrum.pol4[i].weight);
-    }
-  */
+	free(yUnit);
 
 }
 

@@ -206,12 +206,14 @@ void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,i
 void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_label,float *vals);
 
 // Attributes
+void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attributes_struct *attrStruct);
 void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile0,int beam,int band,sdhdf_attributes_struct *dataAttributes,int *nDataAttributes,
 				  sdhdf_attributes_struct *freqAttributes,int *nFreqAttributes);
 int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName);
-//void sdhdf_readAttributes(sdhdf_fileStruct *inFile, char *dataName, char *attr_name); // LT
-void sdhdf_readAttributes(sdhdf_fileStruct *inFile, char *dataName, char *attr_name,sdhdf_attributes_struct *attribute); // LT
+//void sdhdf_readAttributes(sdhdf_fileStruct *inFile, char *dataName, char *attr_name,sdhdf_attributes_struct *attribute);
+void sdhdf_readAttributes(int num_attrs, sdhdf_attributes_struct *attrStruct);
 void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
+char* sdhdf_getAttribute(sdhdf_attributes_struct *attrStruct, char *attr_name);
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out);
 void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attr); //char *attrName,char *result);
 
