@@ -1,18 +1,18 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -1166,13 +1166,17 @@ void sdhdf_writeHistory(sdhdf_fileStruct *outFile,sdhdf_historyStruct *outParams
     }
 
 	sprintf(history,"%s/%s",METADATA_GRP,HISTORY);
-  if (sdhdf_checkGroupExists(outFile,history) == 0)
+  if (sdhdf_checkGroupExists(outFile,history) == 0) // was 0
     {
       printf("THE HISTORY TABLE ALREADY EXISTS\n");
+			//printf("THE HISTORY TABLE DOES NOT EXIST\n");
       dset_id  = H5Dopen2(outFile->fileID,history,H5P_DEFAULT);
     }
   else
-    dset_id = H5Dcreate2(outFile->fileID,history,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+    {
+			dset_id = H5Dcreate2(outFile->fileID,history,datatype_id,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+		}
+
   status  = H5Dwrite(dset_id,datatype_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,outParams);
   status  = H5Dclose(dset_id);
   status  = H5Sclose(dataspace_id);

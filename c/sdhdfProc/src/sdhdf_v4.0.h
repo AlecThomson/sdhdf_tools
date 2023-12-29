@@ -17,7 +17,7 @@
 
 
 //
-// These are definitions for SDHDF v1.9 format
+// These are definitions for SDHDF v4.0 format
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,46 +26,47 @@
 
 #define MAX_STRLEN 512
 #define MAX_ATTRIBUTES 64
-#define MAX_HISTORY 64
+#define MAX_HISTORY 128
 
-// Structure is as follows:
+// Structure for v4 is as follows:
 //
-// Each data set and group has attributes
+// Each HDF dataset and group has attributes
 //
-// filename/
-//          obs_meta/
-//                  primary header
+// filename or root_ID/
+//          metadata/
+//                  primary_header
 //                  software_versions
 //                  history
-//          obs_config/                     (this group is currently ignored by sdhdfProc)
-//                  backend_config
-//                  cal_backend_config
-//          beam_XX/
-//                  beam_header
-//                  band_header
-//                  band_YY/
-//                          astronomy/
-//                                data
-//                                frequency
-//                                  obs_params
-//                          calibrator/
-//                              cal_data_on
-//                              cal_data_off
-//                              cal_frequency
-//                              obs_meta/
-//                                       cal_band_header
-//                                       cal_obs_params
-//                              cal_proc/
-//                                       cal_proc_tsys
-//                                       cal_proc_diff_gain
-//                                       cal_proc_diff_phase
+//                  schedule
+//                  beam_parameters
+//          configuration/        (this group is currently ignored by sdhdfProc)
+//                  instrument_configuration
+//                  receiver_configuration
+//                  telescope_configuration
+//          beam_N/
+//                  metadata/
+//                        band_parameters
+//                        calibrator_band_parameters
+//                  band_N/
+//                        astronomy_data/
+//                              data
+//                              frequency
+//                        calibrator_data/
+//                              calibrator_data_on
+//                              calibrator_data_off
+//                              calibrator_data_binned
+//                              frequency
+//                        metadata/
+//                              observation_parameters
+//                              calibrator_observation_parameters
+//
 
 //
-// SDHDF variables
+// SDHDF definition v4.0
 //
 // HDF groups
 #define BEAM_GRP "beam"
-#define CONFIG_GRP "config"
+#define CONFIG_GRP "configuration"
 #define METADATA_GRP "metadata"
 #define BAND_GRP "band"
 #define ASTRONOMY_DATA_GRP "astronomy_data"
@@ -73,15 +74,19 @@
 // HDF datasets
 #define DATA "data"
 #define FREQUENCY "frequency"
-#define CAL_DATA_BINNED "cal_data_binned"
-#define CAL_DATA_OFF "cal_data_off"
-#define CAL_DATA_ON "cal_data_on"
-#define OBS_PARAMS "obs_params"
-#define CAL_OBS_PARAMS "cal_obs_params"
-#define BAND_PARAMS "band_params"
-#define CAL_BAND_PARAMS "cal_band_params"
-#define BACKEND_CONFIG "backend_config"
-#define BEAM_PARAMS "beam_params"
+#define WEIGHTS "weights"
+#define FLAGS "flags"
+#define CAL_DATA_BINNED "calibrator_data_binned"
+#define CAL_DATA_OFF "calibrator_data_off"
+#define CAL_DATA_ON "calibrator_data_on"
+#define OBS_PARAMS "observation_parameters"
+#define CAL_OBS_PARAMS "calibrator_observation_parameters"
+#define BAND_PARAMS "band_parameters"
+#define CAL_BAND_PARAMS "calibrator_band_parameters"
+#define BACKEND_CONFIG "instrument_configuration"
+#define FRONTEND_CONFIG "receiver_configuration"
+#define TELESCOPE_CONFIG "telescope_configuration"
+#define BEAM_PARAMS "beam_parameters"
 #define HISTORY "history"
 #define PRIMARY_HEADER "primary_header"
 #define SCHEDULE "schedule"
@@ -92,65 +97,67 @@
 #define DATE "DATE"
 #define PROC "PROCESS"
 // beam
-#define N_BANDS "N_BANDS"
+#define N_BANDS "NUMBER_OF_BANDS"
 #define SOURCE "SOURCE"
-#define RA "RA"
-#define DEC "DEC"
+#define RA "RIGHT_ASCENSION"
+#define DEC "DECLINATION"
 // band
-#define C_FREQ "CENTRE_FREQ"
-#define LOW_FREQ "LOW_FREQ"
-#define HIGH_FREQ "HIGH_FREQ"
-#define N_CHANS "N_CHANS"
-#define N_POLS "N_POLS"
-#define POL_TYPE "POL_TYPE"
-#define DUMP_TIME "DUMP_TIME"
-#define N_DUMPS "N_DUMPS"
+#define C_FREQ "CENTRE_FREQUENCY"
+#define LOW_FREQ "LOW_FREQUENCY"
+#define HIGH_FREQ "HIGH_FREQUENCY"
+#define N_CHANS "NUMBER_OF_CHANNELS"
+#define N_POLS "NUMBER_OF_POLARISATIONS"
+#define POL_TYPE "POLARISATION_TYPE"
+#define DUMP_TIME "REQUESTED_INTEGRATION_TIME"
+#define N_DUMPS "NUMBER_OF_INTEGRATIONS"
 // primary header
-#define HDR_DEFN "HDR_DEFN"
-#define HDR_DEFN_VERSION "HDR_DEFN_VERSION"
+#define HDR_DEFN "HEADER_DEFINITION"
+#define HDR_DEFN_VERSION "HEADER_DEFINITION_VERSION"
 #define FILE_FORMAT "FILE_FORMAT"
 #define FILE_FORMAT_VERSION "FILE_FORMAT_VERSION"
-#define SCHED_BLOCK_ID "SCHED_BLOCK_ID"
-#define CAL_MODE "CAL_MODE"
+#define SCHED_BLOCK_ID "SCHEDULE_ID"
+#define CAL_MODE "CALIBRATION_MODE"
 #define INSTRUMENT "INSTRUMENT"
 #define OBSERVER "OBSERVER"
-#define PID "PID"
+#define PID "PROJECT_ID"
 #define RECEIVER "RECEIVER"
 #define TELESCOPE "TELESCOPE"
 #define UTC_START "UTC_START"
-#define N_BEAMS "N_BEAMS"
+#define N_BEAMS "NUMBER_OF_BEAMS"
 // software versions
 #define SOFTWARE "SOFTWARE"
-#define SOFTWARE_DESCR "SOFTWARE_DESCR"
+#define SOFTWARE_DESCR "SOFTWARE_DESCRIPTION"
 #define SOFTWARE_VERSION "SOFTWARE_VERSION"
 // history
-#define PROC_DESCR "PROC_DESCR"
-#define PROC_ARGS "PROC_ARGS"
-#define PROC_HOST "PROC_HOST"
-#define PROC_LOG "PROC_LOG"
+#define PROC_DESCR "PROCESS_DESCRIPTION"
+#define PROC_ARGS "PROCESS_ARGUMENTS"
+#define PROC_HOST "PROCESSING_HOST"
+#define PROC_LOG "PROCESS_LOG"
 // schedule
-#define DTE "DATE";
-#define SCHED_HOST "SCHED_HOST";
-#define SCHED_VERSION "SCHED_VERSION";
-#define SCHED_METADATA "SCHED_BLOCK";
+#define SCHED_HOST "SCHEDULE_HOST"
+#define SCHED_HOSTNAME "SCHEDULE_HOSTNAME"
+#define SCHED_API "SCHEDULE_API"
+#define SCHED_VERSION "SCHEDULE_VERSION"
+#define SCHED_METADATA "SCHEDULE_METADATA"
 
 //
 // Attribute structure
 //
-
-typedef struct sdhdf_attributes_struct {
-  char  key[MAX_STRLEN];
-  char  value[MAX_STRLEN];
+typedef struct sdhdf_attributes_struct { //2
+  char name[MAX_STRLEN];
+  char key[MAX_STRLEN];
+  char value[MAX_STRLEN];
+  char def[MAX_STRLEN];
+  // not used but included while we get it working
   float fvalue;
   int   ivalue;
   int   attributeType; // 0 = string, 1 = float, 2 = int
+  //
 } sdhdf_attributes_struct;
-
 
 //
 // Parameters relating to spectral dumps
 //
-
 typedef struct sdhdf_spectralDumpsStruct {
   int    nchan;                // Number of channels
   int    ndump;                // Number of spectral dumps
@@ -182,13 +189,10 @@ typedef struct sdhdf_spectralDumpsStruct {
 
 } sdhdf_spectralDumpsStruct;
 
-
-
-// ***********************************************
-// obs_meta definitions
-// ***********************************************
-
-// Primary header
+//
+// /metadata group
+//
+// primary_header
 typedef struct sdhdf_primaryHeaderStruct {
   char date[20];
   char hdr_defn[20];
@@ -206,7 +210,7 @@ typedef struct sdhdf_primaryHeaderStruct {
   long nbeam;
 } sdhdf_primaryHeaderStruct;
 
-// Software versions
+// software_versions
 typedef struct sdhdf_softwareVersionsStruct {
   char proc_name[64];
   char software[64];
@@ -214,7 +218,7 @@ typedef struct sdhdf_softwareVersionsStruct {
   char software_version[64];
 } sdhdf_softwareVersionsStruct;
 
-// History group
+// history
 typedef struct sdhdf_historyStruct {
   char date[20];
   char proc_name[64];
@@ -223,21 +227,27 @@ typedef struct sdhdf_historyStruct {
   char proc_host[64];
 } sdhdf_historyStruct;
 
-// ***********************************************
+// schedule
+typedef struct sdhdf_scheduleStruct {
+  char date[20];
+  char host[64];
+  char host_name[64];
+  char api[64];
+  char version[64];
+  char meta[4096];
+} sdhdf_scheduleStruct;
+//
 // beam definitions
-// ***********************************************
-
+//
 typedef struct sdhdf_beamHeaderStruct {
   char label[MAX_STRLEN];
   int  nBand;
   char source[MAX_STRLEN];
-
 } sdhdf_beamHeaderStruct;
 
-// ***********************************************
+//
 // Band definitions
-// ***********************************************
-
+//
 // Band header group
 typedef struct sdhdf_bandHeaderStruct {
   char label[64];
@@ -251,7 +261,29 @@ typedef struct sdhdf_bandHeaderStruct {
   int    ndump;
 } sdhdf_bandHeaderStruct;
 
-// backend_config
+//
+// configuration group
+//
+// telescope_configuration
+typedef struct sdhdf_telescopeConfigStruct {
+  char telescope[64];
+  double itrf_x_coord;
+  double itrf_y_coord;
+  double itrf_z_coord;
+  double itrf_ref;
+  char native_coord[64];
+} sdhdf_telescopeConfigStruct;
+
+// receiver_configuration
+typedef struct sdhdf_frontendConfigStruct {
+  char receiver[64];
+  double low_freq;
+  double high_freq;
+  char polarisation[64];
+  char rx_hand[64];
+} sdhdf_frontendConfigStruct;
+
+// instrument_configuration
 typedef struct sdhdf_backendConfigStruct {
   char backend_phase[64];
   char bw[64];
@@ -328,11 +360,11 @@ typedef struct sdhdf_backendConfigStruct {
   char osamp_denominator[64];
   char order[64];
   char file_size[64];
-
 } sdhdf_backendConfigStruct;
 
-
-// OBS_PARAMS group
+//
+// observation_parameters group
+//
 typedef struct sdhdf_obsParamsStruct {
   double timeElapsed;
   double dtime;
@@ -347,6 +379,9 @@ typedef struct sdhdf_obsParamsStruct {
   double decDeg;
   double raOffset;
   double decOffset;
+  // added for v4
+  int fstat;
+  //
   double gl;
   double gb;
   double az;
@@ -360,10 +395,9 @@ typedef struct sdhdf_obsParamsStruct {
   double windSpd;
 } sdhdf_obsParamsStruct;
 
-// ***********************************************
+//
 // Parameters relating to the data file/observation
-// ***********************************************
-
+//
 // Band information
 typedef struct sdhdf_bandStruct {
   int haveCal;                // = 0 if no, = 1 if yes
@@ -400,14 +434,12 @@ typedef struct sdhdf_bandStruct {
 
 } sdhdf_bandStruct;
 
-
 // Beam information
 typedef struct sdhdf_beamStruct {
 
   sdhdf_bandHeaderStruct *bandHeader;
   sdhdf_attributes_struct bandHeaderAttr[MAX_ATTRIBUTES];
   int nBandHeaderAttributes;
-
 
   sdhdf_bandStruct       *bandData;
   sdhdf_attributes_struct bandDataAttr[MAX_ATTRIBUTES];
@@ -430,36 +462,52 @@ typedef struct sdhdf_fileStruct {
   int   fileOpen;               // 0 = file closed, 1 = file opened
   hid_t fileID;                 // File pointer
 
-  // Primary information
+  // /
+  sdhdf_attributes_struct fileAttr[MAX_ATTRIBUTES];
+
+  // /metadata
+  sdhdf_attributes_struct metaAttr[MAX_ATTRIBUTES];
+
+  // /metadata/primary_header
   int nPrimary;
   int primaryAllocatedMemory;              // 0 = no, 1 = yes
   sdhdf_primaryHeaderStruct *primary;
   sdhdf_attributes_struct primaryAttr[MAX_ATTRIBUTES];
   int nPrimaryAttributes;
 
-  // Config information
-  char cal_epoch[1024];
-  double cal_freq;
-  double cal_duty_cycle;
-  double cal_phase;
-  //  sdhdf_backendConfigStruct config[512]; // Note currently will just load a single line
-
-
-  // Software versions
+  // /metadata/software_versions
   int nSoftware;
   int softwareAllocatedMemory;             // 0 = no, 1 = yes
   sdhdf_softwareVersionsStruct *software;
   sdhdf_attributes_struct softwareAttr[MAX_ATTRIBUTES];
   int nSoftwareAttributes;
 
-  // File history information
+  // /metadata/history
   int nHistory;
   int historyAllocatedMemory;              // 0 = no, 1 = yes
   sdhdf_historyStruct *history;
   sdhdf_attributes_struct historyAttr[MAX_ATTRIBUTES];
   int nHistoryAttributes;
 
-  // Beam information
+  // /metadata/schedule
+  //int nSchedule;
+  int schedAllocatedMemory;              // 0 = no, 1 = yes
+  sdhdf_scheduleStruct *sched;
+  sdhdf_attributes_struct schedAttr[MAX_ATTRIBUTES];
+  //int nHistoryAttributes;
+
+  // /configuration
+  sdhdf_attributes_struct configAttr[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct telescope_configAttr[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct frontend_configAttr[MAX_ATTRIBUTES];
+  sdhdf_attributes_struct backend_configAttr[MAX_ATTRIBUTES];
+  char cal_epoch[1024];
+  double cal_freq;
+  double cal_duty_cycle;
+  double cal_phase;
+  //  sdhdf_backendConfigStruct config[512]; // Note currently will just load a single line
+
+  // /beam_N
   int nBeam;
   int beamAllocatedMemory;                 // 0 = no, 1 = yes
 
@@ -471,7 +519,11 @@ typedef struct sdhdf_fileStruct {
   sdhdf_attributes_struct beamAttr[MAX_ATTRIBUTES];
   int nBeamAttributes;
 
-  sdhdf_attributes_struct fileAttr[MAX_ATTRIBUTES];
-  int nFileAttributes;
+  // /beam_N/band_N
+  int nBand;
+  int bandAllocatedMemory;                 // 0 = no, 1 = yes
+
+  sdhdf_bandStruct *band;
+  sdhdf_attributes_struct bandAttr[MAX_ATTRIBUTES];
 
 } sdhdf_fileStruct;

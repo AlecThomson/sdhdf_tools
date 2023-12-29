@@ -1,26 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to produce a new SDHDF file based on parts of an existing one
-//
-// Usage:
-// sdhdf_extract -f <filename.hdf> -o <outputFile.hdf>
-//
+// sdhdf_extractDump
+// Software to extract spectral dumps from SDHDF files
 //
 
 #include <stdio.h>
@@ -30,6 +27,7 @@
 #include "sdhdfProc.h"
 #include "hdf5.h"
 
+#define VNUM "v2.0"
 #define MAX_BANDS 26     // FIX THIS
 
 //
@@ -39,15 +37,19 @@
 
 void help()
 {
-  printf("sdhdf_extractDump\n\n");
-  printf("Routine to extract spectral dumps from an sdhdf file\n\n");
-  printf("-b <num>       Beam number\n");
-  printf("-d <num>       Spectral dump number to extract (note this can be used multiple times)\n");
-  printf("-e <ext>       Output file extension\n");
-  printf("-h             This help\n");
-  printf("\n\n");
-  printf("Filenames are listed on the command line. For example\n\n");
-  printf("sdhdf_extractDump -e extract -d 0 -d 5 -d 8 *.hdf\n");
+	printf("\nsdhdf_extractDump: %s\n",VNUM);
+	printf("INSPECTA version:    %s\n",SOFTWARE_VER);
+  printf("Authors:             G. Hobbs\n");
+  printf("Software to extract spectral dumps from SDHDF files\n");
+
+	printf("\nCommand line arguments\n\n");
+	printf("-h                   this help\n");
+  printf("-b <num>             Beam number\n");
+  printf("-d <num>             Spectral dump number to extract (note this can be used multiple times)\n");
+  printf("-e <ext>             Output file extension\n");
+
+  printf("\nExample:\n\n");
+  printf("sdhdf_extractDump -e eD -d 0 -d 5 -d 8 *.hdf\n\n");
 }
 
 int main(int argc,char *argv[])
@@ -81,6 +83,9 @@ int main(int argc,char *argv[])
   float *out_data,*out_freq;
 
   strcpy(oname,"sdhdf_extract_output.hdf");
+
+	if (argc==1)
+    help();
 
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {

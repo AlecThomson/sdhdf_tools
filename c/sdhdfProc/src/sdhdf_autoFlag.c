@@ -4,28 +4,26 @@
 // Fix issue about loading all band data
 //
 
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to flag data automatically
-//
-// Usage:
 // sdhdf_autoFlag
+// Software to conduct automatic RFI flagging of SDHDF files
 //
 
 #include <stdio.h>
@@ -47,10 +45,10 @@ void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i)
 
 void help()
 {
-  printf("sdhdf_autoFlag:     %s\n",VNUM);
-  printf("sdhfProc version:   %s\n",SOFTWARE_VER);
+  printf("\nsdhdf_autoFlag:     %s\n",VNUM);
+  printf("INSPECTA version:   %s\n",SOFTWARE_VER);
   printf("Author:             George Hobbs\n");
-  printf("Software to conduct automatic RFI flagging\n");
+  printf("Software to conduct automatic RFI flagging of SDHDF files\n");
 
   printf("\nCommand line arguments:\n\n");
 	printf("-h                  This help\n");
@@ -61,7 +59,7 @@ void help()
   printf("-flag               ?? \n");
 
 	printf("\nExample:\n\n");
-  printf("sdhdf_autoFlag -e flag -persistent file1.hdf\n\n");
+  printf("sdhdf_autoFlag -e flag -persistent file.hdf\n\n");
 
 	exit(1);
 }
@@ -147,16 +145,27 @@ int main(int argc,char *argv[])
       printf(" .... output filename: %s\n",oname);
 
       // Copy the input file to the output file
-			// NOTE metadata from file and /metadata are missing from output file
       sdhdf_initialiseFile(outFile);
       sdhdf_openFile(oname,outFile,3);
 
+			// FIX
+			// issue here is that in the OLD order the /metadata attributes were not copied
+			// but with the NEW, history table is not updated
+			// OLD
       sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_autoFlag","INSPECTA software to add flags automatically",args);
       inFile->nHistory++;
       sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
 
       sdhdf_copyRemainder(inFile,outFile,0);
-      sdhdf_loadMetaData(outFile);
+			sdhdf_loadMetaData(outFile);
+
+			// NEW. TODO: history dataset is not updated here
+			//sdhdf_addHistory(outFile->history,outFile->nHistory,"sdhdf_autoFlag","INSPECTA software to add flags automatically",args);
+			//outFile->nHistory++;
+			//printf("%d\n",outFile->nHistory); // ok n=54
+      //sdhdf_writeHistory(outFile,outFile->history,outFile->nHistory);
+			//
+			//
 
       // Load the trnasient and persistent RFI
       if (transientFlag==1)

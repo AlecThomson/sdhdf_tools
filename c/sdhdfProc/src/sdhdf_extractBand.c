@@ -1,25 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to produce a new SDHDF file based on parts of an existing one
-//
-// Usage:
-// sdhdf_extract -f <filename.hdf> -o <outputFile.hdf>
+// sdhdf_extractBand
+// Software to extract frequency bands from SDHDF files
 //
 
 #include <stdio.h>
@@ -29,17 +27,24 @@
 #include "sdhdfProc.h"
 #include "hdf5.h"
 
+#define VNUM "v2.0"
 #define MAX_BANDS 26     // FIX THIS
 
 void help()
 {
-  printf("sdhdf_extractBand\n");
-  printf("\n");
-  printf("Command line arguments\n\n");
-  printf("-e <ext>          file extension for output files\n");
-  printf("-h                this help\n");
-  printf("-zoom <f1> <f2>   produce zoom band between f1 and f2 MHz\n");
-  printf("-b <bandLabel>    select sub-band with label (if the label is not found then it assumes a band number)\n");
+	printf("\nsdhdf_extractBand: %s\n",VNUM);
+	printf("INSPECTA version:  %s\n",SOFTWARE_VER);
+  printf("Authors:           G. Hobbs\n");
+  printf("Software to extract frequency bands from SDHDF files\n");
+
+  printf("\nCommand line arguments\n\n");
+	printf("-h                 this help\n");
+  printf("-e <ext>           file extension for output files\n");
+  printf("-zoom <f1> <f2>    produce zoom band between f1 and f2 MHz\n");
+  printf("-b <bandLabel>     select sub-band with label (if the label is not found then it assumes a band number)\n");
+
+	printf("\nExample:\n\n");
+  printf("sdhdf_extractBand -e eB -b 5 file.hdf\n\n");
 
   exit(1);
 }
@@ -80,6 +85,7 @@ int main(int argc,char *argv[])
 
   if (argc==1)
     help();
+
   sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
   for (i=1;i<argc;i++)
     {

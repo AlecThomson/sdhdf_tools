@@ -1,26 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to provide a quick-look at the metadata in a SDHDF file.
-//
-// Usage:
-// sdhdf_describe <filename.hdf> <filename2.hdf> ...
-//
+// sdhdf_describe
+// Software to read metadata from multiple SDHDF files
 //
 
 #include <stdio.h>
@@ -33,8 +30,8 @@
 
 void help()
 {
-  printf("sdhdf_describe    %s\n",VNUM);
-	printf("sdhfProc version: %s\n",SOFTWARE_VER);
+  printf("\nsdhdf_describe    %s\n",VNUM);
+	printf("INSPECTA version: %s\n",SOFTWARE_VER);
   printf("Author:           George Hobbs\n");
   printf("Software to read metadata from multiple SDHDF files\n");
 

@@ -1,18 +1,18 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -1043,9 +1043,12 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
   herr_t status;
   int b,i;
 
-  // File information
+  // /metadata group
+	// TODO: this is not copying /metadata attributes!
   sprintf(groupName,"/%s",METADATA_GRP);
-  if (sdhdf_checkGroupExists(outFile,groupName) == 1)
+	printf("%d\n", sdhdf_checkGroupExists(outFile,groupName));
+	//exit(1); // TEMP
+  if (sdhdf_checkGroupExists(outFile,groupName) == 1) // 0 = already exists
     sdhdf_copyEntireGroup(groupName,inFile,outFile);
   else
     {
@@ -1061,7 +1064,7 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
     }
 
-  // Config
+  // /configuration group
   sprintf(groupName,"/%s",CONFIG_GRP);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     sdhdf_copyEntireGroup(groupName,inFile,outFile);
