@@ -38,6 +38,7 @@ void sdhdf_initialiseFile(sdhdf_fileStruct *inFile)
   inFile->historyAllocatedMemory = 0;
   inFile->nBeam = -1;
   inFile->beamAllocatedMemory = 0;
+	inFile->schedAllocatedMemory = 0;
 }
 
 // Open an SDHDF file
@@ -193,11 +194,12 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 
       if (inFile->historyAllocatedMemory > 0)
 	{free(inFile->history); inFile->historyAllocatedMemory = 0;}
-
       if (inFile->softwareAllocatedMemory > 0)
 	{free(inFile->software); inFile->softwareAllocatedMemory = 0;}
       if (inFile->primaryAllocatedMemory > 0)
 	{free(inFile->primary); inFile->primaryAllocatedMemory = 0;}
+			if (inFile->schedAllocatedMemory > 0)
+	{free(inFile->sched); inFile->schedAllocatedMemory = 0;}
       status = H5Fclose(inFile->fileID);
       inFile->fileOpen = 0;
     }
@@ -399,7 +401,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 
 			// Read data dataset attributes
       sprintf(dataName,"%s/%s/%s/%s",beamLabel,inFile->beam[beam].bandHeader[band].label,ASTRONOMY_DATA_GRP,DATA);
-      inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
+      //inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes = sdhdf_getNattributes(inFile,dataName);
 			// NEW
 			// have something like
 			sdhdf_loadAttributes(inFile, dataName, &inFile->beam[beam].bandData[band].astro_obsHeaderAttr);
@@ -549,17 +551,19 @@ void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile,int beam,int band,sdh
 
   strcpy(beamLabel,inFile->beamHeader[beam].label);
   sprintf(dataName,"%s/%s/%s/%s",beamLabel,inFile->beam[beam].bandHeader[band].label,ASTRONOMY_DATA_GRP,FREQUENCY);
-  *nFreqAttributes = sdhdf_getNattributes(inFile,dataName);
+  //*nFreqAttributes = sdhdf_getNattributes(inFile,dataName);
   //      printf("Number of attributes = %d FREQUENCY SECTION\n",inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq);
-  for (j=0;j<*nFreqAttributes;j++)
-      sdhdf_readAttributeFromNum(inFile,dataName,j,&freqAttributes[j]);
+  sdhdf_loadAttributes(inFile, dataName, &freqAttributes);
+	//for (j=0;j<*nFreqAttributes;j++)
+  //    sdhdf_readAttributeFromNum(inFile,dataName,j,&freqAttributes[j]);
 
   sprintf(dataName,"%s/%s/%s/%s",beamLabel,inFile->beam[beam].bandHeader[band].label,ASTRONOMY_DATA_GRP,DATA);
 
   // Read attributes
-  *nDataAttributes = sdhdf_getNattributes(inFile,dataName);
-  for (j=0;j< *nDataAttributes; j++)
-    sdhdf_readAttributeFromNum(inFile,dataName,j,&dataAttributes[j]);
+  //*nDataAttributes = sdhdf_getNattributes(inFile,dataName);
+	sdhdf_loadAttributes(inFile, dataName, &dataAttributes);
+  //for (j=0;j< *nDataAttributes; j++)
+    //sdhdf_readAttributeFromNum(inFile,dataName,j,&dataAttributes[j]);
 
 }
 

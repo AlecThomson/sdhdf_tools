@@ -98,21 +98,79 @@ void sdhdf_fixUnderscore(char *input,char *output)
 }
 
 //
-// Load all available metadata from the SDHDF file
+// Load all available metadata including attributes from the SDHDF file
 //
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
 {
-	printf("IN LOAD METADATA\n");
-  sdhdf_loadPrimaryHeader(inFile); //done
-	printf("FINISH PRIMARY\n");
-  sdhdf_loadConfig(inFile); // to do
-	printf("FINISH CONFIG\n");
-  sdhdf_loadBeamHeader(inFile); //done
-	printf("FINISH BEAM\n");
-  sdhdf_loadBandHeader(inFile,1); //done
-	printf("FINISH BAND\n");
-  sdhdf_loadObsHeader(inFile,1); // todo
-	printf("FINISH OBS\n");
+  // file
+	printf("LOADING FILE\n");
+  // sdhdf_loadFile(inFile); // to fix
+	printf("FINISHED FILE\n");
+
+	// /metadata group
+	printf("LOADING /METADATA\n");
+	// TODO: currently not getting attributres from group
+  sdhdf_loadGroup(inFile, METADATA_GRP, &inFile->metaAttr); // todo
+	printf("FINISHED /METADATA\n");
+
+	printf("LOADING PRIMARY HEADER\n");
+  sdhdf_loadPrimaryHeader(inFile); // done
+	printf("FINISHED PRIMARY HEADER\n");
+
+	printf("LOADING BEAM HEADER\n");
+	sdhdf_loadBeamHeader(inFile); // done
+	printf("FINISHED BEAM HEADER\n");
+
+	printf("LOADING HISTORY\n");
+  sdhdf_loadHistory(inFile);
+	printf("FINISHED HISTORY\n");
+
+	printf("LOADING SOFTWARE\n");
+  sdhdf_loadSoftware(inFile);
+	printf("FINISHED SOFTWARE\n");
+
+	printf("LOADING SCHEDULE\n");
+  sdhdf_loadSchedule(inFile);
+	printf("FINISHED SCHEDULE\n");
+
+	// /configuration group
+	printf("LOADING CONFIG\n");
+	// TODO: currently not getting attributres from group
+  sdhdf_loadGroup(inFile, CONFIG_GRP, &inFile->configAttr); // todo
+  sdhdf_loadConfig(inFile); // done
+	printf("FINISHED CONFIG\n");
+
+	// /beam group
+	printf("LOADING BEAM\n");
+	// TODO: currently not getting attributres from group
+  sdhdf_loadGroup(inFile, BEAM_GRP, &inFile->beamAttr); // todo
+	printf("FINISHED BEAM\n");
+
+	// /beam/metadata group
+	printf("LOADING BEAM/METADATA\n");
+	// TODO: currently not getting attributres from group
+  sdhdf_loadGroup(inFile, BEAM_GRP, &inFile->metaAttr); // todo
+	printf("FINISHED BEAM/METADATA\n");
+
+	printf("LOADING BAND HEADER (ASTRO)\n");
+	sdhdf_loadBandHeader(inFile,1); // done
+	printf("FINISHED BAND HEADER (ASTRO)\n");
+
+	// /beam/band group
+	printf("LOADING BEAM/BAND\n");
+	// TODO: currently not getting attributres from group
+  sdhdf_loadGroup(inFile, BEAM_GRP, &inFile->bandAttr); // todo
+	printf("FINISHED BEAM/BAND\n");
+
+	// /beam/band/metadata group
+	printf("LOADING BEAM/BAND/METADATA\n");
+	// TODO: currently not getting attributres from group
+  sdhdf_loadGroup(inFile, BEAM_GRP, &inFile->metaAttr); // todo
+	printf("FINISHED BEAM/BAND/METADATA\n");
+
+  printf("LOADING OBS HEADER (ASTRO)\n");
+	sdhdf_loadObsHeader(inFile,1); // todo
+	printf("FINISHED OBS HEADER (ASTRO)\n");
 
   if (inFile->beam[0].bandData[0].astro_obsHeader[0].dtime == -1) // Check if dump time not in the observation parameters
     {
@@ -129,47 +187,87 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
 
   if (strcmp(inFile->primary[0].cal_mode,"ON")==0)
     {
-			printf("LOADING BAND HEADER\n");
+			printf("LOADING BAND HEADER (CAL)\n");
       sdhdf_loadBandHeader(inFile,2);
-			printf("FINISHED LOADING BAND HEADER\n");
-			printf("LOADING OBS HEADER\n");
+			printf("FINISHED BAND HEADER (CAL)\n");
+
+			printf("LOADING OBS HEADER (CAL)\n");
       sdhdf_loadObsHeader(inFile,2);
-			printf("FINISHED LOADING OBS HEADER\n");
+			printf("FINISHED LOADING OBS HEADER (CAL)\n");
     }
-	printf("LOADING HISTORY\n");
-  sdhdf_loadHistory(inFile);
-	printf("FINISHED LOADING HISTORY\n");
-	printf("LOADING SOFTWARE\n");
-  sdhdf_loadSoftware(inFile);
-	printf("FINISHED LOADING SOFTWARE\n");
+
+}
+
+void sdhdf_loadGroup(sdhdf_fileStruct *inFile, char *grp, sdhdf_attributes_struct *attrStruct)
+{
+	char groupName[128];
+
+  printf("%s\n", grp);
+	sprintf(groupName,"%s", grp);
+
+	if (sdhdf_checkGroupExists(inFile,groupName) == 1)
+    {
+      printf("WARNING: No group %s in SDHDF file\n", groupName);
+    }
+  else
+    {
+			// load attributes
+			sdhdf_loadAttributes(inFile, groupName, &attrStruct);
+
+		}
+
+}
+
+void sdhdf_loadFile(sdhdf_fileStruct *inFile)
+{
+  hid_t header_id, stid, val_tid;
+	herr_t status;
+  int ndims;
+  hsize_t dims[2];
+	char groupName[128];
+
+	sprintf(groupName,"%s","/");
+
+	// load attributes
+	sdhdf_loadAttributes(inFile, groupName, &inFile->fileAttr);
+
 }
 
 void sdhdf_loadConfig(sdhdf_fileStruct *inFile)
 {
-  int i,j;
-  hid_t header_id,headerT,space,stid,val_tid;
+  hid_t header_id, backend_header_id, frontend_header_id, telescope_header_id, stid, val_tid;
   herr_t status;
   int ndims;
   hsize_t dims[2];
-  sdhdf_backendConfigStruct *configVals;
+  sdhdf_backendConfigStruct *backend_configVals;
+	sdhdf_frontendConfigStruct *frontend_configVals;
+	sdhdf_telescopeConfigStruct *telescope_configVals;
   char groupName[128];
 	char backend_cfg[128];
+	char frontend_cfg[128];
+	char telescope_cfg[128];
 
   sprintf(groupName,"%s",CONFIG_GRP);
 	sprintf(backend_cfg,"%s/%s",CONFIG_GRP,BACKEND_CONFIG);
+	sprintf(frontend_cfg,"%s/%s",CONFIG_GRP,FRONTEND_CONFIG);
+	sprintf(telescope_cfg,"%s/%s",CONFIG_GRP,TELESCOPE_CONFIG);
+
   if (sdhdf_checkGroupExists(inFile,groupName) == 1)
     {
-      //      printf("Warning: No configuration table in SDHDF file\n");
+      printf("WARNING: No configuration group in SDHDF file\n");
     }
   else
     {
-      header_id  = H5Dopen2(inFile->fileID,backend_cfg,H5P_DEFAULT);
-      headerT    = H5Dget_type(header_id);
-      space      = H5Dget_space(header_id);
-      ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
 
-      configVals = (sdhdf_backendConfigStruct *)malloc(sizeof(sdhdf_backendConfigStruct)*dims[0]);
+      backend_header_id = H5Dopen2(inFile->fileID,backend_cfg,H5P_DEFAULT);
+			frontend_header_id = H5Dopen2(inFile->fileID,frontend_cfg,H5P_DEFAULT);
+			telescope_header_id = H5Dopen2(inFile->fileID,telescope_cfg,H5P_DEFAULT);
 
+      backend_configVals = (sdhdf_backendConfigStruct *)malloc(sizeof(sdhdf_backendConfigStruct)*dims[0]);
+			frontend_configVals = (sdhdf_frontendConfigStruct *)malloc(sizeof(sdhdf_frontendConfigStruct)*dims[0]);
+			telescope_configVals = (sdhdf_telescopeConfigStruct *)malloc(sizeof(sdhdf_telescopeConfigStruct)*dims[0]);
+
+			// instrument_configuration
       val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_backendConfigStruct));
       stid    = H5Tcopy(H5T_C_S1);
       status  = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
@@ -178,22 +276,58 @@ void sdhdf_loadConfig(sdhdf_fileStruct *inFile)
       H5Tinsert(val_tid,"CAL_EPOCH",HOFFSET(sdhdf_backendConfigStruct,cal_epoch),stid);
       H5Tinsert(val_tid,"CAL_DUTY_CYCLE",HOFFSET(sdhdf_backendConfigStruct,cal_duty_cycle),stid);
       H5Tinsert(val_tid,"CAL_PHASE",HOFFSET(sdhdf_backendConfigStruct,cal_phase),stid);
-      status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,configVals);
+      status  = H5Dread(backend_header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,backend_configVals);
 
-      strcpy(inFile->cal_epoch,configVals[0].cal_epoch);
-      sscanf(configVals[0].cal_freq,"%lf",&(inFile->cal_freq));
-      sscanf(configVals[0].cal_phase,"%lf",&(inFile->cal_phase));
-      sscanf(configVals[0].cal_duty_cycle,"%lf",&(inFile->cal_duty_cycle));
+      strcpy(inFile->cal_epoch,backend_configVals[0].cal_epoch);
+      sscanf(backend_configVals[0].cal_freq,"%lf",&(inFile->cal_freq));
+      sscanf(backend_configVals[0].cal_phase,"%lf",&(inFile->cal_phase));
+      sscanf(backend_configVals[0].cal_duty_cycle,"%lf",&(inFile->cal_duty_cycle));
 
-      free(configVals);
-
-			// Load attributes // NOT SET YET!
-			//inFile->nConfigAttributes = sdhdf_getNattributes(inFile,dsetPthName);
-			//sdhdf_loadAttributes(inFile, dsetPthName, &inFile->configAttr);
-
-      status = H5Tclose(val_tid);
+			status = H5Tclose(val_tid);
       status = H5Tclose(stid);
-      status = H5Dclose(header_id);
+      status = H5Dclose(backend_header_id);
+
+			// receiver_configuration
+			val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_frontendConfigStruct));
+      stid    = H5Tcopy(H5T_C_S1);
+      status  = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+      H5Tinsert(val_tid,"RECEIVER",HOFFSET(sdhdf_frontendConfigStruct,receiver),stid);
+      H5Tinsert(val_tid,"LOW_FREQUENCY",HOFFSET(sdhdf_frontendConfigStruct,low_freq),stid);
+      H5Tinsert(val_tid,"HIGH_FREQUENCY",HOFFSET(sdhdf_frontendConfigStruct,high_freq),stid);
+      H5Tinsert(val_tid,"POLARISATION",HOFFSET(sdhdf_frontendConfigStruct,polarisation),stid);
+      H5Tinsert(val_tid,"HAND",HOFFSET(sdhdf_frontendConfigStruct,rx_hand),stid);
+      status  = H5Dread(frontend_header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,frontend_configVals);
+
+			status = H5Tclose(val_tid);
+      status = H5Tclose(stid);
+      status = H5Dclose(frontend_header_id);
+
+			// telescope_configuration
+			val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_telescopeConfigStruct));
+      stid    = H5Tcopy(H5T_C_S1);
+      status  = H5Tset_size(stid,64); // Should set to value defined in sdhdf_v1.9.h
+      H5Tinsert(val_tid,"TELESCOPE",HOFFSET(sdhdf_telescopeConfigStruct,telescope),stid);
+      H5Tinsert(val_tid,"ITRF_X_COORDINATE",HOFFSET(sdhdf_telescopeConfigStruct,itrf_x_coord),stid);
+      H5Tinsert(val_tid,"ITRF_Y_COORDINATE",HOFFSET(sdhdf_telescopeConfigStruct,itrf_y_coord),stid);
+      H5Tinsert(val_tid,"ITRF_Z_COORDINATE",HOFFSET(sdhdf_telescopeConfigStruct,itrf_z_coord),stid);
+      H5Tinsert(val_tid,"ITRF_REFERENCE_EPOCH",HOFFSET(sdhdf_telescopeConfigStruct,itrf_ref),stid);
+			H5Tinsert(val_tid,"NATIVE_COORDINATE_SYSTEM",HOFFSET(sdhdf_telescopeConfigStruct,native_coord),stid);
+      status = H5Dread(telescope_header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,telescope_configVals);
+
+			status = H5Tclose(val_tid);
+      status = H5Tclose(stid);
+      status = H5Dclose(telescope_header_id);
+
+			// load attributes
+			sdhdf_loadAttributes(inFile, groupName, &inFile->configAttr);
+			sdhdf_loadAttributes(inFile, backend_cfg, &inFile->backend_configAttr);
+			sdhdf_loadAttributes(inFile, frontend_cfg, &inFile->frontend_configAttr);
+			sdhdf_loadAttributes(inFile, telescope_cfg, &inFile->telescope_configAttr);
+
+      free(backend_configVals);
+			free(frontend_configVals);
+			free(telescope_configVals);
+
     }
 }
 
@@ -256,7 +390,7 @@ void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile)
       inFile->nBeam    = inFile->primary[0].nbeam;
 
       // Load attributes
-			inFile->nPrimaryAttributes = sdhdf_getNattributes(inFile,dsetPthName);
+			//inFile->nPrimaryAttributes = sdhdf_getNattributes(inFile,dsetPthName);
 			sdhdf_loadAttributes(inFile, dsetPthName, &inFile->primaryAttr);
 
       status = H5Tclose(val_tid);
@@ -350,7 +484,7 @@ void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile)
   status = H5Dclose(header_id);
 
   // Load attributes
-  inFile->nBeamHeaderAttributes = sdhdf_getNattributes(inFile,label);
+  //inFile->nBeamHeaderAttributes = sdhdf_getNattributes(inFile,label);
 	sdhdf_loadAttributes(inFile, label, &inFile->beamHeaderAttr);
 
 
@@ -374,6 +508,14 @@ void sdhdf_setMetadataDefaults(sdhdf_primaryHeaderStruct *primaryHeader,sdhdf_be
   strcpy(softwareVersions->software,"UNKNONW");
   strcpy(softwareVersions->software_descr,"UNKNOWN");
   strcpy(softwareVersions->software_version,"UNKNOWN");
+
+	// Schedule
+  /*strcpy(schedHeader->date,"UNKNOWN");
+  strcpy(schedHeader->host,"UNKNOWN");
+	strcpy(schedHeader->host_name,"UNKNOWN");
+	strcpy(schedHeader->api,"UNKNOWN");
+	strcpy(schedHeader->version,"UNKNOWN");
+	strcpy(schedHeader->meta,"UNKNOWN");*/
 
   // Primary header
   strcpy(primaryHeader->date,"UNKNOWN");
@@ -668,14 +810,14 @@ void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type)
 			{
 			  status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[i].bandHeader);
 				// Load attributes
-			  inFile->beam[i].nBandHeaderAttributes = sdhdf_getNattributes(inFile,label);
+			  //inFile->beam[i].nBandHeaderAttributes = sdhdf_getNattributes(inFile,label);
 			  sdhdf_loadAttributes(inFile, label, &inFile->beam[i].bandHeaderAttr);
 			}
 			else if (type==2)
 			{
 				status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->beam[i].calBandHeader);
 				// Load attributes
-			  inFile->beam[i].nBandHeaderAttributes = sdhdf_getNattributes(inFile,label);
+			  //inFile->beam[i].nBandHeaderAttributes = sdhdf_getNattributes(inFile,label);
 			  sdhdf_loadAttributes(inFile, label, &inFile->beam[i].bandHeaderAttr);
 			}
 
@@ -1061,16 +1203,16 @@ void sdhdf_loadHistory(sdhdf_fileStruct *inFile)
       ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
 
       if (inFile->historyAllocatedMemory == 0)
-	{
-	  inFile->history = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct)*MAX_HISTORY);
-      if (dims[0] > MAX_HISTORY)
-	{
-	  printf("ERROR: need to increase MAX_HISTORY\n");
-	  exit(1);
-	}
-      inFile->nHistory = dims[0];
-      inFile->historyAllocatedMemory = 1;
-	}
+			{
+	  		inFile->history = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct)*MAX_HISTORY);
+      	if (dims[0] > MAX_HISTORY)
+				{
+	  			printf("ERROR: need to increase MAX_HISTORY\n");
+	  			exit(1);
+				}
+      	inFile->nHistory = dims[0];
+      	inFile->historyAllocatedMemory = 1;
+			}
 
       val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_historyStruct));
       stid = H5Tcopy(H5T_C_S1);
@@ -1087,6 +1229,54 @@ void sdhdf_loadHistory(sdhdf_fileStruct *inFile)
 
 			// Load attributes
 			sdhdf_loadAttributes(inFile, history, &inFile->historyAttr);
+
+      status = H5Tclose(val_tid);
+      status = H5Tclose(stid);
+      status = H5Dclose(header_id);
+    }
+}
+
+void sdhdf_loadSchedule(sdhdf_fileStruct *inFile)
+{
+  hid_t header_id,headerT,space,stid,val_tid;
+  herr_t status;
+  int ndims;
+  hsize_t dims[2];
+	char sched[MAX_STRLEN];
+
+	sprintf(sched,"%s/%s",METADATA_GRP,SCHEDULE);
+  if (sdhdf_checkGroupExists(inFile,sched) == 1)
+    {
+      printf("WARNING: no schedule information\n");
+      inFile->schedAllocatedMemory = 0;
+    }
+  else
+    {
+      header_id  = H5Dopen2(inFile->fileID,sched,H5P_DEFAULT);
+      headerT    = H5Dget_type(header_id);
+      space      = H5Dget_space(header_id);
+      ndims      = H5Sget_simple_extent_dims(space,dims,NULL);
+
+      if (inFile->schedAllocatedMemory == 0)
+	    {
+	  	 	inFile->sched = (sdhdf_scheduleStruct *)malloc(sizeof(sdhdf_scheduleStruct));
+      	inFile->schedAllocatedMemory = 1;
+			}
+
+      val_tid = H5Tcreate(H5T_COMPOUND,sizeof(sdhdf_scheduleStruct));
+      stid = H5Tcopy(H5T_C_S1);
+
+      H5Tinsert(val_tid,DATE,HOFFSET(sdhdf_scheduleStruct,date),stid);
+      H5Tinsert(val_tid,SCHED_HOST,HOFFSET(sdhdf_scheduleStruct,host),stid);
+      H5Tinsert(val_tid,SCHED_HOSTNAME,HOFFSET(sdhdf_scheduleStruct,host_name),stid);
+      H5Tinsert(val_tid,SCHED_API,HOFFSET(sdhdf_scheduleStruct,api),stid);
+      H5Tinsert(val_tid,SCHED_VERSION,HOFFSET(sdhdf_scheduleStruct,version),stid);
+			H5Tinsert(val_tid,SCHED_METADATA,HOFFSET(sdhdf_scheduleStruct,meta),stid);
+
+      status  = H5Dread(header_id,val_tid,H5S_ALL,H5S_ALL,H5P_DEFAULT,inFile->sched);
+
+			// Load attributes
+			sdhdf_loadAttributes(inFile, sched, &inFile->schedAttr);
 
       status = H5Tclose(val_tid);
       status = H5Tclose(stid);
@@ -1153,7 +1343,7 @@ void sdhdf_loadSoftware(sdhdf_fileStruct *inFile)
   status = H5Dclose(header_id);
 }
 
-int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
+/*int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
 {
   hid_t dataset_id;
   herr_t status;
@@ -1170,7 +1360,7 @@ int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName)
 	//printf("Number of attributes found: %d\n",object_info.num_attrs);
 
   return object_info.num_attrs;
-}
+}*/
 
 /*void sdhdf_readAttributes(sdhdf_fileStruct *inFile, char *dataName, char *attr_name, sdhdf_attributes_struct *attrStruct)
 {
@@ -1226,10 +1416,10 @@ void sdhdf_readAttributes(int num_attrs, sdhdf_attributes_struct *attrStruct)
 	int i;
 	for (i=0;i<num_attrs;i++)
 		{
-			printf("NAME:    %s\n", &attrStruct[i].name);
-			printf("KEY:     %s\n", &attrStruct[i].key);
-			printf("VALUE:   %s\n", &attrStruct[i].value);
-			printf("DEFAULT: %s\n\n", &attrStruct[i].def);
+			printf("NAME:        %s\n", &attrStruct[i].name);
+			printf("DESCRIPTION: %s\n", &attrStruct[i].key);
+			printf("UNIT:        %s\n", &attrStruct[i].value);
+			printf("DEFAULT:     %s\n\n", &attrStruct[i].def);
 		}
 
 }
@@ -1237,61 +1427,142 @@ void sdhdf_readAttributes(int num_attrs, sdhdf_attributes_struct *attrStruct)
 // idea is to replace sdhdf_readAttributeFromNum with this
 void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attributes_struct *attrStruct)
 {
-    hid_t  attr, attr_id, s1_tid, dataset, space, dtype1;
-    herr_t status;
+    hid_t  attr, attr_id, s1_tid, dataset, space, dtype1, space_type, type, type_class, dset, groupID;
+    herr_t status, hErrVal;
 		char name[MAX_STRLEN];
 		char attr_name[MAX_STRLEN];
+		char space_name[MAX_STRLEN];
+		H5G_stat_t objStatInfo;
 		int i;
 		//int num_attrs;
 
 		printf("Loading attributes for %s...\n", dataName);
+		groupID = H5Gopen(inFile->fileID, "/", H5P_DEFAULT);
+		hErrVal = H5Gget_objinfo(groupID, dataName, 0, &objStatInfo);
 
-		//num_attrs = sdhdf_getNattributes(inFile, dataName);
+		if (objStatInfo.type == H5G_DATASET) {
+			// dataset
+			printf("Object %s is an HDF dataset\n", dataName);
+		}
+		else
+		{
+			// group
+			printf("Object %s is an HDF group\n", dataName);
+		}
 
 		for (i=0;i<MAX_ATTRIBUTES;i++)
 			{
 				attr_id = H5Aopen_by_idx(inFile->fileID, dataName, H5_INDEX_NAME, H5_ITER_NATIVE, i, H5P_DEFAULT, H5P_DEFAULT);
+				if (attr_id == -1)
+				{
+					break;
+				}
 				H5Aget_name(attr_id,MAX_STRLEN,attr_name);
 
-		    // ignore the following attributes for now:
-				// REFERENCE_LIST
-				// DIMENSION_LABELS
-				// DIMENSION_LIST
-				// CLASS
-				if (strcmp(attr_name,"REFERENCE_LIST")==0 ||
-		    	strcmp(attr_name,"DIMENSION_LABELS")==0 ||
-					strcmp(attr_name,"DIMENSION_LIST")==0 ||
-			  	strcmp(attr_name,"CLASS")==0) {
-						printf("Cannot read attribute: %s\n",attr_name);
-		    	}
-    	  else {
-    		  dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
-				  attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
+				// get attribute type
+				space = H5Aget_space(attr_id);
+				space_type = H5Sget_simple_extent_type(space);
+				type = H5Aget_type(attr_id);
+				type_class   = H5Tget_class(type);
+			  if (space_type == H5S_SCALAR)
+				  strcpy(space_name, "H5S_SCALAR");
+			  else if (space_type == H5S_SIMPLE)
+				  strcpy(space_name, "H5S_SIMPLE");
+			  else if (space_type == H5S_NULL)
+				  strcpy(space_name, "H5S_NULL");
+			  else
+				  strcpy(space_name, "UNKNOWN");
 
-    		  dtype1 = H5Tcopy(H5T_C_S1);
-    		  status = H5Tset_size(dtype1, MAX_STRLEN);
+				// type_class = 6 COMPOUND
+				// type_class = 3, space = 119, space_type = 0, space_name = H5S_SCALAR, attr_name = CLASS
+				// type_class = 6, space = 120, space_type = 1, space_name = H5S_SIMPLE, attr_name = REFERENCE_LIST
+				// type_class = 3, space = 121, space_type = 1, space_name = H5S_SIMPLE, attr_name = DIMENSION_LABELS
+				// type_class = 9, space = 141, space_type = 1, space_name = H5S_SIMPLE, attr_name = DIMENSION_LIST
 
-				  s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct));
+				/*printf("opening attr %d", i);
+				printf("attr_id = %d, type = %d, type_class = %d, space = %d, space_type = %d, space_name = %s, attr_name = %s\n\n",
+								(int)attr_id,
+								(int)type, (int)type_class,
+								(int)space, (int)space_type,
+								space_name, attr_name);*/
 
-				  H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype1);
-    		  H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct, key), dtype1);
-    		  H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype1);
-    		  H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype1);
+				if (type_class == 3) {
+					// H5T_STRING datatype
+					if (space_type == 0) {
+						// H5S_SCALAR
+					}
+					else if (space_type == 1) {
+						// H5S_SIMPLE
+					}
+					else {
+						//printf("UNKNOWN dataspace: %d", space_type);
+					}
+				}
+				else if (type_class == 6) {
+					// H5T_COMPOUND datatype
+					if (space_type == 0) {
+						// H5S_SCALAR
+					}
+					else if (space_type == 1) {
+						// H5S_SIMPLE
+						// if a dataset then open, otherwise just read attributes
+						if (objStatInfo.type == H5G_DATASET) {
+							dataset = H5Dopen2(inFile->fileID, dataName, H5P_DEFAULT);
+						}
+						else
+						{
+						  // group
+							// TODO this is not getting group attributes!
+							groupID = H5Gopen(inFile->fileID, dataName, H5P_DEFAULT);
+							dataset = H5Dopen2(groupID, dataName, H5P_DEFAULT);
+						}
+					  	attr = H5Aopen(dataset, attr_name, H5P_DEFAULT);
+	    		  	dtype1 = H5Tcopy(H5T_C_S1);
+	    		  	status = H5Tset_size(dtype1, MAX_STRLEN);
 
-				  status = H5Aread(attr, s1_tid, &attrStruct[i]);
+					  	s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct));
 
-				  strcpy(&attrStruct[i].name, attr_name);
+					  	H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype1);
+	    		  	H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct, key), dtype1);
+	    		  	H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype1);
+	    		  	H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype1);
 
-				  /*printf("NAME:    %s\n", &attrStruct[i].name);
-				  printf("KEY:     %s\n", &attrStruct[i].key);
-				  printf("VALUE:   %s\n", &attrStruct[i].value);
-				  printf("DEFAULT: %s\n", &attrStruct[i].def);*/
+					  	status = H5Aread(attr, s1_tid, &attrStruct[i]);
 
-    		  H5Tclose(s1_tid);
-    		  H5Dclose(dataset);
-				  H5Aclose(attr_id);
-			  }
-	  }
+					  	strcpy(&attrStruct[i].name, attr_name);
+
+					  	/*printf("NAME:    %s\n", &attrStruct[i].name);
+					  	printf("KEY:     %s\n", &attrStruct[i].key);
+					  	printf("VALUE:   %s\n", &attrStruct[i].value);
+					  	printf("DEFAULT: %s\n", &attrStruct[i].def);*/
+
+	    		  	H5Tclose(s1_tid);
+	    		  	H5Dclose(dataset);
+					  	H5Aclose(attr_id);
+
+
+					}
+					else {
+						//printf("UNKNOWN dataspace: %d", space_type);
+					}
+				}
+				else if (type_class == 9) {
+					// ??
+					if (space_type == 0) {
+						// H5S_SCALAR
+					}
+					else if (space_type == 1) {
+						// H5S_SIMPLE
+					}
+					else {
+						//printf("UNKNOWN dataspace: %d", space_type);
+					}
+				}
+				else {
+					//printf("UNKNOWN datatype: %d", type_class);
+				}
+
+		}
 
 }
 
@@ -1315,7 +1586,7 @@ char* sdhdf_getAttribute(sdhdf_attributes_struct *attrStruct, char *attr_name)
 
 }
 
-void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute)
+/*void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute)
 {
   hid_t dataset_id,attr_id,atype,atype_mem,aspace,space;
   H5T_class_t type_class;
@@ -1423,7 +1694,7 @@ void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,
   status = H5Sclose(aspace);
   status = H5Aclose(attr_id);
 
-}
+}*/
 
 void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruct *out,int n)
 {

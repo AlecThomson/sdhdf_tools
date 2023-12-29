@@ -179,7 +179,6 @@ void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int n
 void sdhdf_add1arg(char *args,char *add);
 void sdhdf_add2arg(char *args,char *add1,char *add2);
 
-
 // Loading metadata information
 void sdhdf_storeArguments(char *args,int maxLen,int argc,char *argv[]);
 void sdhdf_formOutputFilename(char *inFile,char *extension,char *oname);
@@ -188,12 +187,15 @@ int sdhdf_getTelescopeDirName(char *tel,char *dir);
 void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile);  // Include loading attributes
+void sdhdf_loadFile(sdhdf_fileStruct *inFile);
+void sdhdf_loadGroup(sdhdf_fileStruct *inFile, char *grp, sdhdf_attributes_struct *attrStruct);
 void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile);
 void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile);
 void sdhdf_loadBandHeader(sdhdf_fileStruct *inFile,int type);
 void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type);
 void sdhdf_loadHistory(sdhdf_fileStruct *inFile);
 void sdhdf_loadSoftware(sdhdf_fileStruct *inFile);
+void sdhdf_loadSchedule(sdhdf_fileStruct *inFile);
 void sdhdf_loadSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband, sdhdf_spectralDumpsStruct *spectrum);
 void sdhdf_initialise_spectralDumps(sdhdf_spectralDumpsStruct *in);
 void sdhdf_initialise_bandHeader(sdhdf_bandHeaderStruct *header);
@@ -212,7 +214,7 @@ void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile0,int beam,int band,sd
 int sdhdf_getNattributes(sdhdf_fileStruct *inFile,char *dataName);
 //void sdhdf_readAttributes(sdhdf_fileStruct *inFile, char *dataName, char *attr_name,sdhdf_attributes_struct *attribute);
 void sdhdf_readAttributes(int num_attrs, sdhdf_attributes_struct *attrStruct);
-void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
+//void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
 char* sdhdf_getAttribute(sdhdf_attributes_struct *attrStruct, char *attr_name);
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out);
 void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attr); //char *attrName,char *result);

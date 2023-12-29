@@ -31,37 +31,34 @@
 #include "hdf5.h"
 #include <cpgplot.h>
 
+#define VNUM "v2.0"
+#define MAX_REST_FREQUENCIES 1024
+
 void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double fref,char *yUnit,char *freqFrame,char *freqUnit,
 		  char *grDev);
 void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,float maxY,int drawLabel);
 void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
-
-#define VNUM "v1.0"
-#define MAX_REST_FREQUENCIES 1024
-
 void help()
 {
   printf("sdhdf_plotSpectrum: %s\n",VNUM);
   printf("sdhfProc version:   %s\n",SOFTWARE_VER);
-  printf("author:             George Hobbs\n");
-  printf("\n");
+  printf("Author:             George Hobbs\n");
   printf("Software to plot a spectrum in an interactive matter\n");
-  printf("\n\nCommand line arguments:\n\n");
 
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                  This help\n");
+	printf("-f <filename>       SDHDF file corresponding to observation\n");
   printf("-beam <num>         Set beam number\n");
-  printf("-f <filename>       SDHDF file corresponding to observation\n");
   printf("-g <string>         PGPLOT graphical device\n");
-  printf("-h                  This help\n");
   printf("-sb <num>           Set the sub-band number (starting from 0)\n");
   printf("-sd <num>           Set the spectral dump number (starting from 0)\n");
   printf("-yuint <string>     The text that will be written on the y-axis (by default this comes from the internal SDHDF attributes)\n");
 
   printf("\nExample:\n\n");
   printf("sdhdf_plotSpectrum -f diff.hdf -sb 0\n");
-  printf("---------------------\n");
-  printf("\n");
-  printf("The plot is interactive and the following key/mouse strokes can be used\n\n");
+
+  printf("\n\nThe plot is interactive and the following key/mouse strokes can be used\n\n");
   printf("Left mouse click or A  Display on the screen the current cursor position\n");
   printf(">                   Move to the next sub-band\n");
   printf("<                   Move to the previous sub-band\n");
@@ -102,12 +99,6 @@ int main(int argc,char *argv[])
   int ibeam=0;
   char grDev[128]="/xs";
 
-	// Display help if no commands given
-  if (argc==1) {
-    help();
-		exit(1);
-	}
-
   // Defaults
   idump = iband = 0;
 
@@ -116,6 +107,11 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
       exit(1);
     }
+
+	if (argc==1) {
+	  help();
+		exit(1);
+	}
 
   for (i=1;i<argc;i++)
     {
@@ -267,9 +263,9 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 					freqFrame = sdhdf_getAttribute(&inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq, "FRAME");
 					freqUnit = sdhdf_getAttribute(&inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq, "UNIT");
 		    }
-			printf("yUnit set to: %s\n", yUnit);
+			/*printf("yUnit set to: %s\n", yUnit);
 			printf("freqFrame set to: %s\n",freqFrame);
-			printf("freqUnit set to: %s\n",freqUnit);
+			printf("freqUnit set to: %s\n",freqUnit);*/
 		}
 	      reload=0;
 	    }

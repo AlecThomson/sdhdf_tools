@@ -7,18 +7,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -37,6 +37,7 @@
 #include <cpgplot.h>
 #include "TKfit.h"
 
+#define VNUM "v2.0"
 #define MAX_RFI 512
 
 void flagDataPoint(sdhdf_fileStruct *inFile,int b,int i,int j,int s);
@@ -46,10 +47,24 @@ void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i)
 
 void help()
 {
-  printf("sdhdf_autoFlag:   code to carry out automatic flagging of a data file\n");	 
-  exit(1);
-}
+  printf("sdhdf_autoFlag:     %s\n",VNUM);
+  printf("sdhfProc version:   %s\n",SOFTWARE_VER);
+  printf("Author:             George Hobbs\n");
+  printf("Software to conduct automatic RFI flagging\n");
 
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                  This help\n");
+  printf("-e <extension>      Output file extension\n");
+  printf("-persistent         Flag persistent RFI\n");
+	printf("-transient          Flag transient RFI\n");
+  printf("-autoFlagDump       ?? \n");
+  printf("-flag               ?? \n");
+
+	printf("\nExample:\n\n");
+  printf("sdhdf_autoFlag -e flag -persistent file1.hdf\n\n");
+
+	exit(1);
+}
 
 int main(int argc,char *argv[])
 {
@@ -63,11 +78,11 @@ int main(int argc,char *argv[])
   int nRFI=0;
   int setWt = 0;
   int nManualRFI = 0;
-  
+
   char oname[MAX_STRLEN];
   sdhdf_fileStruct *outFile;
   int nband;
-  
+
   int fromFlag = 0; // = 1 => copy flag table from another file
   int bandEdgeFlag = 0;
   int persistentFlag = 0;
@@ -77,7 +92,7 @@ int main(int argc,char *argv[])
   int flagIt;
   int haveFlag;
   int copyType;
-  
+
   float bandEdge=0;
   sdhdf_rfi rfi[MAX_RFI];
   sdhdf_rfi manual_rfi[MAX_RFI];
@@ -85,7 +100,7 @@ int main(int argc,char *argv[])
   char args[MAX_ARGLEN]="";
   int autoFlagDump=0;
   float autoFlagDump_sigma=3;
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -97,15 +112,20 @@ int main(int argc,char *argv[])
       exit(1);
     }
   sdhdf_storeArguments(args,MAX_ARGLEN,argc,argv);
+
+	if (argc==1)
+    help();
+
   for (i=1;i<argc;i++)
-    {      
+    {
       //      if (strcmp(argv[i],"-from")==0)	{strcpy(fromFileName,argv[++i]); flagType=1; fromFlag=1;}
-      if (strcmp(argv[i],"-e")==0) strcpy(extension,argv[++i]);
+			if (strcmp(argv[i],"-h")==0 || strcmp(argv[i],"-f")==0)
+	help();
+      else if (strcmp(argv[i],"-e")==0) strcpy(extension,argv[++i]);
       else if (strcmp(argv[i],"-edge")==0) {sscanf(argv[++i],"%f",&bandEdge); bandEdgeFlag=1;}
       else if (strcmp(argv[i],"-persistent")==0) {persistentFlag=1;}
       else if (strcmp(argv[i],"-transient")==0) {transientFlag=1;}
       else if (strcasecmp(argv[i],"-autoFlagDump")==0) {autoFlagDump=1; sscanf(argv[++i],"%f",&autoFlagDump_sigma);}
-      else if (strcmp(argv[i],"-h")==0) help();
       else if (strcasecmp(argv[i],"-flag")==0)
 	{
 	  manual_rfi[nManualRFI].type=1;
@@ -116,7 +136,7 @@ int main(int argc,char *argv[])
       else
 	strcpy(fname[nFiles++],argv[i]);
     }
-  
+
   for (ii=0;ii<nFiles;ii++)
     {
       printf("Processing: %s\n",fname[ii]);
@@ -127,14 +147,15 @@ int main(int argc,char *argv[])
       printf(" .... output filename: %s\n",oname);
 
       // Copy the input file to the output file
+			// NOTE metadata from file and /metadata are missing from output file
       sdhdf_initialiseFile(outFile);
       sdhdf_openFile(oname,outFile,3);
 
       sdhdf_addHistory(inFile->history,inFile->nHistory,"sdhdf_autoFlag","INSPECTA software to add flags automatically",args);
       inFile->nHistory++;
       sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
-      
-      sdhdf_copyRemainder(inFile,outFile,0);      
+
+      sdhdf_copyRemainder(inFile,outFile,0);
       sdhdf_loadMetaData(outFile);
 
       // Load the trnasient and persistent RFI
@@ -171,7 +192,7 @@ int main(int argc,char *argv[])
 	      sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 	      sdhdf_releaseBandData(inFile,b,i,1);
 	      printf("Complete band %d\n",i);
-	      
+
 
 	    }
 	  printf("Complete beam %d\n",b);
@@ -179,15 +200,15 @@ int main(int argc,char *argv[])
       printf("Closing input file\n");
       sdhdf_closeFile(inFile);
       printf("Closing output file\n");
-      sdhdf_closeFile(outFile);	  
-      
+      sdhdf_closeFile(outFile);
+
     }
 
   free(inFile);
   free(outFile);
 
   // FREE THE FROM FILE -- FIX ME!
-  
+
 }
 
 void flagDataPoint(sdhdf_fileStruct *inFile,int b,int i,int j,int s)
@@ -205,7 +226,7 @@ void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i)
   float meanDump,sdevDump;
   float meanVals[inFile->beam[b].bandHeader[i].ndump];
   int nc=0;
-  
+
   // Calculate the mean and variance
   v=v2=0;
   for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
@@ -216,9 +237,9 @@ void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i)
 	{
 	  if (inFile->beam[b].bandData[i].astro_data.flag[j+s*inFile->beam[b].bandHeader[i].nchan] == 0)
 	    {
-	      val = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
+	      val = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan]
 		     + inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
-	      
+
 	      x += val;
 	      x2 += pow(val,2);
 	      nc++;
@@ -239,7 +260,7 @@ void flagAutoDump(sdhdf_fileStruct *inFile,float autoFlagDump_sigma,int b,int i)
 
   // Now determine what (if anything to flag)
   for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
-    { 
+    {
       if (meanVals[s] > meanDump + autoFlagDump_sigma*sdevDump)
 	{
 	  printf("Flagging spectral dump %d in band %d because of noise level (deviates by %f sigma)\n",s,i,(meanVals[s]-meanDump)/sdevDump);
@@ -255,7 +276,7 @@ void flagPersistentRFI(sdhdf_fileStruct *inFile,sdhdf_rfi *rfi,int nRFI,int b,in
   int k,s,j;
   double freq;
   int haveFlag;
-  
+
   for (k=0;k<nRFI;k++)
     {
       // Is this RFI within the band?
@@ -275,11 +296,11 @@ void flagPersistentRFI(sdhdf_fileStruct *inFile,sdhdf_rfi *rfi,int nRFI,int b,in
 		      flagDataPoint(inFile,b,i,j,s);
 		      haveFlag=1;
 		    }
-		}				      
+		}
 	    }
 	  if (haveFlag==1)
 	    printf(" ... have flagged this RFI\n");
-	  
+
 	}
     }
 }
@@ -305,7 +326,7 @@ void flagTransientRFI(sdhdf_fileStruct *inFile,sdhdf_transient_rfi *transient_rf
 	  for (s=0;s<inFile->beam[b].bandHeader[i].ndump;s++)
 	    {
 	      v1 = v2 = v3 = 0;
-	      
+
 	      n1=n2=0;
 	      flagIt=0;
 	      for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
@@ -313,22 +334,22 @@ void flagTransientRFI(sdhdf_fileStruct *inFile,sdhdf_transient_rfi *transient_rf
 		  freq = inFile->beam[b].bandData[i].astro_data.freq[s*inFile->beam[b].bandHeader[i].nchan+j];
 		  if (freq > transient_rfi[k].f0 && freq < transient_rfi[k].f1)
 		    {
-		      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
+		      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan]
 				+ inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
 		      if (v1 < sumPol) v1 = sumPol;
 		      n1 ++;
 		    }
 		  if (freq > transient_rfi[k].f2 && freq < transient_rfi[k].f3)
 		    {
-		      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan] 
+		      sumPol = (inFile->beam[b].bandData[i].astro_data.pol1[j+s*inFile->beam[b].bandHeader[i].nchan]
 				+ inFile->beam[b].bandData[i].astro_data.pol2[j+s*inFile->beam[b].bandHeader[i].nchan]);
 		      v2 +=  sumPol;
 		      n2 ++;
 		    }
 		}
 	      v2/=(double)n2; // SHOULD CHECK n2 > 0 --- FIX ME
-	      
-	      
+
+
 	      if (v1 > transient_rfi[k].threshold*v2)
 		{
 		  flagIt=1;
@@ -338,7 +359,7 @@ void flagTransientRFI(sdhdf_fileStruct *inFile,sdhdf_transient_rfi *transient_rf
 		printf("**Not** flagging dump %d, comparing %g and %g (%d %d)\n",s,v1,v2,n1,n2);
 	      if (flagIt==1) // Do the flagging if necessary
 		{
-		
+
 		  for (j=0;j<inFile->beam[b].bandHeader[i].nchan;j++)
 		    {
 		      // FIX ME: using [0] for frequency dump
@@ -347,7 +368,7 @@ void flagTransientRFI(sdhdf_fileStruct *inFile,sdhdf_transient_rfi *transient_rf
 			{
 			  flagDataPoint(inFile,b,i,j,s);
 			}
-		    }					  
+		    }
 		}
 	    }
 	}
