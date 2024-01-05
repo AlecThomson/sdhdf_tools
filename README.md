@@ -41,22 +41,30 @@ Cfitsio library
 * Navigate to the INSPECTA source code directory (inspecta/)
 
 * Run the bootstrap script:
+```
 ./bootstrap
+```
 
 * Run configure with e.g.:
+```
 ./configure --prefix=/path/to/install CFLAGS=-I/path/to/include LDFLAGS=-L/path/to/lib
-
+```
 Where /path/to/install /path/to/include /path/to/lib are full paths to where you
 wish to install it, full path to the prerequisite header files, 
 and full path to the prerequisite libraries respectively.
 
 * Compile it with:
+```
 make
+```
 
 * Install it with:
+```
 make install
+```
 
 * Configure your SDHDF\_RUNTIME environmental variable to point to:
+
 inspecta/runtime
 
 
