@@ -1,38 +1,72 @@
-# README for sdhdf\_tools
+# README for the sdhdf\_tools repository
 
 ## About
 
-This repository contains a collection of tools for interrogating
-Single Dish Hierarchical Data Format (SDHDF) files
+This repository contains a collection of tools for working with 
+Spectral-Domain Hierarchical Data Format (SDHDF) files.
 
-## Prerequisites
+**INSPECTA** is an 'INtegrated SDHDF Processing Engine in C for Telescope data Analysis'. 
+Formerly known as 'sdhdfProc', INSPECTA is a software package to read, 
+manipulate and process radio astronomy data in SDHDF format.
 
-The C code requires the following dependencies to be installed:
-* Erfa (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
-* HDF5 library (https://www.hdfgroup.org/downloads/hdf5) 
-* Pgplot library (http://www.astro.caltech.edu/~tjp/pgplot/)
-* Calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
-* Cfitsio library
+**Author**    George.Hobbs@csiro.au
+**Copyright** CSIRO 2020, 2021, 2022, 2023, 2024
 
-The python modules require the following dependencies to be installed:
-* Python 3
 
-The code has been tested with the following library versions installed:
-* liberfa 1.3.0-2
-* libhdf5 1.10.0
-* pgplot5 5.2.2-19.3
-* calceph 3.0.0
-* cfitsio 3.430-2
+## Contents
+
+* containers
+* docs
+* inspecta 
+
+
+## Building INSPECTA
+
+To build INSPECTA, please follow the steps below:
+* Install prerequisites:
+Erfa (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
+HDF5 library (https://www.hdfgroup.org/downloads/hdf5) 
+Pgplot library (http://www.astro.caltech.edu/~tjp/pgplot/)
+Calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
+Cfitsio library
+
+* Navigate to the INSPECTA source code directory (inspecta/)
+
+* Run the bootstrap script:
+./bootstrap
+
+* Run configure with e.g.:
+./configure --prefix=/path/to/install CFLAGS=-I/path/to/include LDFLAGS=-L/path/to/lib
+Where /path/to/install /path/to/include /path/to/lib are full paths to where you
+wish to install it, full path to the prerequisite header files, 
+and full path to the prerequisite libraries respectively.
+
+* Compile it with:
+make
+
+* Install it with:
+make install
+
+* Configure your SDHDF\_RUNTIME environmental variable to point to:
+inspecta/runtime
+
 
 ## Branches
 
+The repository has the following branches available:
+* master
+* sofa\_build
 The master branch requires the ERFA library (SOFA replacement) by default
 Checkout the 'sofa\_build' branch if you need to use the SOFA library
+* sdhdfv3
+Compatible with data written in SDHDF <=v3.0
+
 
 ## Test data
 
 Accompanying this repository is the sdhdf\_test\_data repository:
 * https://bitbucket.csiro.au/scm/cpda/sdhdf\_test\_data.git
+
 
 ## More information
 
