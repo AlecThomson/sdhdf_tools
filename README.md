@@ -27,10 +27,15 @@ manipulate and process radio astronomy data in SDHDF format.
 To build INSPECTA, please follow the steps below:
 
 * Install prerequisites:
+
 Erfa (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
+
 HDF5 library (https://www.hdfgroup.org/downloads/hdf5) 
+
 Pgplot library (http://www.astro.caltech.edu/~tjp/pgplot/)
+
 Calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
+
 Cfitsio library
 
 * Navigate to the INSPECTA source code directory (inspecta/)
