@@ -6,6 +6,7 @@ This repository contains a collection of tools for working with
 Spectral-Domain Hierarchical Data Format (SDHDF) files.
 
 **INSPECTA** is an 'INtegrated SDHDF Processing Engine in C for Telescope data Analysis'. 
+
 Formerly known as 'sdhdfProc', INSPECTA is a software package to read, 
 manipulate and process radio astronomy data in SDHDF format.
 
@@ -23,6 +24,7 @@ manipulate and process radio astronomy data in SDHDF format.
 ## Building INSPECTA
 
 To build INSPECTA, please follow the steps below:
+
 * Install prerequisites:
 Erfa (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
 HDF5 library (https://www.hdfgroup.org/downloads/hdf5) 
@@ -57,6 +59,7 @@ The repository has the following branches available:
 * master
 * sofa\_build
 The master branch requires the ERFA library (SOFA replacement) by default
+
 Checkout the 'sofa\_build' branch if you need to use the SOFA library
 * sdhdfv3
 Compatible with data written in SDHDF <=v3.0
