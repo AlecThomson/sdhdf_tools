@@ -11,6 +11,7 @@ Formerly known as 'sdhdfProc', INSPECTA is a software package to read,
 manipulate and process radio astronomy data in SDHDF format.
 
 **Author**    George.Hobbs@csiro.au
+
 **Copyright** CSIRO 2020, 2021, 2022, 2023, 2024
 
 
@@ -39,6 +40,7 @@ Cfitsio library
 
 * Run configure with e.g.:
 ./configure --prefix=/path/to/install CFLAGS=-I/path/to/include LDFLAGS=-L/path/to/lib
+
 Where /path/to/install /path/to/include /path/to/lib are full paths to where you
 wish to install it, full path to the prerequisite header files, 
 and full path to the prerequisite libraries respectively.
@@ -58,9 +60,10 @@ inspecta/runtime
 The repository has the following branches available:
 * master
 * sofa\_build
-The master branch requires the ERFA library (SOFA replacement) by default
 
-Checkout the 'sofa\_build' branch if you need to use the SOFA library
+(The master branch requires the ERFA library by default.
+Checkout the 'sofa\_build' branch if you need to use the SOFA library)
+
 * sdhdfv3
 Compatible with data written in SDHDF <=v3.0
 
