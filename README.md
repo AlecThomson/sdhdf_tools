@@ -10,12 +10,11 @@ Spectral-Domain Hierarchical Data Format (SDHDF) files.
 Formerly known as 'sdhdfProc', INSPECTA is a software package to read, 
 manipulate and process radio astronomy data in SDHDF format.
 
-**Author**    George.Hobbs@csiro.au
+**Author:**    George.Hobbs@csiro.au
 
-**Copyright** CSIRO 2020, 2021, 2022, 2023, 2024
+**Copyright:** CSIRO 2020, 2021, 2022, 2023, 2024
 
-
-
+##
 ## Contents
 
 * containers
