@@ -26,7 +26,7 @@ manipulate and process radio astronomy data in SDHDF format.
 
 To build INSPECTA, please follow the steps below:
 
-* Install prerequisites:
+1. Install prerequisites:
 
 Erfa (https://github.com/liberfa/erfa) or the SOFA library (http://www.iausofa.org/)
 
@@ -38,14 +38,14 @@ Calceph library (https://www.imcce.fr/recherche/equipes/asd/calceph/)
 
 Cfitsio library
 
-* Navigate to the INSPECTA source code directory (inspecta/)
+2. Navigate to the INSPECTA source code directory (inspecta/)
 
-* Run the bootstrap script:
+3. Run the bootstrap script:
 ```
 ./bootstrap
 ```
 
-* Run configure with e.g.:
+4. Run configure with e.g.:
 ```
 ./configure --prefix=/path/to/install CFLAGS=-I/path/to/include LDFLAGS=-L/path/to/lib
 ```
@@ -53,17 +53,17 @@ Where /path/to/install /path/to/include /path/to/lib are full paths to where you
 wish to install it, full path to the prerequisite header files, 
 and full path to the prerequisite libraries respectively.
 
-* Compile it with:
+5. Compile it with:
 ```
 make
 ```
 
-* Install it with:
+6. Install it with:
 ```
 make install
 ```
 
-* Configure your SDHDF\_RUNTIME environmental variable to point to:
+7. Configure your SDHDF\_RUNTIME environmental variable to point to:
 
 inspecta/runtime
 
