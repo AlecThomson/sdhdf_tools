@@ -730,12 +730,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       cpgsci(1); drawIncludeWeights(nchan,freq,pol1,wt); cpgsci(1);
       if (sump==0 && npol > 1)
 	{
-	  cpgsci(2); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
+	  cpgsci(6); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
 	}
     }
   else if (polPlot==2)
     {
-      cpgsci(2); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
+      cpgsci(6); drawIncludeWeights(nchan,freq,pol2,wt); cpgsci(1);
       cpgsci(7); drawIncludeWeights(nchan,freq,pol3,wt); cpgsci(1);
       cpgsci(4); drawIncludeWeights(nchan,freq,pol4,wt); cpgsci(1);
       cpgsci(1); drawIncludeWeights(nchan,freq,pol1,wt); cpgsci(1);

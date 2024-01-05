@@ -550,7 +550,7 @@ int main(int argc,char *argv[])
 	//	else
 	//	  cpgenv(minx,maxx,miny,maxy,0,1);
 	//	cpglab("Observing frequency (MHz)","Signal strength","");
-	//	cpgsci(2);
+	//	cpgsci(6);
 	cpgsch(charHeight);
 	if (charHeight < 1.1)
 	  cpgsvp(0.10,0.95,0.10,0.90);
@@ -920,7 +920,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
       if (flagit==1 && region==0)
 	{
 	  i1 = i;
-	  cpgsci(2);
+	  cpgsci(6);
 	  cpgline(i1-i0,px+i0,py1+i0);
 	  cpgsci(4);
 	  cpgline(i1-i0,px+i0,py2+i0);
@@ -939,7 +939,7 @@ void drawBand(float f1,float f2,int nVals,float *px,float *pflag,float *py1,floa
   if (region==0)
     {
       i1 = i-1;
-      cpgsci(2);
+      cpgsci(6);
       cpgline(i1-i0,px+i0,py1+i0);
       cpgsci(4);
       cpgline(i1-i0,px+i0,py2+i0);

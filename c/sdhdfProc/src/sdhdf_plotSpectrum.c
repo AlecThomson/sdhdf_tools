@@ -497,7 +497,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 		  cpgsci(1); cpgline(i-1-i0,freq+i0,pol1+i0); cpgsci(1);
 		  if (npol > 1)
 		    {
-		      cpgsci(2); cpgline(i-1-i0,freq+i0,pol2+i0); cpgsci(1);
+		      cpgsci(6); cpgline(i-1-i0,freq+i0,pol2+i0); cpgsci(1);
 		    }
 		  drawIt=-1;
 
@@ -508,7 +508,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	      cpgsci(1); cpgline(i-1-i0,freq+i0,pol1+i0); cpgsci(1);
 	      if (npol > 1)
 		{
-		  cpgsci(2); cpgline(i-1-i0,freq+i0,pol2+i0); cpgsci(1);
+		  cpgsci(6); cpgline(i-1-i0,freq+i0,pol2+i0); cpgsci(1);
 		}
 	    }
 	}
@@ -517,7 +517,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,double 
 	  cpgsci(1); cpgline(nchan,freq,pol1); cpgsci(1);
 	  if (npol > 1)
 	    {
-	      cpgsci(2); cpgline(nchan,freq,pol2); cpgsci(1);
+	      cpgsci(6); cpgline(nchan,freq,pol2); cpgsci(1);
 	    }
 	}
 
