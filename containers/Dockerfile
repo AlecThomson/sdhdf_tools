@@ -51,11 +51,11 @@ RUN cd / \
 RUN echo "Installing sdhdfProc"
 RUN cd / \
     && git clone https://bitbucket.csiro.au/scm/cpda/sdhdf_tools.git \
-    && cd sdhdf_tools/c/sdhdfProc \
+    && cd sdhdf_tools/inspecta \
     && ./bootstrap  \
     && ./configure --prefix=/ CFLAGS="-I/usr/include/calceph-3.4.7/include -I/usr/include/hdf5/serial/" LDFLAGS="-L/usr/include/calceph-3.4.7/lib -L/usr/lib/x86_64-linux-gnu/hdf5/serial"  \
     && make \
     && make install \
     && cd / \
-    && mv sdhdf_tools/c/sdhdfProc/runtime /usr/include/ \
+    && mv sdhdf_tools/inspecta/runtime /usr/include/ \
     && rm -rf sdhdf_tools/
