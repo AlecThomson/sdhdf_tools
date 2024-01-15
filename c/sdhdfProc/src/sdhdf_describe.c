@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "sdhdfProc.h"
+#include "inspecta.h"
 
 #define VNUM "v2.0"
 
