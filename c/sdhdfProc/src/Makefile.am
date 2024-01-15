@@ -28,10 +28,11 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_listLines
 
 COMMON_SRCS = sdhdfProc_maths.c \
-  sdhdfProc_fileManipulation.c \
-  sdhdfProc_metadata.c \
+  fileManipulation.c \
+  metadata.c \
   sdhdfProc_calibration.c \
   sdhdfProc_ephemeris.c \
+  attributes.c \
   T2toolkit.c \
   TKfit.c
 
