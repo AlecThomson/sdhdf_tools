@@ -26,6 +26,9 @@
 //
 #include <complex.h>
 
+// toggle debugging [1=TRUE]
+#define DEBUG 1
+
 #define SOFTWARE_VER "v1.1"
 #define MAX_STRLEN     512
 #define MAX_ARGLEN     4096         // Maximum number of characters to be stored in HISTORY from the command line
@@ -187,7 +190,7 @@ int sdhdf_getTelescopeDirName(char *tel,char *dir);
 void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadTransientRFI(sdhdf_transient_rfi *rfi,int *nRFI,int maxRFI,char *tel);
 void sdhdf_loadMetaData(sdhdf_fileStruct *inFile);  // Include loading attributes
-void sdhdf_loadFile(sdhdf_fileStruct *inFile);
+//void sdhdf_loadFile(sdhdf_fileStruct *inFile);
 void sdhdf_loadGroup(sdhdf_fileStruct *inFile, char *grp, sdhdf_attributes_struct *attrStruct);
 void sdhdf_loadPrimaryHeader(sdhdf_fileStruct *inFile);
 void sdhdf_loadBeamHeader(sdhdf_fileStruct *inFile);
@@ -208,6 +211,7 @@ void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,i
 void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_label,float *vals);
 
 // Attributes
+void sdhdf_loadGroupAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attributes_struct *attrStruct);
 void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attributes_struct *attrStruct);
 void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile0,int beam,int band,sdhdf_attributes_struct *dataAttributes,int *nDataAttributes,
 				  sdhdf_attributes_struct *freqAttributes,int *nFreqAttributes);
@@ -217,6 +221,7 @@ void sdhdf_readAttributes(int num_attrs, sdhdf_attributes_struct *attrStruct);
 //void sdhdf_readAttributeFromNum(sdhdf_fileStruct *inFile,char *dataName,int num,sdhdf_attributes_struct *attribute);
 char* sdhdf_getAttribute(sdhdf_attributes_struct *attrStruct, char *attr_name);
 void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out);
+void sdhdf_copyAttributes2(sdhdf_attributes_struct *in, sdhdf_attributes_struct *out);
 void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attr); //char *attrName,char *result);
 
 // Loading data

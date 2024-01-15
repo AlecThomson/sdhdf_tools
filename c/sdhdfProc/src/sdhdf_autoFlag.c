@@ -159,6 +159,10 @@ int main(int argc,char *argv[])
       sdhdf_copyRemainder(inFile,outFile,0);
 			sdhdf_loadMetaData(outFile);
 
+			// TESTING
+			sdhdf_copyAttributes2(inFile->metaAttr, outFile->metaAttr);
+			//
+
 			// NEW. TODO: history dataset is not updated here
 			//sdhdf_addHistory(outFile->history,outFile->nHistory,"sdhdf_autoFlag","INSPECTA software to add flags automatically",args);
 			//outFile->nHistory++;

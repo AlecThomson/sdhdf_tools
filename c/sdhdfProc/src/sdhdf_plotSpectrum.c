@@ -1,26 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to plot a spectrum
-//
-// Usage:
-// sdhdf_plotSpectrum -f <filename>
-//
+// sdhdf_plotSpectrum
+// Software to plot a spectrum from an SDHDF file interactively
 //
 
 #include <stdio.h>
@@ -41,10 +38,10 @@ void drawRecombLine(float minX,float maxX,float minY,float maxY);
 
 void help()
 {
-  printf("sdhdf_plotSpectrum: %s\n",VNUM);
+  printf("\nsdhdf_plotSpectrum: %s\n",VNUM);
   printf("sdhfProc version:   %s\n",SOFTWARE_VER);
   printf("Author:             George Hobbs\n");
-  printf("Software to plot a spectrum in an interactive matter\n");
+  printf("Software to plot a spectrum from an SDHDF file interactively\n");
 
   printf("\nCommand line arguments:\n\n");
 	printf("-h                  This help\n");
@@ -56,7 +53,7 @@ void help()
   printf("-yuint <string>     The text that will be written on the y-axis (by default this comes from the internal SDHDF attributes)\n");
 
   printf("\nExample:\n\n");
-  printf("sdhdf_plotSpectrum -f diff.hdf -sb 0\n");
+  printf("sdhdf_plotSpectrum -f file.hdf -sb 0\n");
 
   printf("\n\nThe plot is interactive and the following key/mouse strokes can be used\n\n");
   printf("Left mouse click or A  Display on the screen the current cursor position\n");
@@ -79,7 +76,7 @@ void help()
   printf("u                   Unzoom - back to the original plot scales\n");
   printf("w                   Toggle dividing the spectra by the weights in the file\n");
   printf("x                   Toggle the x-axis\n");
-  printf("z                   Start a zoom region from the current mouse position, move the mouse and click to set the zoom region\n");
+  printf("z                   Start a zoom region from the current mouse position, move the mouse and click to set the zoom region\n\n");
 }
 
 

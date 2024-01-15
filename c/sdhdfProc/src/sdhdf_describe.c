@@ -128,17 +128,17 @@ int main(int argc,char *argv[])
 
   for (i=0;i<nFiles;i++)
     {
-			printf("INITIALISING\n");
+			if (DEBUG == 1) printf("INITIALISING\n");
       sdhdf_initialiseFile(inFile);
-			printf("INITIALISING COMPLETE\n");
+			if (DEBUG == 1) printf("INITIALISING COMPLETE\n");
 
       if (sdhdf_openFile(fname[i],inFile,1)==-1)
 	printf("Warning: unable to open file >%s<. Skipping\n",fname[i]);
       else
 	{
-		printf("LOADING METADATA\n");
+		if (DEBUG == 1) printf(">LOADING ALL METADATA\n");
 	  sdhdf_loadMetaData(inFile);
-		printf("LOADING METADATA COMPLETE\n");
+		if (DEBUG == 1) printf("<FINISHED LOADING ALL METADATA\n\n");
 
 	  if (atoa==1)
 	    {
@@ -346,30 +346,12 @@ int main(int argc,char *argv[])
 	    }
 	  if (showAttributes==1)
 	    {
-				// TODO: loop over all the datasets here
+				// TODO: loop over all the datasets here!
 	      printf("\nReading attributes for primary_header...\n");
-
-				// NEW
-				// have something like
-				//printf("%d\n", inFile->nPrimaryAttributes);
-				//& = sdhdf_getNattributes(inFile, dataName);
 				sdhdf_readAttributes(inFile->nPrimaryAttributes, &inFile->primaryAttr);
-				//sdhdf_readAttributes(&inFile->primaryAttr);
-				//
 
-	      /*for (j=0;j<inFile->nPrimaryAttributes;j++)
-				  {
-						printf("%-20.20s %s\n",inFile->primaryAttr[j].key,inFile->primaryAttr[j].value);
-				  }*/
-
-        //
-				//
-
-	      //printf("\n\nBeam_header\n\n");
 				printf("\nReading attributes for beam_header...\n");
 				sdhdf_readAttributes(inFile->nBeamHeaderAttributes, &inFile->beamHeaderAttr);
-	      //for (j=0;j<inFile->nBeamHeaderAttributes;j++)
-		    //printf("%-20.20s %s\n",inFile->beamHeaderAttr[j].key,inFile->beamHeaderAttr[j].value);
 	    }
 
 	  sdhdf_closeFile(inFile);

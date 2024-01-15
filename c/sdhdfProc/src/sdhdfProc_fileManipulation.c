@@ -1069,7 +1069,6 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
     sdhdf_copyEntireGroup(groupName,inFile,outFile);
 
-
   // Beams
   if (type!=1)
     {
@@ -1103,7 +1102,7 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
 		    sdhdf_copyEntireGroup(groupName,inFile,outFile);
 		  else
 		    {
-		      // Metadata
+		      // metadata
 		      sprintf(groupName,"/%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,METADATA_GRP);
 		      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
@@ -1127,12 +1126,12 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
 		      if (sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
 
-		      // Flagging information
+		      // flags
 		      sprintf(groupName,"%s/%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,ASTRONOMY_DATA_GRP,FLAGS);
 		      if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
 
-		      // Data weights information
+		      // weights
 		      sprintf(groupName,"%s/%s/%s/%s",inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label,ASTRONOMY_DATA_GRP,WEIGHTS);
 		      if (sdhdf_checkGroupExists(inFile,groupName) == 0 && sdhdf_checkGroupExists(outFile,groupName) == 1)
 			sdhdf_copyEntireGroup(groupName,inFile,outFile);
@@ -1199,7 +1198,6 @@ void sdhdf_writeCalProc(sdhdf_fileStruct *outFile,int ibeam,int iband,char *band
   status = H5Gclose(group_id);
 
 }
-
 
 void sdhdf_copyEntireGroup(char *bandLabel,sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile)
 {
