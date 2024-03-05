@@ -27,6 +27,8 @@ char* sdhdf_getAttribute(sdhdf_attributes_struct *attrStruct, char *attr_name)
 	int i;
 	char* def = malloc(MAX_STRLEN * sizeof(char));
 
+	if (DEBUG == 1) printf("In sdhdf_getAttribute...\n");
+
 	for (i=0;i<MAX_ATTRIBUTES;i++)
 		{
 			if (strcmp(attrStruct[i].name,attr_name)==0)
@@ -45,18 +47,26 @@ char* sdhdf_getAttribute(sdhdf_attributes_struct *attrStruct, char *attr_name)
 void sdhdf_readAttributes(int num_attrs, sdhdf_attributes_struct *attrStruct)
 {
 	int i;
+
+	if (DEBUG == 1) printf("In sdhdf_readAttributes...\n");
+
 	for (i=0;i<MAX_ATTRIBUTES;i++)
 		{
 			if (strcmp(&attrStruct[i].name,"")==0) break;
-			printf("NAME:        %s\n", &attrStruct[i].name);
-			printf("DESCRIPTION: %s\n", &attrStruct[i].key);
-			printf("UNIT:        %s\n", &attrStruct[i].value);
-			printf("DEFAULT:     %s\n\n", &attrStruct[i].def);
+			if (DEBUG == 1)
+			  {
+					printf("Reading attribute: %s\n", &attrStruct[i].name);
+					printf("NAME:        %s\n", &attrStruct[i].name);
+					printf("DESCRIPTION: %s\n", &attrStruct[i].key);
+					printf("UNIT:        %s\n", &attrStruct[i].value);
+					printf("DEFAULT:     %s\n\n", &attrStruct[i].def);
+				}
 		}
 
 }
 
-void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out)
+// OLD
+/*void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_struct *out,int *n_out)
 {
   int i;
   *n_out = n_in;
@@ -72,16 +82,23 @@ void sdhdf_copyAttributes(sdhdf_attributes_struct *in,int n_in,sdhdf_attributes_
       else if (in[i].attributeType==2)
 	out[i].ivalue = in[i].ivalue;
     }
-}
+}*/
 
+// NEW
 void sdhdf_copyAttributes2(sdhdf_attributes_struct *in, sdhdf_attributes_struct *out)
 {
 	int i;
+
+	if (DEBUG == 1) printf("In sdhdf_copyAttributes2...\n");
+
 	for (i=0;i<MAX_ATTRIBUTES;i++)
     {
-			printf("In sdhdf_copyAttributes...\n");
-			// hmm inFile->metaAttr appears to be empty!!
-			if (strcmp(in[i].name,"")==0) break;
+			if (strcmp(in[i].name,"")==0)
+			  {
+					printf("WARNING: Attribute name '%s' is empty!\n", in[i].name);
+					break;
+				}
+			if (DEBUG == 1) printf("Copying attribute '%s'\n", in[i].name);
 			strcpy(out[i].name,in[i].name);
 			strcpy(out[i].key,in[i].key);
       strcpy(out[i].value,in[i].value);
@@ -92,32 +109,66 @@ void sdhdf_copyAttributes2(sdhdf_attributes_struct *in, sdhdf_attributes_struct 
 
 void sdhdf_loadGroupAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attributes_struct *attrStruct)
 {
-    hid_t  attr, attr_id, s1_tid, dataset_id, group_id, dtype;
+    hid_t  attr, attr_id, s1_tid, dataset_id, group_id, dtype, type, type_class, space, space_type;
     herr_t status;
-		//char name[MAX_STRLEN];
 		char attr_name[MAX_STRLEN];
+		char space_name[MAX_STRLEN];
 		int i;
 		int num_attrs;
+		//char *buffer;
+	  //buffer = (char *)malloc(sizeof(sdhdf_attributes_struct));
 
-		printf("dataName: %s\n", dataName);
-		printf("to here 1\n");
-
+		if (DEBUG == 1) printf("In sdhdf_loadGroupAttributes...\n");
 		if (DEBUG == 1) printf("Loading attributes for %s...\n", dataName);
+
+		//printf("to here 1\n");
+
 		group_id = H5Gopen(inFile->fileID, dataName, H5P_DEFAULT);
 		num_attrs = H5Aget_num_attrs(group_id);
+		//printf("num_attrs: %d\n", num_attrs); //2
 
-		for (i=0;i<num_attrs;i++)
+		// interestingly if the num_attrs == 1, it works ok
+		//for (i=0;i<num_attrs;i++)
+		for (i=1;i<num_attrs;i++)
 			{
-				printf("start loop %d\n", i);
+				//printf("start loop %d\n", i);
 
 				attr_id = H5Aopen_idx(group_id, i);
 				H5Aget_name(attr_id,MAX_STRLEN,attr_name);
-				printf("Name: %s\n", attr_name);
+
+				// get attribute type
+				space = H5Aget_space(attr_id);
+				space_type = H5Sget_simple_extent_type(space);
+				type = H5Aget_type(attr_id);
+				type_class   = H5Tget_class(type);
+				if (space_type == H5S_SCALAR)
+					strcpy(space_name, "H5S_SCALAR");
+				else if (space_type == H5S_SIMPLE)
+					strcpy(space_name, "H5S_SIMPLE");
+				else if (space_type == H5S_NULL)
+					strcpy(space_name, "H5S_NULL");
+				else
+					strcpy(space_name, "UNKNOWN");
+
+				// type_class = 6 COMPOUND
+				// type_class = 3, space = 119, space_type = 0, space_name = H5S_SCALAR, attr_name = CLASS
+				// type_class = 6, space = 120, space_type = 1, space_name = H5S_SIMPLE, attr_name = REFERENCE_LIST
+				// type_class = 3, space = 121, space_type = 1, space_name = H5S_SIMPLE, attr_name = DIMENSION_LABELS
+				// type_class = 9, space = 141, space_type = 1, space_name = H5S_SIMPLE, attr_name = DIMENSION_LIST
+
+				if (DEBUG == 1) printf("attr_id = %d, type = %d, type_class = %d, space = %d, space_type = %d, space_name = %s, attr_name = %s\n\n",
+								(int)attr_id,
+								(int)type, (int)type_class,
+								(int)space, (int)space_type,
+								space_name, attr_name);
 
 				attr = H5Aopen(group_id, attr_name, H5P_DEFAULT);
 				dtype = H5Tcopy(H5T_C_S1);
 				status = H5Tset_size(dtype, MAX_STRLEN);
 
+				// abort trap: 6
+				// appears that the attrStruct object has only allocated enough memory
+				// for a single compound attribute
 				s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct));
 
 				H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype);
@@ -125,11 +176,11 @@ void sdhdf_loadGroupAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_a
 				H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype);
 				H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype);
 
-				//printf("size of s1_tid in bytes : %d\n", sizeof(s1_tid));
+				//printf("size of s1_tid in bytes : %d\n", sizeof(s1_tid)); //8
 
-				// BREAKS ON THIS LINE on the second loop with abort trap 6
-				//status = H5Aread(attr, s1_tid, &attrStruct[i]);
-				//
+				status = H5Aread(attr, s1_tid, &attrStruct[i]);
+				//status = H5Aread(attr, s1_tid, &buffer);
+				//strcpy(&attrStruct[i],buffer);
 
 				strcpy(&attrStruct[i].name, attr_name);
 
@@ -138,20 +189,20 @@ void sdhdf_loadGroupAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_a
 				if (DEBUG == 1) printf("UNIT:   		 %s\n", &attrStruct[i].value);
 				if (DEBUG == 1) printf("DEFAULT: 	   %s\n", &attrStruct[i].def);
 
-				printf("to here 2\n");
+				//printf("to here 2\n");
 
 				H5Tclose(s1_tid);
 				H5Aclose(attr);
-
+				//exit(1); // TEMP
 			}
 			H5Gclose(group_id);
-			printf("to here 3\n");
-			printf("size of struct in bytes : %d\n", sizeof(attrStruct));
+			//printf("to here 3\n");
+			//printf("size of struct in bytes : %d\n", sizeof(attrStruct)); //8
 }
 
 void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attributes_struct *attrStruct)
 {
-    hid_t  attr, attr_id, s1_tid, dataset_id, group_id, space, dtype1, space_type, type, type_class, dset, rootGroup_id;
+    hid_t  attr, attr_id, s1_tid, dataset_id, group_id, space, dtype, space_type, type, type_class, dset, rootGroup_id;
     herr_t status, hErrVal;
 		char name[MAX_STRLEN];
 		char attr_name[MAX_STRLEN];
@@ -161,7 +212,7 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 		int num_attrs;
 
 		//printf("dataName: %s\n", dataName);
-
+		if (DEBUG == 1) printf("In sdhdf_loadAttributes...\n");
 		if (DEBUG == 1) printf("Loading attributes for %s...\n", dataName);
 		rootGroup_id = H5Gopen(inFile->fileID, "/", H5P_DEFAULT);
 		num_attrs = H5Aget_num_attrs(rootGroup_id);
@@ -189,13 +240,13 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 			  num_attrs = H5Aget_num_attrs(dataset_id);
 		  }*/
 
-		printf("Num attrs: %d\n", num_attrs);
+		//printf("Num attrs: %d\n", num_attrs);
 		//exit(1);
 
 		for (i=0;i<MAX_ATTRIBUTES;i++)
 			{
-				printf("start loop %d\n", i);
-				printf("dataName: %s\n", dataName); //dataName "/" gets reset to " " after first loop
+				//printf("start loop %d\n", i);
+				//printf("dataName: %s\n", dataName); //dataName "/" gets reset to " " after first loop
 
 				if (strcmp(dataName, "/") == 0)
 				{
@@ -219,7 +270,7 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 				{
 					break;
 				}
-				printf("to here 1\n");
+				//printf("to here 1\n");
 				H5Aget_name(attr_id,MAX_STRLEN,attr_name);
 
 				// get attribute type
@@ -279,15 +330,15 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 							dataset = H5Gopen(inFile->fileID, dataName, H5P_DEFAULT);
 						}*/
 							attr = H5Aopen(dataset_id, attr_name, H5P_DEFAULT);
-	    		  	dtype1 = H5Tcopy(H5T_C_S1);
-	    		  	status = H5Tset_size(dtype1, MAX_STRLEN);
+	    		  	dtype = H5Tcopy(H5T_C_S1);
+	    		  	status = H5Tset_size(dtype, MAX_STRLEN);
 
 					  	s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct));
 
-					  	H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype1);
-	    		  	H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct, key), dtype1);
-	    		  	H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype1);
-	    		  	H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype1);
+					  	H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype);
+	    		  	H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct, key), dtype);
+	    		  	H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype);
+	    		  	H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype);
 
 					  	status = H5Aread(attr, s1_tid, &attrStruct[i]);
 
@@ -298,7 +349,9 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 					  	if (DEBUG == 1) printf("UNIT:   		 %s\n", &attrStruct[i].value);
 					  	if (DEBUG == 1) printf("DEFAULT: 	   %s\n", &attrStruct[i].def);
 
-							printf("to here 2\n");
+							//printf("size of s1_tid in bytes : %d\n", sizeof(s1_tid));
+
+							//printf("to here 2\n");
 	    		  	H5Tclose(s1_tid);
 							/*if (objStatInfo.type == H5G_DATASET) {
 	    		  		H5Dclose(dataset);
@@ -307,9 +360,9 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 							{
 								H5Gclose(dataset);
 							}*/
-							printf("to here 3\n");
-							H5Aclose(attr_id);
-							printf("to here 4\n");
+							//printf("to here 3\n");
+							//H5Aclose(attr_id);
+							//printf("to here 4\n");
 
 					}
 					else {
@@ -331,7 +384,7 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 				else {
 					if (DEBUG == 1) printf("UNKNOWN datatype: %d", type_class);
 				}
-			printf("end loop %d\n", i);
+			//printf("end loop %d\n", i);
 		}
 		// need to FIX close!!
 		/*if (objStatInfo.type == H5G_DATASET) {
@@ -342,7 +395,7 @@ void sdhdf_loadAttributes(sdhdf_fileStruct *inFile, char *dataName, sdhdf_attrib
 			H5Gclose(dataset);
 		}*/
 		H5Gclose(rootGroup_id);
-		printf("size of struct in bytes : %d\n", sizeof(attrStruct));
+		//printf("size of struct in bytes : %d\n", sizeof(attrStruct));
 }
 
 void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile,int beam,int band,sdhdf_attributes_struct *dataAttributes,int *nDataAttributes,
@@ -370,7 +423,74 @@ void sdhdf_loadDataFreqAttributes(sdhdf_fileStruct *inFile,int beam,int band,sdh
 
 }
 
-void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attribute) //,char *attrName,char *result)
+// NEW: UP TO HERE!! (from sdhdf_modify.c, sdhdf_writeSpectrumData)
+void sdhdf_writeAttributes2(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attrStruct)
+{
+	hid_t  attr, attr_id, s1_tid, dataset_id, group_id, space, dtype1, space_type, type, type_class, dset, rootGroup_id;
+	herr_t status, hErrVal;
+	char name[MAX_STRLEN];
+	char attr_name[MAX_STRLEN];
+	char space_name[MAX_STRLEN];
+	H5G_stat_t objStatInfo;
+	int i;
+	int num_attrs;
+
+	if (DEBUG == 1) printf("In sdhdf_writeAttributes2...\n");
+
+  group_id = H5Gopen(outFile->fileID, dataName, H5P_DEFAULT);
+	//rootGroup_id = H5Gopen(outFile->fileID, "/", H5P_DEFAULT);
+	//num_attrs = H5Aget_num_attrs(group_id);
+	//hErrVal = H5Gget_objinfo(group_id, dataName, 0, &objStatInfo);
+
+	printf("num_attrs: %d\n", num_attrs);
+
+	if (strcmp(dataName, "/") != 0)
+		{
+		if (objStatInfo.type == H5G_DATASET)
+			{
+			// dataset
+			if (DEBUG == 1) printf("Object %s is an HDF dataset\n", dataName);
+			dataset_id = H5Dopen2(outFile->fileID, dataName, H5P_DEFAULT);
+			num_attrs = H5Aget_num_attrs(dataset_id);
+			}
+		else
+			{
+			// group
+			if (DEBUG == 1) printf("Object %s is an HDF group\n", dataName);
+			dataset_id = H5Dopen2(rootGroup_id, dataName, H5P_DEFAULT);
+			num_attrs = H5Aget_num_attrs(dataset_id);
+			}
+		}
+
+	// segfaults here
+	dataset_id = H5Dopen2(outFile->fileID,dataName,H5P_DEFAULT);
+
+	printf("end open dataset\n");
+
+
+	/*for (i=0;i<MAX_ATTRIBUTES;i++)
+		{
+			printf("attr %d\n", i);
+			dtype1 = H5Tcopy(H5T_C_S1);
+			status = H5Tset_size(dtype1, MAX_STRLEN);
+
+			s1_tid = H5Tcreate(H5T_COMPOUND, sizeof(sdhdf_attributes_struct));
+
+			H5Tinsert(s1_tid, "name", HOFFSET(sdhdf_attributes_struct, name), dtype1);
+			H5Tinsert(s1_tid, "description", HOFFSET(sdhdf_attributes_struct, key), dtype1);
+			H5Tinsert(s1_tid, "unit", HOFFSET(sdhdf_attributes_struct, value), dtype1);
+			H5Tinsert(s1_tid, "default", HOFFSET(sdhdf_attributes_struct, def), dtype1);
+
+			space = H5Screate(H5S_SIMPLE);
+      dset = H5Acreate(dataset_id,dataName,s1_tid,space,H5P_DEFAULT,H5P_DEFAULT);
+      status = H5Awrite(dset,s1_tid,&attrStruct[i]);
+
+		}*/
+
+}
+
+// OLD
+/*void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attributes_struct *attribute) //,char *attrName,char *result)
 {
   hid_t memtype,dataset_id,attr,space,stid;
   herr_t status;
@@ -378,6 +498,9 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attribu
   char *result;
 
   result = attribute->value;
+
+	if (DEBUG == 1) printf("In sdhdf_writeAttributes...\n");
+
   //  printf("In writeAttribute with dataName = >%s<, attrName = >%s< and result = >%s<\n",dataName,attribute->key,attribute->value);
   //  printf("AttributeType = %d\n",attribute->attributeType);
   // Python strings are written as variable length strings
@@ -400,7 +523,7 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attribu
   */
 
   // This produces an attribute which is a string
-  if (attribute->attributeType==0)
+  /*if (attribute->attributeType==0)
     {
       stid    = H5Tcopy(H5T_C_S1);
       //  status  = H5Tset_size(stid,H5T_VARIABLE);
@@ -456,7 +579,7 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attribu
       H5Aclose(attr);
       printf("COMPLETE WRITE WITH STATUS: %s\n",status);
       */
-    }
+    //}//
 
   //  memtype = H5Tcopy(H5T_C_S1);
   //  status  = H5Tset_size(memtype,MAX_STRLEN);
@@ -476,4 +599,4 @@ void sdhdf_writeAttribute(sdhdf_fileStruct *outFile,char *dataName,sdhdf_attribu
   //  status = H5Awrite(attr,space,result);
 
 
-}
+//}

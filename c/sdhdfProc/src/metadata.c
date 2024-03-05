@@ -100,20 +100,25 @@ void sdhdf_fixUnderscore(char *input,char *output)
 //
 // Load all available metadata including attributes from the SDHDF file
 //
-void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
+void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)
 {
 	char beam_path[MAX_STRLEN];
+	char band_path[MAX_STRLEN];
+	char meta_path[MAX_STRLEN];
+
+	// **NOTE: sdhdf_loadGroup currently does not assign
+	// memory properly and causes segfaults**
 
   // file
-	if (DEBUG == 1) printf(">LOADING FILE\n");
-	sdhdf_loadGroup(inFile, "/", &inFile->fileAttr);
-	if (DEBUG == 1) printf("<FINISHED FILE\n\n");
+	//if (DEBUG == 1) printf(">LOADING FILE\n");
+	//sdhdf_loadGroup(inFile, "/", &inFile->fileAttr);
+	//if (DEBUG == 1) printf("<FINISHED FILE\n\n");
 
 	// /metadata group
-	if (DEBUG == 1) printf(">LOADING /METADATA\n");
+	//if (DEBUG == 1) printf(">LOADING /METADATA\n");
 	// TODO: currently not getting attributres from group
-  sdhdf_loadGroup(inFile, METADATA_GRP, &inFile->metaAttr);
-	if (DEBUG == 1) printf("<FINISHED /METADATA\n\n");
+  //sdhdf_loadGroup(inFile, METADATA_GRP, &inFile->metaAttr);
+	//if (DEBUG == 1) printf("<FINISHED /METADATA\n\n");
 
 	// abort trap errors from above. Memory allocation issue?
 
@@ -148,38 +153,39 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)  // Include loading attributes
 	if (DEBUG == 1) printf("<FINISHED CONFIG\n\n");
 
 	// /beam group
-	if (DEBUG == 1) printf(">LOADING BEAM\n");
+	//if (DEBUG == 1) printf(">LOADING BEAM\n");
 	// TODO: currently not getting attributres from group
 	// default: beam_0
-	sprintf(beam_path, "%s_0", BEAM_GRP);
-  sdhdf_loadGroup(inFile, beam_path, &inFile->beamAttr);
-	if (DEBUG == 1) printf("<FINISHED BEAM\n\n");
+	//sprintf(beam_path, "%s_0", BEAM_GRP);
+  //sdhdf_loadGroup(inFile, beam_path, &inFile->beamAttr);
+	//if (DEBUG == 1) printf("<FINISHED BEAM\n\n");
 
 	// /beam/metadata group
-	if (DEBUG == 1) printf(">LOADING BEAM/METADATA\n");
+	//if (DEBUG == 1) printf(">LOADING BEAM/METADATA\n");
 	// TODO: currently not getting attributres from group
-	sprintf(beam_path, "%s_0/%s", BEAM_GRP, METADATA_GRP);
-  sdhdf_loadGroup(inFile, beam_path, &inFile->metaAttr);
-	if (DEBUG == 1) printf("<FINISHED BEAM/METADATA\n\n");
+	//sprintf(beam_path, "%s_0/%s", BEAM_GRP, METADATA_GRP);
+  //sdhdf_loadGroup(inFile, beam_path, &inFile->metaAttr);
+	//if (DEBUG == 1) printf("<FINISHED BEAM/METADATA\n\n");
 
 	if (DEBUG == 1) printf(">LOADING BAND HEADER (ASTRO)\n");
 	sdhdf_loadBandHeader(inFile,1);
 	if (DEBUG == 1) printf("<FINISHED BAND HEADER (ASTRO)\n\n");
 
 	// /beam/band group
-	/*printf(">LOADING BEAM/BAND\n");
+	//if (DEBUG == 1) printf(">LOADING BEAM/BAND\n");
 	// TODO: currently not getting attributres from group
-	sprintf(beam_path, "%s_0/%s", BEAM_GRP, METADATA_GRP);
-  sdhdf_loadGroup(inFile, BEAM_GRP, &inFile->bandAttr); // todo
-	printf("<FINISHED BEAM/BAND\n");
+	//sprintf(band_path, "%s_0/%s_SB0", BEAM_GRP, BAND_GRP);
+  //sdhdf_loadGroup(inFile, band_path, &inFile->bandAttr); // todo
+	//if (DEBUG == 1) printf("<FINISHED BEAM/BAND\n");
 
 	// /beam/band/metadata group
-	printf(">LOADING BEAM/BAND/METADATA\n");
+	//if (DEBUG == 1) printf(">LOADING BEAM/BAND/METADATA\n");
 	// TODO: currently not getting attributres from group
-  sdhdf_loadGroup(inFile, BEAM_GRP, &inFile->metaAttr); // todo
-	printf("<FINISHED BEAM/BAND/METADATA\n");*/
+	//sprintf(meta_path, "%s_0/%s_SB0/%s", BEAM_GRP, BAND_GRP, METADATA_GRP);
+  //sdhdf_loadGroup(inFile, meta_path, &inFile->metaAttr); // todo
+	//if (DEBUG == 1) printf("<FINISHED BEAM/BAND/METADATA\n");
 
-	// /beam/band/metadata group
+	// /beam/band/metadata/ datasets
   if (DEBUG == 1) printf(">LOADING OBS HEADER (ASTRO)\n");
 	sdhdf_loadObsHeader(inFile,1);
 	if (DEBUG == 1) printf("<FINISHED OBS HEADER (ASTRO)\n\n");
@@ -225,7 +231,7 @@ void sdhdf_loadGroup(sdhdf_fileStruct *inFile, char *grp, sdhdf_attributes_struc
 			// load attributes
 			sdhdf_loadGroupAttributes(inFile, groupName, &attrStruct);
 		}
-		printf("finished loadgroupattr\n");
+		//printf("finished loadgroupattr\n");
 }
 
 /*void sdhdf_loadFile(sdhdf_fileStruct *inFile)
@@ -1062,6 +1068,11 @@ void sdhdf_loadObsHeader(sdhdf_fileStruct *inFile,int type)
 	      //H5Tinsert(val_tid,"WIND_SPD",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
 				H5Tinsert(val_tid,"WIND_DIRECTION",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
 	      H5Tinsert(val_tid,"WIND_SPEED",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
+				// added in v4
+				H5Tinsert(val_tid,"PRESSURE",HOFFSET(sdhdf_obsParamsStruct,pressure),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"PRESSURE_MSL",HOFFSET(sdhdf_obsParamsStruct,pressureMSL),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"RELATIVE_HUMIDITY",HOFFSET(sdhdf_obsParamsStruct,relHumidity),H5T_NATIVE_DOUBLE);
+				H5Tinsert(val_tid,"TEMPERATURE",HOFFSET(sdhdf_obsParamsStruct,temp),H5T_NATIVE_DOUBLE);
 
 	      if (type==1)
 				{
@@ -1116,15 +1127,17 @@ void sdhdf_initialise_obsHeader(sdhdf_obsParamsStruct *obs)
 	//strcpy(obs->timedb,"unset");
   obs->mjd = -1;
   strcpy(obs->utc,"unset");
-  strcpy(obs->ut_date,"unset");
+	// deprecated in v4
+  //strcpy(obs->ut_date,"unset");
   strcpy(obs->local_time,"unset");
   strcpy(obs->raStr,"unset");
   strcpy(obs->decStr,"unset");
 	// new for v4
 	obs->fstat = -1;
-  // deprecated v4
-	//obs->raDeg = -1;
-  //obs->decDeg = -1;
+	//
+	obs->raDeg = -1;
+  obs->decDeg = -1;
+	// deprecated v4
   //obs->raOffset = -1;
   //obs->decOffset = -1;
   obs->gl = -1;
@@ -1139,6 +1152,11 @@ void sdhdf_initialise_obsHeader(sdhdf_obsParamsStruct *obs)
   obs->paraAngle = -1;
   obs->windDir = -1;
   obs->windSpd = -1;
+	// added for v4
+	obs->pressure = -1;
+	obs->pressureMSL = -1;
+	obs->relHumidity = -1;
+	obs->temp = -1;
 }
 
 void sdhdf_writeHistory(sdhdf_fileStruct *outFile,sdhdf_historyStruct *outParams,int n)
@@ -1479,6 +1497,7 @@ void sdhdf_loadSoftware(sdhdf_fileStruct *inFile)
 
 }*/
 
+// checked OK
 void sdhdf_copyBandHeaderStruct(sdhdf_bandHeaderStruct *in,sdhdf_bandHeaderStruct *out,int n)
 {
   int i;
@@ -1505,6 +1524,8 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLa
   hsize_t dims[1];
   char name[1024];
   char groupName[1024];
+
+	if (DEBUG == 1) printf("In sdhdf_writeObsParams...\n");
 
   // Need to allocate memory if I need the next line
   //  outFile->beam[ibeam].bandData[iband].nAstro_obsHeader = ndump;
@@ -1539,6 +1560,11 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLa
   H5Tinsert(datatype_id,"PARALLACTIC_ANGLE",HOFFSET(sdhdf_obsParamsStruct,paraAngle),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"WIND_DIRECTION",HOFFSET(sdhdf_obsParamsStruct,windDir),H5T_NATIVE_DOUBLE);
   H5Tinsert(datatype_id,"WIND_SPEED",HOFFSET(sdhdf_obsParamsStruct,windSpd),H5T_NATIVE_DOUBLE);
+	// added in v4
+	H5Tinsert(datatype_id,"PRESSURE",HOFFSET(sdhdf_obsParamsStruct,pressure),H5T_NATIVE_DOUBLE);
+	H5Tinsert(datatype_id,"PRESSURE_MSL",HOFFSET(sdhdf_obsParamsStruct,pressureMSL),H5T_NATIVE_DOUBLE);
+	H5Tinsert(datatype_id,"RELATIVE_HUMIDITY",HOFFSET(sdhdf_obsParamsStruct,relHumidity),H5T_NATIVE_DOUBLE);
+	H5Tinsert(datatype_id,"TEMPERATURE",HOFFSET(sdhdf_obsParamsStruct,temp),H5T_NATIVE_DOUBLE);
 
 
   dataspace_id = H5Screate_simple(1,dims,NULL);
@@ -1578,60 +1604,72 @@ void sdhdf_writeObsParams(sdhdf_fileStruct *outFile,char *bandLabel,char *beamLa
 
 void sdhdf_copySingleObsParams(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam)
 {
+	if (DEBUG == 1) printf("In sdhdf_copySingleObsParams...beam %d band %d dump %d\n", ibeam, iband, idump);
   obsParam->timeElapsed = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].timeElapsed;
   obsParam->dtime = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].dtime;
-  strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].timedb);
+  //strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].timedb);
   obsParam->mjd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].mjd;
   strcpy(obsParam->utc,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].utc);
-  strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].ut_date);
+  //strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].ut_date);
   strcpy(obsParam->local_time,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].local_time);
   strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raStr);
   strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decStr);
+	obsParam->fstat = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].fstat;
 	//strcpy(obsParam->fstat,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].fstat);
-  obsParam->raDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raDeg;
-  obsParam->decDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decDeg;
-  obsParam->raOffset = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raOffset;
-  obsParam->decOffset = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decOffset;
+	//obsParam->raDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raDeg;
+  //obsParam->decDeg = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decDeg;
+  //obsParam->raOffset = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].raOffset;
+  //obsParam->decOffset = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].decOffset;
   obsParam->gl = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].gl;
   obsParam->gb = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].gb;
   obsParam->az = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].az;
   obsParam->ze = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].ze;
   obsParam->el = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].el;
-  obsParam->az_drive_rate = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].az_drive_rate;
-  obsParam->ze_drive_rate = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].ze_drive_rate;
+  //obsParam->az_drive_rate = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].az_drive_rate;
+  //obsParam->ze_drive_rate = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].ze_drive_rate;
   obsParam->hourAngle = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].hourAngle;
   obsParam->paraAngle = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].paraAngle;
   obsParam->windDir = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].windDir;
   obsParam->windSpd = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].windSpd;
+	obsParam->pressure = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].pressure;
+	obsParam->pressureMSL = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].pressureMSL;
+	obsParam->relHumidity = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].relHumidity;
+	obsParam->temp = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].temp;
 }
 
 void sdhdf_copySingleObsParamsCal(sdhdf_fileStruct *inFile,int ibeam,int iband,int idump,sdhdf_obsParamsStruct *obsParam)
 {
+	if (DEBUG == 1) printf("In sdhdf_copySingleObsParamsCal...beam %d band %d dump %d\n", ibeam, iband, idump);
   obsParam->timeElapsed = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timeElapsed;
   obsParam->dtime = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].dtime;
-  strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timedb);
+  //strcpy(obsParam->timedb,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].timedb);
   obsParam->mjd = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].mjd;
   strcpy(obsParam->utc,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].utc);
-  strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ut_date);
+  //strcpy(obsParam->ut_date,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ut_date);
   strcpy(obsParam->local_time,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].local_time);
   strcpy(obsParam->raStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raStr);
   strcpy(obsParam->decStr,inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decStr);
+	obsParam->fstat = inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].fstat;
 	//strcpy(obsParam->fstat,inFile->beam[ibeam].bandData[iband].astro_obsHeader[idump].fstat);
-  obsParam->raDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raDeg;
-  obsParam->decDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decDeg;
-  obsParam->raOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raOffset;
-  obsParam->decOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decOffset;
+	//obsParam->raDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raDeg;
+  //obsParam->decDeg = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decDeg;
+  //obsParam->raOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].raOffset;
+  //obsParam->decOffset = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].decOffset;
   obsParam->gl = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].gl;
   obsParam->gb = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].gb;
   obsParam->az = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].az;
   obsParam->ze = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ze;
   obsParam->el = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].el;
-  obsParam->az_drive_rate = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].az_drive_rate;
-  obsParam->ze_drive_rate = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ze_drive_rate;
+  //obsParam->az_drive_rate = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].az_drive_rate;
+  //obsParam->ze_drive_rate = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].ze_drive_rate;
   obsParam->hourAngle = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].hourAngle;
   obsParam->paraAngle = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].paraAngle;
   obsParam->windDir = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].windDir;
   obsParam->windSpd = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].windSpd;
+	obsParam->pressure = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].pressure;
+	obsParam->pressureMSL = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].pressureMSL;
+	obsParam->relHumidity = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].relHumidity;
+	obsParam->temp = inFile->beam[ibeam].bandData[iband].cal_obsHeader[idump].temp;
 }
 
 void sdhdf_loadPersistentRFI(sdhdf_rfi *rfi,int *nRFI,int maxRFI,char *tel)

@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022, 2023 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -36,7 +36,7 @@ int main(int argc,char *argv[])
   int i,j,k,b;
 
   int fitsType=1; // 1 = SDFITS, 2 = PSRFITS
-  
+
   sdhdf_fileStruct *outFile;
   sdhdf_softwareVersionsStruct *softwareVersions;
   sdhdf_historyStruct *history;
@@ -51,7 +51,7 @@ int main(int argc,char *argv[])
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
-    
+
   // Input FITS file
   int status=0;
   fitsfile *fptr;
@@ -92,15 +92,15 @@ int main(int argc,char *argv[])
   int nBeam;
   int nsblk;
   int samplesperbyte;
-  
+
   nBeam = 1; // FIX ME
-  
+
   primaryHeader    = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
   beamHeader       = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nBeam);
   bandHeader       = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct));
   softwareVersions = (sdhdf_softwareVersionsStruct *)malloc(sizeof(sdhdf_softwareVersionsStruct));
   history          = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct));
-  
+
   sdhdf_setMetadataDefaults(primaryHeader,beamHeader,bandHeader,softwareVersions,history,1,1);
 
   for (i=1;i<argc;i++)
@@ -115,20 +115,20 @@ int main(int argc,char *argv[])
 
 
   // Assuming PSRFITS search mode
-  
+
   printf("Opening file >%s<\n",fname);
   fits_open_file(&fptr,fname,READONLY,&status);
   fits_report_error(stderr,status);
-  
+
   printf("Reading PSRFITS file\n");
   fits_movnam_hdu(fptr,BINARY_TBL,"SUBINT",1,&status);
   fits_get_num_rows(fptr,&long_ndump,&status);
   ndump = (int)long_ndump; // Number of subints in the original file
-    
+
   fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
   fits_read_tdim(fptr,colnum,maxdim,&naxis,naxes,&status);
   fits_report_error(stderr,status);
-  
+
   nchan = naxes[0];
   npol  = naxes[1];
   nsblk  = naxes[2];
@@ -154,7 +154,7 @@ int main(int argc,char *argv[])
   if (!(datScl = (float *)malloc(sizeof(float)*nchan*npol)))
     {
       printf("ERROR: Unable to allocate sufficient memory\n");
-      exit(1);      
+      exit(1);
     }
   freqVals = (float *)malloc(sizeof(float)*nchan);
   printf("Got here\n");
@@ -163,14 +163,14 @@ int main(int argc,char *argv[])
   printf("colnum for DAT_FREQ = %d\n",colnum);
   fits_read_col(fptr,TFLOAT,colnum,1,1,nchan,&n_fval,freqVals,&initflag,&status);
   printf("Status = %d\n",status);
-  fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);  
+  fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
 
-  
+
   for (i=0;i<ndump;i++)
     {
       fits_read_col(fptr,TFLOAT,colnum_datoffs,i+1,1,nchan*npol,&n_fval,datOffs,&initflag,&status);
       fits_read_col(fptr,TFLOAT,colnum_datscl,i+1,1,nchan*npol,&n_fval,datScl,&initflag,&status);
-      
+
       printf("Loading subintegration %d/%d\n",i,ndump-1);
       fits_read_col_byt(fptr,colnum,i+1,1,nchan*npol*nsblk/samplesperbyte,nval,storeVals+i*nchan*npol*nsblk/samplesperbyte,&initflag,&status);
     }
@@ -182,28 +182,31 @@ int main(int argc,char *argv[])
   for (i=0;i<ndump;i++)
     {
       obsParams[i].timeElapsed = i; // FIX
-      strcpy(obsParams[i].timedb,"UNKNOWN"); // FIX
+      //strcpy(obsParams[i].timedb,"UNKNOWN"); // FIX
       obsParams[i].mjd = 56000; // FIX
       strcpy(obsParams[i].utc,"UNKNOWN"); // FIX
-      strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
+      //strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
       strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX
       strcpy(obsParams[i].raStr,"UNKNOWN");
       strcpy(obsParams[i].decStr,"UNKNOWN");
       obsParams[i].raDeg = 0;
       obsParams[i].decDeg = 0;
-      obsParams[i].raOffset = 0;
-      obsParams[i].decOffset = 0;
+      //obsParams[i].raOffset = 0;
+      //obsParams[i].decOffset = 0;
       obsParams[i].gl = 0;
       obsParams[i].gb = 0;
       obsParams[i].az = 0;
       obsParams[i].ze = 0;
       obsParams[i].el = 0;
-      obsParams[i].az_drive_rate = 0;
-      obsParams[i].ze_drive_rate = 0;
+      //obsParams[i].az_drive_rate = 0;
+      //obsParams[i].ze_drive_rate = 0;
       obsParams[i].hourAngle = 0;
       obsParams[i].paraAngle = 0;
       obsParams[i].windDir = 0;
-      obsParams[i].windSpd = 0;      
+      obsParams[i].windSpd = 0;
+			obsParams[i].pressure = 0;
+			obsParams[i].pressureMSL = 0;
+			obsParams[i].relHumidity = 0;    
     }
 
   // Open the output HDF5 file
@@ -217,14 +220,14 @@ int main(int argc,char *argv[])
   // Set up the primary header information
   printf("nbeam = %d\n",nBeam);
   primaryHeader[0].nbeam = nBeam;
-  
+
   // Set up the beam information
 
   // Set up the band information
   strcpy(bandHeader->label,"band0");
-  bandHeader->fc = (freqVals[0]+freqVals[nchan-1])/2.0; 
+  bandHeader->fc = (freqVals[0]+freqVals[nchan-1])/2.0;
   bandHeader->f0 = freqVals[0];
-  bandHeader->f1 = freqVals[nchan-1]; 
+  bandHeader->f1 = freqVals[nchan-1];
   bandHeader->nchan = nchan;
   bandHeader->npol = npol;
   //  strcpy(bandHeader->pol_type,"AABBCRCI");
@@ -251,7 +254,7 @@ int main(int argc,char *argv[])
     }
   sdhdf_writeSoftwareVersions(outFile,softwareVersions);
   sdhdf_writeHistory(outFile,history,1);
-  
+
   sdhdf_closeFile(outFile);
   free(outFile);
   free(storeVals);
@@ -264,4 +267,4 @@ int main(int argc,char *argv[])
   free(softwareVersions);
   free(history);
   free(freqVals);
-} 
+}

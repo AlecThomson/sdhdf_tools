@@ -1,18 +1,18 @@
 //  Copyright (C) 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /* To include
@@ -54,7 +54,7 @@ typedef struct dumpParameterStruct {
   float tdump; // Time of spectral dump
   float raj0;   // Pointing position in degrees at centre of spectral dump (RA)
   float decj0;   // Pointing position in degrees at centre of spectral dump (DEC)
-  
+
   double timeFromStart;
   double mjd;
 
@@ -104,7 +104,7 @@ typedef struct parameterStruct {
 
   includeSpectrumStruct *includeSpectrum;
   int nIncludeSpectrum;
-  
+
   int persistentRFI;
   int galacticHI;
 } parameterStruct;
@@ -174,7 +174,7 @@ int main(int argc,char *argv[])
   float *spectrumAdd;
   int addUserSpectrum=0;
   double cmb = 2.725;
-  
+
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-p")==0)
@@ -188,7 +188,7 @@ int main(int argc,char *argv[])
       printf("ERROR: must set a parameter filename using the -p option\n");
       exit(1);
     }
-  
+
   if (!(fin = fopen(paramFile,"r")))
     {
       printf("ERROR: unable to open parameter file >%s<\n",paramFile);
@@ -197,11 +197,11 @@ int main(int argc,char *argv[])
   params = (parameterStruct *)malloc(sizeof(parameterStruct));
   params->includeSpectrum = (includeSpectrumStruct *)malloc(sizeof(includeSpectrumStruct)*MAX_INCLUDE_SPECTRA);
   params->nIncludeSpectrum=0;
-   
+
   // initialise
   params->persistentRFI=0;
   params->galacticHI=0;
-  
+
   while (!feof(fin))
     {
       if (fgets(line,MAX_STRLEN,fin)!=NULL)
@@ -239,7 +239,7 @@ int main(int argc,char *argv[])
 			{
 			  sscanf(line,"%s %s %s %f %f %f %f",word1,params->beam[ibeam].label,params->beam[ibeam].src,
 				 &(params->beam[ibeam].tsys_aa),
-				 &(params->beam[ibeam].tsys_bb),&(params->beam[ibeam].delta_ra),&(params->beam[ibeam].delta_dec));			  
+				 &(params->beam[ibeam].tsys_bb),&(params->beam[ibeam].delta_ra),&(params->beam[ibeam].delta_dec));
 			  ibeam++;
 			}
 		    }
@@ -309,7 +309,7 @@ int main(int argc,char *argv[])
   nTsky = 0;
   if (!(fin = fopen("haslam408_ds_Remazeilles2014.allSky.dat","r")))
     {
-      printf("Unable to open haslam408_ds_Remazeilles2014.allSky.dat for the sky temperature model\n");      
+      printf("Unable to open haslam408_ds_Remazeilles2014.allSky.dat for the sky temperature model\n");
     }
   else
     {
@@ -336,8 +336,8 @@ int main(int argc,char *argv[])
       dt+=params->dump[i].tdump/2.;
     }
 
-  
-  
+
+
   if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -352,9 +352,9 @@ int main(int argc,char *argv[])
     }
 
   nbeam = params->nbeams;
-  nband = params->nbands; 
+  nband = params->nbands;
   printf("Simulating %d bands\n",nband);
-  
+
   beamHeader = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct)*nbeam);
   primaryHeader = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
 
@@ -362,7 +362,7 @@ int main(int argc,char *argv[])
     {
       strcpy(beamHeader[i].label,params->beam[i].label);
       beamHeader[i].nBand = nband;
-      strcpy(beamHeader[i].source,params->beam[i].src); 
+      strcpy(beamHeader[i].source,params->beam[i].src);
     }
   sdhdf_writeBeamHeader(outFile,beamHeader,nbeam);
 
@@ -388,13 +388,13 @@ int main(int argc,char *argv[])
   for (i=0;i<nbeam;i++)
     {
       printf("Processing beam %d out of %d\n",i+1,nbeam);
-      bandHeader = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nband); // FIX ME -- may have different numbers of bands 
+      bandHeader = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*nband); // FIX ME -- may have different numbers of bands
       for (j=0;j<nband;j++)
 	{
 	  printf("Processing band %d out of %d\n",j+1,nband);
 	  ndump = params->ndumps;
 	  npol  = params->npols;
-	  
+
 	  bandHeader[j].f0 = params->band[j].f0;
 	  bandHeader[j].f1 = params->band[j].f1;
 	  bandHeader[j].fc = (bandHeader[j].f0+bandHeader[j].f1)/2.0;
@@ -415,13 +415,13 @@ int main(int argc,char *argv[])
 	    strcpy(bandHeader[j].pol_type,"AA,BB");
 	  else if (npol==1)
 	    strcpy(bandHeader[j].pol_type,"AA+BB");
-	  bandHeader[j].dtime = params->dump[0].tdump; 
-	  bandHeader[j].ndump = ndump;	 
+	  bandHeader[j].dtime = params->dump[0].tdump;
+	  bandHeader[j].ndump = ndump;
 	  chbw = (bandHeader[j].f1 - bandHeader[j].f0)/(float)nchan;
 	  // Setup the observation parameters for each band
 	  for (k=0;k<nchan;k++)
 	    freq[k] = bandHeader[j].f0+k*(bandHeader[j].f1-bandHeader[j].f0)/(float)nchan + chbw/2.0;
-	  
+
 	  for (k=0;k<ndump;k++)
 	    {
 	      printf("Processing spectral dump %d/%d\n",k+1,ndump);
@@ -429,30 +429,33 @@ int main(int argc,char *argv[])
 	      beamDec_deg = params->dump[k].decj0; // SHOULD INCLUDE BEAM OFFSET ... FIX ME
 	      beamGl_deg = params->dump[k].gl;     // SHOULD INCLUDE BEAM OFFSET ... FIX ME
 	      beamGl_deg = params->dump[k].gb;    // SHOULD INCLUDE BEAM OFFSET ... FIX ME
-	      
+
 	      obsParams[k].timeElapsed = params->dump[k].timeFromStart;
 	      strcpy(obsParams[k].timedb,"unknown");
 	      obsParams[k].mjd = params->dump[k].mjd;
 	      strcpy(obsParams[k].utc,"unknown");
-	      strcpy(obsParams[k].ut_date,"unknown");
+	      //strcpy(obsParams[k].ut_date,"unknown");
 	      strcpy(obsParams[k].local_time,"unknown");
 	      strcpy(obsParams[k].raStr,"unknown");
 	      strcpy(obsParams[k].decStr,"unknown");
-	      obsParams[k].raOffset = 0;
-	      obsParams[k].decOffset = 0;
+	      //obsParams[k].raOffset = 0;
+	      //obsParams[k].decOffset = 0;
 
-	      obsParams[k].raDeg  = beamRA_deg;
-	      obsParams[k].decDeg = beamDec_deg;
+	      //obsParams[k].raDeg  = beamRA_deg;
+	      //obsParams[k].decDeg = beamDec_deg;
 	      obsParams[k].gl     = beamGl_deg;
 	      obsParams[k].gb     = beamGb_deg;
 	      obsParams[k].az = 0;
 	      obsParams[k].el = 0;
-	      obsParams[k].az_drive_rate = 0;
-	      obsParams[k].ze_drive_rate = 0;
+	      //obsParams[k].az_drive_rate = 0;
+	      //obsParams[k].ze_drive_rate = 0;
 	      obsParams[k].hourAngle = 0;
 	      obsParams[k].paraAngle = 0;
 	      obsParams[k].windDir = 0;
-	      obsParams[k].windSpd = 0;		      
+	      obsParams[k].windSpd = 0;
+				obsParams[k].pressure = 0;
+				obsParams[k].pressureMSL = 0;
+				obsParams[k].relHumidity = 0;
 
 	      // Add in defined spectra
 	      for (jj=0;jj<params->nIncludeSpectrum;jj++)
@@ -467,7 +470,7 @@ int main(int argc,char *argv[])
 		    }
 		}
 
-	    
+
 	      for (ii=0;ii<nchan;ii++)
 		{
 		  signal = 0;
@@ -497,7 +500,7 @@ int main(int argc,char *argv[])
 			signal += 9e5;
 		    }
 		  if (addUserSpectrum==1)
-		    signal += spectrumAdd[ii]; 
+		    signal += spectrumAdd[ii];
 		  // Build up ssys_aa and ssys_bb
 		  tsky_model = 0;
 		  if (ii==0)
@@ -517,20 +520,20 @@ int main(int argc,char *argv[])
 		  }
 		  tsky_model = (tsky_model0 - cmb) * pow(freq[ii]/408.0,-2.6) + cmb;
 		  ssky_model = tsky_model ; // FIX ME -- WITH GAINS ETC.
-		
+
 		  //		  printf("chbw = %g, dtime = %g ssky_model = %g\n",chbw,bandHeader[j].dtime,ssky_model);
 		  noiseScaleAA = params->beam[i].tsys_aa/sqrt(chbw*1e6*bandHeader[j].dtime);
 		  noiseScaleBB = params->beam[i].tsys_bb/sqrt(chbw*1e6*bandHeader[j].dtime);
 		  //		  printf("scaleAA, scaleBB = %g %g\n",noiseScaleAA,noiseScaleBB);
 
-		    
+
 		  data[k*nchan*npol + ii]           = noiseScaleAA*TKgaussDev(&iseed) + ssys_aa + ssky_model + ssrc_model + signal;
 		  data[k*nchan*npol + nchan + ii]   = noiseScaleBB*TKgaussDev(&iseed) + ssys_bb + ssky_model + ssrc_model + signal;
 		  data[k*nchan*npol + 2*nchan + ii] = sqrt(noiseScaleAA*noiseScaleBB)*TKgaussDev(&iseed);
 		  data[k*nchan*npol + 3*nchan + ii] = sqrt(noiseScaleAA*noiseScaleBB)*TKgaussDev(&iseed);
 	    }
 	}
-      sdhdf_writeObsParams(outFile,bandHeader[j].label,beamHeader[i].label,j,obsParams,ndump,1);			       
+      sdhdf_writeObsParams(outFile,bandHeader[j].label,beamHeader[i].label,j,obsParams,ndump,1);
       free(obsParams);
       free(spectrumAdd);
 	  // SHOULD SET UP ATTRIBUTES
@@ -541,7 +544,7 @@ int main(int argc,char *argv[])
 
 	}
       sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[i].label,nband,1);
-    
+
       free(bandHeader);
 
 }
@@ -568,8 +571,8 @@ void convertGalactic(double raj,double decj,double *gl,double *gb)
   double gpoleDECJ = 27.116*deg2rad;
   double rot[4][4];
 
-  /* Note: Galactic coordinates are defined from B1950 system - e.g. must transform from J2000.0                      
-                                                  
+  /* Note: Galactic coordinates are defined from B1950 system - e.g. must transform from J2000.0
+
      equatorial coordinates to IAU 1958 Galactic coords */
 
   /* Convert to rectangular coordinates */
@@ -627,7 +630,7 @@ double haversine(double centre_long,double centre_lat,double src_long,double src
   centre_lat*=deg2rad;
   src_long*=deg2rad;
   src_lat*=deg2rad;
-  
+
   /* Apply the Haversine formula */
   dlon = (src_long - centre_long);
   dlat = (src_lat  - centre_lat);
@@ -651,7 +654,7 @@ double beamScaling(double angle,float diameter,float freq)
   double lambda = 3.0e8/(freq*1.0e6);
   double ang;
   ang = 1.22*lambda/diameter;
-  
+
   tt = radangle*M_PI/ang;
   if (tt == 0)
     return 1;

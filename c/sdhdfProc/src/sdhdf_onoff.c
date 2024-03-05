@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -45,7 +45,7 @@ void help()
   printf("-on <filename>    SDHDF file corresponding to 'ON' source pointing\n");
   printf("-off <filename>   SDHDF file corresponding to 'OFF' source pointing\n");
   printf("-o <filename>     Output SDHDF file containing (ON-OFF)/OFF\n");
-  
+
   printf("\nExample:\n\n");
   printf("sdhdf_onoff -on on.hdf.T -off off.hdf.T -o diff.hdf\n");
   printf("---------------------\n");
@@ -68,7 +68,7 @@ int main(int argc,char *argv[])
   sdhdf_fileStruct *onFile;
   sdhdf_fileStruct *offFile;
   sdhdf_fileStruct *outFile;
-  sdhdf_bandHeaderStruct *inBandParams;  
+  sdhdf_bandHeaderStruct *inBandParams;
   //  spectralDumpStruct spectrumOn;
   //  spectralDumpStruct spectrumOff;
   float *out_data;
@@ -88,7 +88,7 @@ int main(int argc,char *argv[])
   int nDataAttributes=0;
   int nFreqAttributes=0;
 
-  
+
   float freqOffScl[8192];
   float offSclA[8192];
   float offSclB[8192];
@@ -96,7 +96,7 @@ int main(int argc,char *argv[])
   float sclA2=1.0,sclB2=1.0;
 
   int procType=1;
-  
+
   FILE *fout;
   printf("Starting\n");
   // help();
@@ -118,17 +118,17 @@ int main(int argc,char *argv[])
     }
 
   for (i=1;i<argc;i++)
-    {       
+    {
       if (strcmp(argv[i],"-on")==0)
-	strcpy(fnameOn[0],argv[++i]);	
+	strcpy(fnameOn[0],argv[++i]);
       else if (strcmp(argv[i],"-h")==0)
 	{
 	  help();
 	  exit(1);
-	    
+
 	}
       else if (strcmp(argv[i],"-off")==0)
-	strcpy(fnameOff[0],argv[++i]);	
+	strcpy(fnameOff[0],argv[++i]);
       else if (strcmp(argv[i],"-sclA")==0)
 	sscanf(argv[++i],"%f",&sclA);
       else if (strcmp(argv[i],"-sclB")==0)
@@ -166,7 +166,7 @@ int main(int argc,char *argv[])
       printf("Loaded %d values for the off source system noise/temperature\n",nOffScl);
     }
 
-  
+
   if (batch==0)
     nFiles=1;
   else
@@ -193,14 +193,14 @@ int main(int argc,char *argv[])
       fclose(fin);
       printf("Loaded %d entires from %s\n",nFiles,batchFileName);
     }
-  
+
   for (ii=0;ii<nFiles;ii++)
     {
       printf("Processing files: %s %s %s\n",fnameOn[ii],fnameOff[ii],outFileName[ii]);
       sdhdf_initialiseFile(onFile);
       sdhdf_initialiseFile(offFile);
       sdhdf_initialiseFile(outFile);
-      sdhdf_openFile(outFileName[ii],outFile,3);         
+      sdhdf_openFile(outFileName[ii],outFile,3);
       sdhdf_openFile(fnameOn[ii],onFile,1);
       sdhdf_openFile(fnameOff[ii],offFile,1);
       sdhdf_loadMetaData(onFile);
@@ -208,8 +208,8 @@ int main(int argc,char *argv[])
       // Should do checks for: (NOT DOING YET)
       // 1) ASSUMING NDUMP = 1 --- NEED TO FIX THIS!!!
       // 2) number of channels same between files
-      
-      //  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*onFile->nBands);      
+
+      //  inBandParams = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct)*onFile->nBands);
       //  sdhdf_loadBandMetadataStruct(onFile,inBandParams);
       for (b=0;b<onFile->nBeam;b++)
 	{
@@ -220,7 +220,7 @@ int main(int argc,char *argv[])
 	      npol  = onFile->beam[b].bandHeader[i].npol;
 	      ndump = 1; //onFile->beam[b].bandHeader[i].ndump;
 	      out_data = (float *)malloc(sizeof(float)*nchan*npol*ndump);
-	      freq = (float *)malloc(sizeof(float)*nchan);      
+	      freq = (float *)malloc(sizeof(float)*nchan);
 	      sdhdf_loadBandData(onFile,b,i,1);
 	      sdhdf_loadBandData(offFile,b,i,1);
 	      /* FIX ME
@@ -230,17 +230,17 @@ int main(int argc,char *argv[])
 		 strcpy(outFile->frequency_attr.unit,onFile->frequency_attr.unit);
 		 strcpy(outFile->data_attr.unit,onFile->data_attr.unit);
 	      */
-	      for (k=0;k<nchan;k++)		
+	      for (k=0;k<nchan;k++)
 		freq[k] = onFile->beam[b].bandData[i].astro_data.freq[k];  // FIX ME: DUMP FOR FREQ AXIS
 	      for (k=0;k<nchan;k++)
 		{
 		  // 0 here should be the spectral dump number
-		  if (npol==1)	   
+		  if (npol==1)
 		    {
 		      on_pol1  = onFile->beam[b].bandData[i].astro_data.pol1[k];
 		      off_pol1 = offFile->beam[b].bandData[i].astro_data.pol1[k];
 
-		      if (procType==1)			
+		      if (procType==1)
 			out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1)/off_pol1;
 		      else if (procType==2)
 			out_data[k+0*npol*nchan]         = sclA*(on_pol1-off_pol1);
@@ -248,7 +248,7 @@ int main(int argc,char *argv[])
 			out_data[k+0*npol*nchan]         = sclA*on_pol1/(off_pol1-on_pol1);
 		      else
 			out_data[k+0*npol*nchan]         = sclA*on_pol1/(off_pol1);
-			
+
 		    }
 		  else if (npol == 2)
 		    {
@@ -277,8 +277,8 @@ int main(int argc,char *argv[])
 			  out_data[k+0*npol*nchan]         = sclA*on_pol1/(off_pol1);
 			  out_data[k+0*npol*nchan+nchan]   = sclB*on_pol2/(off_pol2);
 			}
-			
-		      
+
+
 		    }
 		  else
 		    {
@@ -294,7 +294,7 @@ int main(int argc,char *argv[])
 		      sclA2=sclB2 = 1.0;
 		      if (nOffScl>0)
 			determineOffSourceScale(freqOffScl,offSclA,offSclB,nOffScl,freq[k],&sclA2,&sclB2);
-		      
+
 		      if (procType==1)
 			{
 			  out_data[k+0*npol*nchan]         = sclA2*sclA*(on_pol1-off_pol1)/off_pol1;
@@ -325,13 +325,17 @@ int main(int argc,char *argv[])
 			}
 		    }
 		      //	  printf("DIFF =  %g %g %g %g\n",freq[k],on_pol1,off_pol1,(on_pol1-off_pol1)/off_pol1);
-	      
+
 	      // 0 should be replaced by dump number
 		}
 
 	      // Note that this is getting the attributes from the ON file -- really should check if they are the same as in the OFF file
-	      sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
-	      sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);	  
+				// OLD
+				//sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+	      //sdhdf_copyAttributes(onFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,onFile->beam[b].bandData[i].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+				// NEW
+				sdhdf_copyAttributes2(onFile->beam[b].bandData[i].astro_obsHeaderAttr,dataAttributes);
+	      sdhdf_copyAttributes2(onFile->beam[b].bandData[i].astro_obsHeaderAttr_freq,freqAttributes);
 
 	      sdhdf_releaseBandData(onFile,b,i,1);
 	      sdhdf_releaseBandData(offFile,b,i,1);
@@ -342,20 +346,20 @@ int main(int argc,char *argv[])
 	      free(freq);
 	    }
 	}
-      sdhdf_writeHistory(outFile,onFile->history,onFile->nHistory);  
+      sdhdf_writeHistory(outFile,onFile->history,onFile->nHistory);
 
       //
       // Need to copy time stamps etc. from the ON source data
       //
       sdhdf_copyRemainder(onFile,outFile,0);
       //  free(inBandParams);
-      
-      
+
+
       sdhdf_closeFile(onFile);
       sdhdf_closeFile(offFile);
       sdhdf_closeFile(outFile);
-    }	
-    
+    }
+
   free(onFile);
   free(offFile);
   free(outFile);

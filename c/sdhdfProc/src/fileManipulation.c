@@ -28,8 +28,12 @@
 //
 void sdhdf_initialiseFile(sdhdf_fileStruct *inFile)
 {
+	if (DEBUG == 1) printf("In sdhdf_initialiseFile...\n");
+
   inFile->fileOpen = 0;
   strcpy(inFile->fname,"unset");
+	inFile->fileAttrAllocatedMemory = 0;
+	inFile->metaAttrAllocatedMemory = 0;
   inFile->nPrimary = -1;
   inFile->primaryAllocatedMemory = 0;
   inFile->nSoftware = -1;
@@ -50,6 +54,8 @@ void sdhdf_initialiseFile(sdhdf_fileStruct *inFile)
 //
 int sdhdf_openFile(char *fname,sdhdf_fileStruct *inFile,int openType)
 {
+	if (DEBUG == 1) printf("In sdhdf_openFile...\n");
+
   if (openType==1)
     inFile->fileID  = H5Fopen(fname,H5F_ACC_RDONLY,H5P_DEFAULT);
   else if (openType==2)
@@ -71,6 +77,9 @@ void sdhdf_closeFile(sdhdf_fileStruct *inFile)
 {
   herr_t status;
   int i,j,k;
+
+	if (DEBUG == 1) printf("In sdhdf_closeFile...\n");
+
   if (inFile->fileOpen==1)
     {
       if (inFile->beamAllocatedMemory > 0)
@@ -219,6 +228,8 @@ void sdhdf_loadBandData2Array(sdhdf_fileStruct *inFile,int beam,int band,int typ
   herr_t status;
   float *allData;
 
+	if (DEBUG == 1) printf("In sdhdf_loadBandData2Array...\n");
+
   // astro_data
   if (type==1)
     {
@@ -247,6 +258,8 @@ void sdhdf_loadQuantisedBandData2Array(sdhdf_fileStruct *inFile,int beam,int ban
   herr_t status;
   float *allData;
 
+	if (DEBUG == 1) printf("In sdhdf_loadQuantisedBandData2Array...\n");
+
   // astro_data
   if (type==1)
     {
@@ -271,6 +284,8 @@ void sdhdf_loadFrequency2Array(sdhdf_fileStruct *inFile,int beam,int band,float 
   float *allData;
   hsize_t dims[2];
 
+	if (DEBUG == 1) printf("In sdhdf_loadFrequency2Array...\n");
+
   sprintf(dataName,"%s/%s/%s/%s",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label,ASTRONOMY_DATA_GRP,FREQUENCY);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   /*inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes_freq = sdhdf_getNattributes(inFile,dataName);
@@ -293,6 +308,8 @@ int sdhdf_loadWeights2Array(sdhdf_fileStruct *inFile,int beam,int band,float *ar
   herr_t status;
   float *allData;
   hsize_t dims[2];
+
+	if (DEBUG == 1) printf("In sdhdf_loadWeights2Array...\n");
 
   sprintf(dataName,"%s/%s/%s/%s",inFile->beamHeader[beam].label,inFile->beam[beam].bandHeader[band].label,ASTRONOMY_DATA_GRP,WEIGHTS);
   if (sdhdf_checkGroupExists(inFile,dataName)==0)
@@ -318,6 +335,8 @@ int sdhdf_loadFlags2Array(sdhdf_fileStruct *inFile,int beam,int band,unsigned ch
   herr_t status;
   float *allData;
   hsize_t dims[2];
+
+	if (DEBUG == 1) printf("In sdhdf_loadFlags2Array...\n");
 
   if (sdhdf_checkGroupExists(inFile,dataName)==0)
     {
@@ -352,6 +371,8 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
   char beamLabel[MAX_STRLEN];
   int calName=1;
 
+	if (DEBUG == 1) printf("In sdhdf_loadBandData...\n");
+
   // astro_data
   if (type==1)
     {
@@ -361,7 +382,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       npol  = inFile->beam[beam].bandHeader[band].npol;
       sdhdf_allocateBandData(&(inFile->beam[beam].bandData[band].astro_data),nchan,ndump,npol);
 
-      {
+      { // WHY IS THIS CURLY HERE?
 	hid_t space;
 	hsize_t dims[2];
 	int ndims;
@@ -547,6 +568,8 @@ void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int n
   unsigned long int i,j;
   unsigned long int ii;
 
+	if (DEBUG == 1) printf("In sdhdf_extractPols...\n");
+
   // SHOULD USE MEMCPY -- FIX ME
   // Note: nchan*ndump*npol can be greater than INT_MAX
   //
@@ -573,6 +596,9 @@ void sdhdf_extractPols(sdhdf_spectralDumpsStruct *spec,float *in,int nchan,int n
 void sdhdf_allocateBandData(sdhdf_spectralDumpsStruct *spec,int nchan,int ndump,int npol)
 {
   int k;
+
+	if (DEBUG == 1) printf("In sdhdf_allocateBandData...\n");
+
   if (spec->freqAllocatedMemory == 0)
     {
       spec->freq = (float *)malloc(sizeof(float *)*ndump*nchan);
@@ -618,6 +644,8 @@ void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 {
   int k;
 
+	if (DEBUG == 1) printf("In sdhdf_releaseBandData...\n");
+
   if (type==1)
     {
       if (inFile->beam[beam].bandData[band].astro_data.freqAllocatedMemory == 1)
@@ -642,6 +670,8 @@ void sdhdf_releaseBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 
 void sdhdf_add1arg(char *args,char *add)
 {
+	if (DEBUG == 1) printf("In sdhdf_add1arg...\n");
+
   if (strlen(args) < MAX_STRLEN - strlen(add) - 1)
     {
       strcat(args,add);
@@ -652,6 +682,8 @@ void sdhdf_add1arg(char *args,char *add)
 
 void sdhdf_add2arg(char *args,char *add1,char *add2)
 {
+	if (DEBUG == 1) printf("In sdhdf_add2arg...\n");
+
   if (strlen(args) < MAX_STRLEN - strlen(add1) - 1)
     {
       strcat(args,add1);
@@ -675,58 +707,80 @@ void sdhdf_add2arg(char *args,char *add1,char *add2)
 void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *blabel, int ibeam,int iband,  float *out,float *freq,int nFreqDump,long nchan,long nbin,long npol,long nsub,int type,sdhdf_attributes_struct *dataAttributes,int nDataAttributes,sdhdf_attributes_struct *freqAttributes,int nFreqAttributes)
 {
   int i;
-  hid_t dset_id,datatype_id,group_id,ocpl_id;
+  hid_t dset_id,datatype_id,group_id,ocpl_id,s1_tid,dtype1,space,dset;
   herr_t status=0;
   hid_t dataspace_id,stid;
   char groupName[MAX_STRLEN];
   char dsetName[MAX_STRLEN],label[MAX_STRLEN];
   hsize_t dims[5];
 
+	if (DEBUG == 1) printf("In sdhdf_writeSpectrumData with type '%d'...\n",type);
 
   if (type==0 || type==1 || type==4)
     {
       sprintf(groupName,"%s",beamLabel);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status   = H5Gclose(group_id);
-	}
+				{
+					printf("creating groupName: %s\n", groupName); // beam_0
+	      	group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+					// NEW write attributes here TODO
+					// the dataAttributes are to be attached to obs_params dataset!
+					// we want to copy the beam attributes here
+					//sdhdf_readAttributes();
+					//sdhdf_copyAttributes2();
+	  			status   = H5Gclose(group_id);
+				}
 
       sprintf(groupName,"%s/%s",beamLabel,blabel);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status = H5Gclose(group_id);
-	}
+				{
+	  			group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+					// we want to copy the band attributes here
+					//sdhdf_readAttributes();
+					//sdhdf_copyAttributes2();
+					status = H5Gclose(group_id);
+				}
 
       sprintf(groupName,"%s/%s/%s",beamLabel,blabel,ASTRONOMY_DATA_GRP);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status = H5Gclose(group_id);
-	}
+				{
+	  			group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+					// we want to copy the astronomy_data attributes here
+					//sdhdf_readAttributes();
+					//sdhdf_copyAttributes2();
+					status = H5Gclose(group_id);
+				}
     }
   else if (type==2 || type==3)
     {
       sprintf(groupName,"%s",beamLabel);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status   = H5Gclose(group_id);
-	}
+				{
+	  			group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+					// we want to copy the beam attributes here
+					//sdhdf_readAttributes();
+					//sdhdf_copyAttributes2();
+					status   = H5Gclose(group_id);
+				}
 
       sprintf(groupName,"%s/%s",beamLabel,blabel);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status = H5Gclose(group_id);
-	}
+				{
+	  			group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+					// we want to copy the band attributes here
+					//sdhdf_readAttributes();
+					//sdhdf_copyAttributes2();
+					status = H5Gclose(group_id);
+				}
       sprintf(groupName,"%s/%s/%s",beamLabel,blabel,CAL_DATA_GRP);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status = H5Gclose(group_id);
-	}
+				{
+	  			group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+					// we want to copy the cal data attributes here
+					//sdhdf_readAttributes();
+					//sdhdf_copyAttributes2();
+					status = H5Gclose(group_id);
+				}
     }
   dims[0] = nsub;
   dims[1] = npol;
@@ -766,23 +820,18 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
       sprintf(dsetName,"%s/%s",groupName,DATA);
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       for (i=0;i<nDataAttributes;i++)
-	{
-	  //	  printf("GEORGE: in fileManipulation: writing data attribute\n");
-	  //	  printf("GEORGE: in fileManipulation: %d %d\n",i,nDataAttributes);
-	  //	  printf("GEORGE: in fileManipulation: %s\n",dataAttributes[i].key);
-	  sdhdf_writeAttribute(outFile,dsetName,&dataAttributes[i]); //dataAttributes[i].key,dataAttributes[i].value);
-	  //	  printf("GEORGE: complete writing the attribute\n");
-	}
-
+				{
+	  			sdhdf_writeAttributes2(outFile,dsetName,&dataAttributes[i]);
+				}
     }
   else if (type==2)
     {
       sprintf(groupName,"%s/%s/%s",beamLabel,blabel,CAL_DATA_GRP);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1)
-	{
-	  group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-	  status = H5Gclose(group_id);
-	}
+				{
+	  			group_id = H5Gcreate2(outFile->fileID,groupName,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	  			status = H5Gclose(group_id);
+				}
       sprintf(dsetName,"%s/%s",groupName,CAL_DATA_ON);
       printf("CREATING %s\n",dsetName);
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_FLOAT,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
@@ -820,7 +869,7 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
       // Now write attributes
       //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
       for (i=0;i<nFreqAttributes;i++)
-	sdhdf_writeAttribute(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
+				sdhdf_writeAttributes2(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
 
       status  = H5Dclose(dset_id);
     }
@@ -833,7 +882,8 @@ void sdhdf_writeSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,char *bla
       status  = H5Dclose(dset_id);
     }
   status = H5Sclose(dataspace_id);
-  if (type == 0 || type == 1 || type == 4)
+
+	if (type == 0 || type == 1 || type == 4)
     status = H5Gclose(group_id);
 
 }
@@ -850,6 +900,7 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
   char dsetName[MAX_STRLEN],label[MAX_STRLEN];
   hsize_t dims[5];
 
+	if (DEBUG == 1) printf("In sdhdf_writeQuantisedSpectrumData...\n");
 
   if (type==0 || type==1 || type==4)
     {
@@ -910,7 +961,7 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
       dset_id = H5Dcreate2(outFile->fileID,dsetName,H5T_NATIVE_UCHAR,dataspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
       for (i=0;i<nDataAttributes;i++)
 	{
-	  sdhdf_writeAttribute(outFile,dsetName,&dataAttributes[i]); //dataAttributes[i].key,dataAttributes[i].value);
+	  sdhdf_writeAttributes2(outFile,dsetName,&dataAttributes[i]); //dataAttributes[i].key,dataAttributes[i].value);
 	}
 
     }
@@ -959,7 +1010,7 @@ void sdhdf_writeQuantisedSpectrumData(sdhdf_fileStruct *outFile,char *beamLabel,
       // Now write attributes
       //      printf("Number of attributes to write out = %d\n",outFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq);
       for (i=0;i<nFreqAttributes;i++)
-	sdhdf_writeAttribute(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
+	sdhdf_writeAttributes2(outFile,dsetName,&freqAttributes[i]); //freqAttributes[i].key,freqAttributes[i].value);
 
       status  = H5Dclose(dset_id);
     }
@@ -986,6 +1037,8 @@ void sdhdf_replaceSpectrumData(sdhdf_fileStruct *outFile,char *blabel, int ibeam
   char groupName[MAX_STRLEN];
   char dsetName[MAX_STRLEN],label[MAX_STRLEN];
   hsize_t dims[5];
+
+	if (DEBUG == 1) printf("In sdhdf_replaceSpectrumData...\n");
 
   sprintf(groupName,"%s_%d/%s/%s",BEAM_GRP,ibeam,blabel,ASTRONOMY_DATA_GRP);
   if (sdhdf_checkGroupExists(outFile,groupName) == 1)
@@ -1018,15 +1071,20 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
   herr_t status;
   int b,i;
 
+	if (DEBUG == 1) printf("In sdhdf_copyRemainder...\n");
+
+	// root
+  sdhdf_copyEntireGroup("/",inFile,outFile);
   // /metadata group
 	// TODO: this is not copying /metadata attributes!
   sprintf(groupName,"/%s",METADATA_GRP);
-	printf("%d\n", sdhdf_checkGroupExists(outFile,groupName));
+	sdhdf_copyEntireGroup(groupName,inFile,outFile);
+	//printf("%d\n", sdhdf_checkGroupExists(outFile,groupName));
 	//exit(1); // TEMP
-  if (sdhdf_checkGroupExists(outFile,groupName) == 1) // 0 = already exists
+  /*if (sdhdf_checkGroupExists(outFile,groupName) == 1) // 0 = already exists
     sdhdf_copyEntireGroup(groupName,inFile,outFile);
   else
-    {
+    {*/
       sprintf(groupName,"/%s/%s",METADATA_GRP,BEAM_PARAMS);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
       sprintf(groupName,"/%s/%s",METADATA_GRP,HISTORY);
@@ -1037,7 +1095,7 @@ void sdhdf_copyRemainder(sdhdf_fileStruct *inFile,sdhdf_fileStruct *outFile,int 
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
 			sprintf(groupName,"/%s/%s",METADATA_GRP,SCHEDULE);
       if (sdhdf_checkGroupExists(outFile,groupName) == 1) sdhdf_copyEntireGroup(groupName,inFile,outFile);
-    }
+    //}
 
   // /configuration group
   sprintf(groupName,"/%s",CONFIG_GRP);
@@ -1126,6 +1184,8 @@ void sdhdf_loadCalProc(sdhdf_fileStruct *inFile,int ibeam,int iband,char *cal_la
   herr_t status;
   char dataName[1024];
 
+	if (DEBUG == 1) printf("In sdhdf_loadCalProc...\n");
+
   sprintf(dataName,"/%s/%s/calibrator_proc/%s",inFile->beamHeader[ibeam].label,inFile->beam[ibeam].bandHeader[iband].label,cal_label);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,vals);
@@ -1142,6 +1202,8 @@ void sdhdf_writeCalProc(sdhdf_fileStruct *outFile,int ibeam,int iband,char *band
   char groupName[MAX_STRLEN];
   char dsetName[MAX_STRLEN],label[MAX_STRLEN];
   hsize_t dims[5];
+
+	if (DEBUG == 1) printf("In sdhdf_writeCalProc...\n");
 
   // Create group if needed
   sprintf(groupName,"/beam_%d/%s/calibrator_proc",ibeam,band_label);
@@ -1179,6 +1241,8 @@ void sdhdf_copyEntireGroup(char *bandLabel,sdhdf_fileStruct *inFile,sdhdf_fileSt
   hid_t loc_id,ocpl_id,lcpl_id;
   herr_t status;
 
+	if (DEBUG == 1) printf("In sdhdf_copyEntireGroup copying %s...\n",bandLabel);
+
   loc_id = inFile->fileID;
 
   ocpl_id = H5Pcreate(H5P_OBJECT_COPY);
@@ -1195,6 +1259,8 @@ void sdhdf_copyEntireGroupDifferentLabels(char *bandLabelIn,sdhdf_fileStruct *in
 {
   hid_t loc_id,ocpl_id,lcpl_id;
   herr_t status;
+
+	if (DEBUG == 1) printf("In sdhdf_copyEntireGroupDifferentLabels...\n");
 
   loc_id = inFile->fileID;
 
@@ -1215,6 +1281,8 @@ void sdhdf_writeFlags(sdhdf_fileStruct *outFile,int ibeam,int iband,unsigned cha
   hid_t dataspace_id,stid,dset_id,datatype_id,group_id;
   hsize_t dims[2];
   herr_t status;
+
+	if (DEBUG == 1) printf("In sdhdf_writeFlags...\n");
 
   dims[0] = ndump;
   dims[1] = nchan;
@@ -1239,8 +1307,8 @@ void sdhdf_writeDataWeights(sdhdf_fileStruct *outFile,int ibeam,int iband,float 
   hsize_t dims[2];
   herr_t status;
 
+	if (DEBUG == 1) printf("In sdhdf_writeDataWeights...ndump %d, nchan %d\n",ndump,nchan);
 
-  printf("In here and writing weights for ndump and nchan = %d and %d\n",ndump,nchan);
   dims[0] = ndump;
   dims[1] = nchan;
   dataspace_id = H5Screate_simple(2,dims,NULL);
@@ -1272,6 +1340,8 @@ void sdhdf_loadRestFrequencies(sdhdf_restfrequency_struct *restFreq,int *nRestFr
   char line[4096];
   char *tok;
   char trim[4096];
+
+	if (DEBUG == 1) printf("In sdhdf_loadRestFrequencies...\n");
 
   if (getenv("SDHDF_RUNTIME")==0)
     {

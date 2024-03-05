@@ -90,7 +90,7 @@ void allocateMemory(dataStruct *in);
 
 void help()
 {
-	printf("\nsdhdf_modify    %s\n",VNUM);
+	printf("\nsdhdf_modify      %s\n",VNUM);
 	printf("INSPECTA version: %s\n",SOFTWARE_VER);
   printf("Author:           George Hobbs\n");
   printf("Software to modify an SDHDF file\n");
@@ -293,8 +293,15 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	  // Load in the data
 	  allocateMemory(in);
 
-	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
-	  sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+		//OLD
+	  //sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+	  //sdhdf_copyAttributes(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[ii].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+		//NEW
+		// copy attributes
+		printf("before copying attributes\n");
+		sdhdf_copyAttributes2(inFile->beam[b].bandData[ii].astro_obsHeaderAttr,dataAttributes);			// this works
+	  sdhdf_copyAttributes2(inFile->beam[b].bandData[ii].astro_obsHeaderAttr_freq,freqAttributes); // this returns empty
+		printf("after copying attributes\n");
 
 	  if (astroCal==0)
 	    {
@@ -361,6 +368,7 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
 	  if (astroCal==0)
 	    {
 	      if (singleFreqAxis==0)
+		// UP TO HERE!!
 		sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,out->data,
 					out->freq,out->nFreqDump,out->nchan,1,out->npol,out->ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
 	      else
@@ -415,8 +423,6 @@ void processFile(char *fname,char *oname, commandStruct *commands, int nCommands
   sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
   sdhdf_copyRemainder(inFile,outFile,0);
 
-
-
   sdhdf_closeFile(inFile);
   sdhdf_closeFile(outFile);
 
@@ -444,7 +450,7 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 {
   int i,j,k,kk,p;
   int include;
-  int avDump,ndump;
+  int avDump,ndump,fstat;
   double av;
   float wt,wtVal;
   unsigned char flag;
@@ -452,7 +458,7 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
   double s_flag_wt;
   int flagVal;
   double dtime;
-  double raDeg,decDeg,mjd,timeElapsed;
+  double raDeg,decDeg,mjd,timeElapsed,pressure,pressureMSL,relHumidity;
   double raOffset,decOffset,gl,gb,az,ze,el,az_drive_rate,ze_drive_rate,hourAngle,paraAngle,windDir,windSpd;
   char tempStr[1024];
   double turn;
@@ -490,8 +496,10 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 	      if (p==0 && j==0)
 		{
 		  dtime = raDeg = decDeg = mjd = timeElapsed = 0;
-		  raOffset = decOffset = gl = gb = az = ze = el = az_drive_rate = 0;
-		  ze_drive_rate = hourAngle = paraAngle = windDir = windSpd = 0;
+		  //raOffset = decOffset = gl = gb = az = ze = el = az_drive_rate = 0;
+			gl = gb = az = ze = el = fstat = 0;
+		  //ze_drive_rate = hourAngle = paraAngle = windDir = windSpd = 0;
+			hourAngle = paraAngle = windDir = windSpd = pressure = pressureMSL = relHumidity = 0;
 		  turn_utc_av = turn_local_av = 0;
 		}
 
@@ -508,8 +516,9 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 		      decDeg    += in->obsParams[(k*avDump)+kk].decDeg;
 		      mjd       += in->obsParams[(k*avDump)+kk].mjd;
 		      timeElapsed += in->obsParams[(k*avDump)+kk].timeElapsed;
-		      raOffset += in->obsParams[(k*avDump)+kk].raOffset;
-		      decOffset += in->obsParams[(k*avDump)+kk].decOffset;
+					fstat = in->obsParams[(k*avDump)+kk].fstat;
+		      //raOffset += in->obsParams[(k*avDump)+kk].raOffset;
+		      //decOffset += in->obsParams[(k*avDump)+kk].decOffset;
 		      gl += in->obsParams[(k*avDump)+kk].gl;
 		      gb += in->obsParams[(k*avDump)+kk].gb;
 		      az += in->obsParams[(k*avDump)+kk].az;
@@ -517,12 +526,15 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 		      el += in->obsParams[(k*avDump)+kk].el;
 		      turn_utc_av += hms_turn(in->obsParams[(k*avDump)+kk].utc);
 		      turn_local_av += hms_turn(in->obsParams[(k*avDump)+kk].local_time);
-		      az_drive_rate += in->obsParams[(k*avDump)+kk].az_drive_rate;
-		      ze_drive_rate += in->obsParams[(k*avDump)+kk].ze_drive_rate;
+		      //az_drive_rate += in->obsParams[(k*avDump)+kk].az_drive_rate;
+		      //ze_drive_rate += in->obsParams[(k*avDump)+kk].ze_drive_rate;
 		      hourAngle += in->obsParams[(k*avDump)+kk].hourAngle;
 		      paraAngle += in->obsParams[(k*avDump)+kk].paraAngle;
 		      windDir += in->obsParams[(k*avDump)+kk].windDir;
 		      windSpd  += in->obsParams[(k*avDump)+kk].windSpd;
+					pressure  += in->obsParams[(k*avDump)+kk].pressure;
+					pressureMSL  += in->obsParams[(k*avDump)+kk].pressureMSL;
+					relHumidity  += in->obsParams[(k*avDump)+kk].relHumidity;
 		    }
 
 		}
@@ -546,8 +558,8 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 	      if (p==0 && j==0)
 		{
 		  // Determine the observation parameter output
-		  strcpy(out->obsParams[k].timedb,"UNSET"); // FIX ME
-		  strcpy(out->obsParams[k].ut_date,"UNSET"); // FIX ME
+		  //strcpy(out->obsParams[k].timedb,"UNSET"); // FIX ME
+		  //strcpy(out->obsParams[k].ut_date,"UNSET"); // FIX ME
 
 		  // SHOULD FIX WRAPS HERE --- FIX ME
 		  out->obsParams[k].raDeg = raDeg/avDump; // SHOULD BE WEIGHTED ** FIX ME
@@ -555,28 +567,33 @@ void timeAverage(dataStruct *in,dataStruct *out,int ndumpAv,int sum)
 		  turn_hms(turn_utc_av/avDump,out->obsParams[k].utc);
 		  turn_hms(turn_local_av/avDump,out->obsParams[k].local_time);
 
-
-		  turn_hms(out->obsParams[k].raDeg/360.,out->obsParams[k].raStr);
-		  turn_dms(out->obsParams[k].decDeg/360.,out->obsParams[k].decStr);
-
+			// needs raDeg and decDeg to convert!!
+		  //turn_hms(out->obsParams[k].raDeg/360.,out->obsParams[k].raStr);
+		  //turn_dms(out->obsParams[k].decDeg/360.,out->obsParams[k].decStr);
+			// TEMP, just copy
+			strcpy(out->obsParams[k].raStr, in->obsParams[k].raStr);
+			strcpy(out->obsParams[k].decStr, in->obsParams[k].decStr);
 
 		  out->obsParams[k].timeElapsed = timeElapsed/avDump; // SHOULD BE WEIGHTED *** FIX ME
 		  out->obsParams[k].dtime = dtime; // Note this is just a summation (not an average)
 		  out->obsParams[k].mjd = mjd/avDump; // SHOULD BE WEIGHTED *** FIX ME
-
-		  out->obsParams[k].raOffset = raOffset/avDump;
-		  out->obsParams[k].decOffset = decOffset/avDump;
+			out->obsParams[k].fstat = fstat;
+		  //out->obsParams[k].raOffset = raOffset/avDump;
+		  //out->obsParams[k].decOffset = decOffset/avDump;
 		  out->obsParams[k].gl = gl/avDump;
 		  out->obsParams[k].gb = gb/avDump;
 		  out->obsParams[k].az = az/avDump;
 		  out->obsParams[k].ze = ze/avDump;
 		  out->obsParams[k].el = el/avDump;
-		  out->obsParams[k].az_drive_rate = az_drive_rate/avDump;
-		  out->obsParams[k].ze_drive_rate = ze_drive_rate/avDump;
+		  //out->obsParams[k].az_drive_rate = az_drive_rate/avDump;
+		  //out->obsParams[k].ze_drive_rate = ze_drive_rate/avDump;
 		  out->obsParams[k].hourAngle = hourAngle/avDump;
 		  out->obsParams[k].paraAngle = paraAngle/avDump;
 		  out->obsParams[k].windDir = windDir/avDump;
 		  out->obsParams[k].windSpd = windSpd/avDump;
+			out->obsParams[k].pressure = pressure/avDump;
+			out->obsParams[k].pressureMSL = pressureMSL/avDump;
+			out->obsParams[k].relHumidity = relHumidity/avDump;
 		}
 	    }
 	}

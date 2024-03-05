@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -65,7 +65,7 @@ void help()
   printf("-join               Join plots together\n");
   printf("-locky <y1> <y2>    Fix the y-axis to be between y1 and y2\n");
   printf("-log                Set logarithmic plotting\n");
-  printf("-nx <nx>            Set nx panels in the x-direction\n");  
+  printf("-nx <nx>            Set nx panels in the x-direction\n");
   printf("-ny <ny>            Set ny panels in the y-direction\n");
   printf("-p                  Sum polarisations\n");
   printf("-RLCP               Plot right and left hand circular polarisation\n");
@@ -76,8 +76,8 @@ void help()
   printf("-vline <val>        Draw a vertical line at val\n");
   printf("-ylabel <str>       Label to display on y-axis\n");
   printf("-yscale <val>       Scale (multiply) the values in the spectra by val\n");
-  
-  
+
+
   printf("\nExample:\n\n");
   printf("sdhdf_plotMultiSpec -sb 0 -f0 810 -f1 812 uwl_210722_214441.hdf.T.flag\n");
   printf("---------------------\n");
@@ -95,7 +95,7 @@ int main(int argc,char *argv[])
   char label[1024] = "";
   char title[1024] = "UNSET";
   int labelPos=0;
-  
+
   double yscale=1;
   int rlcp = 0;
   int flipV = 0;
@@ -124,14 +124,14 @@ int main(int argc,char *argv[])
   char queryFile[1024]="query.txt";
   int recordQuery=0;
   FILE *fout;
-  
+
   //  help();
-  
+
   // Defaults
   ibeam = 0;
   idump = iband = 0;
   strcpy(grDev,"/xs");
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -139,9 +139,9 @@ int main(int argc,char *argv[])
     }
 
   sdhdf_initialiseFile(inFile);
-  
+
   for (i=1;i<argc;i++)
-    {      
+    {
       if (strcmp(argv[i],"-h")==0)
 	{help(); exit(1);}
       else if (strcmp(argv[i],"-query")==0)
@@ -161,7 +161,7 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-yscale")==0)
 	sscanf(argv[++i],"%lf",&yscale);
       else if (strcmp(argv[i],"-log")==0)
-	setLog=1;      
+	setLog=1;
       else if (strcmp(argv[i],"-stokes")==0)
 	stokes=1;
       else if (strcmp(argv[i],"-g")==0)
@@ -182,7 +182,7 @@ int main(int argc,char *argv[])
 	flipV = 1;
       else if (strcmp(argv[i],"-fref")==0)
 	sscanf(argv[++i],"%lf",&fref);
-      else if (strcmp(argv[i],"-nx")==0) 
+      else if (strcmp(argv[i],"-nx")==0)
 	sscanf(argv[++i],"%d",&nx);
       else if (strcmp(argv[i],"-ny")==0)
 	sscanf(argv[++i],"%d",&ny);
@@ -245,7 +245,7 @@ int main(int argc,char *argv[])
 
 	  // Check frequency range
 	  if (setBand==0 && setf0 == 1 && setf1 == 1)
-	    {	      
+	    {
 	      printf("Trying to identify suitable band number\n");
 	      for (k=0;k<inFile->beam[ibeam].nBand;k++)
 		{
@@ -258,10 +258,10 @@ int main(int argc,char *argv[])
 		    }
 		}
 	    }
-	  
+
 
 	  plotSpectrum(inFile,ibeam, iband,idump,grDev,fname,f0,setf0,f1,setf1,av,sump,nx,ny,polPlot,chSize,locky1,locky2,join,fref,bl_f0,bl_f1,setBaseline,setLog,stokes,ylabel,label,labelPos,labelChSize,
-		       hline,nHline,vline,nVline,yscale,rlcp,flipV,title);	  	  
+		       hline,nHline,vline,nVline,yscale,rlcp,flipV,title);
 
 	  if (recordQuery==1)
 	    {
@@ -270,12 +270,12 @@ int main(int argc,char *argv[])
 	      scanf("%s",response);
 	      fprintf(fout,"%s %s\n",inFile->fname,response);
 	    }
-	  
+
 	  sdhdf_closeFile(inFile);
 
 	}
     }
-  cpgend();  
+  cpgend();
   free(inFile);
   if (recordQuery==1)
     fclose(fout);
@@ -324,7 +324,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 
   mean1=mean2=mean3=mean4=0.0;
   npol = inFile->beam[ibeam].bandHeader[iband].npol;
-  
+
   if (entry==0)
     {
       if (join==0)
@@ -352,12 +352,16 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
   pol2 = (float *)malloc(sizeof(float)*nchan);
   pol3 = (float *)malloc(sizeof(float)*nchan);
   pol4 = (float *)malloc(sizeof(float)*nchan);
-  
-  sdhdf_loadBandData(inFile,ibeam,iband,1);
-  sdhdf_copyAttributes(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr,inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
-  sdhdf_copyAttributes(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq,inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 
-  
+  sdhdf_loadBandData(inFile,ibeam,iband,1);
+
+	// OLD
+  //sdhdf_copyAttributes(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr,inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+  //sdhdf_copyAttributes(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq,inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+	// NEW
+	sdhdf_copyAttributes2(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr,dataAttributes);
+  sdhdf_copyAttributes2(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq,freqAttributes);
+
   for (kk=0;kk<inFile->beam[ibeam].bandData[iband].nAstro_obsHeaderAttributes;kk++)
     {
       if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr[kk].key,"UNIT")==0)
@@ -371,12 +375,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       //			  printf("Checking attribute %s\n",inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key);
       if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"FRAME")==0)
 	{strcpy(freqFrame,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);}
-      else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"UNIT")==0)		    
+      else if (strcmp(inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].key,"UNIT")==0)
 	{
 	  //			      printf("Value = %s\n",inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);
 	  strcpy(freqUnit,inFile->beam[ibeam].bandData[iband].astro_obsHeaderAttr_freq[kk].value);
 	}
-      
+
     }
 
   if (av < 1)
@@ -412,8 +416,8 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	      Vv = 2*p4;
 	      if (flipV==1) Vv = -Vv;
 	      pol1[i] = 0.5*(Iv+Vv);
-	      pol2[i] = 0.5*(Iv-Vv);	      
-	    }	  
+	      pol2[i] = 0.5*(Iv-Vv);
+	    }
 	  else if (stokes==1)
 	    {
 	      double p1,p2,p3,p4;
@@ -425,16 +429,16 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	      if (flipV==1) pol4[i] = -pol4[i];
 	    }
 
-	  
+
 	  if (sump==1 && npol > 1) pol1[i] = pol1[i]+pol2[i];
-	  
+
 	  if (setLog == 1)
 	    {
 	      if (pol1[i] > 0)
 		pol1[i]=log10(pol1[i]);
 	      else
 		{pol1[i] = -100; useP1[i] = 0;}
-	      
+
 	      if (npol > 1)
 		{
 		  if (pol2[i] > 0)
@@ -494,7 +498,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 
 	  if (sump==1 && npol > 1)
 	    pol1[n] = pol1[n]+pol2[n];
-	  
+
 	  if (setLog == 1)
 	    {
 	      pol1[n]=log10(pol1[n]);
@@ -502,7 +506,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	    }
 	  if (freq[i] > bl_f0 && freq[i] <= bl_f1)
 	    {
-	      
+
 	      mean1+=pol1[i];
 	      mean2+=pol2[i];
 	      mean3+=pol3[i];
@@ -525,12 +529,12 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	}
     }
 
-  
+
   if (setf0 == 1)
     minx = f0;
   else
     minx = freq[0];
-  
+
   if (setf1 == 1)
     maxx = f1;
   else
@@ -566,7 +570,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 		  if (pol3[i] > maxy && useP1[i]==1) maxy = pol3[i];
 		  if (pol4[i] > maxy && useP1[i]==1) maxy = pol4[i];
 		  if (pol3[i] < miny && useP1[i]==1) miny = pol3[i];
-		  if (pol4[i] < miny && useP1[i]==1) miny = pol4[i];		  
+		  if (pol4[i] < miny && useP1[i]==1) miny = pol4[i];
 		}
 	    }
 	}
@@ -579,7 +583,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       printf("Remember to select the correct sub-band using -sb\n");
       printf("*************************************************\n");
     }
-  
+
   if (locky1 != locky2)
     {
       miny = locky1;
@@ -616,10 +620,10 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       if (strcmp(ylabel,"UNSET")==0)
 	sprintf(ylabel,"Signal strength (%s)",dataUnit);
       cpglab(xlabel,ylabel,title);
-      
+
     }
   else
-    {      
+    {
       float dh,dw;
 
       // NX must be 1 for join to work
@@ -658,7 +662,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 
 	  cpglab(xlabel,ylabel,"");
 	}
-      
+
       dh = (wy2-wy1)/ny;
       dw = (wx2-wx1)/nx;
       xp1 = wx1+dw*(entryX);
@@ -684,7 +688,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	      cpgsch(chSize);
 	    }
 	  else
-	    {	      
+	    {
 	      char fixLabel[1024];
 	      sdhdf_fixUnderscore(inFile->fname,fixLabel);
 	      cpgtext(minx+(maxx-minx)*0.05,maxy-(maxy-miny)*0.15,fixLabel);
@@ -705,7 +709,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 
     for (i=0;i<nVline;i++)
     {
-      fx[0] = fx[1] = vline[i]; 
+      fx[0] = fx[1] = vline[i];
       fy[0] = miny; fy[1] = maxy;
       cpgsci(i+1);
       cpgsls(2);
@@ -714,7 +718,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
       cpgsci(1);
     }
 
-  
+
   if (molecularLines==1)
     {
       drawMolecularLine(1420.405752,"HI",minx,maxx,miny,maxy);
@@ -758,7 +762,7 @@ void plotSpectrum(sdhdf_fileStruct *inFile,int ibeam, int iband,int idump,char *
 	     spectrum.pol1[i].val,spectrum.pol2[i].val,spectrum.pol3[i].val,spectrum.pol4[i].val,
 	     spectrum.pol1[i].weight,spectrum.pol2[i].weight,spectrum.pol3[i].weight,spectrum.pol4[i].weight);
     }
-  */  
+  */
 
   entry++;
   entryX++;
@@ -785,11 +789,11 @@ void drawIncludeWeights(int nchan,float *freq,float *pol,float *wt)
 	{
 	  cpgline(i-1-i0,freq+i0,pol+i0);
 	  drawIt=-1;
-	  
-	}	      
+
+	}
     }
-  if (drawIt==1) cpgline(i-1-i0,freq+i0,pol+i0); 
-  
+  if (drawIt==1) cpgline(i-1-i0,freq+i0,pol+i0);
+
   //  cpgline(nchan,freq,pol);
 }
 
@@ -803,4 +807,3 @@ void drawMolecularLine(float freq,char *label,float minX,float maxX,float minY,f
   cpgsci(3); cpgsls(4); cpgline(2,fx,fy); cpgsls(1); cpgsci(1);
 
 }
-

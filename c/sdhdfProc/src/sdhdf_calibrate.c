@@ -248,10 +248,15 @@ void processFile(char *fname,char *oname, int stabiliseType,int out_npol,char *f
 	  npol   = inFile->beam[b].bandHeader[j].npol;
 	  ndump  = inFile->beam[b].bandHeader[j].ndump;
 	  nchanFreq = inFile->beam[b].bandData[j].astro_data.nFreqDumps;
-	  sdhdf_copyAttributes(inFile->beam[b].bandData[j].astro_obsHeaderAttr,inFile->beam[b].bandData[j].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
-	  sdhdf_copyAttributes(inFile->beam[b].bandData[j].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[j].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
 
-	  // SHOULD CHECK IF THE CAL IS ON OR OFF -- FIX ME
+		// OLD
+		//sdhdf_copyAttributes(inFile->beam[b].bandData[j].astro_obsHeaderAttr,inFile->beam[b].bandData[j].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+	  //sdhdf_copyAttributes(inFile->beam[b].bandData[j].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[j].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+		// NEW
+		sdhdf_copyAttributes2(inFile->beam[b].bandData[j].astro_obsHeaderAttr,dataAttributes);
+	  sdhdf_copyAttributes2(inFile->beam[b].bandData[j].astro_obsHeaderAttr_freq,freqAttributes);
+
+		// SHOULD CHECK IF THE CAL IS ON OR OFF -- FIX ME
 
 	  // Load in the noise source data
 	  sdhdf_loadBandData(inFile,b,j,2);

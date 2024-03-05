@@ -1,18 +1,18 @@
 //  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of sdhdfProc.
+ *
+ *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    sdhdfProc is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -71,7 +71,7 @@ typedef struct header {
   int fil_nbins;
   int fil_npuls;
 
-  // 
+  //
   char outputName[1024];
   int  nsblk;
 } header;
@@ -98,7 +98,7 @@ int main(int argc,char *argv[])
   int nDataAttributes=0;
   int nFreqAttributes=0;
 
-  
+
   sdhdf_fileStruct *outFile;
   sdhdf_softwareVersionsStruct *softwareVersions;
   sdhdf_historyStruct *history;
@@ -108,8 +108,8 @@ int main(int argc,char *argv[])
   sdhdf_obsParamsStruct  *obsParams;
   sdhdf_obsParamsStruct  *calObsParams;
   sdhdf_bandHeaderStruct *calBandHeader;
-  
-  
+
+
   // Input FITS file
   int status=0;
   fitsfile *fptr;
@@ -139,7 +139,7 @@ int main(int argc,char *argv[])
   double *doubleVals;
   short int *shortVals;
   short int n_sval=0;
-  int    binVal = 0; 
+  int    binVal = 0;
   int    nVals;
   float  n_fval=0.;
   double n_dval=0.;
@@ -165,13 +165,13 @@ int main(int argc,char *argv[])
   int pulseOff1,pulseOff2;
   double *baseline1,*baseline2,*baseline3,*baseline4;
   pulseOff1=pulseOff2=-1;
-  
+
   primaryHeader    = (sdhdf_primaryHeaderStruct *)malloc(sizeof(sdhdf_primaryHeaderStruct));
   beamHeader       = (sdhdf_beamHeaderStruct *)malloc(sizeof(sdhdf_beamHeaderStruct));
   bandHeader       = (sdhdf_bandHeaderStruct *)malloc(sizeof(sdhdf_bandHeaderStruct));
   softwareVersions = (sdhdf_softwareVersionsStruct *)malloc(sizeof(sdhdf_softwareVersionsStruct));
   history          = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct));
-  
+
   sdhdf_setMetadataDefaults(primaryHeader,beamHeader,bandHeader,softwareVersions,history,1,1);
 
   for (i=1;i<argc;i++)
@@ -207,19 +207,19 @@ int main(int argc,char *argv[])
       else if (strcmp(argv[i],"-o")==0)
 	strcpy(outname,argv[++i]);
     }
-  
-  
+
+
 
   if (fileType==1) // Filterbank
-    {    
+    {
       FILE *fin;
       header head;
-      unsigned char *loadit; 
+      unsigned char *loadit;
       float *fvals;
       int nread;
       int nbits;
 
-      
+
       printf("Opening file >%s<\n",fname);
       if (!(fin = fopen(fname,"rb")))
 	{
@@ -246,15 +246,15 @@ int main(int argc,char *argv[])
 	{
 	  if (nbits <= 8)
 	    {
-	      nread = fread(loadit,1,nbits*nchan*nsblk/8,fin); 
+	      nread = fread(loadit,1,nbits*nchan*nsblk/8,fin);
 	      bytesToFloats(8/nbits,nchan*nsblk*npol,loadit,fvals);
 	    }
 	  else
-	    nread = fread(fvals,sizeof(float),nchan,fin); 
+	    nread = fread(fvals,sizeof(float),nchan,fin);
 	  if (nread > 0)
 	    {
 	      printf("%d Have read %d values, sizeof(float) = %d\n",(int)ndump,(int)nread,sizeof(float));
-	      
+
 	      printf("Complete conversion %d %d %d\n",nchan,npol,nsblk);
 	      for (i=0;i<nchan;i++)
 		{
@@ -270,7 +270,7 @@ int main(int argc,char *argv[])
 		}
 	      // Now should write out this dump
 	      // ****** GOT TO HERE **********  CAN'T LOAD THE LOT IN ONE GO
-	      
+
 	      //	      printf("Got to here\n");
 	      ndump++;
 	    }
@@ -303,54 +303,54 @@ int main(int argc,char *argv[])
 	  calObsParams   = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 
 	  strcpy(primaryHeader->cal_mode,"ON");
-	  
-	  
+
+
 	  // First process cal
 	  printf("Opening file >%s<\n",calFile);
 	  fits_open_file(&fptr,calFile,READONLY,&status);
-	  fits_report_error(stderr,status);      
+	  fits_report_error(stderr,status);
 
 	  printf("Reading PSRFITS file\n");
 	  fits_movnam_hdu(fptr,BINARY_TBL,"SUBINT",1,&status);
 	  fits_get_num_rows(fptr,&long_ndump,&status);
 	  ndump_cal = (int)long_ndump;
-	  
+
 	  doubleVals = (double *)malloc(sizeof(double)*ndump_cal);
-	  
+
 	  fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
 	  fits_read_tdim(fptr,colnum,maxdim,&naxis,naxes,&status);
 	  fits_report_error(stderr,status);
-	  
+
 	  nbin_cal  = naxes[0];
 	  nchan_cal = naxes[1];
 	  npol_cal  = naxes[2];
 	  printf("nbin = %d, nchan = %d, npol = %d, status = %d\n",nbin_cal,nchan_cal,npol_cal,status);
-	  
+
 	  floatCalValsOn  = (float *)malloc(sizeof(float)*nchan_cal*npol_cal*ndump_cal);
 	  floatCalValsOff = (float *)malloc(sizeof(float)*nchan_cal*npol_cal*ndump_cal);
 	  freqCalVals    = (float *)malloc(sizeof(float)*nchan_cal);
 	  shortVals   = (short int *)malloc(sizeof(short int)*nchan_cal*npol_cal*nbin_cal);
-	  
+
 	  fits_get_colnum(fptr,CASEINSEN,"DAT_OFFS",&colnum_datoffs,&status);
 	  fits_get_colnum(fptr,CASEINSEN,"DAT_SCL",&colnum_datscl,&status);
 	  datOffs = (float *)malloc(sizeof(float)*nchan_cal*npol_cal);
-	  datScl = (float *)malloc(sizeof(float)*nchan_cal*npol_cal);	
+	  datScl = (float *)malloc(sizeof(float)*nchan_cal*npol_cal);
 
-	  
+
 	  fits_get_colnum(fptr,CASEINSEN,"DAT_FREQ",&colnum,&status);
 	  fits_read_col(fptr,TFLOAT,colnum,1,1,nchan_cal,&n_fval,freqCalVals,&initflag,&status);
 
 
 	  strcpy(calBandHeader->label,"band0");
-	  calBandHeader->fc = (freqCalVals[0]+freqCalVals[nchan_cal-1])/2.0; 
+	  calBandHeader->fc = (freqCalVals[0]+freqCalVals[nchan_cal-1])/2.0;
 	  calBandHeader->f0 = freqCalVals[0];
-	  calBandHeader->f1 = freqCalVals[nchan_cal-1]; 
+	  calBandHeader->f1 = freqCalVals[nchan_cal-1];
 	  calBandHeader->nchan = nchan_cal;
 	  calBandHeader->npol = npol_cal;
 	  strcpy(calBandHeader->pol_type,"AABBCRCI");
 	  calBandHeader->dtime = 100; // FIX
 	  calBandHeader->ndump = ndump_cal;
-	  
+
 	  fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
 	  for (i=0;i<ndump_cal;i++)
 	    {
@@ -359,31 +359,34 @@ int main(int argc,char *argv[])
 
 
 	      calObsParams[i].timeElapsed = i; // FIX
-	      strcpy(calObsParams[i].timedb,"UNKNOWN"); // FIX
+	      //strcpy(calObsParams[i].timedb,"UNKNOWN"); // FIX
 	      calObsParams[i].mjd = 56000; // FIX
 	      strcpy(calObsParams[i].utc,"UNKNOWN"); // FIX
-	      strcpy(calObsParams[i].ut_date,"UNKNOWN"); // FIX
-	      strcpy(calObsParams[i].local_time,"UNKNOWN"); // FIX  
+	      //strcpy(calObsParams[i].ut_date,"UNKNOWN"); // FIX
+	      strcpy(calObsParams[i].local_time,"UNKNOWN"); // FIX
 	      strcpy(calObsParams[i].raStr,"UNKNOWN");
 	      strcpy(calObsParams[i].decStr,"UNKNOWN");
 	      calObsParams[i].raDeg = 0;
 	      calObsParams[i].decDeg = 0;
-	      calObsParams[i].raOffset = 0;
-	      calObsParams[i].decOffset = 0;
+	      //calObsParams[i].raOffset = 0;
+	      //calObsParams[i].decOffset = 0;
 	      calObsParams[i].gl = 0;
 	      calObsParams[i].gb = 0;
 	      calObsParams[i].az = 0;
 	      calObsParams[i].ze = 0;
 	      calObsParams[i].el = 0;
-	      calObsParams[i].az_drive_rate = 0;
-	      calObsParams[i].ze_drive_rate = 0;
+	      //calObsParams[i].az_drive_rate = 0;
+	      //calObsParams[i].ze_drive_rate = 0;
 	      calObsParams[i].hourAngle = 0;
 	      calObsParams[i].paraAngle = 0;
 	      calObsParams[i].windDir = 0;
-	      calObsParams[i].windSpd = 0;      
+	      calObsParams[i].windSpd = 0;
+				calObsParams[i].pressure = 0;
+				calObsParams[i].pressureMSL = 0;
+				calObsParams[i].relHumidity = 0;
 
 
-	      
+
 	      printf("Loading subintegration %d/%d\n",i,ndump_cal-1);
 	      fits_read_col(fptr,TSHORT,colnum,i+1,1,nchan_cal*npol_cal*nbin_cal,&n_sval,shortVals,&initflag,&status);
 	      // Select bin and scale by DAT_OFFS and DAT_SCL
@@ -397,7 +400,7 @@ int main(int argc,char *argv[])
 		      for (b=0;b<nbin_cal;b++)
 			{
 			  if (b >= calOn1 && b <= calOn2)
-			    {			    
+			    {
 			      floatCalValsOn[i*nchan_cal*npol_cal + j*nchan_cal + k] += (shortVals[k*nbin_cal+j*nchan_cal*nbin_cal + b])*datScl[j*nchan_cal+k]+datOffs[j*nchan_cal+k]; // WHAT ABOUT zeroOff?? -- CHECK
 			      nOn++;
 			    }
@@ -413,24 +416,24 @@ int main(int argc,char *argv[])
 		    }
 		}
 	    }
-	
+
 	  printf("Closing cal file\n");
 	  fits_close_file(fptr,&status);
 	  free(shortVals); free(datOffs); free(datScl);
 	}
       // Now process the astronomy file
-      
+
       printf("Opening file >%s<\n",fname);
       fits_open_file(&fptr,fname,READONLY,&status);
       fits_report_error(stderr,status);
-      
+
       printf("Reading PSRFITS file\n");
       fits_movnam_hdu(fptr,BINARY_TBL,"SUBINT",1,&status);
       fits_get_num_rows(fptr,&long_ndump,&status);
       ndump = (int)long_ndump;
 
       doubleVals = (double *)malloc(sizeof(double)*ndump);
-     
+
       fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
       fits_read_tdim(fptr,colnum,maxdim,&naxis,naxes,&status);
       fits_report_error(stderr,status);
@@ -439,7 +442,7 @@ int main(int argc,char *argv[])
       nchan = naxes[1];
       npol  = naxes[2];
       printf("nbin = %d, nchan = %d, npol = %d, status = %d\n",nbin,nchan,npol,status);
-      
+
       infloatVals = (float *)malloc(sizeof(float)*nchan*npol); // DON'T NEED THIS ONE .. BUT FREE AT THE END .. FIX ME
       floatVals   = (float *)malloc(sizeof(float)*nchan*npol*ndump*nbin);
       freqVals    = (float *)malloc(sizeof(float)*nchan);
@@ -448,13 +451,13 @@ int main(int argc,char *argv[])
       baseline2   = (double *)malloc(sizeof(double)*nchan);
       baseline3   = (double *)malloc(sizeof(double)*nchan);
       baseline4   = (double *)malloc(sizeof(double)*nchan);
-      
-      
+
+
       fits_get_colnum(fptr,CASEINSEN,"DAT_OFFS",&colnum_datoffs,&status);
       fits_get_colnum(fptr,CASEINSEN,"DAT_SCL",&colnum_datscl,&status);
       datOffs = (float *)malloc(sizeof(float)*nchan*npol);
-      datScl = (float *)malloc(sizeof(float)*nchan*npol);	
-      
+      datScl = (float *)malloc(sizeof(float)*nchan*npol);
+
       fits_get_colnum(fptr,CASEINSEN,"DAT_FREQ",&colnum,&status);
       fits_read_col(fptr,TFLOAT,colnum,1,1,nchan,&n_fval,freqVals,&initflag,&status);
 
@@ -471,7 +474,7 @@ int main(int argc,char *argv[])
 	    {
 	      fits_read_col(fptr,TFLOAT,colnum_datoffs,i+1,1,nchan*npol,&n_fval,datOffs,&initflag,&status);
 	      fits_read_col(fptr,TFLOAT,colnum_datscl,i+1,1,nchan*npol,&n_fval,datScl,&initflag,&status);
-	      
+
 	      printf("Loading subintegration %d/%d\n",i,ndump-1);
 	      fits_read_col(fptr,TSHORT,colnum,i+1,1,nchan*npol*nbin,&n_sval,shortVals,&initflag,&status);
 	      // Select bin and scale by DAT_OFFS and DAT_SCL
@@ -523,9 +526,9 @@ int main(int argc,char *argv[])
 	    }
 	}
       tdump = 0; // SET PROPERLY
-      mjd = 56000; // SET PROPERLY 
+      mjd = 56000; // SET PROPERLY
       strcpy(srcName,"UNKNOWN"); // SET PROPERLY
-      
+
       free(shortVals);
       printf("Closing file\n");
       fits_close_file(fptr,&status);
@@ -537,29 +540,32 @@ int main(int argc,char *argv[])
   printf("Here with ndump = %d\n",ndump);
   for (i=0;i<ndump;i++)
     {
-      obsParams[i].timeElapsed = i*tdump; 
-      strcpy(obsParams[i].timedb,"UNKNOWN"); // FIX
+      obsParams[i].timeElapsed = i*tdump;
+      //strcpy(obsParams[i].timedb,"UNKNOWN"); // FIX
       obsParams[i].mjd = mjd;
       strcpy(obsParams[i].utc,"UNKNOWN"); // FIX
-      strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
-      strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX 
+      //strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
+      strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX
       strcpy(obsParams[i].raStr,"UNKNOWN");
       strcpy(obsParams[i].decStr,"UNKNOWN");
       obsParams[i].raDeg = 0;
       obsParams[i].decDeg = 0;
-      obsParams[i].raOffset = 0;
-      obsParams[i].decOffset = 0;
+      //obsParams[i].raOffset = 0;
+      //obsParams[i].decOffset = 0;
       obsParams[i].gl = 0;
       obsParams[i].gb = 0;
       obsParams[i].az = 0;
       obsParams[i].ze = 0;
       obsParams[i].el = 0;
-      obsParams[i].az_drive_rate = 0;
-      obsParams[i].ze_drive_rate = 0;
+      //obsParams[i].az_drive_rate = 0;
+      //obsParams[i].ze_drive_rate = 0;
       obsParams[i].hourAngle = 0;
       obsParams[i].paraAngle = 0;
       obsParams[i].windDir = 0;
-      obsParams[i].windSpd = 0;      
+      obsParams[i].windSpd = 0;
+			obsParams[i].pressure = 0;
+			obsParams[i].pressureMSL = 0;
+			obsParams[i].relHumidity = 0;
     }
 
   // Open the output HDF5 file
@@ -571,24 +577,24 @@ int main(int argc,char *argv[])
   sdhdf_initialiseFile(outFile);
 
   // Set up the primary header information
-      
+
   // Set up the beam information
   strcpy(beamHeader->source,srcName);
   strcpy(beamHeader->label,"beam_0");
   // Set up the band information
   strcpy(bandHeader->label,"band0");
-  bandHeader->fc = (freqVals[0]+freqVals[nchan-1])/2.0; 
+  bandHeader->fc = (freqVals[0]+freqVals[nchan-1])/2.0;
   bandHeader->f0 = freqVals[0];
-  bandHeader->f1 = freqVals[nchan-1]; 
+  bandHeader->f1 = freqVals[nchan-1];
   bandHeader->nchan = nchan;
   bandHeader->npol = npol;
   if (npol==1)
     strcpy(bandHeader->pol_type,"AA+BB");
-  else   
+  else
     strcpy(bandHeader->pol_type,"AABBCRCI");
   bandHeader->dtime = tdump;
   bandHeader->ndump = ndump;
-  
+
   printf("Writing output file\n");
   sdhdf_openFile(outname,outFile,3);
   sdhdf_writePrimaryHeader(outFile,primaryHeader);
@@ -605,7 +611,7 @@ int main(int argc,char *argv[])
       sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[0].label,0,obsParams,ndump_cal,2);
       // GEORGE HERE:
       // ... need to setup and then write the cal metadata
-      // 
+      //
 
       // FIX ME: Only sending 1 frequency channel through
       sdhdf_writeSpectrumData(outFile,beamHeader->label,bandHeader->label,0,0,floatCalValsOn,freqCalVals,1,nchan_cal,1,npol_cal,ndump_cal,2,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
@@ -621,7 +627,7 @@ int main(int argc,char *argv[])
       free(floatCalValsOff);
       free(freqCalVals);
       free(calBandHeader);
-      free(calObsParams);	    
+      free(calObsParams);
     }
 if (type==2)
   {
@@ -637,7 +643,7 @@ if (type==2)
   free(infloatVals);
   free(freqVals);
   free(doubleVals);
-} 
+}
 
 
 //
@@ -647,12 +653,12 @@ if (type==2)
 void readFilHeader(char *fname,FILE *inputfile,header *head)
 {
   char string[80], message[80];
-  int itmp,nbytes,totalbytes,expecting_rawdatafile=0,expecting_source_name=0; 
+  int itmp,nbytes,totalbytes,expecting_rawdatafile=0,expecting_source_name=0;
   int expecting_frequency_table=0,channel_index;
   /* added frequency table for use with non-contiguous data */
   double frequency_table[4096]; /* note limited number of channels */
   long int npuls; /* added for binary pulse profile format */
-  
+
   head->fil_isign=0;
 
 
@@ -769,7 +775,7 @@ void readFilHeader(char *fname,FILE *inputfile,header *head)
       sprintf(message,"read_header - unknown parameter: %s\n",string);
       fprintf(stderr,"ERROR: %s\n",message);
       exit(1);
-    } 
+    }
     if (totalbytes != ftell(inputfile)){
 	    fprintf(stderr,"ERROR: Header bytes does not equal file position\n");
 	    fprintf(stderr,"String was: '%s'\n",string);
@@ -785,7 +791,7 @@ void readFilHeader(char *fname,FILE *inputfile,header *head)
     }
 
 
-  } 
+  }
 
   /* add on last header string */
   totalbytes+=nbytes;
@@ -923,7 +929,7 @@ void twoBitsFloat(int eight_bit_number, float *results, int *index)
       break;
     case 1:
       //      tempResults[i] = 1; // -0.5;
-      tempResults[i] = -0.5;      
+      tempResults[i] = -0.5;
       break;
     case 2:
       tempResults[i] = 0.5;
@@ -968,4 +974,3 @@ void oneBitFloat(int eight_bit_number, float *results, int *index)
       //            printf("This pt: %d %g\n",*index,tempResults[i]);
     }
 }
-

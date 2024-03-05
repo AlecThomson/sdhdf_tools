@@ -336,25 +336,28 @@ int main(int argc,char *argv[])
 	      strcpy(calObsParams[i].timedb,"UNKNOWN"); // FIX
 	      calObsParams[i].mjd = 56000; // FIX
 	      strcpy(calObsParams[i].utc,"UNKNOWN"); // FIX
-	      strcpy(calObsParams[i].ut_date,"UNKNOWN"); // FIX
+	      //strcpy(calObsParams[i].ut_date,"UNKNOWN"); // FIX
 	      strcpy(calObsParams[i].local_time,"UNKNOWN"); // FIX
 	      strcpy(calObsParams[i].raStr,"UNKNOWN");
 	      strcpy(calObsParams[i].decStr,"UNKNOWN");
 	      calObsParams[i].raDeg = 0;
 	      calObsParams[i].decDeg = 0;
-	      calObsParams[i].raOffset = 0;
-	      calObsParams[i].decOffset = 0;
+	      //calObsParams[i].raOffset = 0;
+	      //calObsParams[i].decOffset = 0;
 	      calObsParams[i].gl = 0;
 	      calObsParams[i].gb = 0;
 	      calObsParams[i].az = 0;
 	      calObsParams[i].ze = 0;
 	      calObsParams[i].el = 0;
-	      calObsParams[i].az_drive_rate = 0;
-	      calObsParams[i].ze_drive_rate = 0;
+	      //calObsParams[i].az_drive_rate = 0;
+	      //calObsParams[i].ze_drive_rate = 0;
 	      calObsParams[i].hourAngle = 0;
 	      calObsParams[i].paraAngle = 0;
 	      calObsParams[i].windDir = 0;
 	      calObsParams[i].windSpd = 0;
+				calObsParams[i].pressure = 0;
+				calObsParams[i].pressureMSL = 0;
+				calObsParams[i].relHumidity = 0;
 
 
 
@@ -507,25 +510,28 @@ int main(int argc,char *argv[])
       strcpy(obsParams[i].timedb,"UNKNOWN"); // FIX
       obsParams[i].mjd = 56000; // FIX
       strcpy(obsParams[i].utc,"UNKNOWN"); // FIX
-      strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
+      //strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
       strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX
       strcpy(obsParams[i].raStr,"UNKNOWN");
       strcpy(obsParams[i].decStr,"UNKNOWN");
       obsParams[i].raDeg = 0;
       obsParams[i].decDeg = 0;
-      obsParams[i].raOffset = 0;
-      obsParams[i].decOffset = 0;
+      //obsParams[i].raOffset = 0;
+      //obsParams[i].decOffset = 0;
       obsParams[i].gl = 0;
       obsParams[i].gb = 0;
       obsParams[i].az = 0;
       obsParams[i].ze = 0;
       obsParams[i].el = 0;
-      obsParams[i].az_drive_rate = 0;
-      obsParams[i].ze_drive_rate = 0;
+      //obsParams[i].az_drive_rate = 0;
+      //obsParams[i].ze_drive_rate = 0;
       obsParams[i].hourAngle = 0;
       obsParams[i].paraAngle = 0;
       obsParams[i].windDir = 0;
       obsParams[i].windSpd = 0;
+			obsParams[i].pressure = 0;
+			obsParams[i].pressureMSL = 0;
+			obsParams[i].relHumidity = 0;
     }
 
   // Open the output HDF5 file

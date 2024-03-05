@@ -350,8 +350,12 @@ int main(int argc,char *argv[])
 			  //			  free(inData);
 			}
 
-		      sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
-		      sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+					// OLD
+		      //sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes,dataAttributes,&nDataAttributes);
+		      //sdhdf_copyAttributes(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr_freq,inFile->beam[b].bandData[selectBandID].nAstro_obsHeaderAttributes_freq,freqAttributes,&nFreqAttributes);
+					// NEW
+					sdhdf_copyAttributes2(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr,dataAttributes);
+					sdhdf_copyAttributes2(inFile->beam[b].bandData[selectBandID].astro_obsHeaderAttr_freq,freqAttributes);
 
 		      printf("Output nchan = %d (%d), npol = %d\n",nchan,totNchan,npol);
 		      //		      sdhdf_writeSpectrumData(outFile,inFile,b,j,outVals,freqVals,nchan,4,1,0); // FIX 4,1,0

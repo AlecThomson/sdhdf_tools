@@ -156,10 +156,11 @@ int main(int argc,char *argv[])
       inFile->nHistory++;
       sdhdf_writeHistory(outFile,inFile->history,inFile->nHistory);
 
+			// add metadata
       sdhdf_copyRemainder(inFile,outFile,0);
 			sdhdf_loadMetaData(outFile);
 
-			// TESTING
+			// Copy metadata attributes: but are empty and not copied!
 			sdhdf_copyAttributes2(inFile->metaAttr, outFile->metaAttr);
 			//
 
@@ -203,7 +204,9 @@ int main(int argc,char *argv[])
 
 	      sdhdf_writeDataWeights(outFile,b,i,inFile->beam[b].bandData[i].astro_data.dataWeights,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
 	      sdhdf_writeFlags(outFile,b,i,inFile->beam[b].bandData[i].astro_data.flag,inFile->beam[b].bandHeader[i].nchan,inFile->beam[b].bandHeader[i].ndump,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[i].label);
-	      sdhdf_releaseBandData(inFile,b,i,1);
+				// TODO: need to write attributes here
+				// sdhdf_writeAttributes2
+				sdhdf_releaseBandData(inFile,b,i,1);
 	      printf("Complete band %d\n",i);
 
 
