@@ -38,7 +38,7 @@ void help()
 
   printf("\nCommand line arguments:\n\n");
 	printf("-h                This help\n");
-  printf("-e                Write out file with this extension\n");
+  printf("-e <ext>          Output file extension\n");
 
 	printf("\nExample:\n\n");
   printf("sdhdf_applyCal -e cal file.hdf\n\n");

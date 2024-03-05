@@ -1,26 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of INSPECTA.
+ *
+ *    INSPECTA is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    INSPECTA is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
+// sdhdf_checkFile
 // Software to provide a quick-look at the metadata in a SDHDF file.
-//
-// Usage:
-// sdhdf_checkFile <filename.hdf> <filename2.hdf> ...
-//
 //
 
 #include <stdio.h>
@@ -29,7 +26,7 @@
 #include <math.h>
 #include "inspecta.h"
 
-#define VERSION "v1.0"
+#define VNUM "v2.0"
 #define MAX_HISTORY_LOG 512
 #define MAX_COMMANDS 16
 
@@ -45,16 +42,20 @@ typedef struct historyLogStruct {
   char report[1024];
 } historyLogStruct;
 
+
 void help()
 {
-  printf("sdhdf_checkFile %s (SDHDFProc %s)\n",VERSION,SOFTWARE_VER);
-  printf("Authors: G. Hobbs\n");
+  printf("\nsdhdf_checkFile   %s\n",VNUM);
+	printf("INSPECTA version: %s\n",SOFTWARE_VER);
+  printf("Author:           George Hobbs\n");
+  printf("Software to provide a quick-look at the metadata in SDHDF files\n");
 
-  printf("\n\n");
-  printf("-h        This help\n");
-  printf("Filenames are given on the command line\n\n");
-  printf("Example\n");
-  printf("sdhdf_checkFile *.hdf\n");
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                This help\n");
+
+	printf("\nExample:\n\n");
+  printf("sdhdf_checkFile *.hdf\n\n");
+
   exit(1);
 
 }
@@ -72,11 +73,11 @@ int main(int argc,char *argv[])
   // Display help if no commands given
   if (argc==1)
     help();
-  
+
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-h")==0)
-	help();      
+	help();
       else if (strcmp(argv[i],"-c")==0)
 	strcpy(cmdList[nCommands++],argv[++i]);
       else
@@ -91,7 +92,7 @@ int main(int argc,char *argv[])
     }
 
   inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct));
-  
+
   for (i=0;i<nFiles;i++)
     {
       sdhdf_initialiseFile(inFile);
@@ -104,7 +105,7 @@ int main(int argc,char *argv[])
 	    {
 	      printf("Report for %s\n",inFile->fname);
 	      printf(" ... sdhdf version: %s\n",inFile->primary[0].hdr_defn_version);
-	      checkVersion(inFile->primary[0].hdr_defn_version);       
+	      checkVersion(inFile->primary[0].hdr_defn_version);
 	      checkLog(inFile);
 	    }
 	  else
@@ -142,7 +143,7 @@ void checkLog(sdhdf_fileStruct *inFile)
   historyLogStruct *historyLog;
   char *tok;
   char entry[1024];
-  
+
   if (getenv("SDHDF_RUNTIME")==0)
     {
       printf("=======================================================================\n");
@@ -166,11 +167,11 @@ void checkLog(sdhdf_fileStruct *inFile)
 		  break;
 		}
 	    }
-	}	
+	}
     }
   fclose(fin);
-  
-  
+
+
   strcpy(telescope,inFile->primary[0].telescope);
   printf(" ... searching history log for observatory: %s\n",telescope);
   sprintf(fname,"%s/observatory/%s/historyLog/historyLog.dat",runtimeDir,observatoryDir);
@@ -182,7 +183,7 @@ void checkLog(sdhdf_fileStruct *inFile)
       printf("UNABLE to open file %s\n",fname);
       return;
     }
-  
+
   while (!feof(fin))
     {
       fgets(loadLine,1024,fin);
@@ -221,7 +222,7 @@ void checkLog(sdhdf_fileStruct *inFile)
 	    printf("\n");
 	}
     }
-  
+
 
   free(historyLog);
 }
