@@ -1,22 +1,24 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of INSPECTA.
+ *
+ *    INSPECTA is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    INSPECTA is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Code to apply a calibration solution to a data file
-// for flux and polarisation calibration.  The output is a new, calibrated, file.
+// sdhdf_applyCal
+// Software to apply a calibration solution to a data file
+// for flux and polarisation calibration.
+// The output is a new, calibrated, file.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +27,25 @@
 #include "inspecta.h"
 #include "hdf5.h"
 
+#define VNUM "v2.0"
+
+void help()
+{
+  printf("\nsdhdf_applyCal    %s\n",VNUM);
+	printf("INSPECTA version: %s\n",SOFTWARE_VER);
+  printf("Author:           George Hobbs\n");
+  printf("Software to apply a calibration solution to an SDHDF file\n");
+
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                This help\n");
+  printf("-e                Write out file with this extension\n");
+
+	printf("\nExample:\n\n");
+  printf("sdhdf_applyCal -e cal file.hdf\n\n");
+
+  exit(1);
+
+}
 
 int main(int argc,char *argv[])
 {
@@ -47,7 +68,7 @@ int main(int argc,char *argv[])
   char extension[MAX_STRLEN];
   int nBeam;
   int nchanAst,npolAst,ndumpAst;
-  
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -58,6 +79,9 @@ int main(int argc,char *argv[])
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
       exit(1);
     }
+
+	if (argc==1)
+	   help();
 
   for (i=1;i<argc;i++)
     {
@@ -77,9 +101,9 @@ int main(int argc,char *argv[])
 	    {
 	      sdhdf_loadMetaData(inFile);
 
-	      
+
 	      printf("%-22.22s %-22.22s %-5.5s %-6.6s %-20.20s %-10.10s %-10.10s %-7.7s %3d\n",fname,inFile->primary[0].utc0,inFile->primary[0].hdr_defn_version,inFile->primary[0].pid,inFile->beamHeader[0].source,inFile->primary[0].telescope,inFile->primary[0].observer, inFile->primary[0].rcvr,inFile->beam[0].nBand);
-	      
+
 	      nBeam = inFile->nBeam;
 	      sdhdf_allocateBeamMemory(outFile,nBeam);
 	      for (b=0; b<nBeam; b++)
@@ -109,7 +133,7 @@ int main(int argc,char *argv[])
 			  avTsys_BB[k]/=inFile->beam[b].calBandHeader[ii].ndump;
 
 			  //			  avTsys_AA[k] = 30.1954;
-			  
+
 			  //			  avTsys_AA[k]+=0.15*avTsys_AA[k];  // Used to scale Tsys
 			  //			  avTsys_BB[k]+=0.15*avTsys_BB[k];
 			}
@@ -122,7 +146,7 @@ int main(int argc,char *argv[])
 
 		      // FIXME: Assuming positive bandwidth
 		      cbw = inFile->beam[b].bandData[ii].cal_on_data.freq[1] - inFile->beam[b].bandData[ii].cal_on_data.freq[0];
-		      
+
 		      for (k=0;k<inFile->beam[b].calBandHeader[ii].nchan;k++)
 			{
 
@@ -150,7 +174,7 @@ int main(int argc,char *argv[])
 
 			  //			  scaleAA=1;
 			  //			  scaleBB=1;
-						  
+
 			  nchanAst = inFile->beam[b].bandHeader[ii].nchan;
 			  npolAst  = inFile->beam[b].bandHeader[ii].npol;
 			  ndumpAst  = inFile->beam[b].bandHeader[ii].ndump;
@@ -164,7 +188,7 @@ int main(int argc,char *argv[])
 			  printf("avcal: %.4f %g %g %g %g %g %g %d %d %g %g %g\n",inFile->beam[b].bandData[ii].cal_on_data.freq[k],avTsys_AA[k],avTsys_BB[k],sumAA,sumBB,scaleAA,scaleBB,i0,i1,af0,af1,cbw);
 
 			}
-		      
+
 		      for (k=0;k<inFile->beam[b].bandHeader[ii].nchan;k++)
 			{
 			  // FIX ME: using [0] for frequency dump
@@ -175,13 +199,13 @@ int main(int argc,char *argv[])
 			}
 
 		      sdhdf_writeSpectrumData(outFile,inFile->beamHeader[b].label,inFile->beam[b].bandHeader[ii].label,b,ii,outData,inFile->beam[b].bandData[ii].astro_data.freq,inFile->beam[b].bandData[ii].astro_data.nFreqDumps,inFile->beam[b].bandHeader[ii].nchan,1,inFile->beam[b].bandHeader[ii].npol,inFile->beam[b].bandHeader[ii].ndump,0,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
-		    
+
 		      free(tsys);
 		      free(avTsys_AA);
 		      free(avTsys_BB);
 		      free(outData);
 		    }
-		}	     
+		}
 	      sdhdf_copyRemainder(inFile,outFile,0);
 	      sdhdf_closeFile(inFile);
 	      sdhdf_closeFile(outFile);
