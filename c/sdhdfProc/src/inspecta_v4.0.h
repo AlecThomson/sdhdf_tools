@@ -371,14 +371,14 @@ typedef struct sdhdf_obsParamsStruct {
   char timedb[64];
   double mjd;
   char utc[64];
-  char ut_date[64];
+  //char ut_date[64];
   char local_time[64];
   char raStr[64];
   char decStr[64];
   double raDeg;
   double decDeg;
-  double raOffset;
-  double decOffset;
+  //double raOffset;
+  //double decOffset;
   // added for v4
   int fstat;
   //
@@ -387,12 +387,16 @@ typedef struct sdhdf_obsParamsStruct {
   double az;
   double ze;
   double el;
-  double az_drive_rate;
-  double ze_drive_rate;
+  //double az_drive_rate;
+  //double ze_drive_rate;
   double hourAngle;
   double paraAngle;
   double windDir;
   double windSpd;
+  double pressure;
+  double pressureMSL;
+  double relHumidity;
+  double temp;
 } sdhdf_obsParamsStruct;
 
 //
@@ -463,9 +467,11 @@ typedef struct sdhdf_fileStruct {
   hid_t fileID;                 // File pointer
 
   // /
+  int fileAttrAllocatedMemory;              // 0 = no, 1 = yes
   sdhdf_attributes_struct fileAttr[MAX_ATTRIBUTES];
 
   // /metadata
+  int metaAttrAllocatedMemory;              // 0 = no, 1 = yes
   sdhdf_attributes_struct metaAttr[MAX_ATTRIBUTES];
 
   // /metadata/primary_header
