@@ -1,19 +1,24 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc.
+ *    This file is part of INSPECTA.
  *
- *    sdhdfProc is free software: you can redistribute it and/or modify
+ *    INSPECTA is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *    sdhdfProc is distributed in the hope that it will be useful,
+ *    INSPECTA is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *    You should have received a copy of the GNU General Public License
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>.
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+//
+// sdhdf_convertFromFITS
+// Software to convert a FITS file to SDHDF format
+//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,22 +28,30 @@
 #include "inspecta.h"
 #include "hdf5.h"
 
-#define VNUM "v0.1"
+#define VNUM "v2.0"
 
 void help()
 {
-  printf("sdhdf_convertFromFITS\n\n");
-  printf("Routine to convert FITS files to SDHDF\n");
-  printf("\n\n");
-  printf("-bin <bin>           Choice of phase bin for PSRFITS input files\n");
-  printf("-cal <filaname>      Obtain noise source information from specified file\n");
-  printf("-calOff <bin1> <bin2> Phase bins for the noise source OFF range\n");
-  printf("-calOn <bin1> <bin2> Phase bins for the noise source ON range\n");
-  printf("-f <filename>        FITS filename for conversion\n");
-  printf("-h                   This help\n");
-  printf("-o <filename>        Output filename\n");
+  printf("\nsdhdf_convertFromFITS   %s\n",VNUM);
+	printf("INSPECTA version:       %s\n",SOFTWARE_VER);
+  printf("Author:                 George Hobbs\n");
+  printf("Software to convert a FITS file to SDHDF format\n");
+
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                      This help\n");
+	printf("-bin <bin>              Choice of phase bin for PSRFITS input files\n");
+  printf("-cal <filaname>         Obtain noise source information from specified file\n");
+  printf("-calOff <bin1> <bin2>   Phase bins for the noise source OFF range\n");
+  printf("-calOn <bin1> <bin2>    Phase bins for the noise source ON range\n");
+  printf("-f <filename>           FITS filename for conversion\n");
+  printf("-o <filename>           Output filename\n");
   printf("-pulseOff <bin1> <bin2> Phase bins for the pulse OFF (baseline)\n");
-  printf("-type <type>         Type = 1 = SDFITS (default), 2 = PSRFITS\n");
+  printf("-type <type>            Type = 1 = SDFITS (default), 2 = PSRFITS\n");
+
+	printf("\nExample:\n\n");
+  printf("sdhdf_convertFromFITS -f in.fits -o out.hdf\n\n");
+
+  exit(1);
 
 }
 
@@ -62,8 +75,6 @@ int main(int argc,char *argv[])
   sdhdf_attributes_struct freqAttributes[MAX_ATTRIBUTES];
   int nDataAttributes=0;
   int nFreqAttributes=0;
-
-
 
   // Input FITS file
   int status=0;
@@ -132,9 +143,11 @@ int main(int argc,char *argv[])
   softwareVersions = (sdhdf_softwareVersionsStruct *)malloc(sizeof(sdhdf_softwareVersionsStruct));
   history          = (sdhdf_historyStruct *)malloc(sizeof(sdhdf_historyStruct));
 
-
   sdhdf_setMetadataDefaults(primaryHeader,beamHeader,bandHeader,softwareVersions,history,1,1);
 
+	if (argc==1)
+    help();
+		
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-f")==0)
