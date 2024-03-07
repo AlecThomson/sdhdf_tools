@@ -1,26 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of INSPECTA.
+ *
+ *    INSPECTA is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    INSPECTA is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to output text files relating to the data sets in the file
-//
-// Usage:
-// sdhdf_quickdump <filename.hdf>  <filename.hdf> ...
-//
+// sdhdf_quickdump
+// Software to output text files of the data in SDHDF files
 //
 
 #include <stdio.h>
@@ -29,31 +26,34 @@
 #include <math.h>
 #include "inspecta.h"
 
-#define VERSION "v0.5"
+#define VNUM "v2.0"
 
 void help()
 {
-  printf("sdhdf_quickdump %s (SDHDFProc %s)\n",VERSION,SOFTWARE_VER);
-  printf("Authors: G. Hobbs\n");
-  printf("Purpose: to present data within a file\n");
-  printf("\n");
-  printf("Command line arguments:\n\n");
+  printf("\nsdhdf_quickdump   %s\n",VNUM);
+	printf("INSPECTA version: %s\n",SOFTWARE_VER);
+  printf("Author:           George Hobbs\n");
+  printf("Software to output text files of the data in SDHDF files\n");
+
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                This help\n");
   printf("-bandRange <b0> <b1>   Output data in bands between b0 and b1\n");
   printf("-cal                   Output calibration data\n");
   printf("-cal_tav               Average calibration data in time\n");
   printf("-cal32_ch <ch>         Set the channel to 'ch' when outputting data for the 32-bin cal\n");
-  printf("-cal32_tav             Average the 32-binned calibration signal in time before output\n");  
+  printf("-cal32_tav             Average the 32-binned calibration signal in time before output\n");
   printf("-calOnOff              Calculate ON-OFF for the noise source parameters\n");
   printf("-dumpRange <s0> <s1>   Output data in specificed sub-integration range\n");
   printf("-e <ext>               Output to data file with defined extension\n");
   printf("-fref <fref> Use 'fref' as a reference frequency and output velocities as well as frequencies\n");
   printf("-freqRange <f0> <f1>   Output data between f0 and f1 (in MHz)\n");
-  printf("-h                     this help\n");
   printf("-mjd                   Print dump time MJD in output\n");
   printf("-noflagged             Do not print out lines that have been flagged\n");
   printf("-stokes                Convert coherency products to Stokes (for calibrated data) or pseudo-Stokes (uncalibrated data)\n");
   printf("-tsys                  output system temperature measurements\n");
 
+	printf("\nExample:\n\n");
+  printf("sdhdf_quickdump file.hdf\n\n");
 
   exit(1);
 }
@@ -92,7 +92,10 @@ int main(int argc,char *argv[])
   int band0=-1,band1=-1;
   double fref=-1;
   int cal_tav=-1;
-  
+
+	if (argc==1)
+    help();
+
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-h")==0)
@@ -147,9 +150,9 @@ int main(int argc,char *argv[])
     }
 
   //  printf("Starting quickdump\n");
-  
+
   inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct));
-  
+
   for (i=0;i<nFiles;i++)
     {
       sdhdf_initialiseFile(inFile);
@@ -168,7 +171,7 @@ int main(int argc,char *argv[])
 		  exit(1);
 		}
 	    }
-	  
+
 	  for (beam=0;beam<inFile->nBeam;beam++)
 	    {
 	      if (band0 < 0)
@@ -198,7 +201,7 @@ int main(int argc,char *argv[])
 			  sd0 = 0;
 			  sd1 = inFile->beam[beam].bandHeader[band].ndump;
 			}
-		      
+
 		      for (k=sd0;k<sd1;k++)
 			{
 			  //		      printf("Here with %d\n",k);
@@ -212,7 +215,7 @@ int main(int argc,char *argv[])
 
 			      if (setFreqRange==1 && (freq < freq0 || freq > freq1))
 				display=0;
-			      
+
 			      if (npol > 1)
 				{
 				  pol2 = inFile->beam[beam].bandData[band].astro_data.pol2[j+k*nchan];
@@ -240,11 +243,11 @@ int main(int argc,char *argv[])
 				  pol3 = sU;
 				  pol4 = sV;
 				}
-			      
+
 			      weight = inFile->beam[beam].bandData[band].astro_data.dataWeights[k*nchan+j]*(1-inFile->beam[beam].bandData[band].astro_data.flag[k*nchan+j]);
 			      if (notFlagged == 1 && weight == 0)
 				display=0;
-			      
+
 			      if (display==1)
 				{
 				  if (outFile==1)
@@ -324,7 +327,7 @@ int main(int argc,char *argv[])
 				  mjdAv = 0;
 				  nd=0;
 				  for (j=sd0;j<sd1;j++)
-				    {				      
+				    {
 				      cal_on_pol1+=inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal];
 				      cal_off_pol1+=inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal];
 
@@ -374,7 +377,7 @@ int main(int argc,char *argv[])
 				    display=0;
 				  if (display==1)
 				    printf("%s %d %d %d %d %.6f %g %g %g %g %g %g %g %g %.6f %.6f %.6f %.6f %s\n",inFile->fname,beam,band,k,j,freq,inFile->beam[beam].bandData[band].cal_on_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol1[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol2[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol3[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_on_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_off_data.pol4[k+j*nchanCal],inFile->beam[beam].bandData[band].cal_obsHeader[j].mjd,inFile->beam[beam].bandData[band].cal_obsHeader[j].az,inFile->beam[beam].bandData[band].cal_obsHeader[j].el,inFile->beam[beam].bandData[band].cal_obsHeader[j].paraAngle,inFile->beamHeader[beam].source);
-				  
+
 				}
 			    }
 			}
@@ -383,10 +386,10 @@ int main(int argc,char *argv[])
 		    {
 		      readPhaseResolvedCal(inFile,band,cal32_chN,cal32_tav);
 		    }
-		  
-		  
+
+
 		  sdhdf_releaseBandData(inFile,beam,band,1);
-		  
+
 		}
 	    }
 	  if (outFile==1)
@@ -413,7 +416,7 @@ void readPhaseResolvedCal(sdhdf_fileStruct *inFile,int band,int cal32_chN,int ca
   float *data;
   int k0,k1;
 
-  
+
   if (cal32_chN < 0)
     {
       k0 = 0;
@@ -427,7 +430,7 @@ void readPhaseResolvedCal(sdhdf_fileStruct *inFile,int band,int cal32_chN,int ca
   sprintf(dataName,"beam_%d/%s/calibrator_data/cal32_data",beam,inFile->beam[beam].bandHeader[band].label);
   dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
   data = (float *)malloc(sizeof(float)*nchan*npol*ndump*nbin);
-  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);  
+  status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);
   if (cal32_tav == 1)
     {
       float bin1[nbin],bin2[nbin],bin3[nbin],bin4[nbin];
@@ -456,7 +459,7 @@ void readPhaseResolvedCal(sdhdf_fileStruct *inFile,int band,int cal32_chN,int ca
 	    }
 	    }
       printf("\n");
-      
+
     }
   else
     {
