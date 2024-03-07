@@ -1,26 +1,23 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of INSPECTA.
+ *
+ *    INSPECTA is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    INSPECTA is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
-// Software to flag data
-//
-// Usage:
-// sdhdf_cal
-//
+// sdhdf_flag
+// Software to flag frequency channels in SDHDF files
 //
 
 #include <stdio.h>
@@ -32,6 +29,7 @@
 #include <cpgplot.h>
 #include "TKfit.h"
 
+#define VNUM "v2.0"
 #define MAX_RFI 512
 
 void doPlot(sdhdf_fileStruct *inFile,int ibeam);
@@ -48,21 +46,21 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
 
 void help()
 {
-  printf("sdhdf_flag\n");
-  printf("sdhfProc version:   %s\n",SOFTWARE_VER);
-  printf("author:             George Hobbs\n");
-  printf("\n");
-  printf("Software to flag a spectrum in an interactive matter\n");
-  printf("\n\nCommand line arguments:\n\n");
+	printf("\nsdhdf_flag        %s\n",VNUM);
+	printf("INSPECTA version: %s\n",SOFTWARE_VER);
+  printf("Author:           George Hobbs\n");
+  printf("Software to flag frequency channels in SDHDF files\n");
 
-  printf("-f <string>          Input file name\n");
+  printf("\nCommand line arguments:\n\n");
   printf("-h                   This help\n");
+  printf("-f <string>          Input file name\n");
   printf("-setnband <number>   Set the maximum number of sub-bands to process\n");
-  printf("-sb <number>         Set the band number for the initial plot (starting from 0)   [can also use -band instead of -sb]\n");
+  printf("-sb <number>         Set the band number for the initial plot (starting from 0)");
+	printf("                                     [Can also use -band instead of -sb]\n");
 
-  printf("\n\n");
+  printf("\n");
   printf("The plot is interactive and the following commands are available\n\n");
-  
+
   printf("1        Select only polarisation channel 1\n");
   printf("2        Select only polarisation channel 2\n");
   printf("+        Move to next spectral dump\n");
@@ -99,7 +97,12 @@ int main(int argc,char *argv[])
   //  spectralDumpStruct spectrum;
   int npol=4;
   int setnband=-1;
-  
+
+	if (argc==1) {
+	  help();
+		exit(1);
+	}
+
   if (!(inFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >inFile<\n");
@@ -107,32 +110,32 @@ int main(int argc,char *argv[])
     }
 
   sdhdf_initialiseFile(inFile);
-    
+
   for (i=1;i<argc;i++)
-    {      
-      if (strcmp(argv[i],"-f")==0)	       strcpy(fname,argv[++i]);	
+    {
+      if (strcmp(argv[i],"-f")==0)	       strcpy(fname,argv[++i]);
       else if (strcmp(argv[i],"-setnband")==0) sscanf(argv[++i],"%d",&setnband);
       else if (strcmp(argv[i],"-sb")==0 || strcmp(argv[i],"-band")==0)       sscanf(argv[++i],"%d",&iband);
       else if (strcmp(argv[i],"-h")==0) {help(); exit(1);}
     }
-  
+
   sdhdf_openFile(fname,inFile,1);
   printf("File opened\n");
   sdhdf_loadMetaData(inFile);
   printf("Complete loading metadata\n");
   if (setnband > 0)
     inFile->beam[ibeam].nBand = setnband;
-  
-  
+
+
   totSize=0;
   nband = inFile->beam[ibeam].nBand;
-   
+
   npol=4; // FIX HARDCODING OF NPOL
   for (i=0;i<nband;i++)
     {
       totSize+=(inFile->beam[ibeam].bandHeader[i].nchan*inFile->beam[ibeam].bandHeader[i].ndump*npol);
     }
-  
+
   printf("Loading the data\n");
   for (i=0;i<nband;i++)
     {
@@ -176,7 +179,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
   int selectPol=1;
   int firstThrough=1;
   int needSave=0;
-  
+
   cpgbeg(0,"/xs",1,1);
   cpgslw(2);
   cpgscf(2);
@@ -192,14 +195,14 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	max_nchan = inFile->beam[ibeam].bandHeader[i].nchan;
     }
   printf("Maximum channels = %d\n",(int)max_nchan);
-  
+
   px  = (float *)malloc(sizeof(float)*max_nchan);
   py1 = (float *)malloc(sizeof(float)*max_nchan);
   py2 = (float *)malloc(sizeof(float)*max_nchan);
   pf1 = (float *)malloc(sizeof(float)*max_nchan);
   pf2 = (float *)malloc(sizeof(float)*max_nchan);
-  
-  do {    
+
+  do {
     nchan = inFile->beam[ibeam].bandHeader[iband].nchan;
     ndump = inFile->beam[ibeam].bandHeader[iband].ndump;
 
@@ -256,20 +259,20 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 		      }
 		  }
 	      }
-	      
-	    
+
+
 	    if (regionType==1 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] == 1) // No region set
 	      {
 		//		printf("Flagging region\n");
 		regionType=2;
 		pf1[nFlagRegion] = px[i];
-	      }	     
-	    else if (regionType==2 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] == 1) 
+	      }
+	    else if (regionType==2 && inFile->beam[ibeam].bandData[iband].astro_data.flag[i+nchan*idump] == 1)
 	      {
 		regionType=1;
 		pf2[nFlagRegion++] = px[i];
 	      }
-	      
+
 	  }
 	if (regionType==2)
 	    pf2[nFlagRegion++] = px[i-1];
@@ -304,8 +307,8 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 		cpgsci(1); cpgline(i-1-i0,px+i0,py1+i0); cpgsci(1);
 		cpgsci(2); cpgline(i-1-i0,px+i0,py2+i0); cpgsci(1);
 		drawIt=-1;
-		
-	      }	      
+
+	      }
 	  }
 	if (drawIt==1)
 	  {
@@ -326,7 +329,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
     cpgsci(3);
     cpgpt(1,pointX,pointY,31);
     cpgsci(1);
-    
+
     cpgcurs(&mx,&my,&key);
     if (key=='u')
       recalc=1;
@@ -363,7 +366,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 			  }
 		      }
 		  }
-	      }	
+	      }
 	  }
 	recalc=1;
       }
@@ -403,7 +406,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	  {
 	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
-	      inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;      
+	      inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 	  }
 	idump++;
 	if (idump >= ndump)
@@ -419,10 +422,10 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	  {
 	    for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
-	      { 
+	      {
 		// FIX ME: using [0] for frequency dump
 		if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= minx && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= maxx)
-		  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;      
+		  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 	      }
 	  }
 	idump++;
@@ -442,14 +445,14 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  idump = ndump-1;
 	recalc=2;
       }
-    else if (key=='+') 
+    else if (key=='+')
       {
 	idump++;
 	if (idump >= ndump)
 	  idump = ndump-1;
 	recalc=2;
       }
-    else if (key=='-') 
+    else if (key=='-')
       {
 	idump--;
 	if (idump == -1)
@@ -478,7 +481,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	      {minx = mx; maxx = mx2;}
 	    else
 	      {minx = mx2; maxx = mx;}
-	    
+
 	    if (my < my2)
 	      {miny = my; maxy = my2;}
 	    else
@@ -486,7 +489,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  }
 	else
 	  printf("Please press 'z' and then move somewhere and click left mouse button\n");
-	
+
       }
     else if (key=='Z' || key=='f')
       {
@@ -512,7 +515,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 			      inFile->beam[ibeam].bandData[i].astro_data.flag[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 			  }
 			else
-			  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;  
+			  inFile->beam[ibeam].bandData[i].astro_data.flag[j+idump*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 		      }
 		  }
 	      }
@@ -534,7 +537,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	    for (i=0;i<inFile->beam[ibeam].nBand;i++)
 	      {
 		for (j=0;j<inFile->beam[ibeam].bandHeader[i].nchan;j++)
-		  { 
+		  {
 		    // FIX ME: using [0] for frequency dump
 		    if (inFile->beam[ibeam].bandData[i].astro_data.freq[j] >= lowX && inFile->beam[ibeam].bandData[i].astro_data.freq[j] <= highX)
 		      {
@@ -542,7 +545,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 			if (zapAllDumps==1)
 			  {
 			    for (k=0;k<ndump;k++)
-			      {				
+			      {
 				inFile->beam[ibeam].bandData[i].astro_data.flag[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 0;
 			      }
 			  }
@@ -594,7 +597,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 	  cpgenv(minx,maxx,new_miny,new_maxy,0,1);
 	  sprintf(title,"Band: %s (spectral dump %d/%d)",inFile->beam[ibeam].bandHeader[iband].label,idump,ndump-1);
 	  cpglab("Frequency (MHz)","Signal strength (arbitrary)",title);
-	  
+
 	  {
 	    int i0=0;
 	    int drawIt=-1;
@@ -609,16 +612,16 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 		  {
 		    cpgsci(1); cpgline(i-1-i0,plotX+i0,plotY+i0); cpgsci(1);
 		    drawIt=-1;
-		    
-		  }	      
+
+		  }
 	      }
 	    if (drawIt==1)
 	      {
 		cpgsci(1); cpgline(i-1-i0,plotX+i0,plotY+i0); cpgsci(1);
 	      }
 	  }
-	  
-       
+
+
 	  cpgband(5,0,mx,my,&mx2,&my2,&key);
 	  if (key=='A') // Mouse click
 	    {
@@ -632,7 +635,7 @@ void doPlot(sdhdf_fileStruct *inFile,int ibeam)
 			    inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]+k*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 1;
 			}
 		      else
-			inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 1;   
+			inFile->beam[ibeam].bandData[plotI[i]].astro_data.flag[plotJ[i]+idump*inFile->beam[ibeam].bandHeader[plotI[i]].nchan] = 1;
 		    }
 		}
 	    }
@@ -699,7 +702,7 @@ void saveFile(sdhdf_fileStruct *inFile,int ibeam)
   sdhdf_formOutputFilename(inFile->fname,"flag",oname);
   printf("Saving to %s, please wait ... \n",oname);
 
-  
+
   if (!(outFile = (sdhdf_fileStruct *)malloc(sizeof(sdhdf_fileStruct))))
     {
       printf("ERROR: unable to allocate sufficient memory for >outFile<\n");
@@ -736,7 +739,7 @@ void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
   // Fixed mobile transmission towers
   // We see persistent emission from these at all telescope pointing angles
   //
-  f0[nT] = 758; f1[nT++] = 768;       //  Optus  
+  f0[nT] = 758; f1[nT++] = 768;       //  Optus
   f0[nT] = 768; f1[nT++] = 788;       //  Telstra
   f0[nT] = 869.95; f1[nT++] = 875.05; //  Vodafone
   f0[nT] = 875.05; f1[nT++] = 889.95; //  Telstra
@@ -768,12 +771,12 @@ void autoZapTransmitters(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
       f0[nT] = 847.8-0.2; f1[nT++] = 847.8+0.2;     //  Radio broadcast Parkes
       f0[nT] = 849.5-0.1; f1[nT++] = 849.5+0.1;               //  NSW Police Force
       f0[nT] = 848.6-0.230/2.; f1[nT++] = 848.6+0.230/2.; //  Radio broadcast Mount Coonambro
-      
+
       // Note see Licence number 1927906/1 in the ACMA database
       f0[nT] = 2127.5-2.5; f1[nT++] = 2127.5+2.5; // Parkes: "Station open to official correspondence exclusively"
 
       f0[nT] = 3575; f1[nT++] = 3640;               //  Telstra from Orange or Dubbo
-    }  
+    }
   printf("Number of fixed transmitters being removed = %d\n",nT);
   flagChannels(inFile,ibeam,f0,f1,nT,zapAll);
 }
@@ -787,14 +790,14 @@ void autoZapDigitisers(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
   int i,j;
   int nzap=0;
   int zapAll=1;
-  
+
   //
   // Digitiser-related signals that we always see
   //
   f0[nT] = 1023; f1[nT++] = 1025;
   f0[nT] = 1919.9; f1[nT++] = 1920.1;
-  f0[nT] = 3071.9; f1[nT++] = 3072.05;       
-  
+  f0[nT] = 3071.9; f1[nT++] = 3072.05;
+
   printf("Number of digitiser-related signals being removed = %d\n",nT);
 
   flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
@@ -810,7 +813,7 @@ void autoZapUnexplained(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
   int i,j;
   int nzap=0;
   int zapAll=1;
-  
+
   // We do not know what is causing this
   f0[nT] = 824.95; f1[nT++] = 825.05;
 
@@ -844,7 +847,7 @@ void autoZapWiFi(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
   int i,j;
   int nzap=0;
   int zapAll=1;
-  
+
   //
   // Digitiser-related signals that we always see
   //
@@ -879,7 +882,7 @@ void autoZapSatellites(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
       f0[nT] = 1260; f1[nT++] = 1300;
       f0[nT] = 1525; f1[nT++] = 1646.5;  // Inmarsat - this is too wide
     }
-  
+
   printf("Number of satellite signals being removed = %d\n",nT);
 
   flagChannels(inFile,ibeam,f0,f1,nT,zapAllSub);
@@ -901,7 +904,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
   int n =0;
   int n1=0;
   int nchan;
-  
+
   float s1,s2;
   float s1_2,s2_2;
   float t1,t2,t1_2,t2_2;
@@ -913,13 +916,13 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 
   pwr_clean = (float *)malloc(sizeof(float)*inFile->beam[ibeam].bandHeader[bandNum].ndump);
 
-  
+
   nT=0;
   for (i=0;i<150;i++)
     {
-      f0[nT] = 703+0.2*i; f1[nT] = 703+0.2*(i+1); 
+      f0[nT] = 703+0.2*i; f1[nT] = 703+0.2*(i+1);
       nT++;
-    }  
+    }
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
     {
       printf("Checking %g %g\n",inFile->beam[ibeam].bandHeader[i].f0,inFile->beam[ibeam].bandHeader[i].f1);
@@ -930,7 +933,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 	}
     }
 
-  //      nchan = 
+  //      nchan =
   if (bandNum == -1)
     printf("WARNING: Cannot find the clean band. No flagging applied\n");
   else
@@ -967,10 +970,10 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 
       sdev1 = sqrt(1/(float)n*s1_2 - pow(1.0/(float)n*s1,2));
       sdev2 = sqrt(1/(float)n*s2_2 - pow(1.0/(float)n*s2,2));
-      
-      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, n = %d, band = %d\n",mean1,mean2,sdev1,sdev2,n,bandNum);      
+
+      printf("In clean band. Mean values are %g and %g, sdev = %g and %g, n = %d, band = %d\n",mean1,mean2,sdev1,sdev2,n,bandNum);
     }
-  
+
   // Obtain signal in different bands
   nchan = inFile->beam[ibeam].bandHeader[bandNum].nchan;
   for (j=0;j<inFile->beam[ibeam].bandHeader[bandNum].ndump;j++)
@@ -1006,7 +1009,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 	  pwr_test = (t1+t2)/(float)n;
 	  meanT1 = t1/(float)n;
 	  meanT2 = t2/(float)n;
-	  
+
 	  sdevT1 = sqrt(1/(float)n*t1_2 - pow(1.0/(float)n*t1,2));
 	  sdevT2 = sqrt(1/(float)n*t2_2 - pow(1.0/(float)n*t2,2));
 
@@ -1024,15 +1027,15 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
 		  // FIX ME: using [0] for frequency dump
 		  if (inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] > f0[k] && inFile->beam[ibeam].bandData[bandNum].astro_data.freq[i] < f1[k])
 		    inFile->beam[ibeam].bandData[bandNum].astro_data.flag[i+nchan*j] = 1;
-		}  
+		}
 	    }
 	}
     }
-  
 
-  
+
+
   /*
-  
+
   if (zapAll==1)
     {
       f0[nT] = 703;    f1[nT++] = 713;    // 4G Optus
@@ -1047,7 +1050,7 @@ void autoZapHandsets(sdhdf_fileStruct *inFile,int ibeam)
       f0[nT] = 1710;   f1[nT++] = 1725;  // 4G Telstra
       f0[nT] = 1745;   f1[nT++] = 1755;  // 4G Optus
       f0[nT] = 2550;   f1[nT++] = 2570;  // 4G Optus
-      
+
     }
   printf("Number of Handset signals being removed = %d\n",nT);
 
@@ -1092,7 +1095,7 @@ void autoZapAircraft(sdhdf_fileStruct *inFile,int ibeam,int zapAllSub)
       f0[nT] = 1137.6; f1[nT++] = 1138.4;       // Canberra DME
       f0[nT] = 1149.8; f1[nT++] = 1150.2;       // CHECK IF THIS IS A DME
       f0[nT] = 1150.8; f1[nT++] = 1151.2;       // CHECK IF THIS IS A DME
-      
+
     }
   printf("Number of aircraft signals being removed = %d\n",nT);
 
@@ -1107,10 +1110,10 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
   int nchan;
   float f;
   int zap=0;
-  
+
   for (i=0;i<inFile->beam[ibeam].nBand;i++)
     {
-  	  nchan = inFile->beam[ibeam].bandHeader[i].nchan; 
+  	  nchan = inFile->beam[ibeam].bandHeader[i].nchan;
 	  for (j=0;j<nchan;j++)
 	    {
 	      // FIX ME: using [0] for frequency dump
@@ -1133,7 +1136,7 @@ void flagChannels(sdhdf_fileStruct *inFile,int ibeam,float *f0,float *f1,int nT,
 		      for (k=0;k<inFile->beam[ibeam].bandHeader[i].ndump;k++)
 			inFile->beam[ibeam].bandData[i].astro_data.flag[j+k*inFile->beam[ibeam].bandHeader[i].nchan] = 1;
 		    }
-		  
+
 	    }
 	}
     }
@@ -1151,14 +1154,14 @@ void zapPersistent(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
   int n=0;
   float freq;
   double mjd;
-  
+
   if (strcmp(inFile->primary[0].telescope,"Parkes")!=0)
-    printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME	      
+    printf("WARNING: ONLY IMPLEMENTED PARKES OBSERVATORY\n"); // FIX ME
   sdhdf_loadPersistentRFI(rfi,&nRFI,MAX_RFI,"parkes");
 
   for (i=0;i<nRFI;i++)
     {
-      if (rfi[i].type == 1) 
+      if (rfi[i].type == 1)
 	{
 	  mjd = inFile->beam[ibeam].bandData[0].astro_obsHeader[0].mjd; // FIX 0 FOR BAND AND DUMP HERE
 	  if (mjd >= rfi[i].mjd0 && mjd <= rfi[i].mjd1)
@@ -1173,6 +1176,6 @@ void zapPersistent(sdhdf_fileStruct *inFile,int ibeam,int zapAll)
 	  printf("WARNING: unknown RFI type in sdhdf_flag\n");
 	}
     }
-  
-  flagChannels(inFile,ibeam,f0,f1,n,zapAll);  
+
+  flagChannels(inFile,ibeam,f0,f1,n,zapAll);
 }
