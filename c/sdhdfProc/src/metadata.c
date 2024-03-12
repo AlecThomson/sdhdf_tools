@@ -149,7 +149,7 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)
 	if (DEBUG == 1) printf(">LOADING CONFIG\n");
 	// TODO: currently not getting attributres from group
   //sdhdf_loadGroup(inFile, CONFIG_GRP, &inFile->configAttr);
-  sdhdf_loadConfig(inFile); // done
+  //sdhdf_loadConfig(inFile); // done
 	if (DEBUG == 1) printf("<FINISHED CONFIG\n\n");
 
 	// /beam group
