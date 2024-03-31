@@ -100,8 +100,10 @@ void help()
   printf("-Fav                - completely average frequency channels (weighted mean)\n");
   printf("-fav <val>          - average (weighted mean) val frequency channels together\n");
   printf("-favMedian <val>    - average (*un*weighted median) val frequency channels together\n");
-  printf("-lsr_noregrid       - convert frequency axis to the LSR\n");
-  printf("-lsr_regrid         - convert frequency axis to the LSR and regrid back to the original frequency axis\n");
+  printf("-lsr_noregrid       - convert frequency axis to the LSR (LSRK-approx)\n");
+  printf("-lsr_regrid         - convert frequency axis to the LSR (LSRK-approx) and regrid back to the original frequency axis\n");
+  printf("-lsr2_noregrid       - convert frequency axis to the LSR (LSRK-precise)\n");
+  printf("-lsr2_regrid         - convert frequency axis to the LSR (LSRK-precise) and regrid back to the original frequency axis\n");
   printf("-p1 or -p1_sum      - summation of P0 and P1\n");
   printf("-p1_av              - (P0+P1)/2 \n");
   printf("-showVel            - output the velocity correction to the LSR or barycentre\n");
@@ -175,10 +177,14 @@ int main(int argc,char *argv[])
 	{commands[nCommands].type=3; commands[nCommands++].param1 = 2;}
       else if (strcmp(argv[i],"-lsr_noregrid")==0)
 	{commands[nCommands].type=4; commands[nCommands].param1 = 2; commands[nCommands++].param2 = 1;}
+      else if (strcmp(argv[i],"-lsr2_noregrid")==0)
+	{commands[nCommands].type=4; commands[nCommands].param1 = 3; commands[nCommands++].param2 = 1;}
       else if (strcmp(argv[i],"-bary_noregrid")==0)
 	{commands[nCommands].type=4; commands[nCommands].param1 = 1; commands[nCommands++].param2 = 1;}
       else if (strcmp(argv[i],"-lsr_regrid")==0)
 	{commands[nCommands].type=4; commands[nCommands].param1 = 2; commands[nCommands++].param2 = 2;}
+      else if (strcmp(argv[i],"-lsr2_regrid")==0)
+	{commands[nCommands].type=4; commands[nCommands].param1 = 3; commands[nCommands++].param2 = 2;}
       else if (strcmp(argv[i],"-bary_regrid")==0)
 	{commands[nCommands].type=4; commands[nCommands].param1 = 1; commands[nCommands++].param2 = 2;}
       else if (strcasecmp(argv[i],"-showVel")==0)
@@ -883,7 +889,7 @@ void changeFrequencyAxis(dataStruct *in,dataStruct *out,int bary_lsr,int regrid,
 	{
 	  if (bary_lsr==1)
 	    strcpy(freqAttributes[i].value,"barycentric");
-	  else if (bary_lsr==2)
+	  else if (bary_lsr==2 || bary_lsr==3)
 	    strcpy(freqAttributes[i].value,"LSR");				    
 	}
 

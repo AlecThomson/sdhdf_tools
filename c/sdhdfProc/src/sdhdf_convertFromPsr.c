@@ -522,7 +522,7 @@ int main(int argc,char *argv[])
 		}
 	    }
 	}
-      tdump = 0; // SET PROPERLY
+      tdump = 1; // SET PROPERLY
       mjd = 56000; // SET PROPERLY 
       strcpy(srcName,"UNKNOWN"); // SET PROPERLY
       

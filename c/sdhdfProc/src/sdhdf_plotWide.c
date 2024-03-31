@@ -114,6 +114,8 @@ int main(int argc,char *argv[])
   long writepos;
   int allocateMemory=0;
   float miny,maxy,val1,val2,val3,val4,minx,maxx;
+  float miny1,maxy1,miny2,maxy2,miny3,maxy3;
+  int useAllMiny=0;
   float ominy,omaxy,ominx,omaxx;
   float setMinX=-1;
   float setMaxX=-1;
@@ -146,7 +148,7 @@ int main(int argc,char *argv[])
   int s0,s1;
   int dispAz=0;
   int dispTime=0;
-  float azVal;
+  float azVal,elVal;
   char utc[1024];
   int log=1;
   int setMinMax=0;
@@ -189,6 +191,18 @@ int main(int argc,char *argv[])
 	{sscanf(argv[++i],"%f",&miny); setMinMax=1;}
       else if (strcmp(argv[i],"-maxy")==0)
 	{sscanf(argv[++i],"%f",&maxy); setMinMax=1;}
+      else if (strcasecmp(argv[i],"-3bandrange")==0)
+	{
+	  sscanf(argv[++i],"%f",&miny1);
+	  sscanf(argv[++i],"%f",&maxy1);
+	  sscanf(argv[++i],"%f",&miny2);
+	  sscanf(argv[++i],"%f",&maxy2);
+	  sscanf(argv[++i],"%f",&miny3);
+	  sscanf(argv[++i],"%f",&maxy3);
+
+
+	  useAllMiny=1;
+	}
       else if (strcmp(argv[i],"-stokes")==0)
 	stokes=1;
       else if (strcmp(argv[i],"-transmitters")==0)
@@ -203,6 +217,8 @@ int main(int argc,char *argv[])
 	plotPol=4;
       else if (strcmp(argv[i],"-splitRF")==0)
 	splitRF=1;
+      else if (strcmp(argv[i],"-splitRF_rfi")==0)
+	splitRF=2;
       else if (strcmp(argv[i],"-g")==0)
 	strcpy(grDev,argv[++i]);
       else if (strcmp(argv[i],"-dispAz")==0)
@@ -392,8 +408,11 @@ int main(int argc,char *argv[])
 	}
       
       if (sd >= 0)
-	azVal = inFile->beam[0].bandData[0].astro_obsHeader[sd].az;      
-      strcpy(utc,inFile->beam[0].bandData[0].astro_obsHeader[sd].utc);
+	{
+	  azVal = inFile->beam[0].bandData[0].astro_obsHeader[sd].az;
+	  elVal = inFile->beam[0].bandData[0].astro_obsHeader[sd].el;      
+	}
+	  strcpy(utc,inFile->beam[0].bandData[0].astro_obsHeader[sd].utc);
       printf("Closing\n");
       sdhdf_closeFile(inFile);
       printf("Done close\n");
@@ -613,30 +632,74 @@ int main(int argc,char *argv[])
 	int region;
 	
         cpgsch(charHeight);
-	cpgsvp(0.10,0.95,0.10,0.35);
-	drawBand(704,1344,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title,ylabel);
-		
-	cpgsvp(0.10,0.95,0.40,0.65);
-	drawBand(1344,2368,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title,ylabel);
+	cpgsvp(0.10,0.95,0.08,0.31);
 
-	cpgsvp(0.10,0.95,0.7,0.95);
-	drawBand(2368,4096,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title,ylabel);
-      
+	if (useAllMiny==1)
+	  {
+	    miny=miny1;
+	    maxy=maxy1;
+	    setMinMax=1;
+	  }
+
+	if (splitRF==1)
+	  drawBand(704,1344,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title,ylabel);
+	else
+	  drawBand(704,960,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,1,miny,maxy,setMinMax,title,ylabel);
+	  
+	cpgsvp(0.10,0.95,0.36,0.61);
+	if (useAllMiny==1)
+	  {
+	    miny=miny2;
+	    maxy=maxy2;
+	    setMinMax=1;
+	    printf("Setting to %g %g\n",miny,maxy);
+	  }
+
+	if (splitRF==1)
+	  drawBand(1344,2368,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title,ylabel);
+	else
+	  drawBand(960,1216,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,2,miny,maxy,setMinMax,title,ylabel);
+	  
+	cpgsvp(0.10,0.95,0.66,0.91);
+	if (useAllMiny==1)
+	  {
+	    miny=miny3;
+	    maxy=maxy3;
+	    setMinMax=1;
+	  }
+	if (splitRF==1)
+	  drawBand(2368,4096,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title,ylabel);
+	else
+	  drawBand(2368,2496,nVals,px,pflag,py1,py2,py3,py4,plotPol,flagF0,flagF1,nFlag,nShade,shadeF0,shadeF1,shadeCol,log,0,miny,maxy,setMinMax,title,ylabel);
 	cpgsch(1.4);
-	if (dispAz==1)
+
+	cpgsvp(0.10,0.95,0.91,0.99);
+	cpgswin(0,1,0,1);
+	//	cpgbox("ABCTSN",0,0,"ABCTSN",0,0);
+	
+	//	if (dispAz==1)
 	  {
 	    char label[128];
 	    cpgsch(1.0);
 	    sprintf(label,"Azimuth: %.1f deg",azVal);
-	    cpgtext(2500,6.2,label);
+	    cpgtext(0.07,0.8,label);
+	    sprintf(label,"Elevation: %.1f deg",elVal);
+	    cpgtext(0.07,0.4,label);
 	    cpgsch(1.4);
 	  }
-	if (dispTime==1)
+	  //	if (dispTime==1)
 	  {
 	    char label[128];
+	    sdhdf_fixUnderscore(fname[0],fnameFix);
 	    cpgsch(1.0);
 	    sprintf(label,"UTC time: %s",utc);
-	    cpgtext(2500,3.5,label);
+	    cpgtext(0.3,0.8,label);
+	    sprintf(label,"File: %s",fnameFix);
+	    cpgtext(0.6,0.8,label);
+	    sprintf(label,"Spectral dump: %d",sd);
+	    cpgtext(0.6,0.4,label);
+
+
 	    cpgsch(1.4);
 	  }
 

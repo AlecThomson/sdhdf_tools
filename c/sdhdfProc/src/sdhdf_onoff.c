@@ -41,10 +41,12 @@ void help()
   printf("\n");
   printf("Software to produce (ON-OFF)/OFF spectra\n");
   printf("\n\nCommand line arguments:\n\n");
+  printf("-batch <filename> Read filenames from the file specified\n");
   printf("-h                This help\n");
   printf("-on <filename>    SDHDF file corresponding to 'ON' source pointing\n");
   printf("-off <filename>   SDHDF file corresponding to 'OFF' source pointing\n");
   printf("-o <filename>     Output SDHDF file containing (ON-OFF)/OFF\n");
+  printf("-subtract         Format ON-OFF, instead of (ON-OFF)/OFF\n");
   
   printf("\nExample:\n\n");
   printf("sdhdf_onoff -on on.hdf.T -off off.hdf.T -o diff.hdf\n");
