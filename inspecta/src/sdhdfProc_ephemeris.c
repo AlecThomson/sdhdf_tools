@@ -200,10 +200,18 @@ void sdhdf_calcVoverC(double *mjd,double *raDeg,double *decDeg,int nvals,double 
       // THE STANDARD LSR IS DEFINED AS FOLLOWS: THE SUN MOVES AT 20.0 KM/S
       // TOWARD RA=18.0H, DEC=30.0 DEG IN 1900 EPOCH COORDS
       // using PRECESS, this works out to ra=18.063955 dec=30.004661 in 2000 coords.
-      if (bary_lsr==2)
+      if (bary_lsr==2) // Approx LSRK
 	{
 	  vlsr_ra = 2*M_PI*18./24.;
 	  vlsr_dec = 30*M_PI/180.0;
+	  vobs[0] += 20e3*cos(vlsr_dec)*cos(vlsr_ra);
+	  vobs[1] += 20e3*cos(vlsr_dec)*sin(vlsr_ra);
+	  vobs[2] += 20e3*sin(vlsr_dec);
+	}
+      else if (bary_lsr==3) // More precise LSRK
+	{
+	  vlsr_ra = 2*M_PI*18.063955/24.;
+	  vlsr_dec = 30.004661*M_PI/180.0;
 	  vobs[0] += 20e3*cos(vlsr_dec)*cos(vlsr_ra);
 	  vobs[1] += 20e3*cos(vlsr_dec)*sin(vlsr_ra);
 	  vobs[2] += 20e3*sin(vlsr_dec);

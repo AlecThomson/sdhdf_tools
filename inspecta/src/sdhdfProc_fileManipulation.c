@@ -367,7 +367,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	hsize_t dims[2];
 	int ndims;
 	      
-	//	printf("Loading frequency\n");
+	printf("Loading frequency\n");
 	sprintf(dataName,"%s/%s/astronomy_data/frequency",beamLabel,inFile->beam[beam].bandHeader[band].label);      
 	dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
 
@@ -406,13 +406,14 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
       //      printf("Reading data attributes\n");
       //      printf("We have %d\n",inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes);
 
-      //      printf("Reading data attributes\n");
+            printf("Reading data attributes\n");
       for (j=0;j< inFile->beam[beam].bandData[band].nAstro_obsHeaderAttributes;j++)
       	sdhdf_readAttributeFromNum(inFile,dataName,j,&(inFile->beam[beam].bandData[band].astro_obsHeaderAttr[j]));
 	  
 
-      //      printf("Done reading data attributes\n");
+      printf("Done reading data attributes\n");
       dataset_id   = H5Dopen2(inFile->fileID,dataName,H5P_DEFAULT);
+      printf("Allocating memory with %d %d %d\n",nchan,npol,ndump);
       allData = (float *)malloc(sizeof(float)*nchan*npol*ndump);      
       if (allData==NULL)
 	{
@@ -420,13 +421,15 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
           printf("ERROR: Cannot recover. Sorry\n");
           exit(1);
 	}
+      printf("Now reading the data %s\n",dataName);
       status = H5Dread(dataset_id,H5T_NATIVE_FLOAT,H5S_ALL,H5S_ALL,H5P_DEFAULT,allData);  
-
+      printf("Done reading the data\n");
       sdhdf_extractPols(&(inFile->beam[beam].bandData[band].astro_data),allData,nchan,ndump,npol);
 
       free(allData);
       status = H5Dclose(dataset_id);
       // Flags
+      printf("Loading flags\n");
       sprintf(dataName,"%s/%s/astronomy_data/flags",beamLabel,inFile->beam[beam].bandHeader[band].label);      
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
@@ -442,7 +445,7 @@ void sdhdf_loadBandData(sdhdf_fileStruct *inFile,int beam,int band,int type)
 	}
 
       // Data weights
-      //      printf("Loading weights\n");
+            printf("Loading weights\n");
       sprintf(dataName,"%s/%s/astronomy_data/weights",beamLabel,inFile->beam[beam].bandHeader[band].label);      
       if (sdhdf_checkGroupExists(inFile,dataName)==0)
 	{
