@@ -30,13 +30,13 @@
 
 void help()
 {
-  printf("\nsdhdf_quickdump   %s\n",VNUM);
-	printf("INSPECTA version: %s\n",SOFTWARE_VER);
-  printf("Author:           George Hobbs\n");
+  printf("\nsdhdf_quickdump       %s\n",VNUM);
+	printf("INSPECTA version:     %s\n",SOFTWARE_VER);
+  printf("Author:               George Hobbs\n");
   printf("Software to output text files of the data in SDHDF files\n");
 
   printf("\nCommand line arguments:\n\n");
-	printf("-h                This help\n");
+	printf("-h                     This help\n");
   printf("-bandRange <b0> <b1>   Output data in bands between b0 and b1\n");
   printf("-cal                   Output calibration data\n");
   printf("-cal_tav               Average calibration data in time\n");

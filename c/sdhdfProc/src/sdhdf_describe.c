@@ -63,6 +63,7 @@ int main(int argc,char *argv[])
   float intTime=0;
   sdhdf_fileStruct *inFile;
 	sdhdf_attributes_struct *attribute;
+	char file_ver[20];
 
   int showBands=0;
   int showDump=0;
@@ -136,6 +137,8 @@ int main(int argc,char *argv[])
 	{
 		if (DEBUG == 1) printf(">LOADING ALL METADATA\n");
 	  sdhdf_loadMetaData(inFile);
+		strcpy(file_ver, inFile->primary->hdr_defn_version);
+		printf("SDHDF version of this file is: %s\n",file_ver);
 		if (DEBUG == 1) printf("<FINISHED LOADING ALL METADATA\n\n");
 
 		// segfaulting from here somewhere

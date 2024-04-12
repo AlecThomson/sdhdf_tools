@@ -105,6 +105,7 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)
 	char beam_path[MAX_STRLEN];
 	char band_path[MAX_STRLEN];
 	char meta_path[MAX_STRLEN];
+	char file_ver[20];
 
 	// **NOTE: sdhdf_loadGroup currently does not assign
 	// memory properly and causes segfaults**
@@ -125,6 +126,10 @@ void sdhdf_loadMetaData(sdhdf_fileStruct *inFile)
 
 	if (DEBUG == 1) printf(">LOADING PRIMARY HEADER\n");
   sdhdf_loadPrimaryHeader(inFile);
+	if (DEBUG == 1) {
+		strcpy(file_ver, inFile->primary->hdr_defn_version);
+		printf("SDHDF version of this file is: %s\n",file_ver);
+	}
 	if (DEBUG == 1) printf("<FINISHED PRIMARY HEADER\n\n");
 
 	//exit(1); // TEMP

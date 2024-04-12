@@ -43,7 +43,7 @@ void help()
   printf("-cal <filaname>         Obtain noise source information from specified file\n");
   printf("-calOff <bin1> <bin2>   Phase bins for the noise source OFF range\n");
   printf("-calOn <bin1> <bin2>    Phase bins for the noise source ON range\n");
-  printf("-f <filename>           FITS filename for conversion\n");
+  printf("-f <filename>           Filename to convert\n");
   printf("-o <filename>           Output filename\n");
   printf("-pulseOff <bin1> <bin2> Phase bins for the pulse OFF (baseline)\n");
   printf("-type <type>            Type = 1 = SDFITS (default), 2 = PSRFITS\n");
@@ -147,7 +147,7 @@ int main(int argc,char *argv[])
 
 	if (argc==1)
     help();
-		
+
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-f")==0)

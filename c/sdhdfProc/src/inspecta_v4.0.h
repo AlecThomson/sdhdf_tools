@@ -196,9 +196,9 @@ typedef struct sdhdf_spectralDumpsStruct {
 typedef struct sdhdf_primaryHeaderStruct {
   char date[20];
   char hdr_defn[20];
-  char hdr_defn_version[20];
+  char hdr_defn_version[20]; //SDHDF version
   char file_format[20];
-  char file_format_version[20];
+  char file_format_version[20]; 
   long int sched_block_id;
   char cal_mode[20];
   char instrument[20];

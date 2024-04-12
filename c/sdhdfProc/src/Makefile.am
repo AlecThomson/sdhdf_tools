@@ -20,12 +20,14 @@ bin_PROGRAMS = sdhdf_describe \
   sdhdf_plotPulsar \
   sdhdf_plotPulsarSearch \
   sdhdf_tsys \
+  sdhdf_convertFromPsr \
   sdhdf_convertFromFITS \
   sdhdf_convertPulsarSearchMode \
   sdhdf_convertTo \
   sdhdf_convertToPSRFITS \
-  sdhdf_convertFromPsr \
   sdhdf_listLines
+
+  #sdhdf_convertFromSDFITS
 
 COMMON_SRCS = sdhdfProc_maths.c \
   fileManipulation.c \
@@ -85,7 +87,13 @@ sdhdf_joinBands_SOURCES = sdhdf_joinBands.c \
 sdhdf_identify_SOURCES = sdhdf_identify.c \
   $(COMMON_SRCS)
 
+sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \
+  $(COMMON_SRCS)
+
 sdhdf_convertFromFITS_SOURCES = sdhdf_convertFromFITS.c \
+  $(COMMON_SRCS)
+
+#sdhdf_convertFromSDFITS_SOURCES = sdhdf_convertFromSDFITS.c \
   $(COMMON_SRCS)
 
 sdhdf_convertPulsarSearchMode_SOURCES = sdhdf_convertPulsarSearchMode.c \
@@ -95,9 +103,6 @@ sdhdf_convertTo_SOURCES = sdhdf_convertTo.c \
   $(COMMON_SRCS)
 
 sdhdf_convertToPSRFITS_SOURCES = sdhdf_convertToPSRFITS.c \
-  $(COMMON_SRCS)
-
-sdhdf_convertFromPsr_SOURCES = sdhdf_convertFromPsr.c \
   $(COMMON_SRCS)
 
 sdhdf_plotNoiseCal_SOURCES = sdhdf_plotNoiseCal.c \
@@ -138,7 +143,7 @@ bin_PROGRAMS += sdhdf_primaryFluxCal \
   sdhdf_map \
   sdhdf_weightSpectra \
   sdhdf_plotSpectrum \
-  sdhdf_model 
+  sdhdf_model
 
 sdhdf_primaryFluxCal_SOURCES = sdhdf_primaryFluxCal.c \
   $(COMMON_SRCS)

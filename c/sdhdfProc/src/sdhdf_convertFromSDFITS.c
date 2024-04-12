@@ -1,19 +1,24 @@
-//  Copyright (C) 2019, 2020, 2021, 2022 George Hobbs
+//  Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024 George Hobbs
 
 /*
- *    This file is part of sdhdfProc. 
- * 
- *    sdhdfProc is free software: you can redistribute it and/or modify 
- *    it under the terms of the GNU General Public License as published by 
- *    the Free Software Foundation, either version 3 of the License, or 
- *    (at your option) any later version. 
- *    sdhdfProc is distributed in the hope that it will be useful, 
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- *    GNU General Public License for more details. 
- *    You should have received a copy of the GNU General Public License 
- *    along with sdhdfProc.  If not, see <http://www.gnu.org/licenses/>. 
+ *    This file is part of INSPECTA.
+ *
+ *    INSPECTA is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *    INSPECTA is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *    You should have received a copy of the GNU General Public License
+ *    along with INSPECTA.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+//
+// sdhdf_convertFromSDFITS
+// Software to convert an SDFITS file to SDHDF format
+//
 
 
 #include <stdio.h>
@@ -24,7 +29,7 @@
 #include "inspecta.h"
 #include "hdf5.h"
 
-#define VNUM "v0.1"
+#define VNUM "v2.0"
 
 double dms_turn(char *line);
 double hms_turn(char *line);
@@ -37,12 +42,20 @@ void slaCldj ( int iy, int im, int id, double *djm, int *j );
 
 void help()
 {
-  printf("sdhdf_convertFromSDFITS\n\n");
-  printf("Routine to convert SDFITS files to SDHDF\n");
-  printf("\n\n");
-  printf("-f <filename>        FITS filename for conversion\n");
-  printf("-h                   This help\n");
-  printf("-o <filename>        Output filename\n");
+  printf("\nsdhdf_convertFromSDFITS  %s\n",VNUM);
+	printf("INSPECTA version:        %s\n",SOFTWARE_VER);
+  printf("Author:                  George Hobbs\n");
+  printf("Software to convert an SDFITS file to SDHDF format\n");
+
+  printf("\nCommand line arguments:\n\n");
+	printf("-h                       This help\n");
+	printf("-f <filename>            Filename to convert\n");
+	printf("-o <filename>         Output filename\n");
+
+	printf("\nExample:\n\n");
+  printf("sdhdf_convertFromSDFITS -f file.hdf\n\n");
+
+  exit(1);
 
 }
 
@@ -50,7 +63,7 @@ int main(int argc,char *argv[])
 {
   int i,j,k,b;
 
-  int fitsType=1; // 1 = SDFITS  
+  int fitsType=1; // 1 = SDFITS
   sdhdf_fileStruct *outFile;
   sdhdf_softwareVersionsStruct *softwareVersions;
   sdhdf_historyStruct *history;
@@ -66,8 +79,8 @@ int main(int argc,char *argv[])
   int nDataAttributes=0;
   int nFreqAttributes=0;
 
-  
-  
+
+
   // Input FITS file
   int status=0;
   fitsfile *fptr;
@@ -109,7 +122,7 @@ int main(int argc,char *argv[])
 
   short int *shortVals;
   short int n_sval=0;
-  int    binVal = 0; 
+  int    binVal = 0;
   int    nVals;
   float  n_fval=0.;
   double n_dval=0.;
@@ -158,8 +171,11 @@ int main(int argc,char *argv[])
   int iy,im,id;
   double mjd0;
   int ret;
-  
+
   // Read the command line arguments
+	if (argc==1)
+    help();
+
   for (i=1;i<argc;i++)
     {
       if (strcmp(argv[i],"-f")==0)
@@ -196,24 +212,24 @@ int main(int argc,char *argv[])
     }
   // We now need to determine how those rows are divided
   fits_get_colnum(fptr,CASEINSEN,"CYCLE",&colnum,&status);
-  fits_read_col(fptr,TINT,colnum,1,1,nrows,&n_ival,cycleNum,&initflag,&status);  
+  fits_read_col(fptr,TINT,colnum,1,1,nrows,&n_ival,cycleNum,&initflag,&status);
 
   fits_get_colnum(fptr,CASEINSEN,"BEAM",&colnum,&status);
-  fits_read_col(fptr,TINT,colnum,1,1,nrows,&n_ival,beamNum,&initflag,&status);  
+  fits_read_col(fptr,TINT,colnum,1,1,nrows,&n_ival,beamNum,&initflag,&status);
 
   fits_get_colnum(fptr,CASEINSEN,"IF",&colnum,&status);
-  fits_read_col(fptr,TINT,colnum,1,1,nrows,&n_ival,ifNum,&initflag,&status);  
+  fits_read_col(fptr,TINT,colnum,1,1,nrows,&n_ival,ifNum,&initflag,&status);
 
   fits_get_colnum(fptr,CASEINSEN,"OBJECT",&colnum,&status);
-  fits_read_col(fptr,TSTRING,colnum,1,1,nrows,&n_str,object,&initflag,&status);  
+  fits_read_col(fptr,TSTRING,colnum,1,1,nrows,&n_str,object,&initflag,&status);
 
   fits_get_colnum(fptr,CASEINSEN,"DATE-OBS",&colnum,&status);
-  fits_read_col(fptr,TSTRING,colnum,1,1,nrows,&n_str,dte,&initflag,&status);  
+  fits_read_col(fptr,TSTRING,colnum,1,1,nrows,&n_str,dte,&initflag,&status);
 
   // Note: currently assuming a single object in the SDFITS file
 
-  
-  
+
+
   printf("SDFITS summary\n\n");
   printf("Scan  Cycle Beam IF  Object\n");
   nbeam=0;
@@ -224,7 +240,7 @@ int main(int argc,char *argv[])
       printf("%-5.5d %-5.5d %-4.4d %-3.3d %-16.16s\n",i,cycleNum[i],beamNum[i],ifNum[i],object[i]);
       if (beamNum[i] > nbeam) nbeam=beamNum[i];  // This assumes that all beams are present in this file ** FIX ME
       if (cycleNum[i] > ndump) ndump=cycleNum[i];
-      if (ifNum[i] > nband) nband =ifNum[i]; 
+      if (ifNum[i] > nband) nband =ifNum[i];
     }
   printf("==============================\n");
   printf("Number of spectral dumps/cycles = %d\n",ndump);
@@ -235,7 +251,7 @@ int main(int argc,char *argv[])
   // Obtain the dimensions of the DATA array
   // Use the CTYPE to determine what the dimensions are
   fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
-  fits_read_tdim(fptr,colnum,maxdim,&naxis,naxes,&status);  
+  fits_read_tdim(fptr,colnum,maxdim,&naxis,naxes,&status);
   fits_report_error(stderr,status);
 
   printf("Data array dimensions: %d\n",naxis);
@@ -276,15 +292,15 @@ int main(int argc,char *argv[])
   //
 
   // Load in all the data
-  floatVals   = (float *)malloc(sizeof(float)*nchan*npol*ndump*nbeam);  
+  floatVals   = (float *)malloc(sizeof(float)*nchan*npol*ndump*nbeam);
   freqVals    = (float *)malloc(sizeof(float)*nchan*ndump*nbeam);
   timeVals    = (double *)malloc(sizeof(double)*ndump*nbeam); // Should include *nRA
   raVals    = (double *)malloc(sizeof(double)*ndump*nbeam); // Should include *nRA
   decVals    = (double *)malloc(sizeof(double)*ndump*nbeam); // Should include *nDEC
-  azimuth    = (float *)malloc(sizeof(float)*ndump*nbeam); 
+  azimuth    = (float *)malloc(sizeof(float)*ndump*nbeam);
   elevation    = (float *)malloc(sizeof(float)*ndump*nbeam);
   parAngle    = (float *)malloc(sizeof(float)*ndump*nbeam);
-  exposure    = (float *)malloc(sizeof(float)*ndump*nbeam); 
+  exposure    = (float *)malloc(sizeof(float)*ndump*nbeam);
 
 
   fits_get_colnum(fptr,CASEINSEN,"DATA",&colnum,&status);
@@ -300,7 +316,7 @@ int main(int argc,char *argv[])
   fits_get_colnum(fptr,CASEINSEN,"CRVAL1",&colnum2,&status);
   fits_get_colnum(fptr,CASEINSEN,"CDELT1",&colnum3,&status);
   for (i=0;i<nrows;i++)
-    {      
+    {
       fits_read_col(fptr,TINT,colnum1,i+1,1,1,&n_ival,&chVal0,&initflag,&status);
       fits_read_col(fptr,TDOUBLE,colnum2,i+1,1,1,&n_dval,&val0,&initflag,&status);
       fits_read_col(fptr,TDOUBLE,colnum3,i+1,1,1,&n_dval,&dval,&initflag,&status);
@@ -308,11 +324,11 @@ int main(int argc,char *argv[])
 	freqVals[i*nchan+j] = (val0 + ((j+1)-chVal0)*dval)/1.0e6; // Convert to MHz
     }
 
-  
+
   // Assume RA is simply CRVAL3 -- FIX ME
   fits_get_colnum(fptr,CASEINSEN,"CRVAL3",&colnum,&status);
   fits_read_col(fptr,TDOUBLE,colnum,1,1,nrows,&n_dval,raVals,&initflag,&status);
-  
+
   // Assume DEC is simply CRVAL4 -- FIX ME
   fits_get_colnum(fptr,CASEINSEN,"CRVAL4",&colnum,&status);
   fits_read_col(fptr,TDOUBLE,colnum,1,1,nrows,&n_dval,decVals,&initflag,&status);
@@ -320,7 +336,7 @@ int main(int argc,char *argv[])
   fits_get_colnum(fptr,CASEINSEN,"TIME",&colnum,&status);
   fits_read_col(fptr,TDOUBLE,colnum,1,1,nrows,&n_dval,timeVals,&initflag,&status);
 
- 
+
   fits_get_colnum(fptr,CASEINSEN,"AZIMUTH",&colnum,&status);
   fits_read_col(fptr,TFLOAT,colnum,1,1,nrows,&n_fval,azimuth,&initflag,&status);
 
@@ -333,9 +349,9 @@ int main(int argc,char *argv[])
   fits_get_colnum(fptr,CASEINSEN,"EXPOSURE",&colnum,&status);
   fits_read_col(fptr,TFLOAT,colnum,1,1,nrows,&n_fval,exposure,&initflag,&status);
 
-  
+
   fits_close_file(fptr,&status);
-  
+
   // -----------------------------------------------------------------------
   // Now produce the SDHDF file
   // -----------------------------------------------------------------------
@@ -350,22 +366,22 @@ int main(int argc,char *argv[])
   hr = (int)(timeVals[0]/60./60.);
   min = (int)((timeVals[0]-hr*60*60.)/60.);
   sec = timeVals[0] - hr*60*60. - min*60;
-  sprintf(primaryHeader[0].utc0,"%s-%02d:%02d:%02d",dte[0],hr,min,(int)sec); // Default to first dump/beam. 
+  sprintf(primaryHeader[0].utc0,"%s-%02d:%02d:%02d",dte[0],hr,min,(int)sec); // Default to first dump/beam.
   strcpy(primaryHeader[0].cal_mode,"OFF"); // FIX ME
   if (strcmp(telescope,"ATPKSMB")==0)
     {
       strcpy(primaryHeader[0].telescope,"Parkes");
       strcpy(primaryHeader[0].rcvr,"MB");
     }
-  else    
+  else
     strcpy(primaryHeader[0].telescope,telescope);
   strcpy(primaryHeader[0].pid,projectID);
-  
+
   for (i=0;i<nbeam;i++)
     {
       sprintf(beamHeader[i].label,"beam_%d",i);
       beamHeader[i].nBand = 1;
-      strcpy(beamHeader[i].source,object[i]);	  
+      strcpy(beamHeader[i].source,object[i]);
     }
   obsParams = (sdhdf_obsParamsStruct *)malloc(sizeof(sdhdf_obsParamsStruct)*ndump);
 
@@ -401,37 +417,37 @@ int main(int argc,char *argv[])
 	  strcpy(obsParams[i].timedb,"UNKNOWN"); // FIX
 	  sscanf(dte[i*nbeam+b],"%d-%d-%d",&iy,&im,&id);
 	  slaCaldj (iy, im, id, &mjd0, &ret);
-	  obsParams[i].mjd = mjd0 + timeVals[i*nbeam+b]/86400.; 
+	  obsParams[i].mjd = mjd0 + timeVals[i*nbeam+b]/86400.;
 	  hr = (int)(timeVals[i*nbeam+b]/60./60.);
 	  min = (int)((timeVals[i*nbeam+b]-hr*60*60.)/60.);
 	  sec = timeVals[i*nbeam+b] - hr*60*60. - min*60;
 	  sprintf(obsParams[i].utc,"%02d:%02d:%02d",hr,min,(int)sec);
-	  strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
-	  strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX 
-	  
+	  //strcpy(obsParams[i].ut_date,"UNKNOWN"); // FIX
+	  strcpy(obsParams[i].local_time,"UNKNOWN"); // FIX
+
 	  turn_hms(raVals[i*nbeam+b]/360.,raStr); // FIX: This assumes the specific structure of beams in the RA list
-	  turn_dms(decVals[i*nbeam+b]/360.,decStr);	  
+	  turn_dms(decVals[i*nbeam+b]/360.,decStr);
 	  strcpy(obsParams[i].raStr,raStr);
 	  strcpy(obsParams[i].decStr,decStr);
-	  
+
 	  obsParams[i].raDeg = raVals[i*nbeam+b]; // FIX: This assumes the specific structure of beams in the RA list
 	  obsParams[i].decDeg = decVals[i*nbeam+b];
-	  obsParams[i].raOffset = 0;
-	  obsParams[i].decOffset = 0;
+	  //obsParams[i].raOffset = 0;
+	  //obsParams[i].decOffset = 0;
 	  convertGalactic(obsParams[i].raDeg,obsParams[i].decDeg,&(obsParams[i].gl),&(obsParams[i].gb));
 	  obsParams[i].az = azimuth[i*nbeam+b];
 	  obsParams[i].ze = 90-elevation[i*nbeam+b];
 	  obsParams[i].el = elevation[i*nbeam+b];
-	  obsParams[i].az_drive_rate = 0;
-	  obsParams[i].ze_drive_rate = 0;
+	  //obsParams[i].az_drive_rate = 0;
+	  //obsParams[i].ze_drive_rate = 0;
 	  obsParams[i].hourAngle = 0;
 	  obsParams[i].paraAngle = parAngle[i*nbeam+b];
 	  obsParams[i].windDir = 0;
-	  obsParams[i].windSpd = 0;      
+	  obsParams[i].windSpd = 0;
 	}
       printf("Complete\n");
 
-    
+
       sdhdf_writeBandHeader(outFile,bandHeader,beamHeader[b].label,1,1);
       sdhdf_writeObsParams(outFile,bandHeader[0].label,beamHeader[b].label,0,obsParams,ndump,1);
 
@@ -441,19 +457,19 @@ int main(int argc,char *argv[])
 	  if (beamNum[k]==b+1)
 	    {
 	      for (i=0;i<nchan*npol;i++)
-		spectrumData[nscan*nchan*npol+i] = floatVals[k*nchan*npol+i];	      
+		spectrumData[nscan*nchan*npol+i] = floatVals[k*nchan*npol+i];
 	      nscan++;
 	    }
-	}      
+	}
       sdhdf_writeSpectrumData(outFile,beamHeader[b].label,bandHeader->label,b,0,spectrumData,freqVals,nchan,npol,ndump,1,dataAttributes,nDataAttributes,freqAttributes,nFreqAttributes);
     }
   sdhdf_writeSoftwareVersions(outFile,softwareVersions);
   sdhdf_writeHistory(outFile,history,1);
-  
+
   sdhdf_closeFile(outFile);
   free(outFile);
 
-  
+
 
   free(spectrumData);
   free(floatVals);
@@ -480,10 +496,10 @@ int main(int argc,char *argv[])
 
 
 
-  
 
-   
-  
+
+
+
   //      for (i=0;i<ndump;i++)
   // FIX ME
   ndump/=13;  // (as we have 13 beams)
@@ -491,7 +507,7 @@ int main(int argc,char *argv[])
     {
       printf("Loading spectrum dump %d/%d\n",i,ndump-1);
       //	  fits_read_col(fptr,TFLOAT,colnum,i+1,1,nchan*npol,&n_fval,infloatVals,&initflag,&status);
-      
+
       // FIX ME
       for (b=0;b<nbeam;b++)
 	{
@@ -502,7 +518,7 @@ int main(int argc,char *argv[])
 	      for (k=0;k<nchan;k++)
 		floatVals[b*nchan*npol*ndump + i*nchan*npol + j*nchan + k]
 		  = infloatVals[j*nchan + k];
-	      
+
 	      //floatVals[i*nchan*npol + j*nchan + k] = infloatVals[k*npol+j];
 	    }
 	}
@@ -511,23 +527,23 @@ int main(int argc,char *argv[])
   printf("Closing file\n");
 
 
-} 
+}
 
 double turn_deg(double turn){
- 
+
   /* Converts double turn to string "sddd.ddd" */
   return turn*360.0;
 }
 
 
 int turn_dms(double turn, char *dms){
-  
+
   /* Converts double turn to string "sddd:mm:ss.sss" */
-  
+
   int dd, mm, isec;
   double trn, sec;
   char sign;
-  
+
   sign=' ';
   if (turn < 0.){
     sign = '-';
@@ -550,14 +566,14 @@ int turn_dms(double turn, char *dms){
       }
     }
   sprintf(dms,"%c%02d:%02d:%010.7f",sign,dd,mm,sec);
- 
+
 }
 
 
 int turn_hms(double turn, char *hms){
- 
+
   /* Converts double turn to string " hh:mm:ss.ssss" */
-  
+
   int hh, mm, isec;
   double sec;
 
@@ -578,14 +594,14 @@ int turn_hms(double turn, char *hms){
     }
 
   sprintf(hms," %02d:%02d:%010.7f",hh,mm,sec);
- 
+
 }
 
 
 double hms_turn(char *line){
 
   /* Converts string " hh:mm:ss.ss" or " hh mm ss.ss" to double turn */
-  
+
   int i;int turn_hms(double turn, char *hms);
   double hr, min, sec, turn=0;
   char hold[MAX_STRLEN];
@@ -612,7 +628,7 @@ double hms_turn(char *line){
 double dms_turn(char *line){
 
   /* Converts string "-dd:mm:ss.ss" or " -dd mm ss.ss" to double turn */
-  
+
   int i;
   char *ic, ln[40];
   double deg, min, sec, sign, turn=0;
@@ -654,8 +670,8 @@ void convertGalactic(double raj,double decj,double *gl,double *gb)
   double gpoleDECJ = 27.116*deg2rad;
   double rot[4][4];
 
-  /* Note: Galactic coordinates are defined from B1950 system - e.g. must transform from J2000.0                      
-                                                  
+  /* Note: Galactic coordinates are defined from B1950 system - e.g. must transform from J2000.0
+
      equatorial coordinates to IAU 1958 Galactic coords */
 
   /* Convert to rectangular coordinates */
