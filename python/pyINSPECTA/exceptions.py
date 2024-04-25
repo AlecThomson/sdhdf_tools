@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""SHDF Error classes"""
+"""SDHDF Error classes"""
+
 
 class VerificationError(Exception):
     """ Error raised if Verification fails """
