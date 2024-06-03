@@ -25,25 +25,44 @@ from xarray import DataArray, Dataset, Variable
 from pyINSPECTA import flagging, history
 from pyINSPECTA.logger import logger
 from pyINSPECTA.tables import SDHDFTable
+from pyINSPECTA.attributes import SDHDFAttribute
 
 
-def _get_sdhdf_version(filename: Path) -> str:
-    """Get the SDHDF version of a file
+def _get_sdhdf_version(filename: Path):
+    """Get the SDHDF version of a file and return the path
+       to the definition template
 
     Args:
         filename (Path): Path to the SDHDF file
 
     Returns:
         str: SDHDF version
+        str: Path to definition json template
     """
     with h5py.File(filename, "r") as f:
-        # Need to hardcode this path for now
-        # Assuming it always exists
+        hdr_keys = ["HDR_DEFN_VERSION", "HEADER_DEFINITION_VERSION"]
+        version = None
+        for hdr_key in hdr_keys:
+            if hdr_key in f["metadata/primary_header"].attrs:
+                version = f["metadata/primary_header"][hdr_key][0].decode()
+
+        if version is None:
+            raise ValueError(f"SDHDF version not found in file '{filename}'")
+        elif version <= "2.0":
+            version = "2.0"
+        elif (version > "2.0") and (version <= "2.1"):
+            version = "2.1"
+        elif (version > "2.2") and (version <= "2.9"):
+            version = "2.9"
+
         try:
-            version = f["metadata/primary_header"]["HDR_DEFN_VERSION"][0].decode()
-        except KeyError:
-            raise KeyError(f"SDHDF version not found in file '{filename}'")
-    return version
+            definition_file = pkg_resources.resource_filename(
+                "pyINSPECTA", f"definitions/sdhdf_def_v{version}.json"
+            )
+        except ValueError:
+            raise ValueError(f"SDHDF definition template %s not found.", definition_file)
+
+    return version, definition_file
 
 
 @dataclass
@@ -52,48 +71,154 @@ class MetaData:
 
     Args:
         filename (Path): Path to the SDHDF file
+        verbose (bool): Toggle verbosity of output from metadata load
 
     Attributes:
         beam_params (SDHDFTable): The beam parameters
-        history (SDHDFTable): The history as a pandas SDHDFTable
-        primary_header (SDHDFTable): The primary header
-        backend_config (SDHDFTable): The backend configuration
-        cal_backend_config (SDHDFTable): The calibration backend configuration
+        history (SDHDFTable): File history
+        primary_header (SDHDFTable): Primary header
+        backend_config (SDHDFTable): Backend configuration
+        cal_backend_config (SDHDFTable): Calibration backend configuration
+        software (SDHDFTable): Software versions used in creation of the file
+        schedule (SDHDFTable): Observation schedule metadata (if available)
 
     Methods:
-        print_metadata: Quickly list the metadata
+        print_obs_metadata: Quickly list the observation metadata
+        print_obs_config: Quickly list the observation configuration
+        write: Write metadata to file [NOT YET IMPLEMENTED]
 
     """
     filename: Path
+    verbose: bool = False
 
     def __post_init__(self):
-        version = _get_sdhdf_version(self.filename)
-        defintion_file = pkg_resources.resource_filename(
-            "pyINSPECTA", f"definitions/sdhdf_def_v{version}.json"
-        )
-        with open(defintion_file, "r") as f:
+        version, definition_file = _get_sdhdf_version(self.filename)
+        print("\nSDHDF version: %s" % version)
+        print("Loading SDHDF definition template: %s" % definition_file)
+
+        # load the definition
+        with open(definition_file, "r") as f:
             self.definition = json.load(f)
+
+        # load the metadata
         with h5py.File(self.filename, "r") as f:
-            # Get the metadata and configs
-            for name in ("metadata", "config"):
-                for key, val in self.definition[name].items():
-                    tab = SDHDFTable(f[name][val])
-                    self.__setattr__(key, tab)
+            all_keys = f.keys()
+            print(json.dumps(self.definition, indent=4))
+            # loop over the file keys
+            for key in all_keys:
+                print("\n> Found SDHDF group '%s'..." % key)
+                gp_key = key
+                if "beam" in key:
+                    gp_key = "beam"
+                # check key is in definition
+                if gp_key in self.definition.keys():
+                    if "beam" in gp_key:
+                        print(">> Loading metadata for beam '%s'..." % key)
+                        if self.definition[gp_key]:
+                            for k in self.definition[gp_key].keys():
+                                if k == "attributes":
+                                    attr = SDHDFAttribute(f[key])
+                                    self.__setattr__(k, attr)
+                                    if self.verbose:
+                                        print(self.__getattribute__(k))
+                                if k == "band":
+                                    # loop over the bands
+                                    bands = list(filter(lambda element: 'band' in element, f[key].keys()))
+                                    for band in bands:
+                                        print(">>> Loading metadata for beam '%s' band '%s'..." % (key, band))
+                                        v = self.definition[gp_key][k]
+                                        if self.verbose: print("\nKEY: %s VALUE: %s" % (k, v))
+                                        if isinstance(v, dict):
+                                            for kk in self.definition[gp_key][k].keys():
+                                                if kk == "attributes":
+                                                    attr = SDHDFAttribute(f[key][band])
+                                                    self.__setattr__(kk, attr)
+                                                    if self.verbose:
+                                                        print(self.__getattribute__(kk))
+                                                else:
+                                                    vv = self.definition[gp_key][k][kk]
+                                                    if self.verbose: print("\nKEY: %s VALUE: %s" % (kk, vv))
+                                                    if isinstance(vv, dict):
+                                                        if kk in ["astronomy", "calibrator"]:
+                                                            for kkk in self.definition[gp_key][k][kk].keys():
+                                                                if kkk == "attributes":
+                                                                    attr = SDHDFAttribute(f[key][band][kk])
+                                                                    self.__setattr__(kkk, attr)
+                                                                    if self.verbose:
+                                                                        print(self.__getattribute__(kkk))
+                                                                else:
+                                                                    vvv = self.definition[gp_key][k][kk][kkk]
+                                                                    if self.verbose: print("\nKEY: %s VALUE: %s" % (kkk, vvv))
+                                                                    if self.verbose: print("Nothing to do here right now!")
+                                                        if kk in ["metadata"]:
+                                                            for kkk in self.definition[gp_key][k][kk].keys():
+                                                                if kkk == "attributes":
+                                                                    attr = SDHDFAttribute(f[key][band][kk])
+                                                                    self.__setattr__(kkk, attr)
+                                                                    if self.verbose:
+                                                                        print(self.__getattribute__(kkk))
+                                                                else:
+                                                                    vvv = self.definition[gp_key][k][kk][kkk]
+                                                                    if self.verbose: print("\nKEY: %s VALUE: %s" % (kkk, vvv))
+                                                                    if vvv in f[key][band].keys():
+                                                                        tab = SDHDFTable(f[key][band][vvv])
+                                                                        if self.verbose: print(tab)
+                                                                        self.__setattr__(kkk, tab)
+                                                                    else:
+                                                                        logger.warning(
+                                                                            f"""No object '{key}/{band}/{vvv}' found in file!
+                                                                            """
+                                                                        )
+                    else:
+                        print(">> Loading metadata for '%s'..." % gp_key)
+                        for k in self.definition[gp_key].keys():
+                            if k == "attributes":
+                                attr = SDHDFAttribute(f[key])
+                                self.__setattr__(k, attr)
+                                if self.verbose:
+                                    print(self.__getattribute__(k))
+                            else:
+                                v = self.definition[gp_key][k]
+                                if self.verbose: print("\nKEY: %s VALUE: %s" % (k, v))
+                                if v in f:
+                                    tab = SDHDFTable(f[v])
+                                    if self.verbose: print(tab)
+                                    self.__setattr__(k, tab)
+                                else:
+                                    logger.warning(
+                                        f"""No object '{v}' found in file!
+                                        """
+                                    )
+                else:
+                    logger.warning(
+                        f"""Key '{gp_key}' not found in definition file
+                        '{definition_file}'. Ignoring...
+                        """
+                    )
 
-    def print_metadata(self, format: str = "grid") -> None:
-        """Print the metadata to the terminal"""
-        for label in self.definition["metadata"].keys():
-            df = self.__dict__[label]
-            logger.info(f"{label}:")
-            print(df.T.to_markdown(tablefmt=format, headers=[]))
+    def print_obs_metadata(self, format: str = "grid") -> None:
+        """Print observation metadata to the terminal"""
+        for key in self.definition["metadata"].keys():
+            if key in self.__dict__:
+                df = self.__dict__[key]
+                logger.info(f"{key}:")
+                print(df.table.to_markdown(tablefmt=format, headers=[]))
+            else:
+                logger.warning(
+                    f"""No metadata found for key '{key}'. Ignoring..."""
+                )
 
-    def print_config(self, format: str = "grid") -> None:
-        """Print the configuration to the terminal"""
-        for label in self.definition["config"].keys():
-            df = self.__dict__[label]
-            logger.info(f"{label}:")
-            print(df.T.to_markdown(tablefmt=format, headers=[]))
-
+    def print_obs_config(self, format: str = "grid") -> None:
+        """Print the observation configuration to the terminal"""
+        for key in self.definition["config"].keys():
+            if key in self.__dict__:
+                df = self.__dict__[key]
+                logger.info(f"{key}:")
+                print(df.table.to_markdown(tablefmt=format, headers=[]))
+            else:
+                logger.warning(
+                    f"""No metadata found for key '{key}'. Ignoring..."""
+                )
 
     def write(self, filename: Union[str, Path], overwrite:bool=False) -> pd.DataFrame:
         """Write the metadata to a file
@@ -111,6 +236,7 @@ class MetaData:
                 df.to_hdf(filename, key=f"{val}", mode="a", data_columns=True)
 
         return history.generate_history_row()
+
 
 @dataclass
 class SubBand:
@@ -154,23 +280,23 @@ class SubBand:
 
     def _get_data(self):
         """Get the astronomy sub-band data"""
-        astro_def = self.definition["subband"]["astronomy"]
+        astro_def = self.definition["beam"]["band"]["astronomy"]
+        meta_def = self.definition["beam"]["band"]["metadata"]
         sb_path = f"{self.beam_label}/{self.label}"
 
         with h5py.File(self.filename, "r") as h5:
             data_path = f"{sb_path}/{astro_def['data']}"
             freq_path = f"{sb_path}/{astro_def['frequency']}"
-            meta_path = f"{sb_path}/{astro_def['metadata']}"
+            meta_path = f"{sb_path}/{meta_def['obs_params']}"
 
             data = h5[data_path]
             freqs = h5[freq_path]
             meta = SDHDFTable(h5[meta_path])
             self.metadata = meta
 
-            # Get the flags (if they exists)
-            has_flags = "flags" in astro_def.keys()
-            if has_flags:
-                flag_path = f"{sb_path}/{astro_def['flags']}"
+            # Get the flags (if they exist)
+            flag_path = f"{sb_path}/{astro_def['flags']}"
+            if "flags" in astro_def.keys() and flag_path is True:
                 flags = h5[flag_path][:]
                 # Ensure flag has same shape as data
                 flag_reshape = flags[:].copy()
@@ -205,7 +331,7 @@ class SubBand:
             coords["frequency"] = Variable(
                 dims="frequency",
                 data=freqs,
-                attrs={"units": h5[freq_path].attrs["UNIT"]},
+                attrs={"units": h5[freq_path].attrs["UNIT"]}
             )
             dims = h5[data_path].attrs["DIMENSION_LABELS"]
 
@@ -237,9 +363,10 @@ class SubBand:
                 {
                     "data": data_xr,
                     "flag": flag_xr,
-                    "metadata": (("time", "meta"), meta),
+                    "metadata": xr.DataArray(meta.table, dims=["time", "meta"])
                 }
             )
+
             return astronomy_dataset
 
     def plot_waterfall(
@@ -342,10 +469,7 @@ class SubBand:
 
         logger.info(f"Using {bins} channels per bin")
 
-
-
         # Apply CASA-style decimation
-
         flagged = dataset.where(dataset.flag == 0)
         unflagged = dataset
 
@@ -444,7 +568,6 @@ class SubBand:
         return [astro_hist, cal_hist, history.generate_history_row()]
 
 
-
 @dataclass
 class Beam:
     """An SDHDF beam data object
@@ -473,8 +596,9 @@ class Beam:
     client: Union[Client, None] = None
 
     def __post_init__(self):
+        meta_def = self.definition["beam"]["metadata"]
         with h5py.File(self.filename, "r") as f:
-            sb_avail = Table.read(f, path=self.label + "/metadata/band_params")
+            sb_avail = Table.read(f, path=self.label + f"/{meta_def['band_params']}")
             self.subbands = [
                 SubBand(
                     label=sb,
@@ -590,7 +714,6 @@ class Beam:
             hists.append(hist)
         return hists
 
-
     def write(self, filename: Union[str, Path], overwrite: bool = False) -> List[pd.DataFrame]:
         """Write the data to a new file
 
@@ -625,7 +748,7 @@ class SDHDF:
         plot_waterfall: Waterfall plot of the data
         plot_spectrum: Spectrum plot of the data
         plot_wide: Plot spectra from all subbands
-        print_metadata: List the metadata in the file
+        print_obs_metadata: List the observation metadata in the file
         write: Write the data to a new file
 
     """
@@ -633,15 +756,17 @@ class SDHDF:
     filename: Path
     in_memory: bool = False
     parallel: bool = False
+    verbose: bool = False
 
     def __post_init__(self):
         self.client = Client() if self.parallel else None
         if self.parallel:
             logger.info(f"Dask dashboard at: {self.client.dashboard_link}")
-        self.metadata = MetaData(self.filename)
+        self.metadata = MetaData(self.filename, self.verbose)
         self.definition = self.metadata.definition
         with h5py.File(self.filename, "r") as f:
             keys = list(f.keys())
+            #self.attrs = list(f.attrs) # TODO FIX THIS
             self.beams = [
                 Beam(
                     label=key,
@@ -735,11 +860,15 @@ class SDHDF:
         )
         return ax
 
-    def print_metadata(self, format: str = "grid"):
-        self.metadata.print_metadata(format=format)
+    def print_obs_metadata(self, format: str = "grid"):
+        self.metadata.print_obs_metadata(format=format)
 
-    def print_config(self):
-        self.metadata.print_config()
+    def print_obs_config(self, format: str = "grid"):
+        self.metadata.print_obs_config(format=format)
+
+    #def print_attributes(self):
+    #    self.metadata.print_attributes()
+    #    #self.attributes.print_attributes()
 
     def flag_persistent_rfi(self):
         """Flag persistent RFI in all subbands."""

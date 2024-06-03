@@ -16,16 +16,16 @@ import warnings
 warnings.filterwarnings('ignore', category=Warning, append=True)
 
 
-class SDHDFTable:
+class SDHDFAttribute:
 
     def __init__(self, sdhdf_dataset: h5py.Dataset, *args, **kwargs):
-        """Read an SDHDF table
+        """Read SDHF attributes
 
         Args:
             sdhdf_dataset (h5py.Dataset): SDHDF table dataset
         """
         self.attrs = dict(sdhdf_dataset.attrs)
-        self.table = self._decode_df(pd.DataFrame(sdhdf_dataset[:]))
+        self.table = pd.DataFrame((self.attrs.keys(), self.attrs.values()))
 
     def __repr__(self):
         return self.table.__repr__()
